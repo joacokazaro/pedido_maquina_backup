@@ -1,0 +1,3180 @@
+{
+  "usuarios": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "admin",
+      "rol": "ADMIN",
+      "creadoEn": "2025-01-01T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "username": "super",
+      "password": "super",
+      "rol": "SUPERVISOR"
+    },
+    {
+      "id": 3,
+      "username": "deposito1",
+      "password": "1234",
+      "rol": "DEPOSITO"
+    }
+  ],
+  "maquinas": [
+    {
+      "id": "1.1.1",
+      "tipo": "LUSTRADORA",
+      "modelo": "SUPER SPEED 44C CATANESE",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.2",
+      "tipo": "LUSTRADORA",
+      "modelo": "LILIANA",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.3",
+      "tipo": "LUSTRADORA",
+      "modelo": "POWR-FLITE  1200",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.5",
+      "tipo": "LUSTRADORA",
+      "modelo": "VIPER MOD-DR1500",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.7",
+      "tipo": "LUSTRADORA",
+      "modelo": "POWR-FLITE  1200",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.10",
+      "tipo": "LUSTRADORA",
+      "modelo": "POWR-FLITE  1200",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.11",
+      "tipo": "LUSTRADORA",
+      "modelo": "POWR-FLITE  1200",
+      "serie": "11171016",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.12",
+      "tipo": "LUSTRADORA",
+      "modelo": "VIPER MOD-DR1500",
+      "serie": "AG001149G",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.13",
+      "tipo": "LUSTRADORA",
+      "modelo": "POWR-FLITE  1600 RPM",
+      "serie": "11171007",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.14",
+      "tipo": "LUSTRADORA",
+      "modelo": "VIPER MOD-DR1500",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.15",
+      "tipo": "LUSTRADORA",
+      "modelo": "VIPER MOD-DR1500",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.16",
+      "tipo": "LUSTRADORA",
+      "modelo": "SUPER SPEED HS1500 CATANESE",
+      "serie": "N DE SERIE: 525",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.17",
+      "tipo": "LUSTRADORA",
+      "modelo": "SUPER SPEED HS1500 CATANESE",
+      "serie": "N DE SERIE: 543",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.18",
+      "tipo": "LUSTRADORA",
+      "modelo": "VIPER MOD-DR1500",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.1",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "3865",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.2",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER VF1517",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.3",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER VF1517",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.4",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER VF1517",
+      "serie": "ilegible",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.5",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPERSPEED CATANESE",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.6",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER VF-1517",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.7",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPERSPEED CATANESE",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.P.1",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER VF-1517",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.11",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.13",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "POWR-FLITE",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.14",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.20",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "39341",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.21",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "39288",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.23",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER LS160",
+      "serie": "AG001149G",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.24",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER VF-1517",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.25",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "39298",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.28",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER VF-1517",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.29",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "38921",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.13.13",
+      "tipo": "TRACTOR",
+      "modelo": "HUSQVARNA TS 219 TFM 26 HP - 48\"",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.12.9",
+      "tipo": "CORTADORA DE CESPED 4 RUEDAS",
+      "modelo": "PLUMITA 1.5 HP (ROJA)",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.30",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "39150",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.31",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "39195",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.32",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "39314",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.P.2",
+      "tipo": "ASPIRADORA",
+      "modelo": "ELSEA ARES",
+      "serie": "201604167880",
+      "estado": "no_devuelta"
+    },
+    {
+      "id": "2.2.34",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "39351",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.35",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "40267",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.36",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "40421",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.37",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "41684",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.38",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "41689",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.1",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "171254864",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.2",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "182183895",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.2",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "368008103",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.3",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "183236928",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.3",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "188385888",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.4",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "364764193",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.6",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "NO TIENE CHAPA CON N°",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.6",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "186837116",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.7",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "183236689",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.8",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "184919340",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.8",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "193128997",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.9",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "182183843",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.9",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "193335864",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.10",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "183570931",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.10",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "194911146",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.11",
+      "tipo": "BORDEADORA",
+      "modelo": "BLACK&DECKER GL400-AR",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.12",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N° SERIE 193226721",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.98",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "186629593",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.13",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N° SERIE 193113275",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.14",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "187044732",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.14",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "148726993",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.16",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "N° Serie: 369508609",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.17",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "372107996",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.99",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "369631567",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.18",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "41283526500",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.100",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "188870327",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.P.6",
+      "tipo": "CORTADORA DE CESPED",
+      "modelo": "NIWA GSA 22 2:1 RC -6,5HP",
+      "serie": "5216405608 N° motor: PH-HD675-3000",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.19",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N° SERIE 193129013",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.20",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FSE-60",
+      "serie": "438971842",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.20",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.21",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370023092",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.21",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "N° SERIE 367870730",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.22",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "DAEWOOD D520 ECO",
+      "serie": "DBC5469SYARG2011",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.22",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.23",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "DAEWOOD D520 ECO",
+      "serie": "DBC5455SYARG2011",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.23",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "186837330",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.24",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "DAEWOOD D520 ECO",
+      "serie": "DBC5256SYARG2011",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.26",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N°º SERIE: 195029817",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.55",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20223591722",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.27",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "195030393",
+      "estado": "disponible"
+    },
+    {
+      "id": "15.P.4",
+      "tipo": "CARRO 4 RUEDAS",
+      "modelo": "ROLANDH H2000B",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.28",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "372643228",
+      "estado": "disponible"
+    },
+    {
+      "id": "15.P.2",
+      "tipo": "CHIPEADORA",
+      "modelo": "GTS1300C GTM CON MOTOR HUSQVARNA 13HP",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.29",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "195030392",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.P.7",
+      "tipo": "CORTA CERCO",
+      "modelo": "STIHL HS-82R",
+      "serie": "188868381",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.30",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "194980827",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.11",
+      "tipo": "DESMALEZADORA",
+      "modelo": "ROLANDH H005 STD",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.31",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "194980261",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.18",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 6/15 G",
+      "serie": "11870100010278",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.19",
+      "tipo": "LAVADORA",
+      "modelo": "SUPER SCRUBBER S17 E",
+      "serie": "1609",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.33",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "193229629",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.P.2",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "39321",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.34",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "194911137",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.35",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "372643194",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.36",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371102993",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.101",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370023100",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.37",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "192657388",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.37",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "N° SERIIE: 372107984",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.105",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371594039",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.38",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "N° SERIIE: 372108093",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.39",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N° SERIE 193226710",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.107",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371493842",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.40",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "186837297",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.108",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371594037",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.109",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371496373",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.74",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.110",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371496529",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.111",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371496437",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.46",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370976949",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.47",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370978591",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.112",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370975043",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.113",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370975098",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.114",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370978642",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.115",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370978577",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.116",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371211589",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.53",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370977897",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.53",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20223591708",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.117",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370978590",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.54",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20223591705",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.118",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370975049",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.56",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-120",
+      "serie": "831274507 / 4134-011-2373",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.9.13",
+      "tipo": "MOTOSIERRA",
+      "modelo": "HUSQVARNA 288XP 28\" 3/8 1,5MM",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.57",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "GAMA ELITE 55c - g1839",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.P.2",
+      "tipo": "CORTA CERCO",
+      "modelo": "STIHL HS-45",
+      "serie": "4228-011-2938",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.58",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "N°serie:20233580745",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.10.1",
+      "tipo": "BARREDORA",
+      "modelo": "EUREKA PICOBELLO 101",
+      "serie": "32025",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.59",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "N° SERIE 364584514",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.22",
+      "tipo": "LAVADORA",
+      "modelo": "VIPER FANG 18",
+      "serie": "NO POSEE",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.60",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20233580755",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.59",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "N°serie:20233580752",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.61",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20233580824",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.61",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373040396",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.62",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20233580587",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.62",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-450",
+      "serie": "N° SERIE 188385897",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.79",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374165275",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.80",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374166875",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.81",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373596277",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.82",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373595287",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.83",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "nan",
+      "serie": "25A00375",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.63",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20233580811",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.64",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "372 727 849",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.64",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373040381",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.65",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "372965752",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.65",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373040405",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.66",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373040415",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.67",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "372965754",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.67",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373040407",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.68",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "372965794",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.68",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373040414",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.69",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "372965784",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.69",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.70",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "372705565",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.70",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N° SERIE 196156518",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.71",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20232580244",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.71",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N° SERIE 196170386",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.72",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20232580248",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.72",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N° SERIE 196170412",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.73",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "20232580259",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.73",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "N° SERIE 196170392",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.74",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373387651",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.75",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373553114",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.75",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "HUSQVARNA 143RII - 41.5 CC",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.76",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373553072",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.76",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373632230",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.77",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373388035",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.77",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373553055",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.78",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373596738",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.78",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373805735",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.79",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373553150",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.80",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373387617",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.81",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373553112",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.82",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373387729",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.83",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "N° SERIE 373553069",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.84",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "196321164",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.85",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-460",
+      "serie": "196156642",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.86",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373596699",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.87",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "373632229",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.2",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER K3",
+      "serie": "023770 / 11870 n que figura en la maquina 02/08",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.6",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER K2",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.7",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER K2",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.119",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "nan",
+      "serie": "25A00499",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.120",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "nan",
+      "serie": "25A00487",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.89",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "nan",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.11",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER K2",
+      "serie": "095433",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.13",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 585",
+      "serie": "004335",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.14",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 585",
+      "serie": "004336",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.15",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 5/11P",
+      "serie": "013558",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.16",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 5/11P",
+      "serie": "011195",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.29",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "369924392",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.19",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 6/15 G",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.22",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "HIDROJET 248BAT/18LTS",
+      "serie": "21080750019",
+      "estado": "disponible"
+    },
+    {
+      "id": "1.1.6",
+      "tipo": "LUSTRADORA",
+      "modelo": "VIPER MOD-DR1500",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.24",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "HIDROJET 248BAT/18LTS",
+      "serie": "151021070292",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.25",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 585",
+      "serie": "007118",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.26",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 585",
+      "serie": "N° SERIE : 007188",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.27",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 585",
+      "serie": "007182",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.21",
+      "tipo": "CARGADOR",
+      "modelo": "QUIQ 24V",
+      "serie": "912-2400-N1",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.20",
+      "tipo": "CARGADOR",
+      "modelo": "CATANESE 24V",
+      "serie": "LX-035",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.28",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 5/11P",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.29",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 6/13 EASY FORCE",
+      "serie": "0915209580011404",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.30",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 6/13 EASY FORCE",
+      "serie": "0915209580011533",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.4",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "NIWA",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.20",
+      "tipo": "TRACTOR",
+      "modelo": "HANOMAG 300A",
+      "serie": "N° motor: L800618786B - N° Chasis: 25H5684",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.21",
+      "tipo": "TRACTOR",
+      "modelo": "HANOMAG STARK PARQ 25 - 2WD PARQUERO",
+      "serie": "N° motor: L810826503B - N° Chasis: 25H5267",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.1",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE",
+      "serie": "11289",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.38",
+      "tipo": "ASPIRADORA",
+      "modelo": "CHINA NARANJA",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.2",
+      "tipo": "ASPIRADORA",
+      "modelo": "VIPER M-GV 35",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.P.1",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "HIDROJET 248BAT/18LTS",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.4",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "9523",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.5",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "11795",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.6",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.7",
+      "tipo": "ASPIRADORA",
+      "modelo": "Hidrovac / 30 litros 1000w",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.22",
+      "tipo": "CARGADOR",
+      "modelo": "CATANESE 24V",
+      "serie": "4-62401",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.23",
+      "tipo": "CARGADOR",
+      "modelo": "CATANESE 24V",
+      "serie": "4-62449",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.8",
+      "tipo": "ASPIRADORA",
+      "modelo": "VIPER M-GV 35",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.9",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE FORZA 303 WD",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.10",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE FORZA 303 WD",
+      "serie": "7151",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.12",
+      "tipo": "ASPIRADORA",
+      "modelo": "VIPER M-GV 35",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.14",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE FORZA 303 WD",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.16",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.17",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE",
+      "serie": "11421",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.18",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "12804",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.19",
+      "tipo": "ASPIRADORA",
+      "modelo": "KARCHER T14/1",
+      "serie": "022286",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.21",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "13106",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.P.1",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "13107",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.19",
+      "tipo": "TRACTOR",
+      "modelo": "HANOMAG STARK 500/4 4WD",
+      "serie": "N° motor: L820206679B - N° Chasis: 25H5653",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.24",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "13109",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.25",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "13110",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.26",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 201 WD 30L",
+      "serie": "13111",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.27",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 201 WD 30L",
+      "serie": "13112",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.28",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 201 WD 30L",
+      "serie": "13113",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.106",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371493799",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.34",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-600",
+      "serie": "544840071",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.24",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-421",
+      "serie": "371677068",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.16",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-421",
+      "serie": "369298370",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.30",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE FORZA 305 WD",
+      "serie": "9550",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.30",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370023086",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.32",
+      "tipo": "ASPIRADORA",
+      "modelo": "ELSEA ARES",
+      "serie": "201706221110",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.33",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "14443",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.34",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 200 WD 15L",
+      "serie": "14581",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.35",
+      "tipo": "ASPIRADORA",
+      "modelo": "VIPER LSU 275",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "6.P.1",
+      "tipo": "LAVA TAPIZADOS",
+      "modelo": "SOTECO GENIUS 650",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "6.6.1",
+      "tipo": "LAVA TAPIZADOS",
+      "modelo": "KARCHER PUZZI 10/1",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "6.6.2",
+      "tipo": "LAVA TAPIZADOS",
+      "modelo": "KARCHER PUZZI 10/1",
+      "serie": "013321",
+      "estado": "disponible"
+    },
+    {
+      "id": "6.6.3",
+      "tipo": "LAVA TAPIZADOS",
+      "modelo": "KARCHER PUZZI 10/1",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "6.6.4",
+      "tipo": "LAVA TAPIZADOS",
+      "modelo": "IPC SOTECO",
+      "serie": "SN5015",
+      "estado": "disponible"
+    },
+    {
+      "id": "6.6.5",
+      "tipo": "LAVA TAPIZADOS",
+      "modelo": "PWR-FLITE PFX 1080",
+      "serie": "09171002",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.26",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "N° SERIE : 373045439 / 42039673300I",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.27",
+      "tipo": "SOPLADORA / TRITURADOR",
+      "modelo": "STIHL SH-86C",
+      "serie": "N° SERIE : 42419673317 B",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.28",
+      "tipo": "SOPLADORA / TRITURADOR",
+      "modelo": "STIHL SH-86C",
+      "serie": "N° SERIE : 539 425 732",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.37",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "374524957",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.38",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "374524045",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.2",
+      "tipo": "SOPLADORA",
+      "modelo": "STHIL BR 420",
+      "serie": "366243296",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.10",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "368243512",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.11",
+      "tipo": "SOPLADORA",
+      "modelo": "EINHELL A BATERIA",
+      "serie": "LOTE NRO: 2018/06/EARG-18-2060",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.29",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "373430889",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.31",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370023087",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.1",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "299410895",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.3",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "363798255",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.6",
+      "tipo": "SOPLADORA / TRITURADOR",
+      "modelo": "STIHL SH-86C",
+      "serie": "541251601",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.8",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "522863471",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.9",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-600",
+      "serie": "371569090",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.102",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "370975019",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.33",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-600",
+      "serie": "544840061",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.32",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-600",
+      "serie": "544840059",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.17",
+      "tipo": "CARGADOR",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.25",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BG 50",
+      "serie": "535919552 / 4229-011-1723",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.31",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 585",
+      "serie": "000063 - 19742530000063",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.32",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 585",
+      "serie": "000064 - 19742530000064",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.30",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "373675150",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.5",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-600",
+      "serie": "539281035",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.18",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "569418265",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.33",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "NILFISK C110 XTRA",
+      "serie": "00287039",
+      "estado": "disponible"
+    },
+    {
+      "id": "4.4.34",
+      "tipo": "HIDROLAVADORA",
+      "modelo": "KARCHER HD 585",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.22",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "371677089",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.10",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-421",
+      "serie": "371677045",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.36",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "374202508",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.8",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "367984365",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.7",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "370091204",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.7",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "367984375",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.12",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "369383188",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.15",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "370755495",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.19",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "370759725 ????",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.31",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-600",
+      "serie": "543703651",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.6",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "367154238",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.9",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "368028635",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.3",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "367154236",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.1",
+      "tipo": "LAVADORA",
+      "modelo": "VIPER FANG 18",
+      "serie": "1005442",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.2",
+      "tipo": "LAVADORA",
+      "modelo": "WRANGLER 33",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.3",
+      "tipo": "LAVADORA",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.4",
+      "tipo": "LAVADORA",
+      "modelo": "VIPER FANG 32",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.5",
+      "tipo": "LAVADORA",
+      "modelo": "NILFISK ADVENGER ECOFLEX BR-855",
+      "serie": "M-X3405D-C Hombre a bordo",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.6",
+      "tipo": "LAVADORA",
+      "modelo": "VIPER FANG 20",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.7",
+      "tipo": "LAVADORA",
+      "modelo": "VIPER FANG 20",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.8",
+      "tipo": "LAVADORA",
+      "modelo": "NILFISK ADVENGER ECOFLEX BR-855",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.9",
+      "tipo": "LAVADORA",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "4790",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.10",
+      "tipo": "LAVADORA",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "4932",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.11",
+      "tipo": "LAVADORA",
+      "modelo": "FIMAP BR-85",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.12",
+      "tipo": "LAVADORA",
+      "modelo": "COMAC",
+      "serie": "ELECTRICA",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.36",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 201 WD",
+      "serie": "15584",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.37",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 201 WD",
+      "serie": "15704",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.39",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "42016",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.40",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "SUPER SPEED 39 L CATANESE",
+      "serie": "42030",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.13",
+      "tipo": "LAVADORA",
+      "modelo": "TENANNT",
+      "serie": "56805031244",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.14",
+      "tipo": "LAVADORA",
+      "modelo": "VIPER AS530R",
+      "serie": "eu002088h",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.39",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 201 WD",
+      "serie": "16040",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.40",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 201 WD",
+      "serie": "16039",
+      "estado": "disponible"
+    },
+    {
+      "id": "5.5.41",
+      "tipo": "ASPIRADORA",
+      "modelo": "CATANESE SAMP 201 WD",
+      "serie": "15931",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.15",
+      "tipo": "LAVADORA",
+      "modelo": "VIPER AS 710",
+      "serie": "HOMBRE A BORDO NRO SERIE: EU003548H",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.16",
+      "tipo": "LAVADORA",
+      "modelo": "VIPER AS 710",
+      "serie": "HOMBRE A BORDO NRO SERIE:",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.17",
+      "tipo": "LAVADORA",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "5736",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.18",
+      "tipo": "LAVADORA",
+      "modelo": "SUPER SCRUBBER S17 E",
+      "serie": "1515",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.20",
+      "tipo": "LAVADORA",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "3224",
+      "estado": "disponible"
+    },
+    {
+      "id": "8.8.21",
+      "tipo": "LAVADORA",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "3225",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.103",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371102875",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.9.1",
+      "tipo": "MOTOSIERRA",
+      "modelo": "STIHL MS 250",
+      "serie": "1123/611A",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.3.34",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371102868",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.9.4",
+      "tipo": "MOTOSIERRA",
+      "modelo": "HUSQVARNA 288XP 28\" 3/8 1,5MM",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.19",
+      "tipo": "MOTOSIERRA",
+      "modelo": "HUSQVARNA 445",
+      "serie": "5258621",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.20",
+      "tipo": "MOTOSIERRA",
+      "modelo": "HUSQVARNA 445",
+      "serie": "5374379",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.9.7",
+      "tipo": "PODADORA EN ALTURA",
+      "modelo": "STIHL HT56",
+      "serie": "532990800",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.21",
+      "tipo": "MOTOSIERRA",
+      "modelo": "STIHL MS-250",
+      "serie": "11230213101A",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.9.8",
+      "tipo": "MOTOSIERRA",
+      "modelo": "STIHL MS 250",
+      "serie": "829480488",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.10",
+      "tipo": "MOTOSIERRA",
+      "modelo": "STIHL MS-260",
+      "serie": "N°SERIE : S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.9",
+      "tipo": "MOTOSIERRA",
+      "modelo": "STIHL MS-260",
+      "serie": "N° SERIE : 372101163",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.22",
+      "tipo": "PODADORA EN ALTURA",
+      "modelo": "STIHL HT-101",
+      "serie": "535271189",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.23",
+      "tipo": "PODADORA EN ALTURA",
+      "modelo": "STIHL HT-101",
+      "serie": "531580939",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.13",
+      "tipo": "MOTOSIERRA",
+      "modelo": "STIHL MS 660",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.12",
+      "tipo": "MOTOSIERRA",
+      "modelo": "HUSQVARNA 288XP 28\" 3/8 1,5MM",
+      "serie": "2013-3650237",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.9.12",
+      "tipo": "PODADORA EN ALTURA",
+      "modelo": "HUSQVARNA 525 PT5S 10\"",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.14",
+      "tipo": "MOTOSIERRA",
+      "modelo": "STIHL MS 310",
+      "serie": "372227237",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.104",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-280",
+      "serie": "371102678",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.P.3",
+      "tipo": "CORTA CERCO",
+      "modelo": "STIHL HS-45",
+      "serie": "801521712",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.9.3",
+      "tipo": "MOTOSIERRA",
+      "modelo": "STIHL MS-250",
+      "serie": "825896229",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.P.4",
+      "tipo": "CORTADORA DE CESPED",
+      "modelo": "SKY TS50 (BLANCA)",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.10.4",
+      "tipo": "CORTA CERCO",
+      "modelo": "STHIL HS-45",
+      "serie": "827430688",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.P.5",
+      "tipo": "BARREDORA",
+      "modelo": "EUREKA PICOBELLO 101",
+      "serie": "18690",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.39",
+      "tipo": "SOPLADORA",
+      "modelo": "BRANCO BSC 1600 E",
+      "serie": "BSC1600E25H0058",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.11",
+      "tipo": "SOPLADORA",
+      "modelo": "BRANCO BSC 1600 E",
+      "serie": "E25H0286",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.P.8",
+      "tipo": "CORTA CERCO",
+      "modelo": "STIHL HS-45",
+      "serie": "829643316",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.40",
+      "tipo": "SOPLADORA",
+      "modelo": "BRANCO BSC 1600 E",
+      "serie": "E25H0501",
+      "estado": "disponible"
+    },
+    {
+      "id": "11.P.1",
+      "tipo": "GENERADOR",
+      "modelo": "OHV ROJO 6.5 HP",
+      "serie": "0402100971",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.10.2",
+      "tipo": "CORTA CERCO",
+      "modelo": "STHIL HS-45",
+      "serie": "820904215",
+      "estado": "disponible"
+    },
+    {
+      "id": "10.P.9",
+      "tipo": "CORTA CERCO",
+      "modelo": "STIHL HS-46",
+      "serie": "830148731",
+      "estado": "disponible"
+    },
+    {
+      "id": "11.11.1",
+      "tipo": "HELADERA",
+      "modelo": "BRIKET",
+      "serie": "MOD 1200 BKLSC1",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.12.1",
+      "tipo": "VAPORIZADORA",
+      "modelo": "NILFISK S04500 AMTRIX STEAM",
+      "serie": "20040259",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.12.2",
+      "tipo": "ATOMIZADOR (tanque)",
+      "modelo": "STHIL SR420",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.12.4",
+      "tipo": "APILADOR SEMIELECTRICO 1500 KG",
+      "modelo": "LINDE",
+      "serie": "25201200045",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.12.5",
+      "tipo": "ZORRA HIDRAULICA 2500 KG",
+      "modelo": "LINDE",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.12.10",
+      "tipo": "BARRE FONDO PILETA PORTATIL",
+      "modelo": "KOMASA 3/4 HP",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.P.1",
+      "tipo": "ELECTROBOMBA PARA AGUA",
+      "modelo": "CHERTA ARGENTINA 12 VOLTS",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.12.7",
+      "tipo": "MINI FUMIGADOR FEMA",
+      "modelo": "FEMA K-100",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "12.12.8",
+      "tipo": "MOTOBOMBA",
+      "modelo": "HUSQV. W50P 2\" 967639002",
+      "serie": "S/D",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.11",
+      "tipo": "TRACTOR",
+      "modelo": "MASSEY FERGUSON 1195 S",
+      "serie": "N° SERIE 2176 /CHASIS: 2176050120",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.9.2",
+      "tipo": "PODADORA EN ALTURA",
+      "modelo": "STIHL HT-101",
+      "serie": "529169525",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.14",
+      "tipo": "TRACTOR",
+      "modelo": "HANOMAG 25",
+      "serie": "CHASIS: TE073458U - MOTOR:0809076078",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.13",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "369213508",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.1",
+      "tipo": "TRACTOR",
+      "modelo": "MASSEY FERGUSSON 165",
+      "serie": "MOTOR: PA3110160 nº de chasis 1486836",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.3",
+      "tipo": "TRACTOR",
+      "modelo": "MASSEY FERGUSSON MF 1175",
+      "serie": "MOTOR: PA6252199 CHASIS 1235456",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.9",
+      "tipo": "TRACTOR",
+      "modelo": "MASSEY FERGUSSON MF 1175",
+      "serie": "2174 032714 MOTOR: 032684",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.17",
+      "tipo": "TRACTOR",
+      "modelo": "PAUNY 230CC",
+      "serie": "N° CHASIS: CC24710 N° MOTOR: 36836143",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.15",
+      "tipo": "TRACTOR",
+      "modelo": "ROLANDH H130 TURBO 4WD",
+      "serie": "BCWG3700001DC - MOTOR YT20254192",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.16",
+      "tipo": "TRACTOR",
+      "modelo": "HUSQVARNA TS 148 - 26 HP 48\" CORTE",
+      "serie": "120423A005706",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.18",
+      "tipo": "TRACTOR",
+      "modelo": "HUSQVARNA TS 148 - 26 HP 48\" CORTE",
+      "serie": "120423A005642",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.13.10",
+      "tipo": "TRACTOR",
+      "modelo": "HUSQVARNA TS 148 - 26 HP 48\" CORTE",
+      "serie": "120423A005685",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.7.35",
+      "tipo": "SOPLADORA",
+      "modelo": "STIHL BR-420",
+      "serie": "374202403",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.24",
+      "tipo": "TRACTOR",
+      "modelo": "MURRAY ZT150 20 HP",
+      "serie": "2014569526",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.25",
+      "tipo": "TRACTOR",
+      "modelo": "MASSEY FERGUSSON MF 1195",
+      "serie": "2176 PA047754",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.8",
+      "tipo": "TRACTOR",
+      "modelo": "MASSEY FERGUSSON MF 1175",
+      "serie": "MOTOR: PA621988 CHASIS: 1234 PATENTE:EID66",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.26",
+      "tipo": "TRACTOR",
+      "modelo": "ROLANDH H040 4W",
+      "serie": "BBWB1300015DC MOTOR:L790207420B",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.12",
+      "tipo": "TRACTOR",
+      "modelo": "HUSQVARNA",
+      "serie": "071414A001940",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.22",
+      "tipo": "TRACTOR",
+      "modelo": "HUSQVARNA RADIO 0 26 HP",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.13.8",
+      "tipo": "TRACTOR",
+      "modelo": "CHANU 68",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.1",
+      "tipo": "DESMALEZADORA",
+      "modelo": "1.5000MM (ROJA)",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.13.11",
+      "tipo": "TRACTOR",
+      "modelo": "HUSQVARNA TS 148 - 26 HP 48\" CORTE",
+      "serie": "120423A005687",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.2",
+      "tipo": "DESMALEZADORA",
+      "modelo": "SUPER DAM 4.500mm SUPERVIAL",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.12",
+      "tipo": "DESMALEZADORA",
+      "modelo": "GROSSPAL AVF 3.000 mm",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "15.P.3",
+      "tipo": "CISTERNA 2000 LITROS",
+      "modelo": "GENERICO",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.3",
+      "tipo": "DESMALEZADORA",
+      "modelo": "SUPER DAM 4.500mm",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.13",
+      "tipo": "DESMALEZADORA",
+      "modelo": "SUPER DAM 4.500mm",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.4",
+      "tipo": "DESMALEZADORA",
+      "modelo": "METALBERT 4.500mm",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.14",
+      "tipo": "DESMALEZADORA",
+      "modelo": "ROLANDH H005 STD",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.5",
+      "tipo": "DESMALEZADORA",
+      "modelo": "SUPER DAM 4.500mm TOTICONTI",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.14.5",
+      "tipo": "CUATRICICLO",
+      "modelo": "CF625",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.6",
+      "tipo": "DESMALEZADORA",
+      "modelo": "YOMEL 1321 LT 1.500mm",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.7",
+      "tipo": "DESMALEZADORA",
+      "modelo": "TOTICONTI 1.500mm (verde)",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.8",
+      "tipo": "DESMALEZADORA",
+      "modelo": "SUPER DAM 4.500mm",
+      "serie": "S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.23",
+      "tipo": "TRACTOR",
+      "modelo": "ROLANDH H025 2W",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.13.12",
+      "tipo": "TRACTOR",
+      "modelo": "HUSQVARNA TS 248 TXD - 23 HP",
+      "serie": "052324A006144",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.9",
+      "tipo": "DESMALEZADORA",
+      "modelo": "GROSSPAL AVG 200DE ARRASTRE",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "14.P.10",
+      "tipo": "DESMALEZADORA",
+      "modelo": "GROSSPAL 3PVG 150 MONTADA SOBRE 3 PUNTOS",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "15.15.3",
+      "tipo": "CARRO 4 RUEDAS",
+      "modelo": "TELLO INDUSTRIAL",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "15.15.4",
+      "tipo": "CISTERNA 3000 LITROS",
+      "modelo": "GENERICO",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "15.P.1",
+      "tipo": "MINI CARGADORA",
+      "modelo": "CASE SV185",
+      "serie": "N° SERIE NEM480948",
+      "estado": "disponible"
+    },
+    {
+      "id": "15.P.5",
+      "tipo": "TRAILER DOS RUEDAS",
+      "modelo": "SIN MARCA",
+      "serie": "N° SERIE S/N",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.15",
+      "tipo": "MOTOSIERRA",
+      "modelo": "ECHO CS-303T",
+      "serie": "NRO SERIE: C83829004149",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.16",
+      "tipo": "MOTOSIERRA",
+      "modelo": "ECHO CS-420ES",
+      "serie": "NRO SERIE: C84129006195",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.17",
+      "tipo": "MOTOSIERRA - pertenece a ECOCLEAN",
+      "modelo": "ECHO CS-590",
+      "serie": "Nro de serie: C69015380220",
+      "estado": "disponible"
+    },
+    {
+      "id": "9.P.18",
+      "tipo": "MOTOSIERRA",
+      "modelo": "ECHO CS-1201",
+      "serie": "Nro de serie: C14320018578",
+      "estado": "disponible"
+    },
+    {
+      "id": "16.P.1",
+      "tipo": "PODADORA EN ALTURA",
+      "modelo": "STIHL HT-101",
+      "serie": "298792812",
+      "estado": "disponible"
+    },
+    {
+      "id": "2.2.9",
+      "tipo": "LAVADORA LUSTRADORA",
+      "modelo": "VIPER VF-1517",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "16.P.3",
+      "tipo": "PODADORA EN ALTURA",
+      "modelo": "ECHO PPT-2400",
+      "serie": "14220008868",
+      "estado": "disponible"
+    },
+    {
+      "id": "16.P.4",
+      "tipo": "PODADORA EN ALTURA",
+      "modelo": "STIHL",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.2",
+      "tipo": "CARGADOR",
+      "modelo": "WRANGLER 33",
+      "serie": "ILEGIBLE",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.3",
+      "tipo": "CARGADOR",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.4",
+      "tipo": "CARGADOR",
+      "modelo": "VIPER FANG 32",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.9",
+      "tipo": "CARGADOR",
+      "modelo": "ENTRADA 220, SALIDA 24V/20A",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.10",
+      "tipo": "CARGADOR",
+      "modelo": "SUPER SCRUBBER S 32 B",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.11",
+      "tipo": "CARGADOR",
+      "modelo": "FIMAP BR-85",
+      "serie": "",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.13",
+      "tipo": "CARGADOR",
+      "modelo": "TENANNT",
+      "serie": "s/n",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.88",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374164062",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.89",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374164063",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.90",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374164082",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.91",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374164093",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.92",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374164101",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.93",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374165231",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.94",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374165236",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.95",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374165240",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.96",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374165241",
+      "estado": "disponible"
+    },
+    {
+      "id": "3.P.97",
+      "tipo": "MOTOGUADAÑA",
+      "modelo": "STIHL FS-291",
+      "serie": "374165246",
+      "estado": "disponible"
+    },
+    {
+      "id": "C.8.18",
+      "tipo": "CARGADOR",
+      "modelo": "LESTER 24-48V-1050W",
+      "serie": "N° SERIE 3921W0207",
+      "estado": "disponible"
+    },
+    {
+      "id": "7.P.4",
+      "tipo": "SOPLADORA / TRITURADOR",
+      "modelo": "STIHL SH-86C",
+      "serie": "533328598",
+      "estado": "disponible"
+    },
+    {
+      "id": "13.P.27",
+      "tipo": "TRACTOR",
+      "modelo": "HANOMAG STARK 1000/4C",
+      "serie": "N° CHASIS: 25H5808 MOTOR: Y230603411",
+      "estado": "disponible"
+    }
+  ],
+  "pedidos": [
+    {
+      "id": "P-0001",
+      "supervisorId": 2,
+      "estado": "CERRADO",
+      "itemsSolicitados": [
+        {
+          "tipo": "LUSTRADORA",
+          "cantidad": 1
+        },
+        {
+          "tipo": "ASPIRADORA",
+          "cantidad": 1
+        }
+      ],
+      "itemsAsignados": [
+        {
+          "id": "1.1.1",
+          "tipo": "LUSTRADORA",
+          "modelo": "SUPER SPEED 44C CATANESE",
+          "serie": "ILEGIBLE"
+        },
+        {
+          "id": "1.1.7",
+          "tipo": "LUSTRADORA",
+          "modelo": "POWR-FLITE  1200",
+          "serie": ""
+        }
+      ],
+      "historial": [
+        {
+          "accion": "CREADO",
+          "usuarioId": 2,
+          "fecha": "2025-12-09T11:27:49.574Z"
+        },
+        {
+          "accion": "MAQUINAS_ASIGNADAS",
+          "fecha": "2025-12-09T12:53:27.911Z",
+          "detalle": {
+            "asignadas": [
+              {
+                "id": "1.1.1",
+                "tipo": "LUSTRADORA",
+                "modelo": "SUPER SPEED 44C CATANESE",
+                "serie": "ILEGIBLE"
+              },
+              {
+                "id": "1.1.7",
+                "tipo": "LUSTRADORA",
+                "modelo": "POWR-FLITE  1200",
+                "serie": ""
+              }
+            ],
+            "solicitado": {
+              "LUSTRADORA": 1,
+              "ASPIRADORA": 1
+            },
+            "asignadoPorTipo": {
+              "LUSTRADORA": 2
+            },
+            "justificacion": "Lo que hay"
+          }
+        },
+        {
+          "accion": "ENTREGADO",
+          "usuarioId": 999,
+          "fecha": "2025-12-09T12:54:06.384Z"
+        },
+        {
+          "accion": "DEVOLUCION_REGISTRADA",
+          "fecha": "2025-12-09T12:55:16.853Z",
+          "detalle": {
+            "devueltas": [
+              "1.1.1",
+              "1.1.7"
+            ],
+            "faltantes": [],
+            "justificacion": null
+          },
+          "usuarioId": 0
+        }
+      ]
+    },
+    {
+      "id": "P-0002",
+      "supervisorId": 2,
+      "estado": "CERRADO",
+      "itemsSolicitados": [
+        {
+          "tipo": "LUSTRADORA",
+          "cantidad": 1
+        },
+        {
+          "tipo": "HIDROLAVADORA",
+          "cantidad": 1
+        },
+        {
+          "tipo": "ASPIRADORA",
+          "cantidad": 1
+        }
+      ],
+      "itemsAsignados": [
+        {
+          "id": "2.2.24",
+          "tipo": "LAVADORA LUSTRADORA",
+          "modelo": "VIPER VF-1517",
+          "serie": "ILEGIBLE"
+        },
+        {
+          "id": "5.P.2",
+          "tipo": "ASPIRADORA",
+          "modelo": "ELSEA ARES",
+          "serie": "201604167880"
+        }
+      ],
+      "historial": [
+        {
+          "accion": "CREADO",
+          "usuarioId": 2,
+          "fecha": "2025-12-09T15:28:45.014Z"
+        },
+        {
+          "accion": "MAQUINAS_ASIGNADAS",
+          "fecha": "2025-12-09T15:29:46.226Z",
+          "detalle": {
+            "asignadas": [
+              {
+                "id": "2.2.24",
+                "tipo": "LAVADORA LUSTRADORA",
+                "modelo": "VIPER VF-1517",
+                "serie": "ILEGIBLE"
+              },
+              {
+                "id": "5.P.2",
+                "tipo": "ASPIRADORA",
+                "modelo": "ELSEA ARES",
+                "serie": "201604167880"
+              }
+            ],
+            "solicitado": {
+              "LUSTRADORA": 1,
+              "HIDROLAVADORA": 1,
+              "ASPIRADORA": 1
+            },
+            "asignadoPorTipo": {
+              "LAVADORA LUSTRADORA": 1,
+              "ASPIRADORA": 1
+            },
+            "justificacion": "No hay mas"
+          }
+        },
+        {
+          "accion": "ENTREGADO",
+          "usuarioId": 999,
+          "fecha": "2025-12-09T15:30:41.189Z"
+        },
+        {
+          "accion": "DEVOLUCION_REGISTRADA",
+          "fecha": "2025-12-09T15:31:08.827Z",
+          "detalle": {
+            "devueltas": [
+              "2.2.24"
+            ],
+            "faltantes": [
+              "5.P.2"
+            ],
+            "justificacion": "Se perdió"
+          },
+          "usuarioId": 0
+        }
+      ]
+    }
+  ]
+}
