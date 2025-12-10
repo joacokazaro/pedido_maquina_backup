@@ -44,7 +44,8 @@ export default function AdminPedidos() {
 
       const coincideTexto =
         p.id.toLowerCase().includes(texto) ||
-        (p.supervisorName || "").toLowerCase().includes(texto);
+        (p.supervisorName || "").toLowerCase().includes(texto) ||
+        (p.servicio || "").toLowerCase().includes(texto);
 
       return coincideEstado && coincideTexto;
     });
@@ -98,7 +99,7 @@ export default function AdminPedidos() {
 
         <input
           className="w-full p-3 rounded-xl border border-gray-300"
-          placeholder="Buscar por código o supervisor..."
+          placeholder="Buscar por código, supervisor o servicio..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -140,6 +141,13 @@ export default function AdminPedidos() {
               Supervisor: {p.supervisorName ?? `ID ${p.supervisorId ?? "?"}`}
             </p>
 
+            {/* SERVICIO (NUEVO) */}
+            {p.servicio && (
+              <p className="text-sm text-gray-800 mt-1">
+                Servicio: <b>{p.servicio}</b>
+              </p>
+            )}
+
             <p className="text-xs text-gray-500 mt-1">
               Items: {p.itemsSolicitados.length}
             </p>
@@ -158,12 +166,18 @@ export default function AdminPedidos() {
               Pedido {selectedPedido.id}
             </h2>
 
-            <p className="text-sm text-gray-600 mb-3">
+            <p className="text-sm text-gray-600 mb-1">
               Estado actual:{" "}
               <b>{selectedPedido.estado.replace("_", " ")}</b>
             </p>
 
-            {/* HISTORIAL */}
+            {/* SERVICIO */}
+            {selectedPedido.servicio && (
+              <p className="text-sm text-gray-800 mb-3">
+                Servicio: <b>{selectedPedido.servicio}</b>
+              </p>
+            )}
+
             <h3 className="font-semibold mb-2">Historial</h3>
 
             <div className="max-h-60 overflow-y-auto mb-4 border p-3 rounded space-y-4">
@@ -176,9 +190,17 @@ export default function AdminPedidos() {
                     {new Date(h.fecha).toLocaleString()}
                   </p>
 
-                  {/* DETALLES BONITOS */}
+                  {/* DETALLES */}
                   {h.detalle && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs text-gray-700 space-y-2">
+
+                      {/* SERVICIO dentro de historial */}
+                      {h.detalle.servicio && (
+                        <div>
+                          <p className="font-semibold">Servicio:</p>
+                          <p>{h.detalle.servicio}</p>
+                        </div>
+                      )}
 
                       {/* Máquinas asignadas */}
                       {"asignadas" in h.detalle && (
@@ -206,7 +228,6 @@ export default function AdminPedidos() {
                         </div>
                       )}
 
-                      {/* Solicitado */}
                       {"solicitado" in h.detalle && (
                         <div>
                           <p className="font-semibold">Solicitado:</p>
@@ -217,7 +238,7 @@ export default function AdminPedidos() {
                           </ul>
                         </div>
                       )}
-                      {/* Justificación */}
+
                       {h.detalle.justificacion && (
                         <div>
                           <p className="font-semibold">Justificación:</p>

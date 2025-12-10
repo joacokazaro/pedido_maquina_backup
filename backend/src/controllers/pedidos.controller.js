@@ -4,10 +4,14 @@ import { readDB, writeDB } from "../utils/file.js";
    CREAR PEDIDO (usa username del supervisor)
 ======================================================== */
 export function crearPedido(req, res) {
-  const { supervisorUsername, itemsSolicitados, observacion } = req.body;
+  const { supervisorUsername, itemsSolicitados, observacion, servicio } = req.body;
 
   if (!supervisorUsername) {
     return res.status(400).json({ error: "Falta supervisorUsername" });
+  }
+
+  if (!servicio || servicio.trim() === "") {
+    return res.status(400).json({ error: "Falta el servicio del pedido" });
   }
 
   const db = readDB();
@@ -17,18 +21,20 @@ export function crearPedido(req, res) {
   const nuevo = {
     id,
     supervisor: supervisorUsername,
+    servicio,                 // ✅ GUARDAR SERVICIO
     estado: "PENDIENTE_PREPARACION",
     itemsSolicitados,
     itemsAsignados: [],
-    observacion: observacion || null,  // ✅ GUARDAR OBSERVACIÓN AQUÍ
+    observacion: observacion || null,
     historial: [
       {
         accion: "CREADO",
         usuario: supervisorUsername,
         fecha: new Date().toISOString(),
-        detalle: observacion
-          ? { observacion } // ✅ SI HAY OBSERVACIÓN, SE AGREGA AL HISTORIAL
-          : null
+        detalle: {
+          servicio,          // ✅ MOSTRARLO EN HISTORIAL
+          ...(observacion ? { observacion } : {})
+        }
       }
     ]
   };
@@ -38,8 +44,6 @@ export function crearPedido(req, res) {
 
   res.json({ message: "Pedido creado", pedido: nuevo });
 }
-
-
 
 /* ========================================================
    LISTAR PEDIDOS POR SUPERVISOR
@@ -54,9 +58,6 @@ export function getPedidosSupervisor(req, res) {
 
   res.json(pedidos);
 }
-
-
-
 
 /* ========================================================
    OBTENER PEDIDO POR ID
@@ -91,6 +92,7 @@ export function marcarEntregado(req, res) {
     accion: "ENTREGADO",
     usuario,
     fecha: new Date().toISOString(),
+    detalle: { servicio: pedido.servicio } // opcional
   });
 
   writeDB(db);
@@ -115,7 +117,8 @@ export function actualizarEstadoPedido(req, res) {
     accion: "ESTADO_ACTUALIZADO",
     nuevoEstado: estado,
     usuario,
-    fecha: new Date().toISOString()
+    fecha: new Date().toISOString(),
+    detalle: { servicio: pedido.servicio }
   });
 
   writeDB(db);
@@ -135,7 +138,6 @@ export function asignarMaquinas(req, res) {
 
   if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
 
-  // Mismos cálculos pero guardando historial con username
   const solicitado = {};
   pedido.itemsSolicitados.forEach(i => solicitado[i.tipo] = i.cantidad);
 
@@ -175,6 +177,7 @@ export function asignarMaquinas(req, res) {
     usuario,
     fecha: new Date().toISOString(),
     detalle: {
+      servicio: pedido.servicio,  // siempre visible
       asignadas: pedido.itemsAsignados,
       solicitado,
       asignadoPorTipo,
@@ -226,7 +229,12 @@ export function registrarDevolucion(req, res) {
     accion: "DEVOLUCION_REGISTRADA",
     usuario,
     fecha: new Date().toISOString(),
-    detalle: { devueltas, faltantes, justificacion: requiere ? justificacion : null }
+    detalle: {
+      servicio: pedido.servicio,
+      devueltas,
+      faltantes,
+      justificacion: requiere ? justificacion : null
+    }
   });
 
   pedido.estado = "CERRADO";

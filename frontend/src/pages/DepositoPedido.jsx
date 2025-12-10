@@ -37,7 +37,7 @@ export default function DepositoPedido() {
   if (loading) return <div className="p-6">Cargando pedido...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
-  // 🔎 Buscar observación (en pedido directo o en historial.detalle)
+  // 🔎 Buscar observación
   const observacion =
     pedido.observacion ||
     (
@@ -45,6 +45,16 @@ export default function DepositoPedido() {
         (h) => h.detalle && typeof h.detalle.observacion === "string"
       ) || {}
     ).detalle?.observacion ||
+    "";
+
+  // 🔎 Buscar servicio
+  const servicio =
+    pedido.servicio ||
+    (
+      pedido.historial.find(
+        (h) => h.detalle && typeof h.detalle.servicio === "string"
+      ) || {}
+    ).detalle?.servicio ||
     "";
 
   return (
@@ -73,7 +83,17 @@ export default function DepositoPedido() {
         </span>
       </div>
 
-      {/* 📝 Observación del supervisor */}
+      {/* ✅ SERVICIO */}
+      {servicio && (
+        <div className="bg-white rounded-xl shadow p-4 mb-4 border-l-4 border-green-500">
+          <h2 className="text-lg font-semibold mb-1">Servicio</h2>
+          <p className="text-sm text-gray-700 whitespace-pre-line">
+            {servicio}
+          </p>
+        </div>
+      )}
+
+      {/* Observación */}
       {observacion && (
         <div className="bg-white rounded-xl shadow p-4 mb-4 border-l-4 border-blue-500">
           <h2 className="text-lg font-semibold mb-1">Observación del supervisor</h2>
@@ -145,50 +165,7 @@ export default function DepositoPedido() {
                   {new Date(h.fecha).toLocaleString()}
                 </p>
 
-                {h.detalle && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700 space-y-2">
-
-                    {"asignadas" in h.detalle && (
-                      <div>
-                        <p className="font-semibold">Máquinas asignadas:</p>
-                        <ul className="list-disc ml-5">
-                          {h.detalle.asignadas.map((m, i) => (
-                            <li key={i}>{m.tipo} – {m.id}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {"solicitado" in h.detalle && (
-                      <div>
-                        <p className="font-semibold">Solicitado:</p>
-                        <ul className="list-disc ml-5">
-                          {Object.entries(h.detalle.solicitado).map(([tipo, cant]) => (
-                            <li key={tipo}>{tipo}: {cant}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {"asignadoPorTipo" in h.detalle && (
-                      <div>
-                        <p className="font-semibold">Asignado por tipo:</p>
-                        <ul className="list-disc ml-5">
-                          {Object.entries(h.detalle.asignadoPorTipo).map(([tipo, cant]) => (
-                            <li key={tipo}>{tipo}: {cant}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {h.detalle.observacion && (
-                      <div>
-                        <p className="font-semibold">Observación:</p>
-                        <p>{h.detalle.observacion}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                
               </div>
             </div>
           ))}
@@ -198,7 +175,6 @@ export default function DepositoPedido() {
       {/* ACCIONES */}
       <div className="space-y-3 max-w-xl mx-auto">
 
-        {/* Asignar máquinas */}
         <button
           onClick={() => navigate(`/deposito/pedido/${id}/asignar`)}
           className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-blue-700 transition"
@@ -206,7 +182,6 @@ export default function DepositoPedido() {
           Asignar máquinas
         </button>
 
-        {/* PREPARADO */}
         {pedido.estado === "PENDIENTE_PREPARACION" && (
           <button
             onClick={() => marcarEstado(id, "PREPARADO", navigate)}
@@ -216,7 +191,6 @@ export default function DepositoPedido() {
           </button>
         )}
 
-        {/* ENTREGADO */}
         {pedido.estado === "PREPARADO" && (
           <button
             onClick={() => entregarPedido(id, navigate)}
@@ -231,7 +205,7 @@ export default function DepositoPedido() {
 }
 
 /* ============================
-   FUNCIONES AUXILIARES
+   AUX
 ============================ */
 
 async function marcarEstado(id, nuevoEstado, navigate) {

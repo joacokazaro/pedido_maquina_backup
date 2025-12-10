@@ -1584,7 +1584,7 @@
       "tipo": "ASPIRADORA",
       "modelo": "VIPER M-GV 35",
       "serie": "",
-      "estado": "disponible"
+      "estado": "asignada"
     },
     {
       "id": "5.5.14",
@@ -3026,88 +3026,54 @@
     {
       "id": "P-0001",
       "supervisor": "cmoya",
-      "estado": "CERRADO",
+      "servicio": "R20",
+      "estado": "PREPARADO",
       "itemsSolicitados": [
         {
-          "tipo": "LUSTRADORA",
+          "tipo": "ASPIRADORA",
           "cantidad": 1
         }
       ],
       "itemsAsignados": [
         {
-          "id": "1.1.18",
-          "tipo": "LUSTRADORA",
-          "modelo": "VIPER MOD-DR1500",
+          "id": "5.5.12",
+          "tipo": "ASPIRADORA",
+          "modelo": "VIPER M-GV 35",
           "serie": ""
         }
       ],
-      "observacion": null,
+      "observacion": "Aspiradora Catanese",
       "historial": [
         {
           "accion": "CREADO",
           "usuario": "cmoya",
-          "fecha": "2025-12-10T14:53:48.598Z",
-          "detalle": null
+          "fecha": "2025-12-10T19:20:29.735Z",
+          "detalle": {
+            "servicio": "R20",
+            "observacion": "Aspiradora Catanese"
+          }
         },
         {
           "accion": "MAQUINAS_ASIGNADAS",
           "usuario": "deposito",
-          "fecha": "2025-12-10T14:57:27.471Z",
+          "fecha": "2025-12-10T19:23:54.783Z",
           "detalle": {
+            "servicio": "R20",
             "asignadas": [
               {
-                "id": "1.1.18",
-                "tipo": "LUSTRADORA",
-                "modelo": "VIPER MOD-DR1500",
+                "id": "5.5.12",
+                "tipo": "ASPIRADORA",
+                "modelo": "VIPER M-GV 35",
                 "serie": ""
               }
             ],
             "solicitado": {
-              "LUSTRADORA": 1
+              "ASPIRADORA": 1
             },
             "asignadoPorTipo": {
-              "LUSTRADORA": 1
+              "ASPIRADORA": 1
             },
             "justificacion": null
-          }
-        },
-        {
-          "accion": "ENTREGADO",
-          "usuario": "deposito",
-          "fecha": "2025-12-10T15:14:55.821Z"
-        },
-        {
-          "accion": "DEVOLUCION_REGISTRADA",
-          "fecha": "2025-12-10T15:28:40.045Z",
-          "detalle": {
-            "devueltas": [
-              "1.1.18"
-            ],
-            "faltantes": [],
-            "justificacion": null
-          }
-        }
-      ]
-    },
-    {
-      "id": "P-0002",
-      "supervisor": "cmoya",
-      "estado": "PENDIENTE_PREPARACION",
-      "itemsSolicitados": [
-        {
-          "tipo": "LAVADORA",
-          "cantidad": 1
-        }
-      ],
-      "itemsAsignados": [],
-      "observacion": "Necesito una buena",
-      "historial": [
-        {
-          "accion": "CREADO",
-          "usuario": "cmoya",
-          "fecha": "2025-12-10T15:18:14.800Z",
-          "detalle": {
-            "observacion": "Necesito una buena"
           }
         }
       ]

@@ -24,6 +24,7 @@ export default function CreatePedido() {
     }, {})
   );
 
+  const [servicio, setServicio] = useState("");
   const [observacion, setObservacion] = useState("");
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -49,6 +50,11 @@ export default function CreatePedido() {
       return;
     }
 
+    if (!servicio.trim()) {
+      setMensaje("Ingresá el servicio donde se utilizarán las máquinas.");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -58,6 +64,7 @@ export default function CreatePedido() {
         body: JSON.stringify({
           supervisorUsername: user.username,
           itemsSolicitados,
+          servicio: servicio.trim(),
           observacion: observacion.trim()
         })
       });
@@ -72,7 +79,7 @@ export default function CreatePedido() {
           return acc;
         }, {})
       );
-
+      setServicio("");
       setObservacion("");
 
       setTimeout(() => navigate("/supervisor"), 1200);
@@ -135,8 +142,23 @@ export default function CreatePedido() {
         ))}
       </div>
 
-      {/* OBSERVACIÓN */}
+      {/* SERVICIO (OBLIGATORIO) */}
       <div className="mt-6">
+        <label className="block text-sm font-medium mb-1">
+          Servicio donde se utilizarán las máquinas *
+        </label>
+
+        <input
+          type="text"
+          value={servicio}
+          onChange={(e) => setServicio(e.target.value)}
+          placeholder="Ej: Supermercado Córdoba - Turno noche"
+          className="w-full bg-white rounded-xl shadow p-3 text-sm border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        />
+      </div>
+
+      {/* OBSERVACIÓN */}
+      <div className="mt-4">
         <label className="block text-sm font-medium mb-1">
           Observaciones (opcional)
         </label>

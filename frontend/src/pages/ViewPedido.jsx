@@ -37,7 +37,17 @@ export default function ViewPedido() {
         </span>
       </div>
 
-      {/* OBSERVACIÓN — NUEVO BLOQUE */}
+      {/* SERVICIO — NUEVO BLOQUE */}
+      {pedido.servicio && (
+        <div className="bg-white rounded-xl shadow p-4 mb-4 border-l-4 border-green-500">
+          <h2 className="text-lg font-semibold mb-1">Servicio</h2>
+          <p className="text-sm text-gray-700 whitespace-pre-line">
+            {pedido.servicio}
+          </p>
+        </div>
+      )}
+
+      {/* OBSERVACIÓN */}
       {pedido.observacion && (
         <div className="bg-white rounded-xl shadow p-4 mb-4 border-l-4 border-blue-500">
           <h2 className="text-lg font-semibold mb-1">Observación del supervisor</h2>
@@ -99,7 +109,7 @@ export default function ViewPedido() {
                 )}
               </div>
 
-              {/* Contenido del historial */}
+              {/* Contenido */}
               <div className="flex-1">
                 <p className="font-semibold text-sm">
                   {h.accion.replace("_", " ")}
@@ -107,11 +117,17 @@ export default function ViewPedido() {
                 <p className="text-xs text-gray-500 mb-2">
                   {new Date(h.fecha).toLocaleString()}
                 </p>
-                
 
-                {/* Detalles formateados */}
+                {/* Detalles */}
                 {h.detalle && (
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700 space-y-2">
+
+                    {h.detalle.servicio && (
+                      <div>
+                        <p className="font-semibold">Servicio:</p>
+                        <p>{h.detalle.servicio}</p>
+                      </div>
+                    )}
 
                     {h.detalle.observacion && (
                       <div>
@@ -167,15 +183,16 @@ export default function ViewPedido() {
           ))}
         </div>
       </div>
-            {/* ACCIÓN: REGISTRAR DEVOLUCIÓN */}
-{pedido.estado === "ENTREGADO" && (
-  <button
-    className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold shadow mt-4"
-    onClick={() => navigate(`/supervisor/pedido/${id}/devolucion`)}
-  >
-    Registrar devolución
-  </button>
-)}
+
+      {/* ACCIÓN: REGISTRAR DEVOLUCIÓN */}
+      {pedido.estado === "ENTREGADO" && (
+        <button
+          className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold shadow mt-4"
+          onClick={() => navigate(`/supervisor/pedido/${id}/devolucion`)}
+        >
+          Registrar devolución
+        </button>
+      )}
 
     </div>
   );
