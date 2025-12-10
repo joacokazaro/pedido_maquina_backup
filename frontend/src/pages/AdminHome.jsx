@@ -8,7 +8,7 @@ export default function AdminHome() {
       <header className="mb-6">
         <h1 className="text-2xl font-bold">Panel de administración</h1>
         <p className="text-sm text-gray-600 mt-1">
-          Gestioná el parque de máquinas, pedidos y tené visibilidad del stock.
+          Gestioná máquinas, pedidos y usuarios del sistema.
         </p>
       </header>
 
@@ -33,8 +33,7 @@ export default function AdminHome() {
         <section className="bg-white rounded-2xl shadow p-4">
           <h2 className="text-lg font-semibold mb-2">Pedidos</h2>
           <p className="text-sm text-gray-600 mb-4">
-            Visualizar y auditar todos los pedidos del sistema.
-            Cambiar estado y ver historial.
+            Visualizar y auditar todos los pedidos del sistema. Cambiar estado y ver historial.
           </p>
 
           <button
@@ -45,12 +44,19 @@ export default function AdminHome() {
           </button>
         </section>
 
-        {/* --- USUARIOS (futuro) --- */}
-        <section className="bg-white rounded-2xl shadow p-4 opacity-60">
-          <h2 className="text-lg font-semibold mb-1">Usuarios (futuro)</h2>
-          <p className="text-xs text-gray-500">
-            Alta y roles de usuarios.
+        {/* --- USUARIOS --- */}
+        <section className="bg-white rounded-2xl shadow p-4">
+          <h2 className="text-lg font-semibold mb-2">Usuarios</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Alta, baja, edición y roles de usuarios del sistema.
           </p>
+
+          <button
+            onClick={() => navigate("/admin/usuarios")}
+            className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
+          >
+            Gestionar usuarios
+          </button>
         </section>
 
       </div>

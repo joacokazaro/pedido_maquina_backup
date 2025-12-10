@@ -2,21 +2,21 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-// Podés ajustar esta lista según tus tipos reales del Excel
 const MACHINE_TYPES = [
   "LUSTRADORA",
   "SOPLADORA",
   "HIDROLAVADORA",
   "LAVADORA",
   "ASPIRADORA",
-  "MOTOGUADAÑA"
+  "MOTOGUADAÑA",
+  "CARGADOR",
+  "BOMBA DESINFECCION"
 ];
 
 export default function CreatePedido() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Un estado por tipo
   const [cantidades, setCantidades] = useState(
     MACHINE_TYPES.reduce((acc, tipo) => {
       acc[tipo] = 0;
@@ -24,6 +24,7 @@ export default function CreatePedido() {
     }, {})
   );
 
+  const [observacion, setObservacion] = useState("");
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
@@ -31,8 +32,7 @@ export default function CreatePedido() {
     setCantidades((prev) => {
       const nueva = { ...prev };
       const actual = nueva[tipo] ?? 0;
-      const valor = actual + delta;
-      nueva[tipo] = valor < 0 ? 0 : valor;
+      nueva[tipo] = Math.max(0, actual + delta);
       return nueva;
     });
   }
@@ -56,15 +56,16 @@ export default function CreatePedido() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          supervisorId: user.id,
-          itemsSolicitados
+          supervisorUsername: user.username,
+          itemsSolicitados,
+          observacion: observacion.trim()
         })
       });
 
       const data = await res.json();
 
       setMensaje(`Pedido creado: ${data.pedido.id}`);
-      // Reseteo de cantidades
+
       setCantidades(
         MACHINE_TYPES.reduce((acc, tipo) => {
           acc[tipo] = 0;
@@ -72,10 +73,9 @@ export default function CreatePedido() {
         }, {})
       );
 
-      // Opcional: volver al home del supervisor después de unos segundos
-      setTimeout(() => {
-        navigate("/supervisor");
-      }, 1200);
+      setObservacion("");
+
+      setTimeout(() => navigate("/supervisor"), 1200);
     } catch (err) {
       console.error(err);
       setMensaje("Ocurrió un error al crear el pedido.");
@@ -86,10 +86,20 @@ export default function CreatePedido() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
+
+      {/* BOTÓN VOLVER */}
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg 
+                   bg-white border border-gray-200 shadow-sm 
+                   hover:shadow transition text-gray-700 text-sm font-medium"
+      >
+        <span className="text-lg">←</span> Volver
+      </button>
+
       <h1 className="text-2xl font-bold mb-4">Nuevo pedido</h1>
       <p className="text-sm text-gray-600 mb-4">
-        Seleccioná la cantidad de máquinas que necesitás.  
-        Pensado para usar desde el celular: usá los botones + y −.
+        Seleccioná la cantidad de máquinas que necesitás.
       </p>
 
       <div className="space-y-4">
@@ -100,7 +110,6 @@ export default function CreatePedido() {
           >
             <div className="flex flex-col">
               <span className="font-semibold text-base">{tipo}</span>
-              {/* Si querés agregar descripción por tipo, lo podemos hacer acá */}
             </div>
 
             <div className="flex items-center gap-3">
@@ -124,6 +133,21 @@ export default function CreatePedido() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* OBSERVACIÓN */}
+      <div className="mt-6">
+        <label className="block text-sm font-medium mb-1">
+          Observaciones (opcional)
+        </label>
+
+        <textarea
+          value={observacion}
+          onChange={(e) => setObservacion(e.target.value)}
+          placeholder="Agregar comentarios acerca del pedido"
+          className="w-full bg-white rounded-xl shadow p-3 text-sm border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+          rows={3}
+        />
       </div>
 
       {mensaje && (

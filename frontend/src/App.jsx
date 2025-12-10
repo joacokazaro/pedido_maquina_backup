@@ -10,6 +10,8 @@ import RegistrarDevolucion from "./pages/RegistrarDevolucion";
 import DepositoPedido from "./pages/DepositoPedido";
 import AsignarMaquinas from "./pages/AsignarMaquinas"; 
 import AdminPedidos from "./pages/AdminPedidos";
+import AdminUsuarios from "./pages/AdminUsuarios";
+import AdminUsuarioForm from "./pages/AdminUsuarioForm";
 
 
 // NUEVOS IMPORTS ADMIN
@@ -86,6 +88,9 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+      <Route path="/admin/usuarios/nuevo" element={<AdminUsuarioForm />} />
+      <Route path="/admin/usuarios/:id" element={<AdminUsuarioForm />} />
 
       {/* ADMIN */}
       <Route

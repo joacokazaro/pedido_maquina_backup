@@ -19,17 +19,27 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="bg-white shadow-xl rounded-xl p-8 w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-center mb-6">Iniciar Sesión</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4">
 
+      {/* 🟦 Título grande superior */}
+      <h1 className="text-3xl font-extrabold text-gray-800 mb-8 tracking-wide text-center">
+        SOLICITUD MÁQUINA BACKUP
+      </h1>
+
+      <div className="bg-white shadow-xl rounded-xl p-8 w-full max-w-sm">
+        
+        {/* Título dentro del card */}
+        <h2 className="text-2xl font-bold text-center mb-6">Iniciar Sesión</h2>
+
+        {/* Error */}
         {error && (
           <div className="bg-red-100 text-red-700 p-2 rounded mb-2 text-center">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="space-y-4 mb-8">
           <div>
             <label className="text-sm font-medium">Usuario</label>
             <input
@@ -54,6 +64,15 @@ export default function Login() {
             Entrar
           </button>
         </form>
+
+        {/* Sección explicativa */}
+        <div className="text-center text-gray-600 text-sm leading-relaxed">
+          <h3 className="font-semibold text-gray-700 mb-1">¿Qué es esta aplicación?</h3>
+          <p>
+            Este portal permite gestionar solicitudes de máquinas de backup
+            de forma ordenada, trazable y eficiente para todo el equipo operativo.
+          </p>
+        </div>
       </div>
     </div>
   );

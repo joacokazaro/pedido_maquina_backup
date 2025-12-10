@@ -3,40 +3,74 @@ import { readDB, writeDB } from "../utils/file.js";
 
 /**
  * GET /admin/pedidos
- * Permite listar todos los pedidos (opcionalmente filtrados por estado)
+ * Listar todos los pedidos con supervisorName corregido
  */
 export function adminListPedidos(req, res) {
-  const { estado, supervisorId } = req.query;
+  const { estado } = req.query;
 
   const db = readDB();
-  let pedidos = db.pedidos || [];
+  const usuarios = db.usuarios || [];
+  const pedidos = db.pedidos || [];
+
+  // Mapa rápido para obtener username por ID
+  const userMap = usuarios.reduce((acc, u) => {
+    acc[u.id] = u.username;
+    acc[u.username] = u.username;
+    return acc;
+  }, {});
+
+  let resultado = pedidos.map((p) => {
+    let supervisorName = "Desconocido";
+
+    if (p.supervisor) {
+      supervisorName = p.supervisor;
+    } else if (p.supervisorId) {
+      supervisorName = userMap[p.supervisorId] || `ID ${p.supervisorId}`;
+    }
+
+    return {
+      ...p,
+      supervisorName
+    };
+  });
 
   if (estado) {
-    pedidos = pedidos.filter(p => p.estado === estado);
+    resultado = resultado.filter((p) => p.estado === estado);
   }
 
-  if (supervisorId) {
-    pedidos = pedidos.filter(p => p.supervisorId === Number(supervisorId));
-  }
-
-  res.json(pedidos);
+  res.json(resultado);
 }
 
 /**
  * GET /admin/pedidos/:id
- * Obtiene un pedido completo con historial
+ * Obtiene pedido + supervisorName corregido
  */
 export function adminGetPedido(req, res) {
   const { id } = req.params;
-
   const db = readDB();
-  const pedido = (db.pedidos || []).find(p => p.id === id);
+
+  const usuarios = db.usuarios || [];
+  const userMap = usuarios.reduce((acc, u) => {
+    acc[u.id] = u.username;
+    acc[u.username] = u.username;
+    return acc;
+  }, {});
+
+  const pedido = db.pedidos.find((p) => p.id === id);
 
   if (!pedido) {
     return res.status(404).json({ error: "Pedido no encontrado" });
   }
 
-  res.json(pedido);
+  const supervisorName =
+    pedido.supervisor ||
+    userMap[pedido.supervisorId] ||
+    `ID ${pedido.supervisorId ?? "?"}`;
+
+  res.json({
+    ...pedido,
+    supervisorName,
+  });
 }
 
 /**
@@ -60,12 +94,12 @@ export function adminUpdateEstado(req, res) {
 
   if (!ESTADOS_VALIDOS.includes(estado)) {
     return res.status(400).json({
-      error: `Estado inválido. Debe ser uno de: ${ESTADOS_VALIDOS.join(", ")}`
+      error: `Estado inválido. Debe ser uno de: ${ESTADOS_VALIDOS.join(", ")}`,
     });
   }
 
   const db = readDB();
-  const pedido = db.pedidos.find(p => p.id === id);
+  const pedido = db.pedidos.find((p) => p.id === id);
 
   if (!pedido) {
     return res.status(404).json({ error: "Pedido no encontrado" });
@@ -73,17 +107,16 @@ export function adminUpdateEstado(req, res) {
 
   pedido.estado = estado;
 
-  // Registrar historial
   pedido.historial.push({
     accion: "ADMIN_CAMBIO_ESTADO",
     nuevoEstado: estado,
-    fecha: new Date().toISOString()
+    fecha: new Date().toISOString(),
   });
 
   writeDB(db);
 
   res.json({
     message: "Estado actualizado por el admin",
-    pedido
+    pedido,
   });
 }

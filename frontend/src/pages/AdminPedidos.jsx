@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminPedidos() {
+  const navigate = useNavigate();
+
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,16 +32,19 @@ export default function AdminPedidos() {
     setLoading(false);
   }
 
+  // ============================
   // FILTRO + BUSCADOR
+  // ============================
   function filtrarPedidos() {
     return pedidos.filter((p) => {
       const coincideEstado =
         estadoFiltro === "TODOS" || p.estado === estadoFiltro;
 
       const texto = search.toLowerCase();
+
       const coincideTexto =
         p.id.toLowerCase().includes(texto) ||
-        String(p.supervisorId).includes(texto);
+        (p.supervisorName || "").toLowerCase().includes(texto);
 
       return coincideEstado && coincideTexto;
     });
@@ -48,10 +54,12 @@ export default function AdminPedidos() {
   // CAMBIO FORZADO DE ESTADO
   // ============================
   async function forzarEstado(id, nuevoEstado) {
+    if (!nuevoEstado) return;
+
     await fetch(`http://localhost:3000/admin/pedidos/${id}/estado`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado: nuevoEstado }),
+      body: JSON.stringify({ estado: nuevoEstado })
     });
 
     await loadPedidos();
@@ -63,7 +71,7 @@ export default function AdminPedidos() {
     "PENDIENTE_PREPARACION",
     "PREPARADO",
     "ENTREGADO",
-    "CERRADO",
+    "CERRADO"
   ];
 
   if (loading) {
@@ -72,11 +80,22 @@ export default function AdminPedidos() {
 
   return (
     <div className="p-4 min-h-screen bg-gray-50 pb-24">
+
+      {/* BOTÓN VOLVER */}
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg 
+                 bg-white border border-gray-200 shadow-sm 
+                 hover:shadow transition text-gray-700 text-sm font-medium"
+      >
+        <span className="text-lg">←</span> Volver
+      </button>
+
       <h1 className="text-2xl font-bold mb-4">Gestión de Pedidos</h1>
 
       {/* FILTROS */}
       <div className="space-y-3 mb-4">
-        {/* BUSCADOR */}
+
         <input
           className="w-full p-3 rounded-xl border border-gray-300"
           placeholder="Buscar por código o supervisor..."
@@ -84,7 +103,6 @@ export default function AdminPedidos() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* SELECT DE ESTADO */}
         <select
           className="w-full p-3 rounded-xl border border-gray-300 bg-white"
           value={estadoFiltro}
@@ -96,6 +114,7 @@ export default function AdminPedidos() {
             </option>
           ))}
         </select>
+
       </div>
 
       {/* LISTA DE PEDIDOS */}
@@ -112,15 +131,13 @@ export default function AdminPedidos() {
             <div className="flex justify-between items-center">
               <span className="font-bold">{p.id}</span>
 
-              <span
-                className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700"
-              >
+              <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700">
                 {p.estado.replace("_", " ")}
               </span>
             </div>
 
             <p className="text-gray-600 text-sm mt-1">
-              Supervisor: {p.supervisorId}
+              Supervisor: {p.supervisorName ?? `ID ${p.supervisorId ?? "?"}`}
             </p>
 
             <p className="text-xs text-gray-500 mt-1">
@@ -131,11 +148,12 @@ export default function AdminPedidos() {
       </div>
 
       {/* ============================
-            MODAL DETALLE
-        ============================ */}
+          MODAL DETALLE
+      ============================ */}
       {showModal && selectedPedido && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+
             <h2 className="text-xl font-bold mb-3">
               Pedido {selectedPedido.id}
             </h2>
@@ -147,17 +165,70 @@ export default function AdminPedidos() {
 
             {/* HISTORIAL */}
             <h3 className="font-semibold mb-2">Historial</h3>
-            <div className="max-h-40 overflow-y-auto mb-4 border p-2 rounded">
+
+            <div className="max-h-60 overflow-y-auto mb-4 border p-3 rounded space-y-4">
+
               {selectedPedido.historial.map((h, idx) => (
-                <div key={idx} className="mb-2 text-sm">
-                  <p>
-                    <b>{h.accion}</b>
-                  </p>
-                  <p className="text-xs text-gray-500">
+                <div key={idx} className="text-sm border-b pb-3">
+
+                  <p className="font-bold">{h.accion.replace("_", " ")}</p>
+                  <p className="text-xs text-gray-500 mb-2">
                     {new Date(h.fecha).toLocaleString()}
                   </p>
+
+                  {/* DETALLES BONITOS */}
+                  {h.detalle && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs text-gray-700 space-y-2">
+
+                      {/* Máquinas asignadas */}
+                      {"asignadas" in h.detalle && (
+                        <div>
+                          <p className="font-semibold">Máquinas asignadas:</p>
+                          <ul className="list-disc ml-4 space-y-1">
+                            {h.detalle.asignadas.map((m, i) => (
+                              <li key={i}>
+                                <b>{m.tipo}</b> — {m.id}
+                                <br />
+                                {m.modelo && (
+                                  <span className="text-gray-500">{m.modelo}</span>
+                                )}
+                                {m.serie && (
+                                  <>
+                                    <br />
+                                    <span className="text-gray-400">
+                                      Serie: {m.serie}
+                                    </span>
+                                  </>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Solicitado */}
+                      {"solicitado" in h.detalle && (
+                        <div>
+                          <p className="font-semibold">Solicitado:</p>
+                          <ul className="list-disc ml-4">
+                            {Object.entries(h.detalle.solicitado).map(([tipo, cant]) => (
+                              <li key={tipo}>{tipo}: {cant}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {/* Justificación */}
+                      {h.detalle.justificacion && (
+                        <div>
+                          <p className="font-semibold">Justificación:</p>
+                          <p>{h.detalle.justificacion}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
+
             </div>
 
             {/* CAMBIO DE ESTADO */}
@@ -183,9 +254,11 @@ export default function AdminPedidos() {
             >
               Cerrar
             </button>
+
           </div>
         </div>
       )}
+
     </div>
   );
 }

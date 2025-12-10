@@ -18,6 +18,24 @@
       "username": "deposito1",
       "password": "1234",
       "rol": "DEPOSITO"
+    },
+    {
+      "id": 4,
+      "username": "cmoya",
+      "nombre": "Cristina Moya",
+      "password": "1234",
+      "rol": "SUPERVISOR",
+      "activo": true,
+      "creadoEn": "2025-12-09T19:11:51.147Z"
+    },
+    {
+      "id": 5,
+      "username": "nbustos",
+      "nombre": "Nicolas Bustos",
+      "password": "1234",
+      "rol": "ADMIN",
+      "activo": true,
+      "creadoEn": "2025-12-10T15:06:16.915Z"
     }
   ],
   "maquinas": [
@@ -285,7 +303,7 @@
       "tipo": "ASPIRADORA",
       "modelo": "ELSEA ARES",
       "serie": "201604167880",
-      "estado": "no_devuelta"
+      "estado": "disponible"
     },
     {
       "id": "2.2.34",
@@ -3007,172 +3025,90 @@
   "pedidos": [
     {
       "id": "P-0001",
-      "supervisorId": 2,
+      "supervisor": "cmoya",
       "estado": "CERRADO",
       "itemsSolicitados": [
         {
           "tipo": "LUSTRADORA",
           "cantidad": 1
-        },
-        {
-          "tipo": "ASPIRADORA",
-          "cantidad": 1
         }
       ],
       "itemsAsignados": [
         {
-          "id": "1.1.1",
+          "id": "1.1.18",
           "tipo": "LUSTRADORA",
-          "modelo": "SUPER SPEED 44C CATANESE",
-          "serie": "ILEGIBLE"
-        },
-        {
-          "id": "1.1.7",
-          "tipo": "LUSTRADORA",
-          "modelo": "POWR-FLITE  1200",
+          "modelo": "VIPER MOD-DR1500",
           "serie": ""
         }
       ],
+      "observacion": null,
       "historial": [
         {
           "accion": "CREADO",
-          "usuarioId": 2,
-          "fecha": "2025-12-09T11:27:49.574Z"
+          "usuario": "cmoya",
+          "fecha": "2025-12-10T14:53:48.598Z",
+          "detalle": null
         },
         {
           "accion": "MAQUINAS_ASIGNADAS",
-          "fecha": "2025-12-09T12:53:27.911Z",
+          "usuario": "deposito",
+          "fecha": "2025-12-10T14:57:27.471Z",
           "detalle": {
             "asignadas": [
               {
-                "id": "1.1.1",
+                "id": "1.1.18",
                 "tipo": "LUSTRADORA",
-                "modelo": "SUPER SPEED 44C CATANESE",
-                "serie": "ILEGIBLE"
-              },
-              {
-                "id": "1.1.7",
-                "tipo": "LUSTRADORA",
-                "modelo": "POWR-FLITE  1200",
+                "modelo": "VIPER MOD-DR1500",
                 "serie": ""
               }
             ],
             "solicitado": {
-              "LUSTRADORA": 1,
-              "ASPIRADORA": 1
+              "LUSTRADORA": 1
             },
             "asignadoPorTipo": {
-              "LUSTRADORA": 2
+              "LUSTRADORA": 1
             },
-            "justificacion": "Lo que hay"
+            "justificacion": null
           }
         },
         {
           "accion": "ENTREGADO",
-          "usuarioId": 999,
-          "fecha": "2025-12-09T12:54:06.384Z"
+          "usuario": "deposito",
+          "fecha": "2025-12-10T15:14:55.821Z"
         },
         {
           "accion": "DEVOLUCION_REGISTRADA",
-          "fecha": "2025-12-09T12:55:16.853Z",
+          "fecha": "2025-12-10T15:28:40.045Z",
           "detalle": {
             "devueltas": [
-              "1.1.1",
-              "1.1.7"
+              "1.1.18"
             ],
             "faltantes": [],
             "justificacion": null
-          },
-          "usuarioId": 0
+          }
         }
       ]
     },
     {
       "id": "P-0002",
-      "supervisorId": 2,
-      "estado": "CERRADO",
+      "supervisor": "cmoya",
+      "estado": "PENDIENTE_PREPARACION",
       "itemsSolicitados": [
         {
-          "tipo": "LUSTRADORA",
-          "cantidad": 1
-        },
-        {
-          "tipo": "HIDROLAVADORA",
-          "cantidad": 1
-        },
-        {
-          "tipo": "ASPIRADORA",
+          "tipo": "LAVADORA",
           "cantidad": 1
         }
       ],
-      "itemsAsignados": [
-        {
-          "id": "2.2.24",
-          "tipo": "LAVADORA LUSTRADORA",
-          "modelo": "VIPER VF-1517",
-          "serie": "ILEGIBLE"
-        },
-        {
-          "id": "5.P.2",
-          "tipo": "ASPIRADORA",
-          "modelo": "ELSEA ARES",
-          "serie": "201604167880"
-        }
-      ],
+      "itemsAsignados": [],
+      "observacion": "Necesito una buena",
       "historial": [
         {
           "accion": "CREADO",
-          "usuarioId": 2,
-          "fecha": "2025-12-09T15:28:45.014Z"
-        },
-        {
-          "accion": "MAQUINAS_ASIGNADAS",
-          "fecha": "2025-12-09T15:29:46.226Z",
+          "usuario": "cmoya",
+          "fecha": "2025-12-10T15:18:14.800Z",
           "detalle": {
-            "asignadas": [
-              {
-                "id": "2.2.24",
-                "tipo": "LAVADORA LUSTRADORA",
-                "modelo": "VIPER VF-1517",
-                "serie": "ILEGIBLE"
-              },
-              {
-                "id": "5.P.2",
-                "tipo": "ASPIRADORA",
-                "modelo": "ELSEA ARES",
-                "serie": "201604167880"
-              }
-            ],
-            "solicitado": {
-              "LUSTRADORA": 1,
-              "HIDROLAVADORA": 1,
-              "ASPIRADORA": 1
-            },
-            "asignadoPorTipo": {
-              "LAVADORA LUSTRADORA": 1,
-              "ASPIRADORA": 1
-            },
-            "justificacion": "No hay mas"
+            "observacion": "Necesito una buena"
           }
-        },
-        {
-          "accion": "ENTREGADO",
-          "usuarioId": 999,
-          "fecha": "2025-12-09T15:30:41.189Z"
-        },
-        {
-          "accion": "DEVOLUCION_REGISTRADA",
-          "fecha": "2025-12-09T15:31:08.827Z",
-          "detalle": {
-            "devueltas": [
-              "2.2.24"
-            ],
-            "faltantes": [
-              "5.P.2"
-            ],
-            "justificacion": "Se perdió"
-          },
-          "usuarioId": 0
         }
       ]
     }

@@ -6,6 +6,7 @@ import maquinasRoutes from './routes/maquinas.routes.js';
 import pedidosRoutes from './routes/pedidos.routes.js';
 import adminMaquinasRoutes from "./routes/adminMaquinas.routes.js";
 import adminPedidosRoutes from "./routes/adminPedidos.routes.js";
+import adminUsuariosRoutes from "./routes/admin_usuarios.routes.js";
 
 
 
@@ -19,8 +20,11 @@ app.use('/maquinas', maquinasRoutes);
 app.use('/pedidos', pedidosRoutes);
 
 // Rutas de ADMIN
+app.use("/admin-users", adminUsuariosRoutes);
 app.use("/admin", adminMaquinasRoutes);
 app.use("/admin", adminPedidosRoutes);
+
+
 
 const PORT = 3000;
 app.listen(PORT, () => {
