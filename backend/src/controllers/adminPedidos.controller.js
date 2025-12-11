@@ -3,7 +3,7 @@ import { readDB, writeDB } from "../utils/file.js";
 
 /**
  * GET /admin/pedidos
- * Listar todos los pedidos con supervisorName corregido
+ * Lista todos los pedidos con nombre de supervisor
  */
 export function adminListPedidos(req, res) {
   const { estado } = req.query;
@@ -12,7 +12,6 @@ export function adminListPedidos(req, res) {
   const usuarios = db.usuarios || [];
   const pedidos = db.pedidos || [];
 
-  // Mapa rápido para obtener username por ID
   const userMap = usuarios.reduce((acc, u) => {
     acc[u.id] = u.username;
     acc[u.username] = u.username;
@@ -20,17 +19,14 @@ export function adminListPedidos(req, res) {
   }, {});
 
   let resultado = pedidos.map((p) => {
-    let supervisorName = "Desconocido";
-
-    if (p.supervisor) {
-      supervisorName = p.supervisor;
-    } else if (p.supervisorId) {
-      supervisorName = userMap[p.supervisorId] || `ID ${p.supervisorId}`;
-    }
+    const supervisorName =
+      p.supervisor ||
+      userMap[p.supervisorId] ||
+      `ID ${p.supervisorId ?? "?"}`;
 
     return {
       ...p,
-      supervisorName
+      supervisorName,
     };
   });
 
@@ -43,7 +39,7 @@ export function adminListPedidos(req, res) {
 
 /**
  * GET /admin/pedidos/:id
- * Obtiene pedido + supervisorName corregido
+ * Devuelve pedido con supervisorName
  */
 export function adminGetPedido(req, res) {
   const { id } = req.params;
@@ -75,7 +71,7 @@ export function adminGetPedido(req, res) {
 
 /**
  * PUT /admin/pedidos/:id/estado
- * Admin puede forzar el estado del pedido
+ * Admin puede forzar cualquier cambio de estado
  */
 export function adminUpdateEstado(req, res) {
   const { id } = req.params;
@@ -85,10 +81,12 @@ export function adminUpdateEstado(req, res) {
     return res.status(400).json({ error: "Debe enviar un estado" });
   }
 
+  // 🆕 Agregamos el nuevo estado válido
   const ESTADOS_VALIDOS = [
     "PENDIENTE_PREPARACION",
     "PREPARADO",
     "ENTREGADO",
+    "PENDIENTE_CONFIRMACION", // ← agregado
     "CERRADO"
   ];
 
@@ -107,16 +105,20 @@ export function adminUpdateEstado(req, res) {
 
   pedido.estado = estado;
 
+  // 🆕 Historial más claro para auditoría
   pedido.historial.push({
     accion: "ADMIN_CAMBIO_ESTADO",
     nuevoEstado: estado,
     fecha: new Date().toISOString(),
+    detalle: {
+      mensaje: "Cambio forzado por administrador"
+    }
   });
 
   writeDB(db);
 
   res.json({
-    message: "Estado actualizado por el admin",
+    message: "Estado actualizado por el administrador",
     pedido,
   });
 }

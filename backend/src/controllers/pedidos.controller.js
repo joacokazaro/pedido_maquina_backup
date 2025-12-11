@@ -1,7 +1,7 @@
 import { readDB, writeDB } from "../utils/file.js";
 
 /* ========================================================
-   CREAR PEDIDO (usa username del supervisor)
+   CREAR PEDIDO
 ======================================================== */
 export function crearPedido(req, res) {
   const { supervisorUsername, itemsSolicitados, observacion, servicio } = req.body;
@@ -15,24 +15,24 @@ export function crearPedido(req, res) {
   }
 
   const db = readDB();
-
   const id = `P-${String(db.pedidos.length + 1).padStart(4, "0")}`;
 
   const nuevo = {
     id,
     supervisor: supervisorUsername,
-    servicio,                 // ✅ GUARDAR SERVICIO
+    servicio,
     estado: "PENDIENTE_PREPARACION",
     itemsSolicitados,
     itemsAsignados: [],
     observacion: observacion || null,
+    itemsDevueltos: null,
     historial: [
       {
         accion: "CREADO",
         usuario: supervisorUsername,
         fecha: new Date().toISOString(),
         detalle: {
-          servicio,          // ✅ MOSTRARLO EN HISTORIAL
+          servicio,
           ...(observacion ? { observacion } : {})
         }
       }
@@ -60,7 +60,7 @@ export function getPedidosSupervisor(req, res) {
 }
 
 /* ========================================================
-   OBTENER PEDIDO POR ID
+   OBTENER POR ID
 ======================================================== */
 export function getPedidoById(req, res) {
   const db = readDB();
@@ -72,19 +72,19 @@ export function getPedidoById(req, res) {
 }
 
 /* ========================================================
-   MARCAR COMO ENTREGADO
+   MARCAR ENTREGADO
 ======================================================== */
 export function marcarEntregado(req, res) {
   const { id } = req.params;
   const { usuario } = req.body;
 
   const db = readDB();
-  const pedido = db.pedidos.find(p => p.id === id);
+  const pedido = db.pedidos.find((p) => p.id === id);
 
   if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
 
   if (pedido.estado !== "PREPARADO") {
-    return res.status(400).json({ error: "Debe estar PREPARADO" });
+    return res.status(400).json({ error: "Debe estar PREPARADO para ser entregado" });
   }
 
   pedido.estado = "ENTREGADO";
@@ -92,7 +92,7 @@ export function marcarEntregado(req, res) {
     accion: "ENTREGADO",
     usuario,
     fecha: new Date().toISOString(),
-    detalle: { servicio: pedido.servicio } // opcional
+    detalle: { servicio: pedido.servicio }
   });
 
   writeDB(db);
@@ -108,7 +108,7 @@ export function actualizarEstadoPedido(req, res) {
   const { estado, usuario } = req.body;
 
   const db = readDB();
-  const pedido = db.pedidos.find(p => p.id === id);
+  const pedido = db.pedidos.find((p) => p.id === id);
 
   if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
 
@@ -134,7 +134,7 @@ export function asignarMaquinas(req, res) {
   const { asignadas, justificacion, usuario } = req.body;
 
   const db = readDB();
-  const pedido = db.pedidos.find(p => p.id === id);
+  const pedido = db.pedidos.find((p) => p.id === id);
 
   if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
 
@@ -150,9 +150,9 @@ export function asignarMaquinas(req, res) {
 
   let requiereJustificacion = false;
   for (const tipo in solicitado) {
-    const cantSolicitada = solicitado[tipo];
-    const cantAsignada = asignadoPorTipo[tipo] || 0;
-    if (cantSolicitada !== cantAsignada) requiereJustificacion = true;
+    if ((asignadoPorTipo[tipo] || 0) !== solicitado[tipo]) {
+      requiereJustificacion = true;
+    }
   }
 
   if (requiereJustificacion && (!justificacion || justificacion.trim() === "")) {
@@ -163,8 +163,7 @@ export function asignarMaquinas(req, res) {
 
   pedido.itemsAsignados = asignadas.map(idmaq => {
     const m = db.maquinas.find(x => x.id === idmaq);
-    if (!m) return null;
-    return { id: m.id, tipo: m.tipo, modelo: m.modelo, serie: m.serie };
+    return m ? { id: m.id, tipo: m.tipo, modelo: m.modelo, serie: m.serie } : null;
   }).filter(Boolean);
 
   asignadas.forEach(idmaq => {
@@ -177,39 +176,39 @@ export function asignarMaquinas(req, res) {
     usuario,
     fecha: new Date().toISOString(),
     detalle: {
-      servicio: pedido.servicio,  // siempre visible
+      servicio: pedido.servicio,
       asignadas: pedido.itemsAsignados,
       solicitado,
       asignadoPorTipo,
-      justificacion: requiereJustificacion ? justificacion : null,
+      justificacion: requiereJustificacion ? justificacion : null
     }
   });
 
   pedido.estado = "PREPARADO";
-
   writeDB(db);
 
-  return res.json({ message: "Máquinas asignadas", pedido });
+  res.json({ message: "Máquinas asignadas", pedido });
 }
 
 /* ========================================================
-   DEVOLUCIÓN
+   DEVOLUCIÓN (SUPERVISOR)
 ======================================================== */
 export function registrarDevolucion(req, res) {
   const { id } = req.params;
   const { devueltas, justificacion, usuario } = req.body;
 
   const db = readDB();
-  const pedido = db.pedidos.find(p => p.id === id);
+  const pedido = db.pedidos.find((p) => p.id === id);
 
   if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (pedido.estado !== "ENTREGADO") {
+    return res.status(400).json({ error: "Solo se puede devolver un pedido ENTREGADO" });
+  }
 
   const asignadas = pedido.itemsAsignados.map(m => m.id);
-  const faltantes = asignadas.filter(id => !devueltas.includes(id));
+  const faltantes = asignadas.filter(idmaq => !devueltas.includes(idmaq));
 
-  const requiere = faltantes.length > 0;
-
-  if (requiere && (!justificacion || justificacion.trim() === "")) {
+  if (faltantes.length > 0 && (!justificacion || justificacion.trim() === "")) {
     return res.status(400).json({
       error: "Debe ingresar una justificación para máquinas no devueltas."
     });
@@ -225,6 +224,8 @@ export function registrarDevolucion(req, res) {
     if (m) m.estado = "no_devuelta";
   });
 
+  pedido.itemsDevueltos = devueltas;
+
   pedido.historial.push({
     accion: "DEVOLUCION_REGISTRADA",
     usuario,
@@ -233,19 +234,83 @@ export function registrarDevolucion(req, res) {
       servicio: pedido.servicio,
       devueltas,
       faltantes,
-      justificacion: requiere ? justificacion : null
+      justificacion: justificacion || null
     }
   });
 
-  pedido.estado = "CERRADO";
-
+  pedido.estado = "PENDIENTE_CONFIRMACION";
   writeDB(db);
 
-  res.json({ message: "Devolución registrada", pedido });
+  res.json({ message: "Devolución registrada. Pendiente de confirmación.", pedido });
 }
 
 /* ========================================================
-   LISTAR TOD0S
+   CONFIRMAR DEVOLUCIÓN (DEPÓSITO)
+======================================================== */
+export function confirmarDevolucion(req, res) {
+  const { id } = req.params;
+  const { usuario, observacion, devueltas, faltantes } = req.body;
+
+  const db = readDB();
+  const pedido = db.pedidos.find(p => p.id === id);
+
+  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+
+  if (pedido.estado !== "PENDIENTE_CONFIRMACION") {
+    return res.status(400).json({ error: "El pedido no está pendiente de confirmación" });
+  }
+
+  const historialSupervisor = [...pedido.historial]
+    .reverse()
+    .find(h => h.accion === "DEVOLUCION_REGISTRADA");
+
+  const supervisorDevueltas = historialSupervisor?.detalle?.devueltas || [];
+  const supervisorFaltantes = historialSupervisor?.detalle?.faltantes || [];
+
+  const devueltasConfirmadas = devueltas || [];
+  const faltantesConfirmados = faltantes || [];
+
+  devueltasConfirmadas.forEach(idmaq => {
+    const m = db.maquinas.find(x => x.id === idmaq);
+    if (m) m.estado = "disponible";
+  });
+
+  faltantesConfirmados.forEach(idmaq => {
+    const m = db.maquinas.find(x => x.id === idmaq);
+    if (m) m.estado = "no_devuelta";
+  });
+
+  pedido.itemsDevueltos = devueltasConfirmadas;
+
+  pedido.estado = "CERRADO";
+
+  pedido.historial.push({
+    accion: "DEVOLUCION_CONFIRMADA",
+    usuario,
+    fecha: new Date().toISOString(),
+    detalle: {
+      servicio: pedido.servicio,
+
+      supervisorDevueltas,
+      supervisorFaltantes,
+
+      devueltasConfirmadas,
+      faltantesConfirmados,
+
+      observacion: observacion || null
+    }
+  });
+
+  writeDB(db);
+
+  res.json({
+    message: "Devolución confirmada. Pedido cerrado.",
+    pedido
+  });
+}
+
+/* ========================================================
+   LISTAR TODOS
 ======================================================== */
 export function getPedidos(req, res) {
   const db = readDB();

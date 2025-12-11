@@ -13,7 +13,6 @@ export default function DepositoHome() {
       });
   }, []);
 
-  // === Filtrado dinámico ===
   const pedidosFiltrados = pedidos.filter((p) => {
     if (filtro === "TODOS") return true;
     return p.estado === filtro;
@@ -24,16 +23,14 @@ export default function DepositoHome() {
     { label: "Pendientes", value: "PENDIENTE_PREPARACION", color: "bg-yellow-500 text-white" },
     { label: "Preparados", value: "PREPARADO", color: "bg-blue-500 text-white" },
     { label: "Entregados", value: "ENTREGADO", color: "bg-green-500 text-white" },
+    { label: "Pend. Confirmación", value: "PENDIENTE_CONFIRMACION", color: "bg-orange-500 text-white" },
     { label: "Cerrados", value: "CERRADO", color: "bg-gray-700 text-white" },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-
-      {/* Título */}
       <h1 className="text-3xl font-bold mb-6 text-center">Pedidos a gestionar</h1>
 
-      {/* === FILTROS === */}
       <div className="flex flex-wrap justify-center gap-2 mb-6">
         {filtros.map(f => (
           <button
@@ -47,7 +44,6 @@ export default function DepositoHome() {
         ))}
       </div>
 
-      {/* Lista */}
       {pedidosFiltrados.length === 0 && (
         <p className="text-center text-gray-600 mt-4">No hay pedidos en esta categoría.</p>
       )}
@@ -70,6 +66,8 @@ export default function DepositoHome() {
                     ? "bg-blue-100 text-blue-800"
                     : p.estado === "ENTREGADO"
                     ? "bg-green-100 text-green-700"
+                    : p.estado === "PENDIENTE_CONFIRMACION"
+                    ? "bg-orange-200 text-orange-800"
                     : p.estado === "CERRADO"
                     ? "bg-gray-300 text-gray-800"
                     : "bg-gray-200 text-gray-700"

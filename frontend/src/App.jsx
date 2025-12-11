@@ -1,29 +1,38 @@
+// src/App.jsx
 import { Routes, Route } from "react-router-dom";
+
 import Login from "./pages/Login";
-import SupervisorHome from "./pages/SupervisorHome";
-import DepositoHome from "./pages/DepositoHome";
-import AdminHome from "./pages/AdminHome";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+// SUPERVISOR
+import SupervisorHome from "./pages/SupervisorHome";
 import CreatePedido from "./pages/CreatePedido";
 import ViewPedido from "./pages/ViewPedido";
 import RegistrarDevolucion from "./pages/RegistrarDevolucion";
+
+// DEPÓSITO
+import DepositoHome from "./pages/DepositoHome";
 import DepositoPedido from "./pages/DepositoPedido";
-import AsignarMaquinas from "./pages/AsignarMaquinas"; 
-import AdminPedidos from "./pages/AdminPedidos";
+import AsignarMaquinas from "./pages/AsignarMaquinas";
+import ConfirmarDevolucion from "./pages/ConfirmarDevolucion";
+
+// ADMIN
+import AdminHome from "./pages/AdminHome";
 import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminUsuarioForm from "./pages/AdminUsuarioForm";
-
-
-// NUEVOS IMPORTS ADMIN
+import AdminPedidos from "./pages/AdminPedidos";
 import AdminMaquinas from "./pages/AdminMaquinas";
 import AdminMaquinaForm from "./pages/AdminMaquinaForm";
 
 function App() {
   return (
     <Routes>
+      {/* LOGIN */}
       <Route path="/" element={<Login />} />
 
-      {/* SUPERVISOR */}
+      {/* =============================
+                SUPERVISOR
+      ============================== */}
       <Route
         path="/supervisor"
         element={
@@ -41,7 +50,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="/admin/pedidos" element={<AdminPedidos />} />
 
       <Route
         path="/supervisor/pedido/:id"
@@ -61,7 +69,9 @@ function App() {
         }
       />
 
-      {/* DEPÓSITO */}
+      {/* =============================
+                DEPÓSITO
+      ============================== */}
       <Route
         path="/deposito"
         element={
@@ -88,11 +98,20 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-      <Route path="/admin/usuarios/nuevo" element={<AdminUsuarioForm />} />
-      <Route path="/admin/usuarios/:id" element={<AdminUsuarioForm />} />
 
-      {/* ADMIN */}
+      {/* 🆕 CONFIRMAR DEVOLUCIÓN */}
+      <Route
+        path="/deposito/pedido/:id/confirmar"
+        element={
+          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
+            <ConfirmarDevolucion />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* =============================
+                  ADMIN
+      ============================== */}
       <Route
         path="/admin"
         element={
@@ -102,6 +121,11 @@ function App() {
         }
       />
 
+      <Route path="/admin/pedidos" element={<AdminPedidos />} />
+      <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+      <Route path="/admin/usuarios/nuevo" element={<AdminUsuarioForm />} />
+      <Route path="/admin/usuarios/:id" element={<AdminUsuarioForm />} />
+
       <Route
         path="/admin/maquinas"
         element={
@@ -110,7 +134,7 @@ function App() {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/admin/maquinas/nueva"
         element={

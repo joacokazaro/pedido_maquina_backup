@@ -1409,7 +1409,7 @@
       "tipo": "HIDROLAVADORA",
       "modelo": "HIDROJET 248BAT/18LTS",
       "serie": "151021070292",
-      "estado": "disponible"
+      "estado": "no_devuelta"
     },
     {
       "id": "4.4.25",
@@ -1437,7 +1437,7 @@
       "tipo": "CARGADOR",
       "modelo": "QUIQ 24V",
       "serie": "912-2400-N1",
-      "estado": "disponible"
+      "estado": "no_devuelta"
     },
     {
       "id": "C.8.20",
@@ -1584,7 +1584,7 @@
       "tipo": "ASPIRADORA",
       "modelo": "VIPER M-GV 35",
       "serie": "",
-      "estado": "asignada"
+      "estado": "disponible"
     },
     {
       "id": "5.5.14",
@@ -1836,7 +1836,7 @@
       "tipo": "SOPLADORA",
       "modelo": "STIHL BR-420",
       "serie": "368243512",
-      "estado": "disponible"
+      "estado": "no_devuelta"
     },
     {
       "id": "7.7.11",
@@ -2515,7 +2515,7 @@
       "tipo": "ELECTROBOMBA PARA AGUA",
       "modelo": "CHERTA ARGENTINA 12 VOLTS",
       "serie": "",
-      "estado": "disponible"
+      "estado": "no_devuelta"
     },
     {
       "id": "12.12.7",
@@ -3023,60 +3023,5 @@
     }
   ],
   "pedidos": [
-    {
-      "id": "P-0001",
-      "supervisor": "cmoya",
-      "servicio": "R20",
-      "estado": "PREPARADO",
-      "itemsSolicitados": [
-        {
-          "tipo": "ASPIRADORA",
-          "cantidad": 1
-        }
-      ],
-      "itemsAsignados": [
-        {
-          "id": "5.5.12",
-          "tipo": "ASPIRADORA",
-          "modelo": "VIPER M-GV 35",
-          "serie": ""
-        }
-      ],
-      "observacion": "Aspiradora Catanese",
-      "historial": [
-        {
-          "accion": "CREADO",
-          "usuario": "cmoya",
-          "fecha": "2025-12-10T19:20:29.735Z",
-          "detalle": {
-            "servicio": "R20",
-            "observacion": "Aspiradora Catanese"
-          }
-        },
-        {
-          "accion": "MAQUINAS_ASIGNADAS",
-          "usuario": "deposito",
-          "fecha": "2025-12-10T19:23:54.783Z",
-          "detalle": {
-            "servicio": "R20",
-            "asignadas": [
-              {
-                "id": "5.5.12",
-                "tipo": "ASPIRADORA",
-                "modelo": "VIPER M-GV 35",
-                "serie": ""
-              }
-            ],
-            "solicitado": {
-              "ASPIRADORA": 1
-            },
-            "asignadoPorTipo": {
-              "ASPIRADORA": 1
-            },
-            "justificacion": null
-          }
-        }
-      ]
-    }
   ]
 }

@@ -3,26 +3,24 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 export default function RegistrarDevolucion() {
-  const { id } = useParams(); // ID del pedido
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [pedido, setPedido] = useState(null);
-  const [seleccion, setSeleccion] = useState([]); // IDs devueltos
+  const [seleccion, setSeleccion] = useState([]); 
   const [justificacion, setJustificacion] = useState("");
   const [mostrarJustificacion, setMostrarJustificacion] = useState(false);
 
-  // Usuario que registra la devolución (supervisor)
-  const usuarioId = Number(localStorage.getItem("userId"));
+  // usuario cargado en localStorage → nombre o username
+  const usuario = localStorage.getItem("username") || "supervisor";
 
-  /** ============================
-   *  CARGAR PEDIDO
-   * ============================ */
+  /** CARGAR PEDIDO */
   useEffect(() => {
     fetch(`http://localhost:3000/pedidos/${id}`)
       .then((r) => r.json())
       .then((data) => {
         setPedido(data);
-        setSeleccion(data.itemsAsignados.map((m) => m.id)); // por defecto: todas devueltas
+        setSeleccion(data.itemsAsignados.map((m) => m.id));
       });
   }, [id]);
 
@@ -30,9 +28,7 @@ export default function RegistrarDevolucion() {
 
   const asignadas = pedido.itemsAsignados.map((m) => m.id);
 
-  /** ============================
-   *  LÓGICA DE SELECCIÓN
-   * ============================ */
+  /** LÓGICA DE SELECCIÓN */
   function toggle(idMaq) {
     if (seleccion.includes(idMaq)) {
       setSeleccion(seleccion.filter((x) => x !== idMaq));
@@ -41,16 +37,12 @@ export default function RegistrarDevolucion() {
     }
   }
 
-  /** ============================
-   *  ¿REQUIERE JUSTIFICACIÓN?
-   * ============================ */
+  /** REQUIERE JUSTIFICACIÓN */
   function necesitaJustificacion() {
     return seleccion.length !== asignadas.length;
   }
 
-  /** ============================
-   *  CONFIRMAR DEVOLUCIÓN
-   * ============================ */
+  /** CONFIRMAR DEVOLUCIÓN */
   async function confirmar() {
     const requiere = necesitaJustificacion();
 
@@ -63,12 +55,14 @@ export default function RegistrarDevolucion() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        usuarioId,
+        usuario,
         devueltas: seleccion,
-        justificacion: requiere ? justificacion : null,
+        justificacion: requiere ? justificacion : null
       }),
     });
 
+    // Ahora no se cierra → queda en PENDIENTE_CONFIRMACION
+    alert("Devolución registrada. Esperando confirmación del depósito.");
     navigate(`/supervisor`);
   }
 
@@ -80,7 +74,7 @@ export default function RegistrarDevolucion() {
         Seleccioná qué máquinas fueron devueltas.
       </p>
 
-      {/* LISTA DE MÁQUINAS ASIGNADAS */}
+      {/* MÁQUINAS ASIGNADAS */}
       <div className="space-y-3">
         {pedido.itemsAsignados.map((m) => {
           const checked = seleccion.includes(m.id);
@@ -110,12 +104,10 @@ export default function RegistrarDevolucion() {
         })}
       </div>
 
-      {/* RESUMEN */}
       <div className="mt-6 text-sm text-gray-700">
         Devueltas: <b>{seleccion.length}</b> / {asignadas.length}
       </div>
 
-      {/* BOTÓN CONFIRMAR */}
       <button
         onClick={confirmar}
         className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold mt-4 shadow"
@@ -129,8 +121,7 @@ export default function RegistrarDevolucion() {
           <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full">
             <h2 className="text-lg font-bold mb-3">Justificación requerida</h2>
             <p className="text-sm text-gray-600 mb-3">
-              Algunas máquinas no fueron devueltas.  
-              Explicá el motivo para continuar.
+              Algunas máquinas no fueron devueltas. Explicá el motivo.
             </p>
 
             <textarea

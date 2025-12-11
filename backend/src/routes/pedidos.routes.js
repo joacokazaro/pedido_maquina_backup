@@ -7,12 +7,13 @@ import {
   asignarMaquinas,
   actualizarEstadoPedido,
   marcarEntregado,
+  confirmarDevolucion,
   getPedidos
 } from "../controllers/pedidos.controller.js";
 
 const router = Router();
 
-// LISTAR TODOS LOS PEDIDOS → SIEMPRE PRIMERO
+// LISTAR TODOS
 router.get("/", getPedidos);
 
 // CREAR PEDIDO
@@ -21,11 +22,14 @@ router.post("/", crearPedido);
 // LISTAR POR SUPERVISOR
 router.get("/supervisor/:supervisorId", getPedidosSupervisor);
 
-// OBTENER UN PEDIDO POR ID
+// OBTENER PEDIDO POR ID
 router.get("/:id", getPedidoById);
 
-// DEVOLUCIÓN
+// DEVOLUCIÓN (SUPERVISOR)
 router.post("/:id/devolucion", registrarDevolucion);
+
+// CONFIRMAR DEVOLUCIÓN (DEPÓSITO) 🆕
+router.post("/:id/confirmar-devolucion", confirmarDevolucion);
 
 // ASIGNAR MÁQUINAS
 router.post("/:id/asignar", asignarMaquinas);

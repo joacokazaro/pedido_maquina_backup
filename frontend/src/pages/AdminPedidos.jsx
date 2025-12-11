@@ -8,14 +8,14 @@ export default function AdminPedidos() {
   const [loading, setLoading] = useState(true);
 
   const [estadoFiltro, setEstadoFiltro] = useState("TODOS");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(""); // ✅ CORREGIDO
 
   const [selectedPedido, setSelectedPedido] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // ============================
-  // CARGAR PEDIDOS
-  // ============================
+  /* ============================
+        CARGAR PEDIDOS
+  ============================ */
   useEffect(() => {
     loadPedidos();
   }, []);
@@ -32,9 +32,9 @@ export default function AdminPedidos() {
     setLoading(false);
   }
 
-  // ============================
-  // FILTRO + BUSCADOR
-  // ============================
+  /* ============================
+        FILTRO + BUSCADOR
+  ============================ */
   function filtrarPedidos() {
     return pedidos.filter((p) => {
       const coincideEstado =
@@ -51,9 +51,9 @@ export default function AdminPedidos() {
     });
   }
 
-  // ============================
-  // CAMBIO FORZADO DE ESTADO
-  // ============================
+  /* ============================
+        CAMBIO DE ESTADO MANUAL
+  ============================ */
   async function forzarEstado(id, nuevoEstado) {
     if (!nuevoEstado) return;
 
@@ -67,11 +67,15 @@ export default function AdminPedidos() {
     setShowModal(false);
   }
 
+  /* ============================
+        ESTADOS DISPONIBLES
+  ============================ */
   const estados = [
     "TODOS",
     "PENDIENTE_PREPARACION",
     "PREPARADO",
     "ENTREGADO",
+    "PENDIENTE_CONFIRMACION", // 🆕 nuevo
     "CERRADO"
   ];
 
@@ -81,7 +85,6 @@ export default function AdminPedidos() {
 
   return (
     <div className="p-4 min-h-screen bg-gray-50 pb-24">
-
       {/* BOTÓN VOLVER */}
       <button
         onClick={() => navigate(-1)}
@@ -94,9 +97,10 @@ export default function AdminPedidos() {
 
       <h1 className="text-2xl font-bold mb-4">Gestión de Pedidos</h1>
 
-      {/* FILTROS */}
+      {/* ============================
+          FILTROS
+      ============================ */}
       <div className="space-y-3 mb-4">
-
         <input
           className="w-full p-3 rounded-xl border border-gray-300"
           placeholder="Buscar por código, supervisor o servicio..."
@@ -115,10 +119,11 @@ export default function AdminPedidos() {
             </option>
           ))}
         </select>
-
       </div>
 
-      {/* LISTA DE PEDIDOS */}
+      {/* ============================
+          LISTA DE PEDIDOS
+      ============================ */}
       <div className="space-y-3">
         {filtrarPedidos().map((p) => (
           <div
@@ -132,7 +137,21 @@ export default function AdminPedidos() {
             <div className="flex justify-between items-center">
               <span className="font-bold">{p.id}</span>
 
-              <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700">
+              <span
+                className={`text-xs px-3 py-1 rounded-full ${
+                  p.estado === "PENDIENTE_PREPARACION"
+                    ? "bg-yellow-100 text-yellow-800"
+                    : p.estado === "PREPARADO"
+                    ? "bg-blue-100 text-blue-700"
+                    : p.estado === "ENTREGADO"
+                    ? "bg-green-100 text-green-700"
+                    : p.estado === "PENDIENTE_CONFIRMACION"
+                    ? "bg-orange-100 text-orange-700"
+                    : p.estado === "CERRADO"
+                    ? "bg-gray-300 text-gray-800"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 {p.estado.replace("_", " ")}
               </span>
             </div>
@@ -141,7 +160,6 @@ export default function AdminPedidos() {
               Supervisor: {p.supervisorName ?? `ID ${p.supervisorId ?? "?"}`}
             </p>
 
-            {/* SERVICIO (NUEVO) */}
             {p.servicio && (
               <p className="text-sm text-gray-800 mt-1">
                 Servicio: <b>{p.servicio}</b>
@@ -167,17 +185,19 @@ export default function AdminPedidos() {
             </h2>
 
             <p className="text-sm text-gray-600 mb-1">
-              Estado actual:{" "}
-              <b>{selectedPedido.estado.replace("_", " ")}</b>
+              Estado actual: <b>{selectedPedido.estado.replace("_"," ")}</b>
             </p>
 
-            {/* SERVICIO */}
+            {/* Servicio */}
             {selectedPedido.servicio && (
               <p className="text-sm text-gray-800 mb-3">
                 Servicio: <b>{selectedPedido.servicio}</b>
               </p>
             )}
 
+            {/* ============================
+                HISTORIAL
+            ============================ */}
             <h3 className="font-semibold mb-2">Historial</h3>
 
             <div className="max-h-60 overflow-y-auto mb-4 border p-3 rounded space-y-4">
@@ -191,10 +211,10 @@ export default function AdminPedidos() {
                   </p>
 
                   {/* DETALLES */}
+
                   {h.detalle && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs text-gray-700 space-y-2">
 
-                      {/* SERVICIO dentro de historial */}
                       {h.detalle.servicio && (
                         <div>
                           <p className="font-semibold">Servicio:</p>
@@ -202,40 +222,43 @@ export default function AdminPedidos() {
                         </div>
                       )}
 
-                      {/* Máquinas asignadas */}
-                      {"asignadas" in h.detalle && (
+                      {h.detalle.asignadas && (
                         <div>
                           <p className="font-semibold">Máquinas asignadas:</p>
                           <ul className="list-disc ml-4 space-y-1">
                             {h.detalle.asignadas.map((m, i) => (
-                              <li key={i}>
-                                <b>{m.tipo}</b> — {m.id}
-                                <br />
-                                {m.modelo && (
-                                  <span className="text-gray-500">{m.modelo}</span>
-                                )}
-                                {m.serie && (
-                                  <>
-                                    <br />
-                                    <span className="text-gray-400">
-                                      Serie: {m.serie}
-                                    </span>
-                                  </>
-                                )}
-                              </li>
+                              <li key={i}>{m.tipo} — <b>{m.id}</b></li>
                             ))}
                           </ul>
                         </div>
                       )}
 
-                      {"solicitado" in h.detalle && (
+                      {h.detalle.devueltas && (
                         <div>
-                          <p className="font-semibold">Solicitado:</p>
+                          <p className="font-semibold">Devueltas:</p>
                           <ul className="list-disc ml-4">
-                            {Object.entries(h.detalle.solicitado).map(([tipo, cant]) => (
-                              <li key={tipo}>{tipo}: {cant}</li>
+                            {h.detalle.devueltas.map((idMaq, i) => (
+                              <li key={i}>{idMaq}</li>
                             ))}
                           </ul>
+                        </div>
+                      )}
+
+                      {h.detalle.faltantes && h.detalle.faltantes.length > 0 && (
+                        <div>
+                          <p className="font-semibold text-red-600">Faltantes:</p>
+                          <ul className="list-disc ml-4 text-red-600">
+                            {h.detalle.faltantes.map((idMaq, i) => (
+                              <li key={i}>{idMaq}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {h.detalle.observacion && (
+                        <div>
+                          <p className="font-semibold">Observación:</p>
+                          <p>{h.detalle.observacion}</p>
                         </div>
                       )}
 
@@ -249,10 +272,11 @@ export default function AdminPedidos() {
                   )}
                 </div>
               ))}
-
             </div>
 
-            {/* CAMBIO DE ESTADO */}
+            {/* ============================
+                CAMBIO DE ESTADO MANUAL
+            ============================ */}
             <select
               className="w-full p-3 border rounded-xl mb-3"
               onChange={(e) =>
@@ -279,7 +303,6 @@ export default function AdminPedidos() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
