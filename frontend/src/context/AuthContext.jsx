@@ -6,14 +6,20 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Recuperar sesión del localStorage al iniciar
+  // 🔁 Restaurar sesión
   useEffect(() => {
     const savedUser = localStorage.getItem("authUser");
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("authUser");
+      }
     }
+    setLoading(false);
   }, []);
 
   async function login(username, password) {
@@ -33,6 +39,9 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("authUser");
     navigate("/");
   }
+
+  // ⛔️ IMPORTANTE: no renderizar nada hasta terminar loading
+  if (loading) return null;
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
