@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 const ESTADOS = [
   "disponible",
@@ -38,7 +39,8 @@ export default function AdminMaquinaForm() {
         setError("");
 
         const res = await fetch(
-          `http://localhost:3000/admin/maquinas/${encodeURIComponent(id)}`
+          `${API_BASE}
+/admin/maquinas/${encodeURIComponent(id)}`
         );
         if (!res.ok) throw new Error("No se pudo cargar la máquina");
 
@@ -78,8 +80,9 @@ export default function AdminMaquinaForm() {
 
     try {
       const url = esEdicion
-        ? `http://localhost:3000/admin/maquinas/${encodeURIComponent(id)}`
-        : "http://localhost:3000/admin/maquinas";
+        ? `${API_BASE}
+/admin/maquinas/${encodeURIComponent(id)}`
+        : `${API_BASE} /admin/maquinas`;
 
       const method = esEdicion ? "PUT" : "POST";
 
@@ -120,7 +123,8 @@ export default function AdminMaquinaForm() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/admin/maquinas/${encodeURIComponent(id)}`,
+        `${API_BASE}
+/admin/maquinas/${encodeURIComponent(id)}`,
         { method: "DELETE" }
       );
       if (!res.ok) throw new Error("No se pudo dar de baja la máquina");

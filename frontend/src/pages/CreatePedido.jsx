@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 const MACHINE_TYPES = [
   "LUSTRADORA",
@@ -58,7 +59,8 @@ export default function CreatePedido() {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:3000/pedidos", {
+      const res = await fetch(`${API_BASE}
+/pedidos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

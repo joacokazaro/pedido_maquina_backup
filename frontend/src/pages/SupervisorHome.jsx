@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function SupervisorHome() {
   const { user } = useAuth();
@@ -21,7 +22,8 @@ export default function SupervisorHome() {
       try {
         setLoading(true);
 
-        const url = `http://localhost:3000/pedidos/supervisor/${encodeURIComponent(
+        const url = `${API_BASE}
+/pedidos/supervisor/${encodeURIComponent(
           user.username
         )}`;
 

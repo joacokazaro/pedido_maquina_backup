@@ -3023,5 +3023,96 @@
     }
   ],
   "pedidos": [
+    {
+      "id": "P-0001",
+      "supervisor": "cmoya",
+      "servicio": "r20",
+      "estado": "CERRADO",
+      "itemsSolicitados": [
+        {
+          "tipo": "LUSTRADORA",
+          "cantidad": 1
+        }
+      ],
+      "itemsAsignados": [
+        {
+          "id": "1.1.3",
+          "tipo": "LUSTRADORA",
+          "modelo": "POWR-FLITE  1200",
+          "serie": "ILEGIBLE"
+        }
+      ],
+      "observacion": "15/11",
+      "itemsDevueltos": [
+        "1.1.3"
+      ],
+      "historial": [
+        {
+          "accion": "CREADO",
+          "usuario": "cmoya",
+          "fecha": "2025-12-15T19:04:40.924Z",
+          "detalle": {
+            "servicio": "r20",
+            "observacion": "15/11"
+          }
+        },
+        {
+          "accion": "MAQUINAS_ASIGNADAS",
+          "usuario": "deposito",
+          "fecha": "2025-12-15T19:05:04.945Z",
+          "detalle": {
+            "servicio": "r20",
+            "asignadas": [
+              {
+                "id": "1.1.3",
+                "tipo": "LUSTRADORA",
+                "modelo": "POWR-FLITE  1200",
+                "serie": "ILEGIBLE"
+              }
+            ],
+            "solicitado": {
+              "LUSTRADORA": 1
+            },
+            "asignadoPorTipo": {
+              "LUSTRADORA": 1
+            },
+            "justificacion": null
+          }
+        },
+        {
+          "accion": "ENTREGADO",
+          "usuario": "deposito",
+          "fecha": "2025-12-15T19:05:07.061Z",
+          "detalle": {
+            "servicio": "r20"
+          }
+        },
+        {
+          "accion": "DEVOLUCION_REGISTRADA",
+          "usuario": "supervisor",
+          "fecha": "2025-12-15T19:05:11.257Z",
+          "detalle": {
+            "servicio": "r20",
+            "devueltas": [
+              "1.1.3"
+            ],
+            "faltantes": [],
+            "justificacion": null
+          }
+        },
+        {
+          "accion": "DEVOLUCION_CONFIRMADA",
+          "usuario": "deposito",
+          "fecha": "2025-12-15T19:05:15.410Z",
+          "detalle": {
+            "devueltasConfirmadas": [
+              "1.1.3"
+            ],
+            "faltantesConfirmados": [],
+            "observacion": null
+          }
+        }
+      ]
+    }
   ]
 }

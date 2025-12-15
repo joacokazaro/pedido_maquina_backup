@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function AdminViewPedido() {
   const { id } = useParams();
@@ -17,7 +18,8 @@ export default function AdminViewPedido() {
       try {
         setLoading(true);
         const res = await fetch(
-          `http://localhost:3000/pedidos/${encodeURIComponent(id)}`
+          `${API_BASE}
+/pedidos/${encodeURIComponent(id)}`
         );
         if (!res.ok) throw new Error("No se pudo cargar el pedido");
 

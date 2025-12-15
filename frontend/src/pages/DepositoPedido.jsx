@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function DepositoPedido() {
   const { id } = useParams();
@@ -11,7 +12,8 @@ export default function DepositoPedido() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`http://localhost:3000/pedidos/${id}`);
+        const res = await fetch(`${API_BASE}
+/pedidos/${id}`);
         if (!res.ok) throw new Error("No se encontró el pedido");
 
         const data = await res.json();
@@ -258,7 +260,8 @@ export default function DepositoPedido() {
 /* ===== AUXILIARES ===== */
 
 async function marcarEstado(id, nuevoEstado, navigate) {
-  await fetch(`http://localhost:3000/pedidos/${id}/estado`, {
+  await fetch(`${API_BASE}
+/pedidos/${id}/estado`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ estado: nuevoEstado, usuario: "deposito" }),
@@ -267,7 +270,8 @@ async function marcarEstado(id, nuevoEstado, navigate) {
 }
 
 async function entregarPedido(id, navigate) {
-  await fetch(`http://localhost:3000/pedidos/${id}/entregar`, {
+  await fetch(`${API_BASE}
+/pedidos/${id}/entregar`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ usuario: "deposito" }),

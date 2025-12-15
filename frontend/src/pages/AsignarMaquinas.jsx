@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function AsignarMaquinas() {
   const { id } = useParams();
@@ -20,7 +21,8 @@ export default function AsignarMaquinas() {
      CARGA INICIAL
   ========================== */
   useEffect(() => {
-    fetch(`http://localhost:3000/pedidos/${id}`)
+    fetch(`${API_BASE}
+/pedidos/${id}`)
       .then((r) => r.json())
       .then((p) => {
         setPedido(p);
@@ -32,7 +34,8 @@ export default function AsignarMaquinas() {
         setSolicitado(sol);
       });
 
-    fetch("http://localhost:3000/maquinas")
+    fetch(`${API_BASE}
+/maquinas`)
       .then((r) => r.json())
       .then(setMaquinas);
   }, [id]);
@@ -112,7 +115,8 @@ export default function AsignarMaquinas() {
     }
 
     await fetch(
-      `http://localhost:3000/pedidos/${id}/asignar`,
+      `${API_BASE}
+/pedidos/${id}/asignar`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

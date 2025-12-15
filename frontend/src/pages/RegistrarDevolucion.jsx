@@ -1,6 +1,7 @@
 // src/pages/RegistrarDevolucion.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function RegistrarDevolucion() {
   const { id } = useParams();
@@ -16,7 +17,8 @@ export default function RegistrarDevolucion() {
 
   /** CARGAR PEDIDO */
   useEffect(() => {
-    fetch(`http://localhost:3000/pedidos/${id}`)
+    fetch(`${API_BASE}
+/pedidos/${id}`)
       .then((r) => r.json())
       .then((data) => {
         setPedido(data);
@@ -51,7 +53,8 @@ export default function RegistrarDevolucion() {
       return;
     }
 
-    await fetch(`http://localhost:3000/pedidos/${id}/devolucion`, {
+    await fetch(`${API_BASE}
+/pedidos/${id}/devolucion`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

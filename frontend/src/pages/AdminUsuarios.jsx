@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function AdminUsuarios() {
   const navigate = useNavigate();
@@ -15,8 +16,10 @@ export default function AdminUsuarios() {
 
       const url =
         params.toString().length > 0
-          ? `http://localhost:3000/admin-users?${params.toString()}`
-          : `http://localhost:3000/admin-users`;
+          ? `${API_BASE}
+/admin-users?${params.toString()}`
+          : `${API_BASE}
+/admin-users`;
 
       const res = await fetch(url);
 

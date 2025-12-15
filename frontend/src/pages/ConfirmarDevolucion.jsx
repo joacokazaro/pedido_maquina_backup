@@ -1,6 +1,7 @@
 // src/pages/ConfirmarDevolucion.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function ConfirmarDevolucion() {
   const { id } = useParams();
@@ -13,7 +14,8 @@ export default function ConfirmarDevolucion() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch(`http://localhost:3000/pedidos/${id}`);
+      const res = await fetch(`${API_BASE}
+/pedidos/${id}`);
       const data = await res.json();
       setPedido(data);
 
@@ -63,7 +65,8 @@ export default function ConfirmarDevolucion() {
       .map((m) => m.id)
       .filter((idMaq) => !seleccion.includes(idMaq));
 
-    await fetch(`http://localhost:3000/pedidos/${id}/confirmar-devolucion`, {
+    await fetch(`${API_BASE}
+/pedidos/${id}/confirmar-devolucion`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

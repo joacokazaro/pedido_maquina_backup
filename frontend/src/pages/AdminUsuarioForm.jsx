@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function AdminUsuarioForm() {
   const navigate = useNavigate();
@@ -17,7 +18,8 @@ export default function AdminUsuarioForm() {
     if (!username) return;
 
     async function loadUser() {
-      const res = await fetch(`http://localhost:3000/admin-users/${username}`);
+      const res = await fetch(`${API_BASE}
+/admin-users/${username}`);
       const data = await res.json();
       setForm({
         username: data.username,
@@ -45,8 +47,10 @@ export default function AdminUsuarioForm() {
 
     const method = username ? "PUT" : "POST";
     const url = username
-      ? `http://localhost:3000/admin-users/${username}`
-      : `http://localhost:3000/admin-users`;
+      ? `${API_BASE}
+/admin-users/${username}`
+      : `${API_BASE}
+/admin-users`;
 
     const res = await fetch(url, {
       method,

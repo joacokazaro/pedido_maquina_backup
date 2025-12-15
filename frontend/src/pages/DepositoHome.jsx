@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 export default function DepositoHome() {
   const [pedidos, setPedidos] = useState([]);
   const [filtro, setFiltro] = useState("TODOS");
 
   useEffect(() => {
-    fetch("http://localhost:3000/pedidos")
+    fetch(`${API_BASE}
+/pedidos`)
       .then(res => res.json())
       .then(data => {
         setPedidos(data);

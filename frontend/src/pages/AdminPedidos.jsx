@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+
+
 export default function AdminPedidos() {
   const navigate = useNavigate();
 
@@ -20,7 +22,7 @@ export default function AdminPedidos() {
   async function loadPedidos() {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/admin/pedidos");
+      const res = await fetch("${API_BASE}/admin/pedidos");
       const data = await res.json();
       setPedidos(data);
     } catch (err) {

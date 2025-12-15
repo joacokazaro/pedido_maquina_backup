@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -32,8 +33,8 @@ export default function AdminMaquinas() {
         setError("");
 
         const [maqsRes, resumenRes] = await Promise.all([
-          fetch("http://localhost:3000/admin/maquinas"),
-          fetch("http://localhost:3000/admin/maquinas/stock-resumen")
+          fetch(`${API_BASE}/admin/maquinas`),
+          fetch(`${API_BASE}/admin/maquinas/stock-resumen`)
         ]);
 
         const maqs = await maqsRes.json();

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { API_BASE } from "../services/apiBase";
+
 
 export default function ViewPedido() {
   const { id } = useParams();
@@ -18,7 +20,8 @@ export default function ViewPedido() {
   }, [id]);
 
   async function cargarPedido() {
-    const res = await fetch(`http://localhost:3000/pedidos/${id}`);
+    const res = await fetch(`${API_BASE}
+/pedidos/${id}`);
     const data = await res.json();
     setPedido(data);
 
@@ -52,7 +55,8 @@ export default function ViewPedido() {
     setEnviando(true);
 
     await fetch(
-      `http://localhost:3000/pedidos/${id}/completar-faltantes`,
+      `${API_BASE}
+/pedidos/${id}/completar-faltantes`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
