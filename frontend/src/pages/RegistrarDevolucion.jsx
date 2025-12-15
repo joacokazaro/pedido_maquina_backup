@@ -60,9 +60,6 @@ export default function RegistrarDevolucion() {
         justificacion: requiere ? justificacion : null
       }),
     });
-
-    // Ahora no se cierra → queda en PENDIENTE_CONFIRMACION
-    alert("Devolución registrada. Esperando confirmación del depósito.");
     navigate(`/supervisor`);
   }
 

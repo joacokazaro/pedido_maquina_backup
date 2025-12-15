@@ -200,9 +200,14 @@ export function registrarDevolucion(req, res) {
   const db = readDB();
   const pedido = db.pedidos.find((p) => p.id === id);
 
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
+
   if (pedido.estado !== "ENTREGADO") {
-    return res.status(400).json({ error: "Solo se puede devolver un pedido ENTREGADO" });
+    return res.status(400).json({
+      error: "Solo se puede devolver un pedido ENTREGADO"
+    });
   }
 
   const asignadas = pedido.itemsAsignados.map(m => m.id);
@@ -214,15 +219,8 @@ export function registrarDevolucion(req, res) {
     });
   }
 
-  devueltas.forEach(idmaq => {
-    const m = db.maquinas.find(x => x.id === idmaq);
-    if (m) m.estado = "disponible";
-  });
-
-  faltantes.forEach(idmaq => {
-    const m = db.maquinas.find(x => x.id === idmaq);
-    if (m) m.estado = "no_devuelta";
-  });
+  // ⚠️ NO TOCAR ESTADO DE MÁQUINAS ACÁ
+  // El supervisor solo declara, no confirma
 
   pedido.itemsDevueltos = devueltas;
 
@@ -239,72 +237,83 @@ export function registrarDevolucion(req, res) {
   });
 
   pedido.estado = "PENDIENTE_CONFIRMACION";
+
   writeDB(db);
 
-  res.json({ message: "Devolución registrada. Pendiente de confirmación.", pedido });
+  res.json({
+    message: "Devolución registrada. Pendiente de confirmación por depósito.",
+    pedido
+  });
 }
+
+
+
 
 /* ========================================================
    CONFIRMAR DEVOLUCIÓN (DEPÓSITO)
 ======================================================== */
 export function confirmarDevolucion(req, res) {
   const { id } = req.params;
-  const { usuario, observacion, devueltas, faltantes } = req.body;
+  const { usuario, devueltas, faltantes, observacion } = req.body || {};
 
   const db = readDB();
-  const pedido = db.pedidos.find(p => p.id === id);
+  db.pedidos = db.pedidos || [];
+  db.maquinas = db.maquinas || [];
 
+  const pedido = db.pedidos.find(p => p.id === id);
   if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
 
-  if (pedido.estado !== "PENDIENTE_CONFIRMACION") {
-    return res.status(400).json({ error: "El pedido no está pendiente de confirmación" });
+  // Validaciones básicas
+  const dev = Array.isArray(devueltas) ? devueltas : [];
+  const fal = Array.isArray(faltantes) ? faltantes : [];
+
+  // IDs asignadas reales del pedido (fuente de verdad)
+  const asignadasIds = (pedido.itemsAsignados || []).map(m => m.id);
+
+  // Filtrar para no aceptar ids que no pertenecen a este pedido
+  const devFiltradas = dev.filter(mid => asignadasIds.includes(mid));
+  const falFiltradas = fal.filter(mid => asignadasIds.includes(mid));
+
+  // Si por algún motivo llegaron duplicadas o cruzadas:
+  const devSet = new Set(devFiltradas);
+  const falSet = new Set(falFiltradas);
+  for (const x of devSet) falSet.delete(x); // si está en devueltas, no puede estar en faltantes
+
+  // ==========================
+  // ACTUALIZAR ESTADO MÁQUINAS
+  // ==========================
+  for (const mid of devSet) {
+    const maq = db.maquinas.find(m => m.id === mid);
+    if (maq) maq.estado = "disponible";
   }
 
-  const historialSupervisor = [...pedido.historial]
-    .reverse()
-    .find(h => h.accion === "DEVOLUCION_REGISTRADA");
+  for (const mid of falSet) {
+    const maq = db.maquinas.find(m => m.id === mid);
+    if (maq) maq.estado = "no_devuelta";
+  }
 
-  const supervisorDevueltas = historialSupervisor?.detalle?.devueltas || [];
-  const supervisorFaltantes = historialSupervisor?.detalle?.faltantes || [];
-
-  const devueltasConfirmadas = devueltas || [];
-  const faltantesConfirmados = faltantes || [];
-
-  devueltasConfirmadas.forEach(idmaq => {
-    const m = db.maquinas.find(x => x.id === idmaq);
-    if (m) m.estado = "disponible";
-  });
-
-  faltantesConfirmados.forEach(idmaq => {
-    const m = db.maquinas.find(x => x.id === idmaq);
-    if (m) m.estado = "no_devuelta";
-  });
-
-  pedido.itemsDevueltos = devueltasConfirmadas;
-
-  pedido.estado = "CERRADO";
-
+  // ==========================
+  // ACTUALIZAR PEDIDO + HISTORIAL
+  // ==========================
+  pedido.historial = pedido.historial || [];
   pedido.historial.push({
     accion: "DEVOLUCION_CONFIRMADA",
-    usuario,
+    usuario: usuario || "deposito",
     fecha: new Date().toISOString(),
     detalle: {
-      servicio: pedido.servicio,
-
-      supervisorDevueltas,
-      supervisorFaltantes,
-
-      devueltasConfirmadas,
-      faltantesConfirmados,
-
+      devueltasConfirmadas: Array.from(devSet),
+      faltantesConfirmados: Array.from(falSet),
       observacion: observacion || null
     }
   });
 
+  // Estado final del ciclo
+  pedido.estado = "CERRADO";
+
   writeDB(db);
 
-  res.json({
-    message: "Devolución confirmada. Pedido cerrado.",
+  return res.json({
+    message: "Devolución confirmada. Estados de máquinas actualizados.",
     pedido
   });
 }
@@ -315,4 +324,93 @@ export function confirmarDevolucion(req, res) {
 export function getPedidos(req, res) {
   const db = readDB();
   res.json(db.pedidos || []);
+}
+
+/* ========================================================
+   COMPLETAR FALTANTES (SUPERVISOR)
+======================================================== */
+export function completarFaltantes(req, res) {
+  const { id } = req.params;
+  const { usuario, devueltas } = req.body || {};
+
+  if (!Array.isArray(devueltas) || devueltas.length === 0) {
+    return res.status(400).json({
+      error: "Debe indicar las máquinas devueltas"
+    });
+  }
+
+  const db = readDB();
+  const pedido = db.pedidos.find(p => p.id === id);
+
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
+
+  if (pedido.estado !== "CERRADO") {
+    return res.status(400).json({
+      error: "Solo se pueden completar faltantes en pedidos CERRADOS"
+    });
+  }
+
+  // Última confirmación de devolución
+  const confirmacion = [...(pedido.historial || [])]
+    .reverse()
+    .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
+
+  if (!confirmacion) {
+    return res.status(400).json({
+      error: "El pedido no tiene faltantes confirmados"
+    });
+  }
+
+  const faltantesActuales =
+    confirmacion.detalle?.faltantesConfirmados || [];
+
+  // Solo aceptamos devolver los que realmente estaban faltantes
+  const devueltasValidas = devueltas.filter(idMaq =>
+    faltantesActuales.includes(idMaq)
+  );
+
+  if (devueltasValidas.length === 0) {
+    return res.status(400).json({
+      error: "Las máquinas indicadas no figuran como faltantes"
+    });
+  }
+
+  // =========================
+  // ACTUALIZAR MÁQUINAS
+  // =========================
+  devueltasValidas.forEach(idMaq => {
+    const maq = db.maquinas.find(m => m.id === idMaq);
+    if (maq) {
+      maq.estado = "disponible";
+    }
+  });
+
+  // =========================
+  // ACTUALIZAR HISTORIAL
+  // =========================
+  pedido.historial.push({
+    accion: "FALTANTES_COMPLETADOS",
+    usuario: usuario || "supervisor",
+    fecha: new Date().toISOString(),
+    detalle: {
+      devueltas: devueltasValidas
+    }
+  });
+
+  // =========================
+  // ACTUALIZAR FALTANTES CONFIRMADOS
+  // =========================
+  confirmacion.detalle.faltantesConfirmados =
+    faltantesActuales.filter(
+      idMaq => !devueltasValidas.includes(idMaq)
+    );
+
+  writeDB(db);
+
+  return res.json({
+    message: "Faltantes completados correctamente",
+    pedido
+  });
 }

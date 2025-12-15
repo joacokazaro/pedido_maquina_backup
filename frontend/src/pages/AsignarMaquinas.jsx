@@ -16,7 +16,9 @@ export default function AsignarMaquinas() {
 
   const [solicitado, setSolicitado] = useState({});
 
-  // Cargar pedido y máquinas
+  /* =========================
+     CARGA INICIAL
+  ========================== */
   useEffect(() => {
     fetch(`http://localhost:3000/pedidos/${id}`)
       .then((r) => r.json())
@@ -24,7 +26,9 @@ export default function AsignarMaquinas() {
         setPedido(p);
 
         const sol = {};
-        p.itemsSolicitados.forEach((i) => (sol[i.tipo] = i.cantidad));
+        (p.itemsSolicitados ?? []).forEach(
+          (i) => (sol[i.tipo] = i.cantidad)
+        );
         setSolicitado(sol);
       });
 
@@ -35,8 +39,13 @@ export default function AsignarMaquinas() {
 
   if (!pedido) return <div className="p-6">Cargando...</div>;
 
+  /* =========================
+     FILTROS
+  ========================== */
   const tipos = [
-    ...new Set(maquinas.map((m) => m.tipo).filter((t) => t && t !== ""))
+    ...new Set(
+      maquinas.map((m) => m.tipo).filter((t) => t && t !== "")
+    ),
   ];
 
   const filtradas = maquinas.filter((m) => {
@@ -46,13 +55,17 @@ export default function AsignarMaquinas() {
     const cumpleTexto =
       m.id.toLowerCase().includes(texto) ||
       m.tipo.toLowerCase().includes(texto) ||
-      m.modelo.toLowerCase().includes(texto);
+      (m.modelo ?? "").toLowerCase().includes(texto);
 
-    const cumpleTipo = filtroTipo === "TODOS" || m.tipo === filtroTipo;
+    const cumpleTipo =
+      filtroTipo === "TODOS" || m.tipo === filtroTipo;
 
     return cumpleTexto && cumpleTipo;
   });
 
+  /* =========================
+     SELECCIÓN
+  ========================== */
   function toggleSeleccion(m) {
     if (seleccion.some((s) => s.id === m.id)) {
       setSeleccion(seleccion.filter((s) => s.id !== m.id));
@@ -65,7 +78,8 @@ export default function AsignarMaquinas() {
     const asignadosPorTipo = {};
 
     seleccion.forEach((m) => {
-      asignadosPorTipo[m.tipo] = (asignadosPorTipo[m.tipo] || 0) + 1;
+      asignadosPorTipo[m.tipo] =
+        (asignadosPorTipo[m.tipo] || 0) + 1;
     });
 
     for (const tipo in solicitado) {
@@ -77,12 +91,16 @@ export default function AsignarMaquinas() {
     return false;
   }
 
+  /* =========================
+     ACCIÓN PRINCIPAL
+  ========================== */
   async function confirmarAsignacion() {
     setAlerta("");
 
-    // ❌ No seleccionó ninguna máquina
     if (seleccion.length === 0) {
-      setAlerta("Debés seleccionar al menos 1 máquina para continuar.");
+      setAlerta(
+        "Debés seleccionar al menos 1 máquina para continuar."
+      );
       return;
     }
 
@@ -93,35 +111,46 @@ export default function AsignarMaquinas() {
       return;
     }
 
-    await fetch(`http://localhost:3000/pedidos/${id}/asignar`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        asignadas: seleccion.map((m) => m.id),
-        justificacion: necesita ? justificacion : null,
-        usuario: "deposito"
-      })
-    });
+    await fetch(
+      `http://localhost:3000/pedidos/${id}/asignar`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          asignadas: seleccion.map((m) => m.id),
+          justificacion: necesita ? justificacion : null,
+          usuario: "deposito",
+        }),
+      }
+    );
 
     navigate(`/deposito/pedido/${id}`);
+  }
+
+  function cerrarJustificacion() {
+    setShowJustificacion(false);
+    // opcional: limpiar texto
+    // setJustificacion("");
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
 
-      {/* Botón volver */}
+      {/* VOLVER */}
       <button
         onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg 
-                   bg-white border border-gray-200 shadow-sm 
+        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg
+                   bg-white border border-gray-200 shadow-sm
                    hover:shadow transition text-gray-700 text-sm font-medium"
       >
         <span className="text-lg">←</span> Volver
       </button>
 
-      <h1 className="text-2xl font-bold mb-4">Asignar máquinas</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Asignar máquinas
+      </h1>
 
-      {/* FILTRO POR TIPO */}
+      {/* FILTRO TIPO */}
       <div className="mb-4 space-y-2">
         <label className="block text-sm font-medium text-gray-700">
           Tipo de máquina
@@ -133,7 +162,9 @@ export default function AsignarMaquinas() {
         >
           <option value="TODOS">Todos los tipos</option>
           {tipos.map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </select>
       </div>
@@ -146,24 +177,32 @@ export default function AsignarMaquinas() {
         onChange={(e) => setFiltroTexto(e.target.value)}
       />
 
-      {/* LISTA DE MÁQUINAS */}
+      {/* LISTA */}
       <div className="space-y-3">
         {filtradas.map((m) => {
-          const selected = seleccion.some((s) => s.id === m.id);
+          const selected = seleccion.some(
+            (s) => s.id === m.id
+          );
           return (
             <div
               key={m.id}
               onClick={() => toggleSeleccion(m)}
               className={`p-4 rounded-xl shadow cursor-pointer ${
-                selected ? "bg-green-100 border border-green-400" : "bg-white"
+                selected
+                  ? "bg-green-100 border border-green-400"
+                  : "bg-white"
               }`}
             >
               <p className="text-sm font-semibold uppercase tracking-wide">
                 {m.tipo}
               </p>
-              <p className="mt-1 text-base font-bold">Código: {m.id}</p>
+              <p className="mt-1 text-base font-bold">
+                Código: {m.id}
+              </p>
               {m.modelo && (
-                <p className="mt-1 text-xs text-gray-600">{m.modelo}</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  {m.modelo}
+                </p>
               )}
             </div>
           );
@@ -171,19 +210,20 @@ export default function AsignarMaquinas() {
 
         {filtradas.length === 0 && (
           <p className="text-sm text-gray-500">
-            No hay máquinas disponibles que coincidan con el filtro.
+            No hay máquinas disponibles que coincidan
+            con el filtro.
           </p>
         )}
       </div>
 
-      {/* ALERTA DE VALIDACIÓN */}
+      {/* ALERTA */}
       {alerta && (
         <div className="mt-4 text-center text-sm bg-red-100 text-red-700 py-2 rounded-xl">
           {alerta}
         </div>
       )}
 
-      {/* BARRA FIJA DE CONFIRMACIÓN */}
+      {/* BARRA INFERIOR */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-lg p-4">
         <p className="text-sm mb-2 text-gray-700">
           Seleccionadas: <b>{seleccion.length}</b>
@@ -197,29 +237,51 @@ export default function AsignarMaquinas() {
         </button>
       </div>
 
-      {/* MODAL DE JUSTIFICACIÓN */}
+      {/* MODAL JUSTIFICACIÓN */}
       {showJustificacion && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full">
-            <h2 className="text-lg font-bold mb-3">Justificación requerida</h2>
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4"
+          onClick={cerrarJustificacion}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-bold mb-3">
+              Justificación requerida
+            </h2>
+
             <p className="text-sm text-gray-600 mb-3">
-              La cantidad asignada no coincide con lo solicitado.
-              Es necesario justificar la diferencia.
+              La cantidad asignada no coincide con lo
+              solicitado. Es necesario justificar la
+              diferencia.
             </p>
 
             <textarea
               className="w-full p-2 border rounded-lg mb-4"
               rows="3"
               value={justificacion}
-              onChange={(e) => setJustificacion(e.target.value)}
+              onChange={(e) =>
+                setJustificacion(e.target.value)
+              }
+              placeholder="Escribí la justificación..."
             />
 
-            <button
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold"
-              onClick={confirmarAsignacion}
-            >
-              Guardar y continuar
-            </button>
+            <div className="flex gap-2">
+              <button
+                className="w-1/2 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold"
+                onClick={cerrarJustificacion}
+              >
+                Cancelar
+              </button>
+
+              <button
+                className="w-1/2 bg-blue-600 text-white py-2 rounded-lg font-semibold"
+                onClick={confirmarAsignacion}
+              >
+                Guardar y continuar
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -10,6 +10,7 @@ import CreatePedido from "./pages/CreatePedido";
 import ViewPedido from "./pages/ViewPedido";
 import RegistrarDevolucion from "./pages/RegistrarDevolucion";
 
+
 // DEPÓSITO
 import DepositoHome from "./pages/DepositoHome";
 import DepositoPedido from "./pages/DepositoPedido";
@@ -23,6 +24,7 @@ import AdminUsuarioForm from "./pages/AdminUsuarioForm";
 import AdminPedidos from "./pages/AdminPedidos";
 import AdminMaquinas from "./pages/AdminMaquinas";
 import AdminMaquinaForm from "./pages/AdminMaquinaForm";
+import AdminViewPedido from "./pages/AdminViewPedido";
 
 function App() {
   return (
@@ -143,6 +145,9 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="/admin/pedido/:id" element={<AdminViewPedido />} />
+
 
       <Route
         path="/admin/maquinas/:id"

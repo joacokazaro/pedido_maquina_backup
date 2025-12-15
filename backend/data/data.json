@@ -1409,7 +1409,7 @@
       "tipo": "HIDROLAVADORA",
       "modelo": "HIDROJET 248BAT/18LTS",
       "serie": "151021070292",
-      "estado": "no_devuelta"
+      "estado": "disponible"
     },
     {
       "id": "4.4.25",
@@ -1437,7 +1437,7 @@
       "tipo": "CARGADOR",
       "modelo": "QUIQ 24V",
       "serie": "912-2400-N1",
-      "estado": "no_devuelta"
+      "estado": "disponible"
     },
     {
       "id": "C.8.20",
@@ -1836,7 +1836,7 @@
       "tipo": "SOPLADORA",
       "modelo": "STIHL BR-420",
       "serie": "368243512",
-      "estado": "no_devuelta"
+      "estado": "disponible"
     },
     {
       "id": "7.7.11",
@@ -2515,7 +2515,7 @@
       "tipo": "ELECTROBOMBA PARA AGUA",
       "modelo": "CHERTA ARGENTINA 12 VOLTS",
       "serie": "",
-      "estado": "no_devuelta"
+      "estado": "disponible"
     },
     {
       "id": "12.12.7",

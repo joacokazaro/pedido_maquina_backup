@@ -49,14 +49,39 @@ export function adminGetMaquinaById(req, res) {
   const { id } = req.params;
 
   const db = readDB();
-  const maquina = (db.maquinas || []).find(m => m.id === id);
 
+  const maquina = (db.maquinas || []).find(m => m.id === id);
   if (!maquina) {
     return res.status(404).json({ error: "Máquina no encontrada" });
   }
 
-  res.json(maquina);
+  // ===============================
+  // BUSCAR ASIGNACIÓN EN PEDIDOS
+  // ===============================
+  let asignacion = null;
+
+  const pedidos = db.pedidos || [];
+
+  for (const p of pedidos) {
+    const asignadas = p.itemsAsignados || [];
+
+    const encontrada = asignadas.find(m => m.id === id);
+    if (encontrada) {
+      asignacion = {
+        pedidoId: p.id,
+        servicio: p.servicio || null,
+        estadoPedido: p.estado
+      };
+      break;
+    }
+  }
+
+  res.json({
+    ...maquina,
+    asignacion
+  });
 }
+
 
 /**
  * POST /admin/maquinas

@@ -22,6 +22,9 @@ export default function AdminMaquinaForm() {
     serie: "",
     estado: "disponible"
   });
+
+  const [asignacion, setAsignacion] = useState(null);
+
   const [loading, setLoading] = useState(esEdicion);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -33,13 +36,14 @@ export default function AdminMaquinaForm() {
       try {
         setLoading(true);
         setError("");
+
         const res = await fetch(
           `http://localhost:3000/admin/maquinas/${encodeURIComponent(id)}`
         );
-        if (!res.ok) {
-          throw new Error("No se pudo cargar la máquina");
-        }
+        if (!res.ok) throw new Error("No se pudo cargar la máquina");
+
         const data = await res.json();
+
         setForm({
           id: data.id || "",
           tipo: data.tipo || "",
@@ -47,6 +51,10 @@ export default function AdminMaquinaForm() {
           serie: data.serie || "",
           estado: data.estado || "disponible"
         });
+
+        // 👇 NUEVO
+        setAsignacion(data.asignacion || null);
+
       } catch (e) {
         console.error(e);
         setError("Error cargando la máquina");
@@ -60,10 +68,7 @@ export default function AdminMaquinaForm() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setForm(prev => ({ ...prev, [name]: value }));
   }
 
   async function handleSubmit(e) {
@@ -118,9 +123,7 @@ export default function AdminMaquinaForm() {
         `http://localhost:3000/admin/maquinas/${encodeURIComponent(id)}`,
         { method: "DELETE" }
       );
-      if (!res.ok) {
-        throw new Error("No se pudo dar de baja la máquina");
-      }
+      if (!res.ok) throw new Error("No se pudo dar de baja la máquina");
       navigate("/admin/maquinas");
     } catch (e) {
       console.error(e);
@@ -128,12 +131,14 @@ export default function AdminMaquinaForm() {
     }
   }
 
-  if (loading) {
-    return <div className="p-4">Cargando máquina...</div>;
-  }
+  if (loading) return <div className="p-4">Cargando máquina...</div>;
+
+  const estaAsignada =
+    form.estado === "asignada" || form.estado === "no_devuelta";
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
+
       {/* HEADER */}
       <header className="mb-4 flex items-center justify-between gap-3">
         <button
@@ -158,6 +163,21 @@ export default function AdminMaquinaForm() {
           </p>
         )}
 
+        {/* INFO DE ASIGNACIÓN */}
+        {estaAsignada && asignacion && (
+          <div className="bg-yellow-50 border border-yellow-300 p-3 rounded-xl text-xs">
+            <p className="font-semibold text-yellow-800">
+              Máquina asignada
+            </p>
+            <p>
+              Servicio: <b>{asignacion.servicio}</b>
+            </p>
+            <p>
+              Pedido: <b>{asignacion.pedidoId}</b>
+            </p>
+          </div>
+        )}
+
         {/* CÓDIGO */}
         <div>
           <label className="block text-xs font-semibold mb-1">
@@ -166,16 +186,9 @@ export default function AdminMaquinaForm() {
           <input
             name="id"
             value={form.id}
-            onChange={handleChange}
-            disabled={esEdicion} // En edición no tocamos el ID
+            disabled
             className="w-full p-2 rounded-xl border border-gray-300 text-sm disabled:bg-gray-100"
-            placeholder="Ej: 3.P.20"
           />
-          {!esEdicion && (
-            <p className="text-[10px] text-gray-500 mt-1">
-              Debe ser único y coincidir con el código real de la máquina.
-            </p>
-          )}
         </div>
 
         {/* TIPO */}
@@ -188,7 +201,6 @@ export default function AdminMaquinaForm() {
             value={form.tipo}
             onChange={handleChange}
             className="w-full p-2 rounded-xl border border-gray-300 text-sm"
-            placeholder="Ej: MOTOGUADAÑA, LAVADORA, HIDROLAVADORA..."
           />
         </div>
 
@@ -202,21 +214,19 @@ export default function AdminMaquinaForm() {
             value={form.modelo}
             onChange={handleChange}
             className="w-full p-2 rounded-xl border border-gray-300 text-sm"
-            placeholder="Ej: STIHL FS-280"
           />
         </div>
 
         {/* SERIE */}
         <div>
           <label className="block text-xs font-semibold mb-1">
-            N° de serie (texto libre)
+            N° de serie
           </label>
           <input
             name="serie"
             value={form.serie}
             onChange={handleChange}
             className="w-full p-2 rounded-xl border border-gray-300 text-sm"
-            placeholder='Ej: "N° SERIE: 371102875" o "S/N"'
           />
         </div>
 
@@ -232,9 +242,7 @@ export default function AdminMaquinaForm() {
             className="w-full p-2 rounded-xl border border-gray-300 text-sm"
           >
             {ESTADOS.map(e => (
-              <option key={e} value={e}>
-                {e}
-              </option>
+              <option key={e} value={e}>{e}</option>
             ))}
           </select>
         </div>
@@ -246,11 +254,7 @@ export default function AdminMaquinaForm() {
             disabled={saving}
             className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold disabled:opacity-60"
           >
-            {saving
-              ? "Guardando..."
-              : esEdicion
-              ? "Guardar cambios"
-              : "Crear máquina"}
+            {saving ? "Guardando..." : "Guardar cambios"}
           </button>
 
           {esEdicion && (

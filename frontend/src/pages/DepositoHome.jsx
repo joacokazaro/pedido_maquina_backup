@@ -13,6 +13,23 @@ export default function DepositoHome() {
       });
   }, []);
 
+  /* =========================
+     HELPERS
+  ========================== */
+
+  function tieneFaltantes(pedido) {
+    if (pedido.estado !== "CERRADO") return false;
+
+    const confirmacion = [...(pedido.historial || [])]
+      .reverse()
+      .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
+
+    const faltantes =
+      confirmacion?.detalle?.faltantesConfirmados || [];
+
+    return faltantes.length > 0;
+  }
+
   const pedidosFiltrados = pedidos.filter((p) => {
     if (filtro === "TODOS") return true;
     return p.estado === filtro;
@@ -29,15 +46,20 @@ export default function DepositoHome() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">Pedidos a gestionar</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        Pedidos a gestionar
+      </h1>
 
+      {/* FILTROS */}
       <div className="flex flex-wrap justify-center gap-2 mb-6">
         {filtros.map(f => (
           <button
             key={f.value}
             onClick={() => setFiltro(f.value)}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition 
-              ${filtro === f.value ? f.color : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+              ${filtro === f.value
+                ? f.color
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
           >
             {f.label}
           </button>
@@ -45,9 +67,12 @@ export default function DepositoHome() {
       </div>
 
       {pedidosFiltrados.length === 0 && (
-        <p className="text-center text-gray-600 mt-4">No hay pedidos en esta categoría.</p>
+        <p className="text-center text-gray-600 mt-4">
+          No hay pedidos en esta categoría.
+        </p>
       )}
 
+      {/* LISTA */}
       <div className="space-y-4 max-w-xl mx-auto">
         {pedidosFiltrados.map((p) => (
           <Link
@@ -55,28 +80,38 @@ export default function DepositoHome() {
             key={p.id}
             className="block bg-white shadow rounded-xl p-4 border border-gray-200 hover:shadow-md transition"
           >
-            <div className="flex justify-between items-center">
+            {/* HEADER CARD */}
+            <div className="flex justify-between items-center gap-2">
               <h2 className="font-bold text-lg">{p.id}</h2>
 
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  p.estado === "PENDIENTE_PREPARACION"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : p.estado === "PREPARADO"
-                    ? "bg-blue-100 text-blue-800"
-                    : p.estado === "ENTREGADO"
-                    ? "bg-green-100 text-green-700"
-                    : p.estado === "PENDIENTE_CONFIRMACION"
-                    ? "bg-orange-200 text-orange-800"
-                    : p.estado === "CERRADO"
-                    ? "bg-gray-300 text-gray-800"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                {p.estado.replace("_", " ")}
-              </span>
+              <div className="flex items-center gap-2">
+                {tieneFaltantes(p) && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                    ⚠ Con faltantes
+                  </span>
+                )}
+
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    p.estado === "PENDIENTE_PREPARACION"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : p.estado === "PREPARADO"
+                      ? "bg-blue-100 text-blue-800"
+                      : p.estado === "ENTREGADO"
+                      ? "bg-green-100 text-green-700"
+                      : p.estado === "PENDIENTE_CONFIRMACION"
+                      ? "bg-orange-200 text-orange-800"
+                      : p.estado === "CERRADO"
+                      ? "bg-gray-300 text-gray-800"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  {p.estado.replace("_", " ")}
+                </span>
+              </div>
             </div>
 
+            {/* SOLICITADO */}
             <div className="mt-2">
               <p className="text-sm text-gray-600">Solicitado:</p>
 

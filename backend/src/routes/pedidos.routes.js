@@ -8,7 +8,8 @@ import {
   actualizarEstadoPedido,
   marcarEntregado,
   confirmarDevolucion,
-  getPedidos
+  getPedidos,
+  completarFaltantes
 } from "../controllers/pedidos.controller.js";
 
 const router = Router();
@@ -39,5 +40,9 @@ router.put("/:id/estado", actualizarEstadoPedido);
 
 // MARCAR COMO ENTREGADO
 router.post("/:id/entregar", marcarEntregado);
+
+// COMPLETAR FALTANTES
+router.post("/:id/completar-faltantes", completarFaltantes);
+
 
 export default router;

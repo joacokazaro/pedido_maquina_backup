@@ -8,10 +8,7 @@ export default function AdminPedidos() {
   const [loading, setLoading] = useState(true);
 
   const [estadoFiltro, setEstadoFiltro] = useState("TODOS");
-  const [search, setSearch] = useState(""); // ✅ CORREGIDO
-
-  const [selectedPedido, setSelectedPedido] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [search, setSearch] = useState("");
 
   /* ============================
         CARGAR PEDIDOS
@@ -33,6 +30,23 @@ export default function AdminPedidos() {
   }
 
   /* ============================
+        HELPERS
+  ============================ */
+
+  function tieneFaltantes(pedido) {
+    if (pedido.estado !== "CERRADO") return false;
+
+    const confirmacion = [...(pedido.historial || [])]
+      .reverse()
+      .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
+
+    const faltantes =
+      confirmacion?.detalle?.faltantesConfirmados || [];
+
+    return faltantes.length > 0;
+  }
+
+  /* ============================
         FILTRO + BUSCADOR
   ============================ */
   function filtrarPedidos() {
@@ -44,7 +58,7 @@ export default function AdminPedidos() {
 
       const coincideTexto =
         p.id.toLowerCase().includes(texto) ||
-        (p.supervisorName || "").toLowerCase().includes(texto) ||
+        (p.supervisorName || p.supervisor || "").toLowerCase().includes(texto) ||
         (p.servicio || "").toLowerCase().includes(texto);
 
       return coincideEstado && coincideTexto;
@@ -52,30 +66,14 @@ export default function AdminPedidos() {
   }
 
   /* ============================
-        CAMBIO DE ESTADO MANUAL
-  ============================ */
-  async function forzarEstado(id, nuevoEstado) {
-    if (!nuevoEstado) return;
-
-    await fetch(`http://localhost:3000/admin/pedidos/${id}/estado`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado: nuevoEstado })
-    });
-
-    await loadPedidos();
-    setShowModal(false);
-  }
-
-  /* ============================
-        ESTADOS DISPONIBLES
+        ESTADOS
   ============================ */
   const estados = [
     "TODOS",
     "PENDIENTE_PREPARACION",
     "PREPARADO",
     "ENTREGADO",
-    "PENDIENTE_CONFIRMACION", // 🆕 nuevo
+    "PENDIENTE_CONFIRMACION",
     "CERRADO"
   ];
 
@@ -85,7 +83,8 @@ export default function AdminPedidos() {
 
   return (
     <div className="p-4 min-h-screen bg-gray-50 pb-24">
-      {/* BOTÓN VOLVER */}
+
+      {/* VOLVER */}
       <button
         onClick={() => navigate(-1)}
         className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg 
@@ -128,36 +127,44 @@ export default function AdminPedidos() {
         {filtrarPedidos().map((p) => (
           <div
             key={p.id}
-            className="bg-white shadow p-4 rounded-xl cursor-pointer"
-            onClick={() => {
-              setSelectedPedido(p);
-              setShowModal(true);
-            }}
+            className="bg-white shadow p-4 rounded-xl cursor-pointer hover:shadow-md transition"
+            onClick={() => navigate(`/admin/pedido/${p.id}`)}
           >
-            <div className="flex justify-between items-center">
+            {/* HEADER */}
+            <div className="flex justify-between items-center gap-2">
               <span className="font-bold">{p.id}</span>
 
-              <span
-                className={`text-xs px-3 py-1 rounded-full ${
-                  p.estado === "PENDIENTE_PREPARACION"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : p.estado === "PREPARADO"
-                    ? "bg-blue-100 text-blue-700"
-                    : p.estado === "ENTREGADO"
-                    ? "bg-green-100 text-green-700"
-                    : p.estado === "PENDIENTE_CONFIRMACION"
-                    ? "bg-orange-100 text-orange-700"
-                    : p.estado === "CERRADO"
-                    ? "bg-gray-300 text-gray-800"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {p.estado.replace("_", " ")}
-              </span>
+              <div className="flex items-center gap-2">
+                {tieneFaltantes(p) && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                    ⚠ Con faltantes
+                  </span>
+                )}
+
+                <span
+                  className={`text-xs px-3 py-1 rounded-full ${
+                    p.estado === "PENDIENTE_PREPARACION"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : p.estado === "PREPARADO"
+                      ? "bg-blue-100 text-blue-700"
+                      : p.estado === "ENTREGADO"
+                      ? "bg-green-100 text-green-700"
+                      : p.estado === "PENDIENTE_CONFIRMACION"
+                      ? "bg-orange-100 text-orange-700"
+                      : p.estado === "CERRADO"
+                      ? "bg-gray-300 text-gray-800"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {p.estado.replace("_", " ")}
+                </span>
+              </div>
             </div>
 
+            {/* INFO */}
             <p className="text-gray-600 text-sm mt-1">
-              Supervisor: {p.supervisorName ?? `ID ${p.supervisorId ?? "?"}`}
+              Supervisor:{" "}
+              <b>{p.supervisorName ?? p.supervisor ?? "—"}</b>
             </p>
 
             {p.servicio && (
@@ -167,142 +174,11 @@ export default function AdminPedidos() {
             )}
 
             <p className="text-xs text-gray-500 mt-1">
-              Items: {p.itemsSolicitados.length}
+              Ítems solicitados: {p.itemsSolicitados.length}
             </p>
           </div>
         ))}
       </div>
-
-      {/* ============================
-          MODAL DETALLE
-      ============================ */}
-      {showModal && selectedPedido && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
-
-            <h2 className="text-xl font-bold mb-3">
-              Pedido {selectedPedido.id}
-            </h2>
-
-            <p className="text-sm text-gray-600 mb-1">
-              Estado actual: <b>{selectedPedido.estado.replace("_"," ")}</b>
-            </p>
-
-            {/* Servicio */}
-            {selectedPedido.servicio && (
-              <p className="text-sm text-gray-800 mb-3">
-                Servicio: <b>{selectedPedido.servicio}</b>
-              </p>
-            )}
-
-            {/* ============================
-                HISTORIAL
-            ============================ */}
-            <h3 className="font-semibold mb-2">Historial</h3>
-
-            <div className="max-h-60 overflow-y-auto mb-4 border p-3 rounded space-y-4">
-
-              {selectedPedido.historial.map((h, idx) => (
-                <div key={idx} className="text-sm border-b pb-3">
-
-                  <p className="font-bold">{h.accion.replace("_", " ")}</p>
-                  <p className="text-xs text-gray-500 mb-2">
-                    {new Date(h.fecha).toLocaleString()}
-                  </p>
-
-                  {/* DETALLES */}
-
-                  {h.detalle && (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs text-gray-700 space-y-2">
-
-                      {h.detalle.servicio && (
-                        <div>
-                          <p className="font-semibold">Servicio:</p>
-                          <p>{h.detalle.servicio}</p>
-                        </div>
-                      )}
-
-                      {h.detalle.asignadas && (
-                        <div>
-                          <p className="font-semibold">Máquinas asignadas:</p>
-                          <ul className="list-disc ml-4 space-y-1">
-                            {h.detalle.asignadas.map((m, i) => (
-                              <li key={i}>{m.tipo} — <b>{m.id}</b></li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {h.detalle.devueltas && (
-                        <div>
-                          <p className="font-semibold">Devueltas:</p>
-                          <ul className="list-disc ml-4">
-                            {h.detalle.devueltas.map((idMaq, i) => (
-                              <li key={i}>{idMaq}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {h.detalle.faltantes && h.detalle.faltantes.length > 0 && (
-                        <div>
-                          <p className="font-semibold text-red-600">Faltantes:</p>
-                          <ul className="list-disc ml-4 text-red-600">
-                            {h.detalle.faltantes.map((idMaq, i) => (
-                              <li key={i}>{idMaq}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {h.detalle.observacion && (
-                        <div>
-                          <p className="font-semibold">Observación:</p>
-                          <p>{h.detalle.observacion}</p>
-                        </div>
-                      )}
-
-                      {h.detalle.justificacion && (
-                        <div>
-                          <p className="font-semibold">Justificación:</p>
-                          <p>{h.detalle.justificacion}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* ============================
-                CAMBIO DE ESTADO MANUAL
-            ============================ */}
-            <select
-              className="w-full p-3 border rounded-xl mb-3"
-              onChange={(e) =>
-                forzarEstado(selectedPedido.id, e.target.value)
-              }
-            >
-              <option value="">Cambiar estado...</option>
-              {estados
-                .filter((e) => e !== "TODOS")
-                .map((e) => (
-                  <option key={e} value={e}>
-                    {e.replace("_", " ")}
-                  </option>
-                ))}
-            </select>
-
-            <button
-              className="w-full py-2 bg-red-600 text-white rounded-xl"
-              onClick={() => setShowModal(false)}
-            >
-              Cerrar
-            </button>
-
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -73,8 +73,6 @@ export default function ConfirmarDevolucion() {
         observacion: observacion.trim() || null
       }),
     });
-
-    alert("Devolución confirmada. Pedido cerrado.");
     navigate("/deposito");
   }
 
