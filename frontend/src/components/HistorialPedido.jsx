@@ -15,11 +15,12 @@ export default function HistorialPedido({ historial }) {
             (d.devueltasConfirmadas && d.devueltasConfirmadas.length > 0) ||
             (d.faltantesConfirmados && d.faltantesConfirmados.length > 0) ||
             (d.devueltasDeclaradas && d.devueltasDeclaradas.length > 0) ||
-            (d.comentario && d.comentario.trim() !== "");
+            (d.justificacion && String(d.justificacion).trim() !== "") ||
+            (d.observacion && String(d.observacion).trim() !== "");
 
           return (
             <div key={idx} className="flex gap-4">
-              {/* Línea temporal */}
+              {/* Timeline */}
               <div className="flex flex-col items-center">
                 <div className="w-3 h-3 rounded-full bg-blue-600"></div>
                 {idx !== historial.length - 1 && (
@@ -40,18 +41,55 @@ export default function HistorialPedido({ historial }) {
                 {tieneContenido && (
                   <div className="rounded-lg p-3 border bg-gray-50 space-y-3 text-xs">
 
-                    {renderLista("Devueltas", d.devueltas, "blue")}
-                    {renderLista("Faltantes", d.faltantes, "yellow")}
-                    {renderLista("Devueltas confirmadas", d.devueltasConfirmadas, "green")}
-                    {renderLista("Faltantes confirmados", d.faltantesConfirmados, "red")}
-                    {renderLista("Faltantes declarados", d.devueltasDeclaradas, "orange")}
-
-                    {d.comentario && (
-                      <div className="bg-gray-100 border p-2 rounded">
-                        <p className="font-semibold">Comentario</p>
-                        <p>{d.comentario}</p>
-                      </div>
+                    {renderLista(
+                      "Devueltas por supervisor",
+                      d.devueltas,
+                      "blue"
                     )}
+
+                    {renderLista(
+                      "Faltantes informados",
+                      d.faltantes,
+                      "yellow"
+                    )}
+
+                    {renderLista(
+                      "Ingreso confirmado por depósito",
+                      d.devueltasConfirmadas,
+                      "green"
+                    )}
+
+                    {renderLista(
+                      "Faltantes confirmados finales",
+                      d.faltantesConfirmados,
+                      "red"
+                    )}
+
+                    {renderLista(
+                      "Faltantes devueltos posteriormente",
+                      d.devueltasDeclaradas,
+                      "orange"
+                    )}
+
+                    {d.justificacion &&
+                      String(d.justificacion).trim() !== "" && (
+                        <div className="bg-yellow-100 border border-yellow-500 p-2 rounded">
+                          <p className="font-semibold">
+                            Justificación del supervisor:
+                          </p>
+                          <p>{d.justificacion}</p>
+                        </div>
+                      )}
+
+                    {d.observacion &&
+                      String(d.observacion).trim() !== "" && (
+                        <div className="bg-blue-100 border border-blue-400 p-2 rounded">
+                          <p className="font-semibold">
+                            Observación de depósito:
+                          </p>
+                          <p>{d.observacion}</p>
+                        </div>
+                      )}
 
                   </div>
                 )}
@@ -64,7 +102,9 @@ export default function HistorialPedido({ historial }) {
   );
 }
 
-/* ===== Helpers ===== */
+/* =========================
+   Helpers
+========================= */
 
 function renderLista(titulo, items, color) {
   if (!items || items.length === 0) return null;
