@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import HistorialPedido from "../components/HistorialPedido";
+
 
 export default function DepositoPedido() {
   const { id } = useParams();
@@ -120,99 +122,8 @@ export default function DepositoPedido() {
       </div>
 
       {/* Historial */}
-      <div className="bg-white rounded-xl shadow p-4 mb-4">
-        <h2 className="text-lg font-semibold mb-3">Historial</h2>
+      <HistorialPedido historial={pedido.historial} />
 
-        <div className="space-y-6">
-          {pedido.historial.map((h, idx) => {
-            const d = h.detalle || {};
-
-            return (
-              <div key={idx} className="flex gap-4">
-
-                <div className="flex flex-col items-center">
-                  <div className="w-3 h-3 rounded-full bg-blue-600"></div>
-                  {idx !== pedido.historial.length - 1 && (
-                    <div className="flex-1 w-0.5 bg-gray-300"></div>
-                  )}
-                </div>
-
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">
-                    {h.accion.replace("_", " ")}
-                  </p>
-                  <p className="text-xs text-gray-500 mb-2">
-                    {new Date(h.fecha).toLocaleString()}
-                  </p>
-
-                  <div className="rounded-lg p-3 border bg-gray-50 space-y-3 text-xs">
-
-                    {d.servicio && (
-                      <div>
-                        <p className="font-semibold">Servicio:</p>
-                        <p>{d.servicio}</p>
-                      </div>
-                    )}
-
-                    {d.devueltas && (
-                      <div className="bg-blue-100 border border-blue-400 p-2 rounded">
-                        <p className="font-semibold">
-                          Devueltas por supervisor:
-                        </p>
-                        <ul className="list-disc ml-5">
-                          {d.devueltas.map((id, i) => (
-                            <li key={i}>{id}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {d.faltantes && d.faltantes.length > 0 && (
-                      <div className="bg-yellow-100 border border-yellow-500 p-2 rounded">
-                        <p className="font-semibold">
-                          Faltantes según supervisor:
-                        </p>
-                        <ul className="list-disc ml-5">
-                          {d.faltantes.map((id, i) => (
-                            <li key={i}>{id}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {d.devueltasConfirmadas && (
-                      <div className="bg-green-100 border border-green-500 p-2 rounded">
-                        <p className="font-semibold">
-                          Ingreso confirmado por depósito:
-                        </p>
-                        <ul className="list-disc ml-5">
-                          {d.devueltasConfirmadas.map((id, i) => (
-                            <li key={i}>{id}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {d.faltantesConfirmados &&
-                      d.faltantesConfirmados.length > 0 && (
-                        <div className="bg-red-100 border border-red-500 p-2 rounded">
-                          <p className="font-semibold">
-                            Faltantes confirmados finales:
-                          </p>
-                          <ul className="list-disc ml-5 text-red-700">
-                            {d.faltantesConfirmados.map((id, i) => (
-                              <li key={i}>{id}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* BOTONES DE ACCIÓN */}
 

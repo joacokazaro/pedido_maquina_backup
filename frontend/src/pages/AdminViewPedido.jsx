@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import HistorialPedido from "../components/HistorialPedido";
+
 
 export default function AdminViewPedido() {
   const { id } = useParams();
@@ -138,115 +140,8 @@ export default function AdminViewPedido() {
         )}
       </div>
 
-      {/* ============================
-          HISTORIAL COMPLETO
-      ============================ */}
-      <div className="bg-white rounded-xl shadow p-4 mb-4">
-        <h2 className="text-lg font-semibold mb-3">Historial</h2>
+      <HistorialPedido historial={pedido.historial} />
 
-        <div className="space-y-6">
-          {pedido.historial.map((h, idx) => {
-            const d = h.detalle || {};
-
-            return (
-              <div key={idx} className="flex gap-4">
-
-                {/* TIMELINE */}
-                <div className="flex flex-col items-center">
-                  <div className="w-3 h-3 rounded-full bg-blue-600"></div>
-                  {idx !== pedido.historial.length - 1 && (
-                    <div className="flex-1 w-0.5 bg-gray-300"></div>
-                  )}
-                </div>
-
-                {/* CONTENIDO */}
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">
-                    {h.accion.replaceAll("_", " ")}
-                  </p>
-                  <p className="text-xs text-gray-500 mb-2">
-                    {new Date(h.fecha).toLocaleString()}
-                  </p>
-
-                  <div className="rounded-lg p-3 border bg-gray-50 space-y-3 text-xs">
-
-                    {d.servicio && (
-                      <div>
-                        <p className="font-semibold">Servicio:</p>
-                        <p>{d.servicio}</p>
-                      </div>
-                    )}
-
-                    {d.asignadas && (
-                      <div>
-                        <p className="font-semibold">Asignadas:</p>
-                        <ul className="list-disc ml-4">
-                          {d.asignadas.map((m, i) => (
-                            <li key={i}>
-                              {m.tipo} — <b>{m.id}</b>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {d.devueltas && (
-                      <div className="bg-green-50 border border-green-300 p-2 rounded">
-                        <p className="font-semibold">Devueltas:</p>
-                        <ul className="list-disc ml-4">
-                          {d.devueltas.map((idMaq, i) => (
-                            <li key={i}>{idMaq}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {d.faltantes && d.faltantes.length > 0 && (
-                      <div className="bg-yellow-50 border border-yellow-400 p-2 rounded">
-                        <p className="font-semibold">Faltantes informados:</p>
-                        <ul className="list-disc ml-4">
-                          {d.faltantes.map((idMaq, i) => (
-                            <li key={i}>{idMaq}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {d.faltantesConfirmados &&
-                      d.faltantesConfirmados.length > 0 && (
-                        <div className="bg-red-100 border border-red-500 p-2 rounded">
-                          <p className="font-semibold">
-                            Faltantes confirmados finales:
-                          </p>
-                          <ul className="list-disc ml-4 text-red-700">
-                            {d.faltantesConfirmados.map((idMaq, i) => (
-                              <li key={i}>{idMaq}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                    {d.justificacion && (
-                      <div>
-                        <p className="font-semibold">Justificación:</p>
-                        <p>{d.justificacion}</p>
-                      </div>
-                    )}
-
-                    {d.observacion && (
-                      <div>
-                        <p className="font-semibold">Observación:</p>
-                        <p>{d.observacion}</p>
-                      </div>
-                    )}
-
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
     </div>
   );
