@@ -17,6 +17,8 @@ const router = Router();
 // LISTAR TODOS
 router.get("/", getPedidos);
 
+
+
 // CREAR PEDIDO
 router.post("/", crearPedido);
 
@@ -29,7 +31,7 @@ router.get("/:id", getPedidoById);
 // DEVOLUCIÓN (SUPERVISOR)
 router.post("/:id/devolucion", registrarDevolucion);
 
-// CONFIRMAR DEVOLUCIÓN (DEPÓSITO) 🆕
+// CONFIRMAR DEVOLUCIÓN (DEPÓSITO) 
 router.post("/:id/confirmar-devolucion", confirmarDevolucion);
 
 // ASIGNAR MÁQUINAS
