@@ -253,6 +253,16 @@ export default function DepositoPedido() {
         </button>
       )}
 
+      {pedido.estado === "PENDIENTE_CONFIRMACION_FALTANTES" && (
+  <button
+    onClick={() => navigate(`/deposito/pedido/${id}/confirmar`)}
+    className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-red-700 transition"
+  >
+    Confirmar faltantes devueltos
+  </button>
+)}
+
+
     </div>
   );
 }

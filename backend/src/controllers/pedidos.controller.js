@@ -261,27 +261,43 @@ export function confirmarDevolucion(req, res) {
   db.maquinas = db.maquinas || [];
 
   const pedido = db.pedidos.find(p => p.id === id);
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
 
-  // Validaciones básicas
+  // ======================================================
+  // VALIDAR ESTADO DEL PEDIDO (CLAVE DEL CAMBIO)
+  // ======================================================
+  if (
+    pedido.estado !== "PENDIENTE_CONFIRMACION" &&
+    pedido.estado !== "PENDIENTE_CONFIRMACION_FALTANTES"
+  ) {
+    return res.status(400).json({
+      error: "El pedido no está pendiente de confirmación por depósito"
+    });
+  }
+
+  // ======================================================
+  // NORMALIZAR INPUT
+  // ======================================================
   const dev = Array.isArray(devueltas) ? devueltas : [];
   const fal = Array.isArray(faltantes) ? faltantes : [];
 
   // IDs asignadas reales del pedido (fuente de verdad)
   const asignadasIds = (pedido.itemsAsignados || []).map(m => m.id);
 
-  // Filtrar para no aceptar ids que no pertenecen a este pedido
+  // Filtrar ids inválidos
   const devFiltradas = dev.filter(mid => asignadasIds.includes(mid));
   const falFiltradas = fal.filter(mid => asignadasIds.includes(mid));
 
-  // Si por algún motivo llegaron duplicadas o cruzadas:
+  // Evitar cruces o duplicados
   const devSet = new Set(devFiltradas);
   const falSet = new Set(falFiltradas);
-  for (const x of devSet) falSet.delete(x); // si está en devueltas, no puede estar en faltantes
+  for (const x of devSet) falSet.delete(x);
 
-  // ==========================
-  // ACTUALIZAR ESTADO MÁQUINAS
-  // ==========================
+  // ======================================================
+  // ACTUALIZAR ESTADO DE MÁQUINAS
+  // ======================================================
   for (const mid of devSet) {
     const maq = db.maquinas.find(m => m.id === mid);
     if (maq) maq.estado = "disponible";
@@ -292,9 +308,9 @@ export function confirmarDevolucion(req, res) {
     if (maq) maq.estado = "no_devuelta";
   }
 
-  // ==========================
-  // ACTUALIZAR PEDIDO + HISTORIAL
-  // ==========================
+  // ======================================================
+  // HISTORIAL
+  // ======================================================
   pedido.historial = pedido.historial || [];
   pedido.historial.push({
     accion: "DEVOLUCION_CONFIRMADA",
@@ -307,7 +323,9 @@ export function confirmarDevolucion(req, res) {
     }
   });
 
-  // Estado final del ciclo
+  // ======================================================
+  // CIERRE FINAL (SOLO DEPÓSITO)
+  // ======================================================
   pedido.estado = "CERRADO";
 
   writeDB(db);
@@ -317,6 +335,7 @@ export function confirmarDevolucion(req, res) {
     pedido
   });
 }
+
 
 /* ========================================================
    LISTAR TODOS
@@ -352,7 +371,6 @@ export function completarFaltantes(req, res) {
     });
   }
 
-  // Última confirmación de devolución
   const confirmacion = [...(pedido.historial || [])]
     .reverse()
     .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
@@ -366,7 +384,6 @@ export function completarFaltantes(req, res) {
   const faltantesActuales =
     confirmacion.detalle?.faltantesConfirmados || [];
 
-  // Solo aceptamos devolver los que realmente estaban faltantes
   const devueltasValidas = devueltas.filter(idMaq =>
     faltantesActuales.includes(idMaq)
   );
@@ -377,40 +394,24 @@ export function completarFaltantes(req, res) {
     });
   }
 
-  // =========================
-  // ACTUALIZAR MÁQUINAS
-  // =========================
-  devueltasValidas.forEach(idMaq => {
-    const maq = db.maquinas.find(m => m.id === idMaq);
-    if (maq) {
-      maq.estado = "disponible";
-    }
-  });
-
-  // =========================
-  // ACTUALIZAR HISTORIAL
-  // =========================
+  // ✅ SOLO REGISTRO – NO TOCAR MÁQUINAS
   pedido.historial.push({
-    accion: "FALTANTES_COMPLETADOS",
+    accion: "FALTANTES_DECLARADOS",
     usuario: usuario || "supervisor",
     fecha: new Date().toISOString(),
     detalle: {
-      devueltas: devueltasValidas
+      devueltasDeclaradas: devueltasValidas
     }
   });
 
-  // =========================
-  // ACTUALIZAR FALTANTES CONFIRMADOS
-  // =========================
-  confirmacion.detalle.faltantesConfirmados =
-    faltantesActuales.filter(
-      idMaq => !devueltasValidas.includes(idMaq)
-    );
+  // ✅ NUEVO ESTADO
+  pedido.estado = "PENDIENTE_CONFIRMACION_FALTANTES";
 
   writeDB(db);
 
   return res.json({
-    message: "Faltantes completados correctamente",
+    message: "Faltantes declarados. Pendiente de validación por depósito.",
     pedido
   });
 }
+
