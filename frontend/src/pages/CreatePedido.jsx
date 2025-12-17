@@ -162,7 +162,7 @@ export default function CreatePedido() {
       {/* OBSERVACIÓN */}
       <div className="mt-4">
         <label className="block text-sm font-medium mb-1">
-          Observaciones, fechas, motivos, etc.)
+          Observaciones(fechas, motivos, etc.)
         </label>
 
         <textarea

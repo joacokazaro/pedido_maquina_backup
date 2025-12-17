@@ -154,6 +154,41 @@ export default function AsignarMaquinas() {
         Asignar máquinas
       </h1>
 
+      {/* RESUMEN SOLICITADO */}
+<div className="mb-4 bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+  <h2 className="text-sm font-semibold text-gray-800 mb-2">
+    Pedido solicitado
+  </h2>
+
+  {Object.keys(solicitado).length === 0 ? (
+    <p className="text-sm text-gray-500">
+      Este pedido no tiene items solicitados.
+    </p>
+  ) : (
+    <div className="flex flex-wrap gap-2">
+      {Object.entries(solicitado).map(([tipo, cant]) => {
+        const asignadasTipo = seleccion.filter((m) => m.tipo === tipo).length;
+
+        return (
+          <div
+            key={tipo}
+            className="px-3 py-2 rounded-lg border bg-gray-50"
+          >
+            <p className="text-xs text-gray-600 uppercase tracking-wide">
+              {tipo}
+            </p>
+            <p className="text-sm font-semibold text-gray-900">
+              {asignadasTipo} / {cant}
+              <span className="text-xs font-normal text-gray-500"> asignadas</span>
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  )}
+</div>
+
+
       {/* FILTRO TIPO */}
       <div className="mb-4 space-y-2">
         <label className="block text-sm font-medium text-gray-700">
