@@ -1,10 +1,17 @@
 // controllers/adminPedidos.controller.js
 import { readDB, writeDB } from "../utils/file.js";
+import {
+  ESTADOS_PEDIDO,
+  ESTADOS_PEDIDO_VALIDOS,
+  normalizeEstadoPedido
+} from "../constants/estadosPedidos.js";
 
+void ESTADOS_PEDIDO;
 /**
  * GET /admin/pedidos
  * Lista todos los pedidos con nombre de supervisor
  */
+
 export function adminListPedidos(req, res) {
   const { estado } = req.query;
 
@@ -26,12 +33,14 @@ export function adminListPedidos(req, res) {
 
     return {
       ...p,
-      supervisorName,
+      supervisorName
     };
   });
 
+  // 🔒 Filtro por estado normalizado
   if (estado) {
-    resultado = resultado.filter((p) => p.estado === estado);
+    const estadoNorm = normalizeEstadoPedido(estado);
+    resultado = resultado.filter((p) => p.estado === estadoNorm);
   }
 
   res.json(resultado);
@@ -65,7 +74,7 @@ export function adminGetPedido(req, res) {
 
   res.json({
     ...pedido,
-    supervisorName,
+    supervisorName
   });
 }
 
@@ -81,18 +90,11 @@ export function adminUpdateEstado(req, res) {
     return res.status(400).json({ error: "Debe enviar un estado" });
   }
 
-  // 🆕 Agregamos el nuevo estado válido
-  const ESTADOS_VALIDOS = [
-    "PENDIENTE_PREPARACION",
-    "PREPARADO",
-    "ENTREGADO",
-    "PENDIENTE_CONFIRMACION", // ← agregado
-    "CERRADO"
-  ];
+  const estadoNormalizado = normalizeEstadoPedido(estado);
 
-  if (!ESTADOS_VALIDOS.includes(estado)) {
+  if (!ESTADOS_PEDIDO_VALIDOS.includes(estadoNormalizado)) {
     return res.status(400).json({
-      error: `Estado inválido. Debe ser uno de: ${ESTADOS_VALIDOS.join(", ")}`,
+      error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(", ")}`
     });
   }
 
@@ -103,12 +105,11 @@ export function adminUpdateEstado(req, res) {
     return res.status(404).json({ error: "Pedido no encontrado" });
   }
 
-  pedido.estado = estado;
+  pedido.estado = estadoNormalizado;
 
-  // 🆕 Historial más claro para auditoría
   pedido.historial.push({
     accion: "ADMIN_CAMBIO_ESTADO",
-    nuevoEstado: estado,
+    nuevoEstado: estadoNormalizado,
     fecha: new Date().toISOString(),
     detalle: {
       mensaje: "Cambio forzado por administrador"
@@ -119,6 +120,6 @@ export function adminUpdateEstado(req, res) {
 
   res.json({
     message: "Estado actualizado por el administrador",
-    pedido,
+    pedido
   });
 }

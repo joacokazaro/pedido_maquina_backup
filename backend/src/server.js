@@ -11,6 +11,7 @@ import adminMaquinasRoutes from "./routes/adminMaquinas.routes.js";
 import adminPedidosRoutes from "./routes/adminPedidos.routes.js";
 import adminUsuariosRoutes from "./routes/admin_usuarios.routes.js";
 
+
 const app = express();
 app.use(cors());
 app.use(express.json());

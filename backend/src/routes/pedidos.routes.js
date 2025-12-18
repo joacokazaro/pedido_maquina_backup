@@ -17,8 +17,6 @@ const router = Router();
 // LISTAR TODOS
 router.get("/", getPedidos);
 
-
-
 // CREAR PEDIDO
 router.post("/", crearPedido);
 

@@ -1437,7 +1437,7 @@
       "tipo": "CARGADOR",
       "modelo": "QUIQ 24V",
       "serie": "912-2400-N1",
-      "estado": "disponible"
+      "estado": "Disponible"
     },
     {
       "id": "C.8.20",
@@ -2529,7 +2529,8 @@
       "tipo": "MOTOBOMBA",
       "modelo": "HUSQV. W50P 2\" 967639002",
       "serie": "S/D",
-      "estado": "disponible"
+      "estado": "disponible",
+      "pedidoActual": null
     },
     {
       "id": "13.P.11",
@@ -3023,5 +3024,284 @@
     }
   ],
   "pedidos": [
+    {
+      "id": "P-0001",
+      "supervisor": "cmoya",
+      "servicio": "R20",
+      "estado": "CERRADO",
+      "itemsSolicitados": [
+        {
+          "tipo": "LUSTRADORA",
+          "cantidad": 1
+        },
+        {
+          "tipo": "SOPLADORA",
+          "cantidad": 1
+        },
+        {
+          "tipo": "HIDROLAVADORA",
+          "cantidad": 1
+        },
+        {
+          "tipo": "ASPIRADORA",
+          "cantidad": 1
+        }
+      ],
+      "itemsAsignados": [
+        {
+          "id": "1.1.1",
+          "tipo": "LUSTRADORA",
+          "modelo": "SUPER SPEED 44C CATANESE",
+          "serie": "ILEGIBLE"
+        },
+        {
+          "id": "7.7.2",
+          "tipo": "SOPLADORA",
+          "modelo": "STHIL BR 420",
+          "serie": "366243296"
+        },
+        {
+          "id": "4.4.22",
+          "tipo": "HIDROLAVADORA",
+          "modelo": "HIDROJET 248BAT/18LTS",
+          "serie": "21080750019"
+        },
+        {
+          "id": "5.5.8",
+          "tipo": "ASPIRADORA",
+          "modelo": "VIPER M-GV 35",
+          "serie": ""
+        }
+      ],
+      "observacion": "18/12",
+      "itemsDevueltos": [
+        "7.7.2",
+        "4.4.22",
+        "5.5.8"
+      ],
+      "historial": [
+        {
+          "accion": "CREADO",
+          "usuario": "cmoya",
+          "fecha": "2025-12-18T13:37:05.615Z",
+          "detalle": {
+            "observacion": "18/12"
+          }
+        },
+        {
+          "accion": "MAQUINAS_ASIGNADAS",
+          "usuario": "deposito",
+          "fecha": "2025-12-18T13:37:40.426Z",
+          "detalle": {
+            "asignadas": [
+              {
+                "id": "1.1.1",
+                "tipo": "LUSTRADORA",
+                "modelo": "SUPER SPEED 44C CATANESE",
+                "serie": "ILEGIBLE"
+              },
+              {
+                "id": "7.7.2",
+                "tipo": "SOPLADORA",
+                "modelo": "STHIL BR 420",
+                "serie": "366243296"
+              },
+              {
+                "id": "4.4.22",
+                "tipo": "HIDROLAVADORA",
+                "modelo": "HIDROJET 248BAT/18LTS",
+                "serie": "21080750019"
+              },
+              {
+                "id": "5.5.8",
+                "tipo": "ASPIRADORA",
+                "modelo": "VIPER M-GV 35",
+                "serie": ""
+              }
+            ],
+            "solicitado": {
+              "LUSTRADORA": 1,
+              "SOPLADORA": 1,
+              "HIDROLAVADORA": 1,
+              "ASPIRADORA": 1
+            },
+            "asignadoPorTipo": {
+              "LUSTRADORA": 1,
+              "SOPLADORA": 1,
+              "HIDROLAVADORA": 1,
+              "ASPIRADORA": 1
+            }
+          }
+        },
+        {
+          "accion": "ENTREGADO",
+          "usuario": "deposito",
+          "fecha": "2025-12-18T13:37:42.112Z",
+          "detalle": {}
+        },
+        {
+          "accion": "DEVOLUCION_REGISTRADA",
+          "usuario": "supervisor",
+          "fecha": "2025-12-18T13:37:53.130Z",
+          "detalle": {
+            "devueltas": [
+              "7.7.2",
+              "4.4.22",
+              "5.5.8"
+            ],
+            "faltantes": [
+              "1.1.1"
+            ],
+            "justificacion": "SIGO USANDO LA LUSTRADORA"
+          }
+        },
+        {
+          "accion": "DEVOLUCION_CONFIRMADA",
+          "usuario": "deposito",
+          "fecha": "2025-12-18T13:38:02.795Z",
+          "detalle": {
+            "devueltasConfirmadas": [
+              "7.7.2",
+              "4.4.22",
+              "5.5.8"
+            ],
+            "faltantesConfirmados": [
+              "1.1.1"
+            ],
+            "observacion": "NO DEVUELVE LUSTRADORA"
+          }
+        },
+        {
+          "accion": "FALTANTES_DECLARADOS",
+          "usuario": "supervisor",
+          "fecha": "2025-12-18T13:38:05.823Z",
+          "detalle": {
+            "devueltasDeclaradas": [
+              "1.1.1"
+            ]
+          }
+        },
+        {
+          "accion": "DEVOLUCION_CONFIRMADA",
+          "usuario": "deposito",
+          "fecha": "2025-12-18T13:38:55.635Z",
+          "detalle": {
+            "devueltasConfirmadas": [
+              "1.1.1",
+              "7.7.2",
+              "4.4.22",
+              "5.5.8"
+            ],
+            "faltantesConfirmados": [],
+            "observacion": "TODO LISTO"
+          }
+        }
+      ]
+    },
+    {
+      "id": "P-0002",
+      "supervisor": "cmoya",
+      "servicio": "r20",
+      "estado": "CERRADO",
+      "itemsSolicitados": [
+        {
+          "tipo": "LUSTRADORA",
+          "cantidad": 1
+        }
+      ],
+      "itemsAsignados": [
+        {
+          "id": "1.1.3",
+          "tipo": "LUSTRADORA",
+          "modelo": "POWR-FLITE  1200",
+          "serie": "ILEGIBLE"
+        }
+      ],
+      "observacion": "18/12",
+      "itemsDevueltos": [],
+      "historial": [
+        {
+          "accion": "CREADO",
+          "usuario": "cmoya",
+          "fecha": "2025-12-18T13:54:01.759Z",
+          "detalle": {
+            "observacion": "18/12"
+          }
+        },
+        {
+          "accion": "MAQUINAS_ASIGNADAS",
+          "usuario": "deposito",
+          "fecha": "2025-12-18T13:54:14.887Z",
+          "detalle": {
+            "asignadas": [
+              {
+                "id": "1.1.3",
+                "tipo": "LUSTRADORA",
+                "modelo": "POWR-FLITE  1200",
+                "serie": "ILEGIBLE"
+              }
+            ],
+            "solicitado": {
+              "LUSTRADORA": 1
+            },
+            "asignadoPorTipo": {
+              "LUSTRADORA": 1
+            }
+          }
+        },
+        {
+          "accion": "ENTREGADO",
+          "usuario": "deposito",
+          "fecha": "2025-12-18T13:54:16.345Z",
+          "detalle": {}
+        },
+        {
+          "accion": "DEVOLUCION_REGISTRADA",
+          "usuario": "supervisor",
+          "fecha": "2025-12-18T13:55:06.863Z",
+          "detalle": {
+            "devueltas": [],
+            "faltantes": [
+              "1.1.3"
+            ],
+            "justificacion": "se perdi"
+          }
+        },
+        {
+          "accion": "DEVOLUCION_CONFIRMADA",
+          "usuario": "deposito",
+          "fecha": "2025-12-18T13:56:20.081Z",
+          "detalle": {
+            "devueltasConfirmadas": [],
+            "faltantesConfirmados": [
+              "1.1.3"
+            ],
+            "observacion": "no devuelve"
+          }
+        },
+        {
+          "accion": "FALTANTES_DECLARADOS",
+          "usuario": "supervisor",
+          "fecha": "2025-12-18T13:56:45.640Z",
+          "detalle": {
+            "devueltasDeclaradas": [
+              "1.1.3"
+            ]
+          }
+        },
+        {
+          "accion": "DEVOLUCION_CONFIRMADA",
+          "usuario": "deposito",
+          "fecha": "2025-12-18T13:56:51.863Z",
+          "detalle": {
+            "devueltasConfirmadas": [
+              "1.1.3"
+            ],
+            "faltantesConfirmados": [],
+            "observacion": "la encontro"
+          }
+        }
+      ]
+    }
   ]
 }

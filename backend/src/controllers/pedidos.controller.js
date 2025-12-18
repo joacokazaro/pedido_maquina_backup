@@ -1,4 +1,9 @@
 import { readDB, writeDB } from "../utils/file.js";
+import {
+  ESTADOS_PEDIDO,
+  ESTADOS_PEDIDO_VALIDOS,
+  normalizeEstadoPedido
+} from "../constants/estadosPedidos.js";
 
 /* ========================================================
    CREAR PEDIDO
@@ -21,7 +26,7 @@ export function crearPedido(req, res) {
     id,
     supervisor: supervisorUsername,
     servicio,
-    estado: "PENDIENTE_PREPARACION",
+    estado: ESTADOS_PEDIDO.PENDIENTE_PREPARACION,
     itemsSolicitados,
     itemsAsignados: [],
     observacion: observacion || null,
@@ -65,7 +70,9 @@ export function getPedidoById(req, res) {
   const db = readDB();
   const pedido = db.pedidos.find((p) => p.id === req.params.id);
 
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
 
   res.json(pedido);
 }
@@ -80,13 +87,18 @@ export function marcarEntregado(req, res) {
   const db = readDB();
   const pedido = db.pedidos.find((p) => p.id === id);
 
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
-
-  if (pedido.estado !== "PREPARADO") {
-    return res.status(400).json({ error: "Debe estar PREPARADO para ser entregado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
   }
 
-  pedido.estado = "ENTREGADO";
+  if (pedido.estado !== ESTADOS_PEDIDO.PREPARADO) {
+    return res.status(400).json({
+      error: "Debe estar PREPARADO para ser entregado"
+    });
+  }
+
+  pedido.estado = ESTADOS_PEDIDO.ENTREGADO;
+
   pedido.historial.push({
     accion: "ENTREGADO",
     usuario,
@@ -101,7 +113,7 @@ export function marcarEntregado(req, res) {
 }
 
 /* ========================================================
-   ACTUALIZAR ESTADO
+   ACTUALIZAR ESTADO (GENÉRICO)
 ======================================================== */
 export function actualizarEstadoPedido(req, res) {
   const { id } = req.params;
@@ -110,12 +122,23 @@ export function actualizarEstadoPedido(req, res) {
   const db = readDB();
   const pedido = db.pedidos.find((p) => p.id === id);
 
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
 
-  pedido.estado = estado;
+  const estadoNormalizado = normalizeEstadoPedido(estado);
+
+  if (!ESTADOS_PEDIDO_VALIDOS.includes(estadoNormalizado)) {
+    return res.status(400).json({
+      error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(", ")}`
+    });
+  }
+
+  pedido.estado = estadoNormalizado;
+
   pedido.historial.push({
     accion: "ESTADO_ACTUALIZADO",
-    nuevoEstado: estado,
+    nuevoEstado: estadoNormalizado,
     usuario,
     fecha: new Date().toISOString(),
     detalle: {
@@ -136,10 +159,48 @@ export function asignarMaquinas(req, res) {
 
   const db = readDB();
   const pedido = db.pedidos.find((p) => p.id === id);
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
 
+  if (!Array.isArray(asignadas) || asignadas.length === 0) {
+    return res.status(400).json({
+      error: "Debe enviar la lista de máquinas a asignar"
+    });
+  }
+
+  // 1) Validar existencia y disponibilidad
+  const noDisponibles = [];
+  const inexistentes = [];
+
+  for (const idmaq of asignadas) {
+    const m = db.maquinas.find((x) => x.id === idmaq);
+    if (!m) {
+      inexistentes.push(idmaq);
+      continue;
+    }
+    if (m.estado !== "disponible") {
+      noDisponibles.push({ id: m.id, estado: m.estado, tipo: m.tipo });
+    }
+  }
+
+  if (inexistentes.length > 0) {
+    return res.status(400).json({
+      error: "Hay máquinas inexistentes en la asignación",
+      inexistentes
+    });
+  }
+
+  if (noDisponibles.length > 0) {
+    return res.status(400).json({
+      error: "Solo se pueden asignar máquinas en estado 'disponible'",
+      noDisponibles
+    });
+  }
+
+  // 2) Validación por tipo
   const solicitado = {};
-  pedido.itemsSolicitados.forEach(i => solicitado[i.tipo] = i.cantidad);
+  pedido.itemsSolicitados.forEach(i => (solicitado[i.tipo] = i.cantidad));
 
   const asignadoPorTipo = {};
   asignadas.forEach(idmaq => {
@@ -161,18 +222,23 @@ export function asignarMaquinas(req, res) {
     });
   }
 
+  // 3) Snapshot asignadas
   pedido.itemsAsignados = asignadas
     .map(idmaq => {
       const m = db.maquinas.find(x => x.id === idmaq);
-      return m ? { id: m.id, tipo: m.tipo, modelo: m.modelo, serie: m.serie } : null;
+      return m
+        ? { id: m.id, tipo: m.tipo, modelo: m.modelo, serie: m.serie }
+        : null;
     })
     .filter(Boolean);
 
+  // 4) Cambiar estado de máquinas
   asignadas.forEach(idmaq => {
     const m = db.maquinas.find(x => x.id === idmaq);
     if (m) m.estado = "asignada";
   });
 
+  // 5) Historial + estado
   pedido.historial.push({
     accion: "MAQUINAS_ASIGNADAS",
     usuario,
@@ -185,7 +251,8 @@ export function asignarMaquinas(req, res) {
     }
   });
 
-  pedido.estado = "PREPARADO";
+  pedido.estado = ESTADOS_PEDIDO.PREPARADO;
+
   writeDB(db);
   res.json({ message: "Máquinas asignadas", pedido });
 }
@@ -199,10 +266,14 @@ export function registrarDevolucion(req, res) {
 
   const db = readDB();
   const pedido = db.pedidos.find((p) => p.id === id);
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
 
-  if (pedido.estado !== "ENTREGADO") {
-    return res.status(400).json({ error: "Solo se puede devolver un pedido ENTREGADO" });
+  if (pedido.estado !== ESTADOS_PEDIDO.ENTREGADO) {
+    return res.status(400).json({
+      error: "Solo se puede devolver un pedido ENTREGADO"
+    });
   }
 
   const asignadas = pedido.itemsAsignados.map(m => m.id);
@@ -215,6 +286,7 @@ export function registrarDevolucion(req, res) {
   }
 
   pedido.itemsDevueltos = devueltas;
+
   pedido.historial.push({
     accion: "DEVOLUCION_REGISTRADA",
     usuario,
@@ -226,9 +298,9 @@ export function registrarDevolucion(req, res) {
     }
   });
 
-  pedido.estado = "PENDIENTE_CONFIRMACION";
-  writeDB(db);
+  pedido.estado = ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION;
 
+  writeDB(db);
   res.json({ message: "Devolución registrada", pedido });
 }
 
@@ -241,10 +313,24 @@ export function confirmarDevolucion(req, res) {
 
   const db = readDB();
   const pedido = db.pedidos.find(p => p.id === id);
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
 
   const devSet = new Set(devueltas || []);
   const falSet = new Set(faltantes || []);
+
+  // Devueltas → disponible
+  for (const idmaq of devSet) {
+    const m = db.maquinas.find(x => x.id === idmaq);
+    if (m) m.estado = "disponible";
+  }
+
+  // Faltantes → no_devuelta
+  for (const idmaq of falSet) {
+    const m = db.maquinas.find(x => x.id === idmaq);
+    if (m) m.estado = "no_devuelta";
+  }
 
   pedido.historial.push({
     accion: "DEVOLUCION_CONFIRMADA",
@@ -257,9 +343,9 @@ export function confirmarDevolucion(req, res) {
     }
   });
 
-  pedido.estado = "CERRADO";
-  writeDB(db);
+  pedido.estado = ESTADOS_PEDIDO.CERRADO;
 
+  writeDB(db);
   res.json({ message: "Devolución confirmada", pedido });
 }
 
@@ -270,9 +356,17 @@ export function completarFaltantes(req, res) {
   const { id } = req.params;
   const { usuario, devueltas, observacion } = req.body || {};
 
+  if (!Array.isArray(devueltas) || devueltas.length === 0) {
+    return res.status(400).json({
+      error: "Debe indicar al menos una máquina devuelta"
+    });
+  }
+
   const db = readDB();
   const pedido = db.pedidos.find(p => p.id === id);
-  if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+  if (!pedido) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
 
   pedido.historial.push({
     accion: "FALTANTES_DECLARADOS",
@@ -284,12 +378,15 @@ export function completarFaltantes(req, res) {
     }
   });
 
-  pedido.estado = "PENDIENTE_CONFIRMACION_FALTANTES";
-  writeDB(db);
+  pedido.estado = ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION_FALTANTES;
 
+  writeDB(db);
   res.json({ message: "Faltantes declarados", pedido });
 }
 
+/* ========================================================
+   LISTAR TODOS
+======================================================== */
 export function getPedidos(req, res) {
   const db = readDB();
   res.json(db.pedidos || []);
