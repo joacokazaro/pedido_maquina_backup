@@ -1,26 +1,46 @@
-import { readDB } from "../utils/file.js";
+// backend/src/controllers/auth.controller.js
+import prisma from "../db/prisma.js";
 
-export function login(req, res) {
-  const { username, password } = req.body;
+export async function login(req, res) {
+  try {
+    const { username, password } = req.body || {};
 
-  const db = readDB();
-  if (!db) return res.status(500).json({ error: "DB no disponible" });
-
-  const user = db.usuarios.find(
-    u => u.username === username && u.password === password
-  );
-
-  if (!user) return res.status(401).json({ error: "Credenciales inválidas" });
-
-  const token = `${user.username}-${Date.now()}`;
-
-  return res.json({
-    message: "Login correcto",
-    token,
-    user: {
-      id: user.id,
-      username: user.username,
-      rol: user.rol
+    if (!username || !password) {
+      return res.status(400).json({
+        error: "Username y password son obligatorios",
+      });
     }
-  });
+
+    const user = await prisma.usuario.findFirst({
+      where: {
+        username,
+        password, // ⚠️ texto plano, igual que antes
+        activo: true,
+      },
+      select: {
+        id: true,
+        username: true,
+        rol: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+
+    const token = `${user.username}-${Date.now()}`;
+
+    res.json({
+      message: "Login correcto",
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        rol: user.rol.toUpperCase(), // 👈 contrato del front
+      },
+    });
+  } catch (e) {
+    console.error("login:", e);
+    res.status(500).json({ error: "Error en login" });
+  }
 }

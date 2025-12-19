@@ -59,6 +59,22 @@ export default function AdminHome() {
           </button>
         </section>
 
+        {/* --- SERVICIOS --- */}
+<section className="bg-white rounded-2xl shadow p-4">
+  <h2 className="text-lg font-semibold mb-2">Servicios</h2>
+  <p className="text-sm text-gray-600 mb-4">
+    Gestión de servicios y máquinas asociadas.
+  </p>
+
+  <button
+    onClick={() => navigate("/admin/servicios")}
+    className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold"
+  >
+    Gestionar servicios
+  </button>
+</section>
+
+
       </div>
     </div>
   );

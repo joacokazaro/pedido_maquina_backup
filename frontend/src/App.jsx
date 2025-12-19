@@ -33,6 +33,8 @@ import AdminPedidos from "./pages/AdminPedidos";
 import AdminMaquinas from "./pages/AdminMaquinas";
 import AdminMaquinaForm from "./pages/AdminMaquinaForm";
 import AdminViewPedido from "./pages/AdminViewPedido";
+import AdminServicios from "./pages/AdminServicios";
+import AdminServicioForm from "./pages/AdminServicioForm";
 
 function App() {
   const [ready, setReady] = useState(false);
@@ -227,7 +229,17 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="/admin/servicios" element={<AdminServicios />} />
+      <Route path="/admin/servicios/nuevo" element={<AdminServicioForm />} />
+      <Route path="/admin/servicios/:id" element={<AdminServicioForm />} />
+
+
+
     </Routes>
+
+
+
   );
 }
 

@@ -11,28 +11,51 @@ export default function ViewPedido() {
   const [faltantes, setFaltantes] = useState([]);
   const [seleccion, setSeleccion] = useState([]);
   const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
 
-  const usuario =
-    localStorage.getItem("username") || "supervisor";
+  // ✅ USUARIO REAL DESDE AUTH
+  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  const usuario = authUser.username;
+
+  /* =========================
+     GUARDIA DE SESIÓN
+  ========================== */
+  if (!usuario) {
+    return (
+      <div className="p-6 text-red-600 font-semibold">
+        Sesión inválida. Volvé a iniciar sesión.
+      </div>
+    );
+  }
 
   useEffect(() => {
     cargarPedido();
   }, [id]);
 
   async function cargarPedido() {
-    const res = await fetch(`${API_BASE}/pedidos/${id}`);
-    const data = await res.json();
-    setPedido(data);
+    try {
+      const res = await fetch(`${API_BASE}/pedidos/${id}`);
+      if (!res.ok) throw new Error("Error cargando pedido");
 
-    const confirmacion = [...(data.historial || [])]
-      .reverse()
-      .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
+      const data = await res.json();
+      setPedido(data);
 
-    const faltantesConfirmados =
-      confirmacion?.detalle?.faltantesConfirmados || [];
+      const confirmacion = [...(data.historial || [])]
+        .reverse()
+        .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
 
-    setFaltantes(faltantesConfirmados);
-    setSeleccion(faltantesConfirmados);
+      const faltantesConfirmados =
+        confirmacion?.detalle?.faltantesConfirmados || [];
+
+      setFaltantes(faltantesConfirmados);
+      setSeleccion(faltantesConfirmados);
+    } catch (e) {
+      setError("No se pudo cargar el pedido");
+    }
+  }
+
+  if (error) {
+    return <div className="p-4 text-red-600">{error}</div>;
   }
 
   if (!pedido) return <div className="p-4">Cargando...</div>;
@@ -48,25 +71,49 @@ export default function ViewPedido() {
     );
   }
 
+  /* =========================
+     COMPLETAR FALTANTES
+  ========================== */
   async function completarEntrega() {
     if (seleccion.length === 0) return;
 
     setEnviando(true);
+    setError("");
 
-    await fetch(`${API_BASE}/pedidos/${id}/completar-faltantes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usuario, devueltas: seleccion })
-    });
+    try {
+      const res = await fetch(
+        `${API_BASE}/pedidos/${id}/completar-faltantes`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            usuario,            // ✅ CLAVE
+            devueltas: seleccion
+          }),
+        }
+      );
 
-    await cargarPedido();
-    setEnviando(false);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Error completando faltantes");
+      }
+
+      await cargarPedido();
+    } catch (e) {
+      console.error(e);
+      setError(e.message);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
 
-      <button onClick={() => navigate(-1)} className="mb-4 px-3 py-2 bg-white border rounded-lg">
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 px-3 py-2 bg-white border rounded-lg"
+      >
         ← Volver
       </button>
 
@@ -83,42 +130,16 @@ export default function ViewPedido() {
         </div>
       )}
 
-      {pedido.observacion && (
-        <div className="bg-white p-4 mb-4 border-l-4 border-blue-500 rounded-xl shadow">
-          <h2 className="font-semibold">Observación del supervisor</h2>
-          <p className="whitespace-pre-line">{pedido.observacion}</p>
-        </div>
-      )}
-
-      {/* SOLICITADAS */}
-      <div className="bg-white p-4 mb-4 rounded-xl shadow">
-        <h2 className="font-semibold mb-2">Máquinas solicitadas</h2>
-        {pedido.itemsSolicitados.map((i, idx) => (
-          <div key={idx} className="flex justify-between bg-gray-50 p-2 rounded">
-            <span>{i.tipo}</span>
-            <b>{i.cantidad}</b>
-          </div>
-        ))}
-      </div>
-
-      {/* ASIGNADAS */}
-      <div className="bg-white p-4 mb-4 rounded-xl shadow">
-        <h2 className="font-semibold mb-2">Máquinas asignadas</h2>
-        {pedido.itemsAsignados.map((m, idx) => (
-          <div key={idx} className="bg-gray-50 p-2 rounded mb-1">
-            <b>{m.tipo} — {m.id}</b>
-            <div className="text-xs text-gray-600">{m.modelo}</div>
-          </div>
-        ))}
-      </div>
-
       {/* COMPLETAR FALTANTES */}
       {puedeCompletarFaltantes && (
         <div className="bg-white p-4 mb-4 border-l-4 border-red-500 rounded-xl shadow">
           <h2 className="font-semibold mb-2">⚠ Faltantes pendientes</h2>
 
           {faltantes.map(idMaq => (
-            <label key={idMaq} className="flex justify-between bg-gray-50 p-2 rounded mb-2">
+            <label
+              key={idMaq}
+              className="flex justify-between bg-gray-50 p-2 rounded mb-2"
+            >
               <span>{idMaq}</span>
               <input
                 type="checkbox"
@@ -131,14 +152,14 @@ export default function ViewPedido() {
           <button
             disabled={enviando}
             onClick={completarEntrega}
-            className="w-full bg-green-600 text-white py-3 rounded-xl mt-2"
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl mt-2"
           >
             {enviando ? "Guardando..." : "Completar entrega"}
           </button>
         </div>
       )}
 
-      {/* ✅ HISTORIAL UNIFICADO */}
+      {/* HISTORIAL */}
       <HistorialPedido historial={pedido.historial} />
 
       {pedido.estado === "ENTREGADO" && (

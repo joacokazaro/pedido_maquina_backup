@@ -8,29 +8,55 @@ export default function RegistrarDevolucion() {
   const navigate = useNavigate();
 
   const [pedido, setPedido] = useState(null);
-  const [seleccion, setSeleccion] = useState([]); 
+  const [seleccion, setSeleccion] = useState([]);
   const [justificacion, setJustificacion] = useState("");
   const [mostrarJustificacion, setMostrarJustificacion] = useState(false);
+  const [error, setError] = useState("");
 
-  // usuario cargado en localStorage → nombre o username
-  const usuario = localStorage.getItem("username") || "supervisor";
+  // ✅ USUARIO REAL DESDE AUTH
+  const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
+  const usuario = authUser.username;
 
-  /** CARGAR PEDIDO */
+  /* =========================
+     GUARDIA DE SESIÓN
+  ========================== */
+  if (!usuario) {
+    return (
+      <div className="p-6 text-red-600 font-semibold">
+        Sesión inválida. Volvé a iniciar sesión.
+      </div>
+    );
+  }
+
+  /* =========================
+     CARGAR PEDIDO
+  ========================== */
   useEffect(() => {
-    fetch(`${API_BASE}
-/pedidos/${id}`)
-      .then((r) => r.json())
+    fetch(`${API_BASE}/pedidos/${id}`)
+      .then((r) => {
+        if (!r.ok) throw new Error("Error cargando pedido");
+        return r.json();
+      })
       .then((data) => {
         setPedido(data);
         setSeleccion(data.itemsAsignados.map((m) => m.id));
-      });
+      })
+      .catch(() => setError("No se pudo cargar el pedido"));
   }, [id]);
 
-  if (!pedido) return <div className="p-4">Cargando...</div>;
+  if (error) {
+    return <div className="p-4 text-red-600">{error}</div>;
+  }
+
+  if (!pedido) {
+    return <div className="p-4">Cargando...</div>;
+  }
 
   const asignadas = pedido.itemsAsignados.map((m) => m.id);
 
-  /** LÓGICA DE SELECCIÓN */
+  /* =========================
+     LÓGICA DE SELECCIÓN
+  ========================== */
   function toggle(idMaq) {
     if (seleccion.includes(idMaq)) {
       setSeleccion(seleccion.filter((x) => x !== idMaq));
@@ -39,12 +65,13 @@ export default function RegistrarDevolucion() {
     }
   }
 
-  /** REQUIERE JUSTIFICACIÓN */
   function necesitaJustificacion() {
     return seleccion.length !== asignadas.length;
   }
 
-  /** CONFIRMAR DEVOLUCIÓN */
+  /* =========================
+     CONFIRMAR DEVOLUCIÓN
+  ========================== */
   async function confirmar() {
     const requiere = necesitaJustificacion();
 
@@ -53,17 +80,27 @@ export default function RegistrarDevolucion() {
       return;
     }
 
-    await fetch(`${API_BASE}
-/pedidos/${id}/devolucion`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        usuario,
-        devueltas: seleccion,
-        justificacion: requiere ? justificacion : null
-      }),
-    });
-    navigate(`/supervisor`);
+    try {
+      const res = await fetch(`${API_BASE}/pedidos/${id}/devolucion`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usuario,
+          devueltas: seleccion,
+          justificacion: requiere ? justificacion : null,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Error registrando devolución");
+      }
+
+      navigate("/supervisor");
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "No se pudo registrar la devolución");
+    }
   }
 
   return (
@@ -83,12 +120,16 @@ export default function RegistrarDevolucion() {
             <label
               key={m.id}
               className={`block p-4 rounded-xl shadow cursor-pointer ${
-                checked ? "bg-green-100 border border-green-400" : "bg-white"
+                checked
+                  ? "bg-green-100 border border-green-400"
+                  : "bg-white"
               }`}
             >
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="font-semibold">{m.tipo} — {m.id}</p>
+                  <p className="font-semibold">
+                    {m.tipo} — {m.id}
+                  </p>
                   <p className="text-xs text-gray-600">{m.modelo}</p>
                 </div>
 
@@ -110,7 +151,7 @@ export default function RegistrarDevolucion() {
 
       <button
         onClick={confirmar}
-        className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold mt-4 shadow"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold mt-4 shadow"
       >
         Confirmar devolución
       </button>
@@ -119,7 +160,9 @@ export default function RegistrarDevolucion() {
       {mostrarJustificacion && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full">
-            <h2 className="text-lg font-bold mb-3">Justificación requerida</h2>
+            <h2 className="text-lg font-bold mb-3">
+              Justificación requerida
+            </h2>
             <p className="text-sm text-gray-600 mb-3">
               Algunas máquinas no fueron devueltas. Explicá el motivo.
             </p>
@@ -132,7 +175,7 @@ export default function RegistrarDevolucion() {
             />
 
             <button
-              className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold"
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold"
               onClick={confirmar}
             >
               Guardar y continuar

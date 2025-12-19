@@ -1,43 +1,135 @@
-import { readDB, writeDB } from "../utils/file.js";
+// backend/src/controllers/maquinas.controller.js
+import prisma from "../db/prisma.js";
+import { EstadoMaquina } from "@prisma/client";
 
-export function getMaquinas(req, res) {
-  const db = readDB();
-  return res.json(db.maquinas);
-}
+/* ========================================================
+   LISTAR TODAS
+======================================================== */
+export async function getMaquinas(req, res) {
+  try {
+    const maquinas = await prisma.maquina.findMany({
+      include: { servicio: true },
+      orderBy: { id: "asc" },
+    });
 
-export function getMaquinaById(req, res) {
-  const db = readDB();
-  const maquina = db.maquinas.find(m => m.id === req.params.id);
+    const out = maquinas.map(m => ({
+      id: m.id,
+      tipo: m.tipo,
+      modelo: m.modelo,
+      serie: m.serie,
+      estado: m.estado,
+      servicio: m.servicio?.nombre,
+    }));
 
-  if (!maquina) {
-    return res.status(404).json({ error: "Máquina no encontrada" });
+    res.json(out);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Error obteniendo máquinas" });
   }
-
-  return res.json(maquina);
 }
 
-export function getMaquinasPorTipo(req, res) {
-  const db = readDB();
-  const tipo = req.params.tipo.toUpperCase();
+/* ========================================================
+   OBTENER POR ID
+======================================================== */
+export async function getMaquinaById(req, res) {
+  try {
+    const maquina = await prisma.maquina.findUnique({
+      where: { id: req.params.id },
+      include: { servicio: true },
+    });
 
-  const filtradas = db.maquinas.filter(m => m.tipo.toUpperCase() === tipo);
+    if (!maquina) {
+      return res.status(404).json({ error: "Máquina no encontrada" });
+    }
 
-  return res.json(filtradas);
-}
-
-export function actualizarEstado(req, res) {
-  const { id } = req.params;
-  const { estado } = req.body;
-
-  const db = readDB();
-  const maquina = db.maquinas.find(m => m.id === id);
-
-  if (!maquina) {
-    return res.status(404).json({ error: "Máquina no encontrada" });
+    res.json({
+      id: maquina.id,
+      tipo: maquina.tipo,
+      modelo: maquina.modelo,
+      serie: maquina.serie,
+      estado: maquina.estado,
+      servicio: maquina.servicio?.nombre,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Error obteniendo máquina" });
   }
+}
 
-  maquina.estado = estado;
-  writeDB(db);
+/* ========================================================
+   LISTAR POR TIPO
+======================================================== */
+export async function getMaquinasPorTipo(req, res) {
+  try {
+    const tipo = String(req.params.tipo).toLowerCase();
 
-  return res.json({ message: "Estado actualizado", maquina });
+    const maquinas = await prisma.maquina.findMany({
+      where: {
+        tipo: {
+          equals: tipo,
+          mode: "insensitive",
+        },
+      },
+      include: { servicio: true },
+      orderBy: { id: "asc" },
+    });
+
+    const out = maquinas.map(m => ({
+      id: m.id,
+      tipo: m.tipo,
+      modelo: m.modelo,
+      serie: m.serie,
+      estado: m.estado,
+      servicio: m.servicio?.nombre,
+    }));
+
+    res.json(out);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Error filtrando máquinas" });
+  }
+}
+
+/* ========================================================
+   ACTUALIZAR ESTADO
+======================================================== */
+export async function actualizarEstado(req, res) {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    if (!estado) {
+      return res.status(400).json({ error: "Estado es obligatorio" });
+    }
+
+    if (!Object.values(EstadoMaquina).includes(estado)) {
+      return res.status(400).json({
+        error: `Estado inválido. Debe ser uno de: ${Object.values(EstadoMaquina).join(", ")}`,
+      });
+    }
+
+    const maquina = await prisma.maquina.update({
+      where: { id },
+      data: { estado },
+      include: { servicio: true },
+    });
+
+    res.json({
+      message: "Estado actualizado",
+      maquina: {
+        id: maquina.id,
+        tipo: maquina.tipo,
+        modelo: maquina.modelo,
+        serie: maquina.serie,
+        estado: maquina.estado,
+        servicio: maquina.servicio?.nombre,
+      },
+    });
+  } catch (e) {
+    if (e.code === "P2025") {
+      return res.status(404).json({ error: "Máquina no encontrada" });
+    }
+    console.error(e);
+    res.status(500).json({ error: "Error actualizando estado" });
+  }
 }

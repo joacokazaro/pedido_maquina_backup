@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+
+/////////////////////////////////////////////////
+// ENUMS
+/////////////////////////////////////////////////
+
+enum RolUsuario {
+  supervisor
+  deposito
+  admin
+}
+
+enum EstadoMaquina {
+  disponible
+  asignada
+  no_devuelta
+  fuera_servicio
+  reparacion
+  baja
+}
+
+enum EstadoPedido {
+  PENDIENTE_PREPARACION
+  PREPARADO
+  ENTREGADO
+  PENDIENTE_CONFIRMACION
+  PENDIENTE_CONFIRMACION_FALTANTES
+  CERRADO
+}
+
+/////////////////////////////////////////////////
+// MODELOS
+/////////////////////////////////////////////////
+
+model Usuario {
+  id        Int        @id @default(autoincrement())
+  username  String     @unique
+
+  nombre    String?    // ⬅️ opcional por ahora
+  password  String?    // ⬅️ opcional por ahora
+  rol       RolUsuario
+  activo    Boolean    @default(true)
+
+  pedidosSupervisor Pedido[]          @relation("SupervisorPedidos")
+  historialAcciones HistorialPedido[]
+
+  createdAt DateTime @default(now())
+}
+
+
+
+model Servicio {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+
+  maquinas  Maquina[]
+  pedidos   Pedido[]
+
+  createdAt DateTime @default(now())
+}
+
+model Maquina {
+  id        String        @id
+  tipo      String
+  modelo    String
+  serie     String?
+  estado    EstadoMaquina @default(disponible)
+
+  servicioId Int
+  servicio   Servicio     @relation(fields: [servicioId], references: [id])
+
+  asignaciones PedidoMaquina[]
+
+  createdAt DateTime @default(now())
+}
+
+
+model Pedido {
+  id          String       @id
+  estado      EstadoPedido
+  observacion String?
+
+  // ✅ Para mantener el front igual:
+  itemsSolicitados Json
+  itemsDevueltos   Json?
+
+  supervisorId Int
+  supervisor   Usuario @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
+
+  servicioId Int
+  servicio   Servicio @relation(fields: [servicioId], references: [id])
+
+  asignadas   PedidoMaquina[]
+  historial   HistorialPedido[]
+
+  createdAt DateTime @default(now())
+}
+
+
+model PedidoMaquina {
+  id         Int      @id @default(autoincrement())
+
+  pedidoId   String
+  maquinaId  String
+
+  pedido     Pedido  @relation(fields: [pedidoId], references: [id])
+  maquina    Maquina @relation(fields: [maquinaId], references: [id])
+
+  @@unique([pedidoId, maquinaId])
+}
+
+model HistorialPedido {
+  id        Int      @id @default(autoincrement())
+
+  pedidoId  String
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id])
+
+  accion    String
+  detalle   Json?
+
+  usuarioId Int
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+
+  fecha     DateTime @default(now())
+}

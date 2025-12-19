@@ -1,125 +1,132 @@
-// controllers/adminPedidos.controller.js
-import { readDB, writeDB } from "../utils/file.js";
+// backend/src/controllers/adminPedidos.controller.js
+import prisma from "../db/prisma.js";
 import {
-  ESTADOS_PEDIDO,
   ESTADOS_PEDIDO_VALIDOS,
-  normalizeEstadoPedido
+  normalizeEstadoPedido,
 } from "../constants/estadosPedidos.js";
 
-void ESTADOS_PEDIDO;
-/**
- * GET /admin/pedidos
- * Lista todos los pedidos con nombre de supervisor
- */
+/* ========================================================
+   GET /admin/pedidos
+======================================================== */
+export async function adminListPedidos(req, res) {
+  try {
+    const { estado } = req.query;
 
-export function adminListPedidos(req, res) {
-  const { estado } = req.query;
-
-  const db = readDB();
-  const usuarios = db.usuarios || [];
-  const pedidos = db.pedidos || [];
-
-  const userMap = usuarios.reduce((acc, u) => {
-    acc[u.id] = u.username;
-    acc[u.username] = u.username;
-    return acc;
-  }, {});
-
-  let resultado = pedidos.map((p) => {
-    const supervisorName =
-      p.supervisor ||
-      userMap[p.supervisorId] ||
-      `ID ${p.supervisorId ?? "?"}`;
-
-    return {
-      ...p,
-      supervisorName
-    };
-  });
-
-  // 🔒 Filtro por estado normalizado
-  if (estado) {
-    const estadoNorm = normalizeEstadoPedido(estado);
-    resultado = resultado.filter((p) => p.estado === estadoNorm);
-  }
-
-  res.json(resultado);
-}
-
-/**
- * GET /admin/pedidos/:id
- * Devuelve pedido con supervisorName
- */
-export function adminGetPedido(req, res) {
-  const { id } = req.params;
-  const db = readDB();
-
-  const usuarios = db.usuarios || [];
-  const userMap = usuarios.reduce((acc, u) => {
-    acc[u.id] = u.username;
-    acc[u.username] = u.username;
-    return acc;
-  }, {});
-
-  const pedido = db.pedidos.find((p) => p.id === id);
-
-  if (!pedido) {
-    return res.status(404).json({ error: "Pedido no encontrado" });
-  }
-
-  const supervisorName =
-    pedido.supervisor ||
-    userMap[pedido.supervisorId] ||
-    `ID ${pedido.supervisorId ?? "?"}`;
-
-  res.json({
-    ...pedido,
-    supervisorName
-  });
-}
-
-/**
- * PUT /admin/pedidos/:id/estado
- * Admin puede forzar cualquier cambio de estado
- */
-export function adminUpdateEstado(req, res) {
-  const { id } = req.params;
-  const { estado } = req.body || {};
-
-  if (!estado) {
-    return res.status(400).json({ error: "Debe enviar un estado" });
-  }
-
-  const estadoNormalizado = normalizeEstadoPedido(estado);
-
-  if (!ESTADOS_PEDIDO_VALIDOS.includes(estadoNormalizado)) {
-    return res.status(400).json({
-      error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(", ")}`
-    });
-  }
-
-  const db = readDB();
-  const pedido = db.pedidos.find((p) => p.id === id);
-
-  if (!pedido) {
-    return res.status(404).json({ error: "Pedido no encontrado" });
-  }
-
-  pedido.estado = estadoNormalizado;
-
-  pedido.historial.push({
-    accion: "ADMIN_CAMBIO_ESTADO",
-    nuevoEstado: estadoNormalizado,
-    fecha: new Date().toISOString(),
-    detalle: {
-      mensaje: "Cambio forzado por administrador"
+    let estadoFiltro;
+    if (estado) {
+      const estadoNorm = normalizeEstadoPedido(estado);
+      if (!ESTADOS_PEDIDO_VALIDOS.includes(estadoNorm)) {
+        return res.status(400).json({
+          error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(", ")}`,
+        });
+      }
+      estadoFiltro = estadoNorm;
     }
-  });
 
-  writeDB(db);
+    const pedidos = await prisma.pedido.findMany({
+      where: estadoFiltro ? { estado: estadoFiltro } : undefined,
+      include: {
+        supervisor: { select: { username: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-  res.json({
-    message: "Estado actualizado por el administrador",
-    pedido
-  });
+    const resultado = pedidos.map(p => ({
+      ...p,
+      supervisorName: p.supervisor?.username ?? "—",
+    }));
+
+    res.json(resultado);
+  } catch (err) {
+    console.error("adminListPedidos:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+}
+
+/* ========================================================
+   GET /admin/pedidos/:id
+======================================================== */
+export async function adminGetPedido(req, res) {
+  try {
+    const { id } = req.params;
+
+    const pedido = await prisma.pedido.findUnique({
+      where: { id },
+      include: {
+        supervisor: { select: { username: true } },
+        historial: {
+          orderBy: { fecha: "asc" },
+        },
+      },
+    });
+
+    if (!pedido) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+
+    res.json({
+      ...pedido,
+      supervisorName: pedido.supervisor?.username ?? "—",
+    });
+  } catch (err) {
+    console.error("adminGetPedido:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+}
+
+/* ========================================================
+   PUT /admin/pedidos/:id/estado
+   Admin puede forzar cualquier cambio de estado
+======================================================== */
+export async function adminUpdateEstado(req, res) {
+  try {
+    const { id } = req.params;
+    const { estado, usuario } = req.body || {};
+
+    if (!estado) {
+      return res.status(400).json({ error: "Debe enviar un estado" });
+    }
+
+    const estadoNormalizado = normalizeEstadoPedido(estado);
+    if (!ESTADOS_PEDIDO_VALIDOS.includes(estadoNormalizado)) {
+      return res.status(400).json({
+        error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(", ")}`,
+      });
+    }
+
+    const pedido = await prisma.pedido.findUnique({ where: { id } });
+    if (!pedido) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+
+    const actualizado = await prisma.pedido.update({
+      where: { id },
+      data: {
+        estado: estadoNormalizado,
+        historial: {
+          create: {
+            accion: "ADMIN_CAMBIO_ESTADO",
+            fecha: new Date(),
+            usuario: usuario || "admin", // 👈 STRING
+            detalle: {
+              mensaje: "Cambio forzado por administrador",
+            },
+          },
+        },
+      },
+      include: {
+        historial: {
+          orderBy: { fecha: "asc" },
+        },
+      },
+    });
+
+    res.json({
+      message: "Estado actualizado por el administrador",
+      pedido: actualizado,
+    });
+  } catch (err) {
+    console.error("adminUpdateEstado:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
 }

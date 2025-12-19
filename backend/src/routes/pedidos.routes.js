@@ -1,48 +1,43 @@
-import { Router } from "express";
+import express from "express";
 import {
   crearPedido,
   getPedidosSupervisor,
   getPedidoById,
-  registrarDevolucion,
-  asignarMaquinas,
-  actualizarEstadoPedido,
-  marcarEntregado,
-  confirmarDevolucion,
   getPedidos,
-  completarFaltantes
+  marcarEntregado,
+  actualizarEstadoPedido,
+  asignarMaquinas,
+  registrarDevolucion,
+  confirmarDevolucion,
+  completarFaltantes,
 } from "../controllers/pedidos.controller.js";
 
-const router = Router();
+const router = express.Router();
 
-// LISTAR TODOS
-router.get("/", getPedidos);
-
-// CREAR PEDIDO
+// =========================
+// CREAR / LISTAR
+// =========================
 router.post("/", crearPedido);
-
-// LISTAR POR SUPERVISOR
+router.get("/", getPedidos);
 router.get("/supervisor/:supervisorId", getPedidosSupervisor);
-
-// OBTENER PEDIDO POR ID
 router.get("/:id", getPedidoById);
 
-// DEVOLUCIÓN (SUPERVISOR)
-router.post("/:id/devolucion", registrarDevolucion);
+// =========================
+// ESTADOS
+// =========================
+router.put("/:id/estado", actualizarEstadoPedido);
+router.put("/:id/entregar", marcarEntregado);
 
-// CONFIRMAR DEVOLUCIÓN (DEPÓSITO) 
-router.post("/:id/confirmar-devolucion", confirmarDevolucion);
-
-// ASIGNAR MÁQUINAS
+// =========================
+// ASIGNACIÓN
+// =========================
 router.post("/:id/asignar", asignarMaquinas);
 
-// CAMBIAR ESTADO
-router.put("/:id/estado", actualizarEstadoPedido);
-
-// MARCAR COMO ENTREGADO
-router.post("/:id/entregar", marcarEntregado);
-
-// COMPLETAR FALTANTES
+// =========================
+// DEVOLUCIONES
+// =========================
+router.post("/:id/devolucion", registrarDevolucion);
+router.post("/:id/confirmar-devolucion", confirmarDevolucion);
 router.post("/:id/completar-faltantes", completarFaltantes);
-
 
 export default router;
