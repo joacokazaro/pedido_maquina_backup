@@ -1,6 +1,15 @@
-// backend/src/controllers/auth.controller.js
 import prisma from "../db/prisma.js";
 
+/* ========================================================
+   HELPERS
+======================================================== */
+function normalizeUsername(username) {
+  return String(username || "").trim();
+}
+
+/* ========================================================
+   POST /login
+======================================================== */
 export async function login(req, res) {
   try {
     const { username, password } = req.body || {};
@@ -11,16 +20,16 @@ export async function login(req, res) {
       });
     }
 
-    const user = await prisma.usuario.findFirst({
-      where: {
-        username,
-        password, // ⚠️ texto plano, igual que antes
-        activo: true,
-      },
+    const usernameNorm = normalizeUsername(username);
+
+    const user = await prisma.usuario.findUnique({
+      where: { username: usernameNorm },
       select: {
         id: true,
         username: true,
+        password: true,
         rol: true,
+        activo: true,
       },
     });
 
@@ -28,6 +37,15 @@ export async function login(req, res) {
       return res.status(401).json({ error: "Credenciales inválidas" });
     }
 
+    if (!user.activo) {
+      return res.status(403).json({ error: "Usuario inactivo" });
+    }
+
+    if (user.password !== password) {
+      return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+
+    // 🔐 Token simple (mock / dev)
     const token = `${user.username}-${Date.now()}`;
 
     res.json({
@@ -36,7 +54,7 @@ export async function login(req, res) {
       user: {
         id: user.id,
         username: user.username,
-        rol: user.rol.toUpperCase(), // 👈 contrato del front
+        rol: user.rol.toUpperCase(), // 👈 contrato con el front
       },
     });
   } catch (e) {

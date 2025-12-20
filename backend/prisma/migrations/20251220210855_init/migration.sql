@@ -1,49 +1,11 @@
-/*
-  Warnings:
-
-  - You are about to drop the `Machine` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Order` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `OrderHistory` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `OrderItem` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `OrderMachine` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Service` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "Machine";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "Order";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "OrderHistory";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "OrderItem";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "OrderMachine";
-PRAGMA foreign_keys=on;
-
--- DropTable
-PRAGMA foreign_keys=off;
-DROP TABLE "Service";
-PRAGMA foreign_keys=on;
-
 -- CreateTable
 CREATE TABLE "Usuario" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "username" TEXT NOT NULL,
+    "nombre" TEXT,
+    "password" TEXT,
     "rol" TEXT NOT NULL,
+    "activo" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -71,6 +33,8 @@ CREATE TABLE "Pedido" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "estado" TEXT NOT NULL,
     "observacion" TEXT,
+    "itemsSolicitados" TEXT NOT NULL,
+    "itemsDevueltos" TEXT,
     "supervisorId" INTEGER NOT NULL,
     "servicioId" INTEGER NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -92,7 +56,7 @@ CREATE TABLE "HistorialPedido" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "pedidoId" TEXT NOT NULL,
     "accion" TEXT NOT NULL,
-    "detalle" JSONB,
+    "detalle" TEXT,
     "usuarioId" INTEGER NOT NULL,
     "fecha" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "HistorialPedido_pedidoId_fkey" FOREIGN KEY ("pedidoId") REFERENCES "Pedido" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,

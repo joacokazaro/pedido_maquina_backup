@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import HistorialPedido from "../components/HistorialPedido";
+import PedidoResumen from "../components/PedidoResumen";
 
 
 export default function DepositoPedido() {
@@ -14,8 +15,7 @@ export default function DepositoPedido() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API_BASE}
-/pedidos/${id}`);
+        const res = await fetch(`${API_BASE}/pedidos/${id}`);
         if (!res.ok) throw new Error("No se encontró el pedido");
 
         const data = await res.json();
@@ -52,74 +52,7 @@ export default function DepositoPedido() {
         Supervisor: <b>{pedido.supervisor}</b>
       </p>
 
-      {/* Estado */}
-      <span className="px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
-        {pedido.estado.replace("_", " ")}
-      </span>
-
-      {/* Servicio */}
-      {pedido.servicio && (
-        <div className="bg-white rounded-xl shadow p-4 my-4 border-l-4 border-green-500">
-          <h2 className="text-lg font-semibold mb-1">Servicio</h2>
-          <p className="text-sm text-gray-700">{pedido.servicio}</p>
-        </div>
-      )}
-
-      {/* Observación del supervisor */}
-      {pedido.observacion && (
-        <div className="bg-white rounded-xl shadow p-4 mb-4 border-l-4 border-blue-500">
-          <h2 className="text-lg font-semibold mb-1">
-            Observación del supervisor
-          </h2>
-          <p className="text-sm text-gray-700 whitespace-pre-line">
-            {pedido.observacion}
-          </p>
-        </div>
-      )}
-
-      {/* Máquinas solicitadas */}
-      <div className="bg-white rounded-xl shadow p-4 mb-4">
-        <h2 className="text-lg font-semibold mb-2">Máquinas solicitadas</h2>
-
-        {(pedido.itemsSolicitados ?? []).length === 0 ? (
-          <p className="text-sm text-gray-500">
-            No hay máquinas solicitadas.
-          </p>
-        ) : (
-          (pedido.itemsSolicitados ?? []).map((i, idx) => (
-            <div
-              key={idx}
-              className="flex justify-between bg-gray-50 px-3 py-2 rounded-lg text-sm"
-            >
-              <span>{i.tipo}</span>
-              <span className="font-bold">{i.cantidad}</span>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Máquinas asignadas */}
-      <div className="bg-white rounded-xl shadow p-4 mb-4">
-        <h2 className="text-lg font-semibold mb-2">Máquinas asignadas</h2>
-
-        {(pedido.itemsAsignados ?? []).length === 0 ? (
-          <p className="text-sm text-gray-500">
-            No hay máquinas asignadas.
-          </p>
-        ) : (
-          (pedido.itemsAsignados ?? []).map((m, idx) => (
-            <div key={idx} className="bg-gray-50 px-3 py-2 rounded-lg text-sm">
-              <p className="font-semibold">
-                {m.tipo} — {m.id}
-              </p>
-              <p className="text-xs text-gray-600">{m.modelo}</p>
-              <p className="text-xs text-gray-500">
-                Serie: {m.serie}
-              </p>
-            </div>
-          ))
-        )}
-      </div>
+      <PedidoResumen pedido={pedido} />
 
       {/* Historial */}
       <HistorialPedido historial={pedido.historial} />
@@ -181,8 +114,7 @@ export default function DepositoPedido() {
 /* ===== AUXILIARES ===== */
 
 async function marcarEstado(id, nuevoEstado, navigate) {
-  await fetch(`${API_BASE}
-/pedidos/${id}/estado`, {
+  await fetch(`${API_BASE}/pedidos/${id}/estado`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ estado: nuevoEstado, usuario: "deposito" }),
@@ -191,9 +123,8 @@ async function marcarEstado(id, nuevoEstado, navigate) {
 }
 
 async function entregarPedido(id, navigate) {
-  await fetch(`${API_BASE}
-/pedidos/${id}/entregar`, {
-    method: "POST",
+  await fetch(`${API_BASE}/pedidos/${id}/entregar`, {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ usuario: "deposito" }),
   });

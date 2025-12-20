@@ -1,40 +1,107 @@
-// backend/src/controllers/adminPedidos.controller.js
 import prisma from "../db/prisma.js";
-import {
-  ESTADOS_PEDIDO_VALIDOS,
-  normalizeEstadoPedido,
-} from "../constants/estadosPedidos.js";
+
+/* ========================================================
+   CONSTANTES Y HELPERS
+======================================================== */
+const ESTADOS_PEDIDO_VALIDOS = [
+  "PENDIENTE_PREPARACION",
+  "PREPARADO",
+  "ENTREGADO",
+  "PENDIENTE_CONFIRMACION",
+  "PENDIENTE_CONFIRMACION_FALTANTES",
+  "CERRADO",
+];
+
+function normalizeEstadoPedido(raw) {
+  return String(raw || "")
+    .trim()
+    .toUpperCase()
+    .replaceAll(" ", "_");
+}
+
+function safeParse(detalle) {
+  if (!detalle) return null;
+  try {
+    return JSON.parse(detalle);
+  } catch {
+    return null;
+  }
+}
 
 /* ========================================================
    GET /admin/pedidos
 ======================================================== */
 export async function adminListPedidos(req, res) {
   try {
-    const { estado } = req.query;
+    const { estado, faltantes } = req.query;
 
-    let estadoFiltro;
-    if (estado) {
+    /* =========================
+       1) Filtro por estado
+    ========================= */
+    let where = {};
+
+    if (estado && estado !== "TODOS") {
       const estadoNorm = normalizeEstadoPedido(estado);
       if (!ESTADOS_PEDIDO_VALIDOS.includes(estadoNorm)) {
         return res.status(400).json({
-          error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(", ")}`,
+          error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(
+            ", "
+          )}`,
         });
       }
-      estadoFiltro = estadoNorm;
+      where.estado = estadoNorm;
     }
 
+    /* =========================
+       2) Traer pedidos
+    ========================= */
     const pedidos = await prisma.pedido.findMany({
-      where: estadoFiltro ? { estado: estadoFiltro } : undefined,
+      where,
       include: {
         supervisor: { select: { username: true } },
+        servicio: { select: { nombre: true } },
+        historial: {
+          where: { accion: "DEVOLUCION_CONFIRMADA" },
+          orderBy: { fecha: "desc" },
+          take: 1,
+        },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    const resultado = pedidos.map(p => ({
-      ...p,
-      supervisorName: p.supervisor?.username ?? "—",
-    }));
+    /* =========================
+       3) Mapear + detectar faltantes
+    ========================= */
+    let resultado = pedidos.map((p) => {
+      const ultimaConfirm = p.historial?.[0];
+      const detalle = safeParse(ultimaConfirm?.detalle);
+
+      const faltantesConfirmados =
+        detalle?.faltantesConfirmados || [];
+
+      const conFaltantes =
+        p.estado === "CERRADO" &&
+        Array.isArray(faltantesConfirmados) &&
+        faltantesConfirmados.length > 0;
+
+      return {
+        ...p,
+        supervisorName: p.supervisor?.username ?? "—",
+        servicioName: p.servicio?.nombre ?? null,
+        conFaltantes,
+      };
+    });
+
+    /* =========================
+       4) Filtro por faltantes
+    ========================= */
+    if (faltantes === "1") {
+      resultado = resultado.filter((p) => p.conFaltantes);
+    }
+
+    if (faltantes === "0") {
+      resultado = resultado.filter((p) => !p.conFaltantes);
+    }
 
     res.json(resultado);
   } catch (err) {
@@ -54,7 +121,12 @@ export async function adminGetPedido(req, res) {
       where: { id },
       include: {
         supervisor: { select: { username: true } },
+        servicio: { select: { nombre: true } },
+        asignadas: {
+          include: { maquina: true },
+        },
         historial: {
+          include: { usuario: { select: { username: true } } },
           orderBy: { fecha: "asc" },
         },
       },
@@ -67,6 +139,7 @@ export async function adminGetPedido(req, res) {
     res.json({
       ...pedido,
       supervisorName: pedido.supervisor?.username ?? "—",
+      servicioName: pedido.servicio?.nombre ?? null,
     });
   } catch (err) {
     console.error("adminGetPedido:", err);
@@ -76,7 +149,6 @@ export async function adminGetPedido(req, res) {
 
 /* ========================================================
    PUT /admin/pedidos/:id/estado
-   Admin puede forzar cualquier cambio de estado
 ======================================================== */
 export async function adminUpdateEstado(req, res) {
   try {
@@ -87,10 +159,12 @@ export async function adminUpdateEstado(req, res) {
       return res.status(400).json({ error: "Debe enviar un estado" });
     }
 
-    const estadoNormalizado = normalizeEstadoPedido(estado);
-    if (!ESTADOS_PEDIDO_VALIDOS.includes(estadoNormalizado)) {
+    const estadoNorm = normalizeEstadoPedido(estado);
+    if (!ESTADOS_PEDIDO_VALIDOS.includes(estadoNorm)) {
       return res.status(400).json({
-        error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(", ")}`,
+        error: `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(
+          ", "
+        )}`,
       });
     }
 
@@ -102,20 +176,22 @@ export async function adminUpdateEstado(req, res) {
     const actualizado = await prisma.pedido.update({
       where: { id },
       data: {
-        estado: estadoNormalizado,
+        estado: estadoNorm,
         historial: {
           create: {
             accion: "ADMIN_CAMBIO_ESTADO",
-            fecha: new Date(),
-            usuario: usuario || "admin", // 👈 STRING
-            detalle: {
+            usuarioId: null,
+            detalle: JSON.stringify({
               mensaje: "Cambio forzado por administrador",
-            },
+              usuario: usuario || "admin",
+              nuevoEstado: estadoNorm,
+            }),
           },
         },
       },
       include: {
         historial: {
+          include: { usuario: { select: { username: true } } },
           orderBy: { fecha: "asc" },
         },
       },
@@ -128,5 +204,47 @@ export async function adminUpdateEstado(req, res) {
   } catch (err) {
     console.error("adminUpdateEstado:", err);
     res.status(500).json({ error: "Error interno del servidor" });
+  }
+}
+
+/* ========================================================
+   DELETE /admin/pedidos/:id
+======================================================== */
+export async function adminDeletePedido(req, res) {
+  try {
+    const { id } = req.params;
+
+    const pedido = await prisma.pedido.findUnique({
+      where: { id },
+      include: { asignadas: true },
+    });
+
+    if (!pedido) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      /* 1️⃣ Liberar máquinas */
+      const maquinasIds = pedido.asignadas.map((a) => a.maquinaId);
+
+      if (maquinasIds.length > 0) {
+        await tx.maquina.updateMany({
+          where: { id: { in: maquinasIds } },
+          data: { estado: "disponible" },
+        });
+      }
+
+      /* 2️⃣ Borrar relaciones */
+      await tx.pedidoMaquina.deleteMany({ where: { pedidoId: id } });
+      await tx.historialPedido.deleteMany({ where: { pedidoId: id } });
+
+      /* 3️⃣ Borrar pedido */
+      await tx.pedido.delete({ where: { id } });
+    });
+
+    res.json({ message: `Pedido ${id} eliminado correctamente` });
+  } catch (e) {
+    console.error("adminDeletePedido:", e);
+    res.status(500).json({ error: "Error eliminando pedido" });
   }
 }

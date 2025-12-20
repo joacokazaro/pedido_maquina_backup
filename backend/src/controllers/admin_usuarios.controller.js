@@ -1,45 +1,55 @@
-// backend/src/controllers/admin_usuarios.controller.js
-import { RolUsuario } from "@prisma/client";
 import prisma from "../db/prisma.js";
 
-/**
- * Helpers
- */
+/* =====================================================
+   CONSTANTES
+===================================================== */
+const ROLES_VALIDOS = ["admin", "supervisor", "deposito"];
+
+/* =====================================================
+   HELPERS
+===================================================== */
+function normalizeRol(rol) {
+  return rol ? String(rol).toLowerCase() : null;
+}
+
 function mapUsuarioResponse(u) {
   return {
     id: u.id,
     username: u.username,
     nombre: u.nombre,
-    rol: u.rol.toUpperCase(), // 👈 CLAVE
+    rol: u.rol.toUpperCase(), // 👈 el front lo espera así
     activo: u.activo,
     createdAt: u.createdAt,
   };
 }
 
-/**
- * GET /admin-users
- */
+/* =====================================================
+   GET /admin-users
+===================================================== */
 export async function adminGetUsuarios(req, res) {
   try {
     const { rol, activo, search } = req.query;
     const where = {};
 
-    if (rol) {
-      const rolLower = String(rol).toLowerCase();
-      if (!Object.values(RolUsuario).includes(rolLower)) {
+    if (rol !== undefined) {
+      const rolNorm = normalizeRol(rol);
+      if (!ROLES_VALIDOS.includes(rolNorm)) {
         return res.status(400).json({
-          error: `Rol inválido. Debe ser uno de: ${Object.values(RolUsuario).join(", ")}`,
+          error: `Rol inválido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}`,
         });
       }
-      where.rol = rolLower;
+      where.rol = rolNorm;
     }
 
-    if (typeof activo !== "undefined") {
-      where.activo = activo === "true" || activo === "1";
+    if (activo !== undefined) {
+      where.activo =
+        activo === true ||
+        activo === "true" ||
+        activo === "1";
     }
 
-    if (search) {
-      const q = String(search).toLowerCase();
+    if (search && String(search).trim() !== "") {
+      const q = String(search).trim();
       where.OR = [
         { username: { contains: q, mode: "insensitive" } },
         { nombre: { contains: q, mode: "insensitive" } },
@@ -53,17 +63,21 @@ export async function adminGetUsuarios(req, res) {
 
     res.json(usuarios.map(mapUsuarioResponse));
   } catch (e) {
-    console.error(e);
+    console.error("adminGetUsuarios:", e);
     res.status(500).json({ error: "Error listando usuarios" });
   }
 }
 
-/**
- * GET /admin-users/:username
- */
+/* =====================================================
+   GET /admin-users/:username
+===================================================== */
 export async function adminGetUsuarioByUsername(req, res) {
   try {
     const { username } = req.params;
+
+    if (!username) {
+      return res.status(400).json({ error: "Username requerido" });
+    }
 
     const usuario = await prisma.usuario.findUnique({
       where: { username },
@@ -75,14 +89,14 @@ export async function adminGetUsuarioByUsername(req, res) {
 
     res.json(mapUsuarioResponse(usuario));
   } catch (e) {
-    console.error(e);
+    console.error("adminGetUsuarioByUsername:", e);
     res.status(500).json({ error: "Error obteniendo usuario" });
   }
 }
 
-/**
- * POST /admin-users
- */
+/* =====================================================
+   POST /admin-users
+===================================================== */
 export async function adminCreateUsuario(req, res) {
   try {
     const { username, nombre, rol, password } = req.body || {};
@@ -93,14 +107,17 @@ export async function adminCreateUsuario(req, res) {
       });
     }
 
-    const rolLower = String(rol).toLowerCase();
-    if (!Object.values(RolUsuario).includes(rolLower)) {
+    const rolNorm = normalizeRol(rol);
+    if (!ROLES_VALIDOS.includes(rolNorm)) {
       return res.status(400).json({
-        error: `Rol inválido. Debe ser uno de: ${Object.values(RolUsuario).join(", ")}`,
+        error: `Rol inválido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}`,
       });
     }
 
-    const existe = await prisma.usuario.findUnique({ where: { username } });
+    const existe = await prisma.usuario.findUnique({
+      where: { username },
+    });
+
     if (existe) {
       return res.status(409).json({
         error: "Ya existe un usuario con ese username",
@@ -110,9 +127,9 @@ export async function adminCreateUsuario(req, res) {
     const nuevo = await prisma.usuario.create({
       data: {
         username,
-        nombre: nombre || username,
-        password, // plano por ahora
-        rol: rolLower,
+        nombre: nombre && nombre.trim() !== "" ? nombre : username,
+        password, // ⚠️ plano (OK para entorno dev)
+        rol: rolNorm,
         activo: true,
       },
     });
@@ -122,43 +139,57 @@ export async function adminCreateUsuario(req, res) {
       usuario: mapUsuarioResponse(nuevo),
     });
   } catch (e) {
-    console.error(e);
+    console.error("adminCreateUsuario:", e);
     res.status(500).json({ error: "Error creando usuario" });
   }
 }
 
-/**
- * PUT /admin-users/:username
- */
+/* =====================================================
+   PUT /admin-users/:username
+===================================================== */
 export async function adminUpdateUsuario(req, res) {
   try {
     const { username } = req.params;
     const { nombre, rol, password, activo } = req.body || {};
 
-    const usuario = await prisma.usuario.findUnique({ where: { username } });
+    const usuario = await prisma.usuario.findUnique({
+      where: { username },
+    });
+
     if (!usuario) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
     let rolFinal = usuario.rol;
     if (rol !== undefined) {
-      const rolLower = String(rol).toLowerCase();
-      if (!Object.values(RolUsuario).includes(rolLower)) {
+      const rolNorm = normalizeRol(rol);
+      if (!ROLES_VALIDOS.includes(rolNorm)) {
         return res.status(400).json({
-          error: `Rol inválido. Debe ser uno de: ${Object.values(RolUsuario).join(", ")}`,
+          error: `Rol inválido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}`,
         });
       }
-      rolFinal = rolLower;
+      rolFinal = rolNorm;
     }
 
     const actualizado = await prisma.usuario.update({
       where: { username },
       data: {
-        nombre: nombre ?? usuario.nombre,
+        nombre:
+          nombre !== undefined && nombre.trim() !== ""
+            ? nombre
+            : usuario.nombre,
+
         rol: rolFinal,
+
         password:
-          password && password.trim() !== "" ? password : usuario.password,
-        activo: typeof activo === "boolean" ? activo : usuario.activo,
+          password !== undefined && password.trim() !== ""
+            ? password
+            : usuario.password,
+
+        activo:
+          typeof activo === "boolean"
+            ? activo
+            : usuario.activo,
       },
     });
 
@@ -167,19 +198,23 @@ export async function adminUpdateUsuario(req, res) {
       usuario: mapUsuarioResponse(actualizado),
     });
   } catch (e) {
-    console.error(e);
+    console.error("adminUpdateUsuario:", e);
     res.status(500).json({ error: "Error actualizando usuario" });
   }
 }
 
-/**
- * DELETE /admin-users/:username
- */
+/* =====================================================
+   DELETE /admin-users/:username
+   (baja lógica)
+===================================================== */
 export async function adminDeleteUsuario(req, res) {
   try {
     const { username } = req.params;
 
-    const usuario = await prisma.usuario.findUnique({ where: { username } });
+    const usuario = await prisma.usuario.findUnique({
+      where: { username },
+    });
+
     if (!usuario) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
@@ -194,7 +229,7 @@ export async function adminDeleteUsuario(req, res) {
       usuario: mapUsuarioResponse(actualizado),
     });
   } catch (e) {
-    console.error(e);
+    console.error("adminDeleteUsuario:", e);
     res.status(500).json({ error: "Error dando de baja usuario" });
   }
 }

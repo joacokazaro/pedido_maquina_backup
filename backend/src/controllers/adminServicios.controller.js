@@ -1,6 +1,18 @@
 import prisma from "../db/prisma.js";
 
 /* ========================================================
+   HELPERS
+======================================================== */
+function parseId(raw) {
+  const id = Number(raw);
+  return Number.isNaN(id) ? null : id;
+}
+
+function normalizeNombre(nombre) {
+  return String(nombre || "").trim();
+}
+
+/* ========================================================
    GET /admin/servicios
    Lista servicios + cantidad de máquinas
 ======================================================== */
@@ -16,28 +28,30 @@ export async function adminGetServicios(req, res) {
     });
 
     res.json(
-      servicios.map(s => ({
+      servicios.map((s) => ({
         id: s.id,
         nombre: s.nombre,
         maquinas: s._count.maquinas,
       }))
     );
   } catch (e) {
-    console.error(e);
+    console.error("adminGetServicios:", e);
     res.status(500).json({ error: "Error listando servicios" });
   }
 }
 
 /* ========================================================
    GET /admin/servicios/:id
-   Servicio + máquinas asociadas
 ======================================================== */
 export async function adminGetServicioById(req, res) {
   try {
-    const { id } = req.params;
+    const id = parseId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ error: "ID de servicio inválido" });
+    }
 
     const servicio = await prisma.servicio.findUnique({
-      where: { id: Number(id) },
+      where: { id },
       include: {
         maquinas: {
           orderBy: { id: "asc" },
@@ -51,7 +65,7 @@ export async function adminGetServicioById(req, res) {
 
     res.json(servicio);
   } catch (e) {
-    console.error(e);
+    console.error("adminGetServicioById:", e);
     res.status(500).json({ error: "Error obteniendo servicio" });
   }
 }
@@ -61,14 +75,14 @@ export async function adminGetServicioById(req, res) {
 ======================================================== */
 export async function adminCreateServicio(req, res) {
   try {
-    const { nombre } = req.body || {};
+    const nombre = normalizeNombre(req.body?.nombre);
 
-    if (!nombre || nombre.trim() === "") {
+    if (!nombre) {
       return res.status(400).json({ error: "Nombre obligatorio" });
     }
 
     const existe = await prisma.servicio.findUnique({
-      where: { nombre: nombre.trim() },
+      where: { nombre },
     });
 
     if (existe) {
@@ -76,12 +90,15 @@ export async function adminCreateServicio(req, res) {
     }
 
     const nuevo = await prisma.servicio.create({
-      data: { nombre: nombre.trim() },
+      data: { nombre },
     });
 
-    res.status(201).json(nuevo);
+    res.status(201).json({
+      message: "Servicio creado correctamente",
+      servicio: nuevo,
+    });
   } catch (e) {
-    console.error(e);
+    console.error("adminCreateServicio:", e);
     res.status(500).json({ error: "Error creando servicio" });
   }
 }
@@ -91,21 +108,35 @@ export async function adminCreateServicio(req, res) {
 ======================================================== */
 export async function adminUpdateServicio(req, res) {
   try {
-    const { id } = req.params;
-    const { nombre } = req.body || {};
+    const id = parseId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ error: "ID de servicio inválido" });
+    }
 
-    if (!nombre || nombre.trim() === "") {
+    const nombre = normalizeNombre(req.body?.nombre);
+    if (!nombre) {
       return res.status(400).json({ error: "Nombre obligatorio" });
     }
 
-    const actualizado = await prisma.servicio.update({
-      where: { id: Number(id) },
-      data: { nombre: nombre.trim() },
+    const existe = await prisma.servicio.findUnique({
+      where: { id },
     });
 
-    res.json(actualizado);
+    if (!existe) {
+      return res.status(404).json({ error: "Servicio no encontrado" });
+    }
+
+    const actualizado = await prisma.servicio.update({
+      where: { id },
+      data: { nombre },
+    });
+
+    res.json({
+      message: "Servicio actualizado correctamente",
+      servicio: actualizado,
+    });
   } catch (e) {
-    console.error(e);
+    console.error("adminUpdateServicio:", e);
     res.status(500).json({ error: "Error actualizando servicio" });
   }
 }

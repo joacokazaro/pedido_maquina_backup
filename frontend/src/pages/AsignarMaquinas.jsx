@@ -128,7 +128,8 @@ export default function AsignarMaquinas() {
       }
     );
 
-    navigate(`/deposito/pedido/${id}`);
+    navigate("/deposito");
+
   }
 
   function cerrarJustificacion() {

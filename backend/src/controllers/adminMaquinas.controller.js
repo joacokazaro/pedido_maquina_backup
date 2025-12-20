@@ -1,28 +1,35 @@
-// backend/src/controllers/adminMaquinas.controller.js
 import prisma from "../db/prisma.js";
 
 /* ========================================================
-   NORMALIZAR ESTADO (FUENTE DE VERDAD)
+   CONSTANTES
+======================================================== */
+const ESTADO_PEDIDO_CERRADO = "CERRADO";
+
+const ESTADOS_MAQUINA_VALIDOS = [
+  "disponible",
+  "asignada",
+  "no_devuelta",
+  "fuera_servicio",
+  "reparacion",
+  "baja",
+];
+
+/* ========================================================
+   NORMALIZAR ESTADO DE MÁQUINA
+   (FUENTE ÚNICA DE VERDAD)
 ======================================================== */
 function normalizeEstado(raw) {
   const v = String(raw || "").trim().toLowerCase();
 
-  if (
-    [
-      "disponible",
-      "asignada",
-      "no_devuelta",
-      "fuera_servicio",
-      "reparacion",
-      "baja",
-    ].includes(v)
-  ) {
-    return v;
-  }
+  if (ESTADOS_MAQUINA_VALIDOS.includes(v)) return v;
 
   if (v === "no devuelta" || v === "nodevuelta") return "no_devuelta";
   if (v === "fuera de servicio") return "fuera_servicio";
-  if (v === "en reparacion" || v === "en reparación" || v === "reparación")
+  if (
+    v === "en reparacion" ||
+    v === "en reparación" ||
+    v === "reparación"
+  )
     return "reparacion";
 
   return "disponible";
@@ -36,11 +43,16 @@ export async function adminGetMaquinas(req, res) {
     const { tipo, estado, search } = req.query;
     const where = {};
 
-    if (tipo) where.tipo = tipo;
-    if (estado) where.estado = normalizeEstado(estado);
+    if (tipo && String(tipo).trim() !== "") {
+      where.tipo = String(tipo);
+    }
 
-    if (search) {
-      const q = search.toLowerCase();
+    if (estado) {
+      where.estado = normalizeEstado(estado);
+    }
+
+    if (search && String(search).trim() !== "") {
+      const q = String(search).trim();
       where.OR = [
         { id: { contains: q } },
         { tipo: { contains: q } },
@@ -50,19 +62,18 @@ export async function adminGetMaquinas(req, res) {
     }
 
     const maquinas = await prisma.maquina.findMany({
-  where,
-  include: {
-    servicio: {
-      select: { id: true, nombre: true }
-    }
-  },
-  orderBy: [{ tipo: "asc" }, { id: "asc" }],
-});
-
+      where,
+      include: {
+        servicio: {
+          select: { id: true, nombre: true },
+        },
+      },
+      orderBy: [{ tipo: "asc" }, { id: "asc" }],
+    });
 
     res.json(maquinas);
   } catch (e) {
-    console.error(e);
+    console.error("adminGetMaquinas:", e);
     res.status(500).json({ error: "Error listando máquinas" });
   }
 }
@@ -75,45 +86,48 @@ export async function adminGetMaquinaById(req, res) {
     const { id } = req.params;
 
     const maquina = await prisma.maquina.findUnique({
-  where: { id },
-  include: {
-    servicio: {
-      select: { id: true, nombre: true }
-    }
-  }
-});
-
+      where: { id },
+      include: {
+        servicio: {
+          select: { id: true, nombre: true },
+        },
+      },
+    });
 
     if (!maquina) {
       return res.status(404).json({ error: "Máquina no encontrada" });
     }
 
-    // Buscar si está asignada a algún pedido
-    const pedido = await prisma.pedido.findFirst({
+    // 🔑 Pedido actual (no cerrado) más reciente
+    const pedidoActual = await prisma.pedido.findFirst({
       where: {
+        estado: { not: ESTADO_PEDIDO_CERRADO },
         asignadas: {
           some: { maquinaId: id },
         },
       },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         estado: true,
-        servicio: { select: { nombre: true } },
+        servicio: {
+          select: { nombre: true },
+        },
       },
     });
 
     res.json({
       ...maquina,
-      asignacion: pedido
+      asignacion: pedidoActual
         ? {
-            pedidoId: pedido.id,
-            servicio: pedido.servicio?.nombre ?? null,
-            estadoPedido: pedido.estado,
+            pedidoId: pedidoActual.id,
+            servicio: pedidoActual.servicio?.nombre ?? null,
+            estadoPedido: pedidoActual.estado,
           }
         : null,
     });
   } catch (e) {
-    console.error(e);
+    console.error("adminGetMaquinaById:", e);
     res.status(500).json({ error: "Error obteniendo máquina" });
   }
 }
@@ -143,9 +157,12 @@ export async function adminCreateMaquina(req, res) {
         id: String(id),
         tipo: String(tipo),
         modelo: String(modelo),
-        serie: serie ? String(serie) : null,
-        estado: normalizeEstado(estado || "disponible"),
-        servicioId,
+        serie:
+          serie !== undefined && String(serie).trim() !== ""
+            ? String(serie)
+            : null,
+        estado: normalizeEstado(estado),
+        servicioId: Number(servicioId),
       },
     });
 
@@ -154,7 +171,7 @@ export async function adminCreateMaquina(req, res) {
       maquina: nueva,
     });
   } catch (e) {
-    console.error(e);
+    console.error("adminCreateMaquina:", e);
     res.status(500).json({ error: "Error creando máquina" });
   }
 }
@@ -175,11 +192,32 @@ export async function adminUpdateMaquina(req, res) {
     const actualizada = await prisma.maquina.update({
       where: { id },
       data: {
-        tipo: tipo ?? existe.tipo,
-        modelo: modelo ?? existe.modelo,
-        serie: serie !== undefined ? serie : existe.serie,
-        estado: estado !== undefined ? normalizeEstado(estado) : existe.estado,
-        servicioId: servicioId ?? existe.servicioId,
+        tipo:
+          tipo !== undefined && String(tipo).trim() !== ""
+            ? String(tipo)
+            : existe.tipo,
+
+        modelo:
+          modelo !== undefined && String(modelo).trim() !== ""
+            ? String(modelo)
+            : existe.modelo,
+
+        serie:
+          serie !== undefined
+            ? String(serie).trim() !== ""
+              ? String(serie)
+              : null
+            : existe.serie,
+
+        estado:
+          estado !== undefined
+            ? normalizeEstado(estado)
+            : existe.estado,
+
+        servicioId:
+          servicioId !== undefined
+            ? Number(servicioId)
+            : existe.servicioId,
       },
     });
 
@@ -188,13 +226,14 @@ export async function adminUpdateMaquina(req, res) {
       maquina: actualizada,
     });
   } catch (e) {
-    console.error(e);
+    console.error("adminUpdateMaquina:", e);
     res.status(500).json({ error: "Error actualizando máquina" });
   }
 }
 
 /* ========================================================
-   DELETE /admin/maquinas/:id (BAJA LÓGICA)
+   DELETE /admin/maquinas/:id
+   (BAJA LÓGICA)
 ======================================================== */
 export async function adminDeleteMaquina(req, res) {
   try {
@@ -215,7 +254,7 @@ export async function adminDeleteMaquina(req, res) {
       maquina,
     });
   } catch (e) {
-    console.error(e);
+    console.error("adminDeleteMaquina:", e);
     res.status(500).json({ error: "Error dando de baja máquina" });
   }
 }
@@ -232,19 +271,12 @@ export async function adminCambiarEstado(req, res) {
       return res.status(400).json({ error: "Debe enviar el nuevo estado" });
     }
 
-    const ESTADOS_VALIDOS = [
-      "disponible",
-      "asignada",
-      "no_devuelta",
-      "fuera_servicio",
-      "reparacion",
-      "baja",
-    ];
-
     const estadoNorm = normalizeEstado(estado);
-    if (!ESTADOS_VALIDOS.includes(estadoNorm)) {
+    if (!ESTADOS_MAQUINA_VALIDOS.includes(estadoNorm)) {
       return res.status(400).json({
-        error: `Estado inválido. Debe ser uno de: ${ESTADOS_VALIDOS.join(", ")}`,
+        error: `Estado inválido. Debe ser uno de: ${ESTADOS_MAQUINA_VALIDOS.join(
+          ", "
+        )}`,
       });
     }
 
@@ -263,7 +295,7 @@ export async function adminCambiarEstado(req, res) {
       maquina,
     });
   } catch (e) {
-    console.error(e);
+    console.error("adminCambiarEstado:", e);
     res.status(500).json({ error: "Error actualizando estado" });
   }
 }
@@ -280,6 +312,7 @@ export async function adminResumenStock(req, res) {
 
     for (const m of maquinas) {
       const est = normalizeEstado(m.estado);
+
       porEstado[est] = (porEstado[est] || 0) + 1;
 
       const tipo = m.tipo || "SIN_TIPO";
@@ -303,8 +336,7 @@ export async function adminResumenStock(req, res) {
 
     res.json({ porEstado, porTipo });
   } catch (e) {
-    console.error(e);
+    console.error("adminResumenStock:", e);
     res.status(500).json({ error: "Error obteniendo resumen de stock" });
   }
 }
-

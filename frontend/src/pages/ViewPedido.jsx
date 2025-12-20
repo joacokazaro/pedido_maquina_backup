@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import HistorialPedido from "../components/HistorialPedido";
+import PedidoResumen from "../components/PedidoResumen";
 
 export default function ViewPedido() {
   const { id } = useParams();
@@ -119,16 +120,7 @@ export default function ViewPedido() {
 
       <h1 className="text-2xl font-bold mb-3">Pedido {pedido.id}</h1>
 
-      <span className="px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
-        {pedido.estado.replaceAll("_", " ")}
-      </span>
-
-      {pedido.servicio && (
-        <div className="bg-white p-4 my-4 border-l-4 border-green-500 rounded-xl shadow">
-          <h2 className="font-semibold">Servicio</h2>
-          <p>{pedido.servicio}</p>
-        </div>
-      )}
+      <PedidoResumen pedido={pedido} />
 
       {/* COMPLETAR FALTANTES */}
       {puedeCompletarFaltantes && (
