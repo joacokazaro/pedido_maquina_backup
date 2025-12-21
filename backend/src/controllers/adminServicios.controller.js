@@ -140,3 +140,39 @@ export async function adminUpdateServicio(req, res) {
     res.status(500).json({ error: "Error actualizando servicio" });
   }
 }
+/* ========================================================
+   DELETE /admin/servicios/:id
+======================================================== */
+export async function adminDeleteServicio(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!id) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    // Verificar existencia + máquinas asociadas
+    const servicio = await prisma.servicio.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { maquinas: true } },
+      },
+    });
+
+    if (!servicio) {
+      return res.status(404).json({ error: "Servicio no encontrado" });
+    }
+
+    if (servicio._count.maquinas > 0) {
+      return res.status(409).json({
+        error: "No se puede eliminar un servicio con máquinas asignadas",
+      });
+    }
+
+    await prisma.servicio.delete({ where: { id } });
+
+    res.json({ message: "Servicio eliminado correctamente" });
+  } catch (e) {
+    console.error("adminDeleteServicio:", e);
+    res.status(500).json({ error: "Error eliminando servicio" });
+  }
+}
