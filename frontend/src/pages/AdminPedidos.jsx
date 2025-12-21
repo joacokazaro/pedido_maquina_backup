@@ -10,6 +10,8 @@ export default function AdminPedidos() {
 
   const [estadoFiltro, setEstadoFiltro] = useState("TODOS");
   const [search, setSearch] = useState("");
+  const [pedidoAEliminar, setPedidoAEliminar] = useState(null);
+
 
   /* ============================
         CARGAR PEDIDOS
@@ -17,6 +19,8 @@ export default function AdminPedidos() {
   useEffect(() => {
     loadPedidos();
   }, []);
+
+ 
 
   async function loadPedidos() {
     setLoading(true);
@@ -33,110 +37,207 @@ export default function AdminPedidos() {
   /* ============================
         ELIMINAR PEDIDO
   ============================ */
-  async function eliminarPedido(id) {
-    const ok = window.confirm(
-      `⚠️ ¿Eliminar definitivamente el pedido ${id}?\n\nEsta acción NO se puede deshacer.`
+  async function eliminarPedido() {
+  if (!pedidoAEliminar) return;
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/admin/pedidos/${pedidoAEliminar.id}`,
+      { method: "DELETE" }
     );
-    if (!ok) return;
 
-    try {
-      const res = await fetch(`${API_BASE}/admin/pedidos/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Error eliminando pedido");
-      }
-
-      setPedidos(prev => prev.filter(p => p.id !== id));
-    } catch (e) {
-      alert(e.message || "Error eliminando pedido");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Error eliminando pedido");
     }
+
+    setPedidos(prev =>
+      prev.filter(p => p.id !== pedidoAEliminar.id)
+    );
+
+    setPedidoAEliminar(null);
+  } catch (e) {
+    console.error(e);
+    setPedidoAEliminar(null);
   }
+}
 
   /* ============================
         FALTANTES
   ============================ */
-  function tieneFaltantes(pedido) {
-    if (pedido.estado !== "CERRADO") return false;
+  /* ============================
+        FALTANTES
+============================ */
+function tieneFaltantes(pedido) {
+  return pedido.conFaltantes === true;
+}
 
-    const confirmacion = [...(pedido.historial || [])]
-      .reverse()
-      .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
 
-    const faltantes =
-      confirmacion?.detalle?.faltantesConfirmados || [];
+  /* ============================
+      TOTAL ÍTEMS SOLICITADOS
+============================ */
+/* ============================
+      TOTAL ÍTEMS SOLICITADOS
+============================ */
+function totalItemsSolicitados(pedido) {
+  let items = pedido.itemsSolicitados;
 
-    return faltantes.length > 0;
+  if (!items) return 0;
+
+  // 🟡 Si viene como string JSON
+  if (typeof items === "string") {
+    try {
+      items = JSON.parse(items);
+    } catch {
+      return 0;
+    }
   }
+
+  // 🟢 Caso array [{ tipo, cantidad }]
+  if (Array.isArray(items)) {
+    return items.reduce(
+      (acc, it) => acc + (Number(it.cantidad) || 0),
+      0
+    );
+  }
+
+  // 🔵 Caso objeto { LUSTADORA: 2, CARGADOR: 1 }
+  if (typeof items === "object") {
+    return Object.values(items).reduce(
+      (acc, v) => acc + (Number(v) || 0),
+      0
+    );
+  }
+
+  return 0;
+}
+
+function pedidoTieneMaquina(pedido, texto) {
+  const t = texto.toLowerCase();
+
+  // 1️⃣ asignadas actuales
+  const asignadas = (pedido.asignadas || []).some(a => {
+    const m = a.maquina || {};
+    return (
+      (m.id || "").toLowerCase().includes(t) ||
+      (m.serie || "").toLowerCase().includes(t)
+    );
+  });
+
+  // 2️⃣ historial (todas las variantes)
+  const historial = (pedido.historial || []).some(h => {
+    const d = h.detalle || {};
+    const listas = [
+      d.devueltas,
+      d.faltantes,
+      d.devueltasConfirmadas,
+      d.faltantesConfirmados,
+      d.devueltasDeclaradas,
+    ].flat().filter(Boolean);
+
+    return listas.some(x =>
+      String(x).toLowerCase().includes(t)
+    );
+  });
+
+  return asignadas || historial;
+}
+
+
+
+  
 
   /* ============================
         FILTRAR PEDIDOS
   ============================ */
   function filtrarPedidos() {
-    return pedidos.filter(p => {
-      const texto = search.toLowerCase();
-      const faltantes = tieneFaltantes(p);
+  const texto = search.toLowerCase();
 
-      /* ---- filtro por estado ---- */
-      let coincideEstado = true;
+  return pedidos.filter(p => {
+    const conFaltantes = p.conFaltantes === true;
 
-      if (estadoFiltro === "TODOS") {
-        coincideEstado = true;
-      } else if (estadoFiltro === "CERRADO") {
-        coincideEstado = p.estado === "CERRADO" && !faltantes;
-      } else if (estadoFiltro === "CERRADO_CON_FALTANTES") {
-        coincideEstado = p.estado === "CERRADO" && faltantes;
-      } else {
-        coincideEstado = p.estado === estadoFiltro;
+    /* =========================
+        FILTRO POR ESTADO
+    ========================== */
+    let coincideEstado = true;
+
+    if (estadoFiltro === "TODOS") {
+      coincideEstado = true;
+    } else if (estadoFiltro === "CERRADO") {
+      coincideEstado = p.estado === "CERRADO" && !conFaltantes;
+    } else if (estadoFiltro === "CERRADO_CON_FALTANTES") {
+      coincideEstado = p.estado === "CERRADO" && conFaltantes;
+    } else {
+      coincideEstado = p.estado === estadoFiltro;
+    }
+
+    if (!coincideEstado) return false;
+
+    /* =========================
+        BÚSQUEDA BÁSICA
+    ========================== */
+    const coincideBasico =
+      p.id?.toLowerCase().includes(texto) ||
+      (p.supervisorName || p.supervisor || "")
+        .toLowerCase()
+        .includes(texto) ||
+      (p.servicio?.nombre || "")
+        .toLowerCase()
+        .includes(texto);
+
+    /* =========================
+        MÁQUINAS ASIGNADAS
+    ========================== */
+    const coincideAsignadas = (p.asignadas || []).some(a => {
+      const m = a.maquina || a;
+      return (
+        (m.id || "").toLowerCase().includes(texto) ||
+        (m.tipo || "").toLowerCase().includes(texto) ||
+        (m.modelo || "").toLowerCase().includes(texto) ||
+        (m.serie || "").toLowerCase().includes(texto)
+      );
+    });
+
+    /* =========================
+        HISTORIAL (todas)
+    ========================== */
+    const coincideHistorial = (p.historial || []).some(h => {
+      let d = h.detalle;
+
+      // 🟡 parsear JSON si viene como string
+      if (typeof d === "string") {
+        try {
+          d = JSON.parse(d);
+        } catch {
+          return false;
+        }
       }
 
-      if (!coincideEstado) return false;
+      if (!d || typeof d !== "object") return false;
 
-      /* ---- búsqueda básica ---- */
-      const coincideBasico =
-        p.id.toLowerCase().includes(texto) ||
-        (p.supervisorName || p.supervisor || "")
-          .toLowerCase()
-          .includes(texto) ||
-        (p.servicio?.nombre || "")
-          .toLowerCase()
-          .includes(texto);
+      const listas = [
+        d.devueltas,
+        d.faltantes,
+        d.devueltasConfirmadas,
+        d.faltantesConfirmados,
+        d.devueltasDeclaradas,
+        d.asignadoPorTipo && Object.keys(d.asignadoPorTipo),
+      ]
+        .flat()
+        .filter(Boolean);
 
-      /* ---- máquinas asignadas ---- */
-      const coincideAsignadas = (p.asignadas || []).some(a => {
-        const m = a.maquina || a;
-        return (
-          (m.id || "").toLowerCase().includes(texto) ||
-          (m.tipo || "").toLowerCase().includes(texto) ||
-          (m.modelo || "").toLowerCase().includes(texto) ||
-          (m.serie || "").toLowerCase().includes(texto)
-        );
-      });
-
-      /* ---- máquinas en historial ---- */
-      const coincideHistorial = (p.historial || []).some(h => {
-        const d = h.detalle || {};
-        const listas = [
-          d.devueltas,
-          d.faltantes,
-          d.devueltasConfirmadas,
-          d.faltantesConfirmados,
-          d.devueltasDeclaradas,
-          d.asignadoPorTipo && Object.keys(d.asignadoPorTipo),
-        ]
-          .flat()
-          .filter(Boolean);
-
-        return listas.some(x =>
-          String(x).toLowerCase().includes(texto)
-        );
-      });
-
-      return coincideBasico || coincideAsignadas || coincideHistorial;
+      return listas.some(x =>
+        String(x).toLowerCase().includes(texto)
+      );
     });
-  }
+
+    /* =========================
+        RESULTADO FINAL
+    ========================== */
+    return coincideBasico || coincideAsignadas || coincideHistorial;
+  });
+}
+
 
   /* ============================
         ESTADOS
@@ -156,6 +257,8 @@ export default function AdminPedidos() {
   }
 
   return (
+
+    
     <div className="p-4 min-h-screen bg-gray-50 pb-24">
 
       {/* VOLVER */}
@@ -214,11 +317,13 @@ export default function AdminPedidos() {
                 </span>
 
                 <button
-                  onClick={() => eliminarPedido(p.id)}
-                  className="ml-2 px-2 py-1 text-xs rounded-md bg-red-100 text-red-700 hover:bg-red-200"
-                >
-                  Eliminar
-                </button>
+  onClick={() => setPedidoAEliminar(p)}
+  className="ml-2 px-2 py-1 text-xs rounded-md 
+             bg-red-100 text-red-700 hover:bg-red-200"
+>
+  Eliminar
+</button>
+
               </div>
             </div>
 
@@ -235,14 +340,50 @@ export default function AdminPedidos() {
                   Servicio: <b>{p.servicio.nombre}</b>
                 </p>
               )}
-
               <p className="text-xs text-gray-500 mt-1">
-                Ítems solicitados: {p.itemsSolicitados.length}
-              </p>
+  Ítems solicitados: {totalItemsSolicitados(p)}
+</p>
+
             </div>
           </div>
         ))}
       </div>
+
+      {pedidoAEliminar && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+      
+      <h2 className="text-lg font-bold text-red-600 mb-3">
+        ⚠ Eliminar pedido
+      </h2>
+
+      <p className="text-sm text-gray-700 mb-4">
+        Estás por eliminar <b>{pedidoAEliminar.id}</b>.
+      </p>
+
+      <p className="text-sm text-red-600 font-semibold mb-6">
+        Esta acción es permanente y no se puede deshacer.
+      </p>
+
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={() => setPedidoAEliminar(null)}
+          className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
+        >
+          Cancelar
+        </button>
+
+        <button
+          onClick={eliminarPedido}
+          className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
