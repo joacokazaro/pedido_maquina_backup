@@ -24,9 +24,18 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          cat << 'EOF' > ~/.ssh/id_rsa
+          ${{ secrets.SERVER_SSH_KEY }}
+          EOF
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: |
+          ssh -o StrictHostKeyChecking=yes \
+          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+          "echo SSH_OK"
+
 
       # ---------- COPY FRONT ----------
       - name: Copy frontend build
