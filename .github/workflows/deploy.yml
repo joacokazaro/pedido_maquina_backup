@@ -1,4 +1,4 @@
-name: Deploy Producción
+name: Deploy Pedido Maquina PROD
 
 on:
   push:
@@ -10,32 +10,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /var/www/pedido-maquina-backup
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-            echo "📥 Pull código"
-            git pull origin main
+      # ---------- FRONTEND ----------
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
 
-            echo "📦 Backend deps"
-            cd backend
-            npm install
+      # ---------- SSH SETUP ----------
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-            echo "🔁 Restart backend"
+      # ---------- COPY FRONT ----------
+      - name: Copy frontend build
+        run: |
+          rsync -avz --delete \
+            frontend/dist/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/pedido-maquina-backup/backend/public/
+
+      # ---------- BACKEND ----------
+      - name: Deploy backend
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd /var/www/pedido-maquina-backup/backend
+            npm install --omit=dev
             pm2 restart pedido-backend
-
-            echo "🎨 Build frontend"
-            cd ../frontend
-            npm install
-            npm run build
-
-            echo "📂 Copiando build"
-            rm -rf ../backend/public
-            cp -r dist ../backend/public
-
-            echo "✅ Deploy finalizado"
+            sudo systemctl reload nginx
+          EOF
