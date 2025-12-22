@@ -1,6 +1,6 @@
 // src/constants/estadosPedido.js
 
-// 🔒 Fuente única de verdad
+// Fuente única de verdad
 const ESTADOS_PEDIDO = {
   PENDIENTE_PREPARACION: "PENDIENTE_PREPARACION",
   PREPARADO: "PREPARADO",
