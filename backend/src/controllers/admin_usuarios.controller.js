@@ -11,7 +11,7 @@ const ROLES_VALIDOS = ["admin", "supervisor", "deposito"];
 function normalizeRol(rol) {
   return rol ? String(rol).toLowerCase() : null;
 }
-
+//test
 function mapUsuarioResponse(u) {
   return {
     id: u.id,
