@@ -1,0 +1,19 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn.lock
+
+# Env
+.env
+.env.*
+
+# Build frontend
+frontend/dist/
+
+# Build backend (si aplica)
+backend/public/assets/
+backend/public/*.map
+
+# OS / Editor
+.DS_Store
+.vscode/

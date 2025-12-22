@@ -7,97 +7,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/////////////////////////////////////////////////
-// MODELOS
-/////////////////////////////////////////////////
-
 model Usuario {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-
-  nombre    String?
-  password  String?
-  rol       String   // supervisor | deposito | admin
-  activo    Boolean  @default(true)
-
-  pedidosSupervisor Pedido[]          @relation("SupervisorPedidos")
+  id                Int               @id @default(autoincrement())
+  username          String            @unique
+  nombre            String?
+  password          String?
+  rol               String
+  activo            Boolean           @default(true)
+  createdAt         DateTime          @default(now())
   historialAcciones HistorialPedido[]
-
-  createdAt DateTime @default(now())
+  pedidosSupervisor Pedido[]          @relation("SupervisorPedidos")
 }
 
 model Servicio {
   id        Int       @id @default(autoincrement())
   nombre    String    @unique
-
+  createdAt DateTime  @default(now())
   maquinas  Maquina[]
   pedidos   Pedido[]
-
-  createdAt DateTime @default(now())
 }
 
 model Maquina {
-  id        String   @id
-  tipo      String
-  modelo    String
-  serie     String?
-  estado    String   @default("disponible")
-  // disponible | asignada | no_devuelta | fuera_servicio | reparacion | baja
-
-  servicioId Int
-  servicio   Servicio @relation(fields: [servicioId], references: [id])
-
+  id           String          @id
+  tipo         String
+  modelo       String
+  serie        String?
+  estado       String          @default("disponible")
+  servicioId   Int
+  createdAt    DateTime        @default(now())
+  servicio     Servicio        @relation(fields: [servicioId], references: [id])
   asignaciones PedidoMaquina[]
-
-  createdAt DateTime @default(now())
 }
 
 model Pedido {
-  id          String   @id
-  estado      String
-  // PENDIENTE_PREPARACION | PREPARADO | ENTREGADO | PENDIENTE_CONFIRMACION | PENDIENTE_CONFIRMACION_FALTANTES | CERRADO
-
-  observacion String?
-
-  // Para mantener el front igual
+  id               String            @id
+  estado           String
+  observacion      String?
   itemsSolicitados String
   itemsDevueltos   String?
-
-  supervisorId Int
-  supervisor   Usuario @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
-
-  servicioId Int
-  servicio   Servicio @relation(fields: [servicioId], references: [id])
-
-  asignadas PedidoMaquina[]
-  historial HistorialPedido[]
-
-  createdAt DateTime @default(now())
+  supervisorId     Int
+  servicioId       Int
+  createdAt        DateTime          @default(now())
+  historial        HistorialPedido[]
+  servicio         Servicio          @relation(fields: [servicioId], references: [id])
+  supervisor       Usuario           @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
+  asignadas        PedidoMaquina[]
 }
 
 model PedidoMaquina {
-  id         Int    @id @default(autoincrement())
-
-  pedidoId   String
-  maquinaId  String
-
-  pedido     Pedido  @relation(fields: [pedidoId], references: [id])
-  maquina    Maquina @relation(fields: [maquinaId], references: [id])
+  id        Int     @id @default(autoincrement())
+  pedidoId  String
+  maquinaId String
+  maquina   Maquina @relation(fields: [maquinaId], references: [id])
+  pedido    Pedido  @relation(fields: [pedidoId], references: [id])
 
   @@unique([pedidoId, maquinaId])
 }
 
 model HistorialPedido {
   id        Int      @id @default(autoincrement())
-
   pedidoId  String
-  pedido    Pedido   @relation(fields: [pedidoId], references: [id])
-
   accion    String
   detalle   String?
-
   usuarioId Int
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
-
   fecha     DateTime @default(now())
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id])
 }
