@@ -10,9 +10,8 @@ yarn.lock
 # Build frontend
 frontend/dist/
 
-# Build backend (si aplica)
-backend/public/assets/
-backend/public/*.map
+# Build backend
+backend/public/
 
 # OS / Editor
 .DS_Store
