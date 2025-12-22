@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ---------- CHECKOUT ----------
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -24,30 +25,42 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          cat << 'EOF' > ~/.ssh/id_rsa
+
+          # Guardar key (ED25519)
+          cat << 'EOF' > ~/.ssh/id_ed25519
           ${{ secrets.SERVER_SSH_KEY }}
           EOF
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+                    chmod 600 ~/.ssh/id_ed25519
 
+                    # known_hosts (no falla si no responde)
+                    ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts || true
+
+                    # Config SSH
+                    cat << 'EOF' > ~/.ssh/config
+          Host prod
+            HostName ${{ secrets.SERVER_HOST }}
+            User ${{ secrets.SERVER_USER }}
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+          EOF
+                    chmod 600 ~/.ssh/config
+
+      # ---------- TEST SSH ----------
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=yes \
-          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-          "echo SSH_OK"
-
+          ssh -o StrictHostKeyChecking=yes prod "echo SSH_OK"
 
       # ---------- COPY FRONT ----------
       - name: Copy frontend build
         run: |
           rsync -avz --delete \
             frontend/dist/ \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/pedido-maquina-backup/backend/public/
+            prod:/var/www/pedido-maquina-backup/backend/public/
 
       # ---------- BACKEND ----------
       - name: Deploy backend
         run: |
-          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh prod << 'EOF'
             cd /var/www/pedido-maquina-backup/backend
             npm install --omit=dev
             pm2 restart pedido-backend
