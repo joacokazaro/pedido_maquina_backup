@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
@@ -30,6 +30,12 @@ export default function CreatePedido() {
 
   const [servicios, setServicios] = useState([]);
   const [servicioId, setServicioId] = useState("");
+
+  // 🔎 buscador servicios
+  const [servicioQuery, setServicioQuery] = useState("");
+  const [openServicios, setOpenServicios] = useState(false);
+  const comboRef = useRef(null);
+
   const [observacion, setObservacion] = useState("");
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -47,6 +53,34 @@ export default function CreatePedido() {
       .catch(() => setServicios([]));
   }, []);
 
+  // Cerrar dropdown si clickeás afuera
+  useEffect(() => {
+    function onDown(e) {
+      if (!comboRef.current) return;
+      if (!comboRef.current.contains(e.target)) {
+        setOpenServicios(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  // Si ya hay servicioId, precargar el texto en el input (por si vuelve a renderizar)
+  useEffect(() => {
+    if (!servicioId) return;
+    const s = servicios.find((x) => String(x.id) === String(servicioId));
+    if (s && servicioQuery.trim() === "") {
+      setServicioQuery(s.nombre);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servicioId, servicios]);
+
+  const serviciosFiltrados = useMemo(() => {
+    const q = servicioQuery.trim().toLowerCase();
+    if (!q) return servicios;
+    return servicios.filter((s) => (s.nombre || "").toLowerCase().includes(q));
+  }, [servicios, servicioQuery]);
+
   /* =========================
      HANDLERS
   ========================== */
@@ -56,6 +90,18 @@ export default function CreatePedido() {
       nueva[tipo] = Math.max(0, (nueva[tipo] || 0) + delta);
       return nueva;
     });
+  }
+
+  function seleccionarServicio(s) {
+    setServicioId(String(s.id));
+    setServicioQuery(s.nombre);
+    setOpenServicios(false);
+  }
+
+  function limpiarServicio() {
+    setServicioId("");
+    setServicioQuery("");
+    setOpenServicios(false);
   }
 
   async function handleCrear() {
@@ -89,7 +135,7 @@ export default function CreatePedido() {
         body: JSON.stringify({
           supervisorUsername: user.username,
           itemsSolicitados,
-          servicioId: Number(servicioId), // 🔑 CLAVE
+          servicioId: Number(servicioId),
           observacion: observacion.trim() || null,
         }),
       });
@@ -110,6 +156,7 @@ export default function CreatePedido() {
         }, {})
       );
       setServicioId("");
+      setServicioQuery("");
       setObservacion("");
 
       setTimeout(() => navigate("/supervisor"), 1200);
@@ -126,7 +173,6 @@ export default function CreatePedido() {
   ========================== */
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-
       {/* VOLVER */}
       <button
         onClick={() => navigate(-1)}
@@ -160,9 +206,7 @@ export default function CreatePedido() {
                 −
               </button>
 
-              <span className="text-xl w-8 text-center">
-                {cantidades[tipo]}
-              </span>
+              <span className="text-xl w-8 text-center">{cantidades[tipo]}</span>
 
               <button
                 type="button"
@@ -176,26 +220,94 @@ export default function CreatePedido() {
         ))}
       </div>
 
-      {/* SERVICIO */}
-      <div className="mt-6">
+      {/* SERVICIO (BUSCABLE) */}
+      <div className="mt-6" ref={comboRef}>
         <label className="block text-sm font-medium mb-1">
           Servicio donde se utilizarán las máquinas *
         </label>
 
-        <select
-          value={servicioId}
-          onChange={(e) => setServicioId(e.target.value)}
-          className="w-full bg-white rounded-xl shadow p-3 text-sm
-                     border border-gray-300 focus:ring-2
-                     focus:ring-blue-400 focus:outline-none"
-        >
-          <option value="">Seleccionar servicio…</option>
-          {servicios.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nombre}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <input
+            value={servicioQuery}
+            onChange={(e) => {
+              setServicioQuery(e.target.value);
+              setOpenServicios(true);
+              // si el usuario edita el texto, invalidamos la selección anterior
+              setServicioId("");
+            }}
+            onFocus={() => setOpenServicios(true)}
+            placeholder="Escribí para buscar…"
+            className="w-full bg-white rounded-xl shadow p-3 text-sm
+                       border border-gray-300 focus:ring-2
+                       focus:ring-blue-400 focus:outline-none pr-20"
+          />
+
+          {/* Botones derecha */}
+          <div className="absolute inset-y-0 right-2 flex items-center gap-2">
+            {servicioQuery && (
+              <button
+                type="button"
+                onClick={limpiarServicio}
+                className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+                title="Limpiar"
+              >
+                ✕
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setOpenServicios((p) => !p)}
+              className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+              title="Abrir/cerrar"
+            >
+              ▾
+            </button>
+          </div>
+
+          {openServicios && (
+            <div
+              className="absolute z-20 mt-2 w-full bg-white rounded-xl shadow-lg
+                         border border-gray-200 overflow-hidden"
+            >
+              <div className="max-h-72 overflow-auto">
+                {serviciosFiltrados.length === 0 ? (
+                  <div className="p-3 text-sm text-gray-500">
+                    No hay resultados para “{servicioQuery}”
+                  </div>
+                ) : (
+                  serviciosFiltrados.map((s) => {
+                    const selected = String(s.id) === String(servicioId);
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => seleccionarServicio(s)}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50
+                          ${selected ? "bg-blue-50" : "bg-white"}`}
+                      >
+                        <div className="font-medium text-gray-800">
+                          {s.nombre}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* mini feedback de selección */}
+        <div className="mt-2 text-xs text-gray-500">
+          {servicioId ? (
+            <span>
+              Seleccionado:{" "}
+              <span className="text-gray-800 font-medium">{servicioQuery}</span>
+            </span>
+          ) : (
+            <span>Tip: escribí parte del nombre y elegí de la lista.</span>
+          )}
+        </div>
       </div>
 
       {/* OBSERVACIÓN */}
