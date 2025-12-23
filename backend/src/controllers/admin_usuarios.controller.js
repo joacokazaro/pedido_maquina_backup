@@ -9,15 +9,19 @@ const ROLES_VALIDOS = ["admin", "supervisor", "deposito"];
    HELPERS
 ===================================================== */
 function normalizeRol(rol) {
-  return rol ? String(rol).toLowerCase() : null;
+  return typeof rol === "string" ? rol.toLowerCase().trim() : null;
 }
-//test
+
+function normalizeString(v) {
+  return typeof v === "string" ? v.trim() : null;
+}
+
 function mapUsuarioResponse(u) {
   return {
     id: u.id,
     username: u.username,
     nombre: u.nombre,
-    rol: u.rol.toUpperCase(), // 👈 el front lo espera así
+    rol: u.rol.toUpperCase(), // el front lo espera así
     activo: u.activo,
     createdAt: u.createdAt,
   };
@@ -25,12 +29,14 @@ function mapUsuarioResponse(u) {
 
 /* =====================================================
    GET /admin-users
+   ?rol=&activo=&search=
 ===================================================== */
 export async function adminGetUsuarios(req, res) {
   try {
     const { rol, activo, search } = req.query;
     const where = {};
 
+    // ---- filtro rol ----
     if (rol !== undefined) {
       const rolNorm = normalizeRol(rol);
       if (!ROLES_VALIDOS.includes(rolNorm)) {
@@ -41,15 +47,14 @@ export async function adminGetUsuarios(req, res) {
       where.rol = rolNorm;
     }
 
+    // ---- filtro activo ----
     if (activo !== undefined) {
-      where.activo =
-        activo === true ||
-        activo === "true" ||
-        activo === "1";
+      where.activo = ["true", "1", true].includes(activo);
     }
 
-    if (search && String(search).trim() !== "") {
-      const q = String(search).trim();
+    // ---- búsqueda ----
+    if (search && normalizeString(search)) {
+      const q = normalizeString(search);
       where.OR = [
         { username: { contains: q, mode: "insensitive" } },
         { nombre: { contains: q, mode: "insensitive" } },
@@ -73,7 +78,7 @@ export async function adminGetUsuarios(req, res) {
 ===================================================== */
 export async function adminGetUsuarioByUsername(req, res) {
   try {
-    const { username } = req.params;
+    const username = normalizeString(req.params.username);
 
     if (!username) {
       return res.status(400).json({ error: "Username requerido" });
@@ -101,13 +106,17 @@ export async function adminCreateUsuario(req, res) {
   try {
     const { username, nombre, rol, password } = req.body || {};
 
-    if (!username || !rol || !password) {
+    const usernameNorm = normalizeString(username);
+    const nombreNorm = normalizeString(nombre);
+    const rolNorm = normalizeRol(rol);
+    const passwordNorm = normalizeString(password);
+
+    if (!usernameNorm || !rolNorm || !passwordNorm) {
       return res.status(400).json({
         error: "username, rol y password son obligatorios",
       });
     }
 
-    const rolNorm = normalizeRol(rol);
     if (!ROLES_VALIDOS.includes(rolNorm)) {
       return res.status(400).json({
         error: `Rol inválido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}`,
@@ -115,7 +124,7 @@ export async function adminCreateUsuario(req, res) {
     }
 
     const existe = await prisma.usuario.findUnique({
-      where: { username },
+      where: { username: usernameNorm },
     });
 
     if (existe) {
@@ -126,9 +135,9 @@ export async function adminCreateUsuario(req, res) {
 
     const nuevo = await prisma.usuario.create({
       data: {
-        username,
-        nombre: nombre && nombre.trim() !== "" ? nombre : username,
-        password, // ⚠️ plano (OK para entorno dev)
+        username: usernameNorm,
+        nombre: nombreNorm || usernameNorm,
+        password: passwordNorm, // plano (decisión del proyecto)
         rol: rolNorm,
         activo: true,
       },
@@ -149,8 +158,12 @@ export async function adminCreateUsuario(req, res) {
 ===================================================== */
 export async function adminUpdateUsuario(req, res) {
   try {
-    const { username } = req.params;
+    const username = normalizeString(req.params.username);
     const { nombre, rol, password, activo } = req.body || {};
+
+    if (!username) {
+      return res.status(400).json({ error: "Username requerido" });
+    }
 
     const usuario = await prisma.usuario.findUnique({
       where: { username },
@@ -160,6 +173,7 @@ export async function adminUpdateUsuario(req, res) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
+    // ---- rol ----
     let rolFinal = usuario.rol;
     if (rol !== undefined) {
       const rolNorm = normalizeRol(rol);
@@ -171,26 +185,28 @@ export async function adminUpdateUsuario(req, res) {
       rolFinal = rolNorm;
     }
 
+    // ---- data final ----
+    const data = {
+      nombre:
+        typeof nombre === "string" && nombre.trim() !== ""
+          ? nombre.trim()
+          : usuario.nombre,
+
+      rol: rolFinal,
+
+      activo:
+        typeof activo === "boolean"
+          ? activo
+          : usuario.activo,
+    };
+
+    if (typeof password === "string" && password.trim() !== "") {
+      data.password = password.trim();
+    }
+
     const actualizado = await prisma.usuario.update({
       where: { username },
-      data: {
-        nombre:
-          nombre !== undefined && nombre.trim() !== ""
-            ? nombre
-            : usuario.nombre,
-
-        rol: rolFinal,
-
-        password:
-          password !== undefined && password.trim() !== ""
-            ? password
-            : usuario.password,
-
-        activo:
-          typeof activo === "boolean"
-            ? activo
-            : usuario.activo,
-      },
+      data,
     });
 
     res.json({
@@ -203,13 +219,18 @@ export async function adminUpdateUsuario(req, res) {
   }
 }
 
+
 /* =====================================================
    DELETE /admin-users/:username
-   (baja lógica)
+   (borrado físico)
 ===================================================== */
 export async function adminDeleteUsuario(req, res) {
   try {
-    const { username } = req.params;
+    const username = req.params.username;
+
+    if (!username) {
+      return res.status(400).json({ error: "Username requerido" });
+    }
 
     const usuario = await prisma.usuario.findUnique({
       where: { username },
@@ -219,17 +240,27 @@ export async function adminDeleteUsuario(req, res) {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const actualizado = await prisma.usuario.update({
+    // ⚠️ Protección mínima: no borrar último admin
+    if (usuario.rol === "admin") {
+      const admins = await prisma.usuario.count({
+        where: { rol: "admin" },
+      });
+
+      if (admins <= 1) {
+        return res.status(409).json({
+          error: "No se puede eliminar el último administrador",
+        });
+      }
+    }
+
+    await prisma.usuario.delete({
       where: { username },
-      data: { activo: false },
     });
 
-    res.json({
-      message: "Usuario dado de baja",
-      usuario: mapUsuarioResponse(actualizado),
-    });
+    res.json({ message: "Usuario eliminado correctamente" });
   } catch (e) {
     console.error("adminDeleteUsuario:", e);
-    res.status(500).json({ error: "Error dando de baja usuario" });
+    res.status(500).json({ error: "Error eliminando usuario" });
   }
 }
+

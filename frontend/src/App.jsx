@@ -199,7 +199,8 @@ function App() {
       <Route path="/admin/pedidos" element={<AdminPedidos />} />
       <Route path="/admin/usuarios" element={<AdminUsuarios />} />
       <Route path="/admin/usuarios/nuevo" element={<AdminUsuarioForm />} />
-      <Route path="/admin/usuarios/:id" element={<AdminUsuarioForm />} />
+      <Route path="/admin/usuarios/:username" element={<AdminUsuarioForm />} />
+
 
       <Route
         path="/admin/maquinas"

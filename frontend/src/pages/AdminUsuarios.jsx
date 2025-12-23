@@ -9,30 +9,18 @@ export default function AdminUsuarios() {
   const [rol, setRol] = useState("");
 
   async function load() {
-    try {
-      const params = new URLSearchParams();
-      if (search) params.append("search", search);
-      if (rol) params.append("rol", rol);
+    const params = new URLSearchParams();
+    if (search) params.append("search", search);
+    if (rol) params.append("rol", rol.toLowerCase());
 
-      const url =
-        params.toString().length > 0
-          ? `${API_BASE}
-/admin-users?${params.toString()}`
-          : `${API_BASE}
-/admin-users`;
+    const url =
+      params.toString().length > 0
+        ? `${API_BASE}/admin-users?${params.toString()}`
+        : `${API_BASE}/admin-users`;
 
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        console.error("Error al cargar usuarios:", res.status);
-        return;
-      }
-
-      const data = await res.json();
-      setUsuarios(data);
-    } catch (err) {
-      console.error("Error al cargar usuarios:", err);
-    }
+    const res = await fetch(url);
+    const data = await res.json();
+    setUsuarios(data);
   }
 
   useEffect(() => {
@@ -42,24 +30,22 @@ export default function AdminUsuarios() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
 
-      {/* BOTÓN VOLVER */}
+      {/* VOLVER */}
       <button
         onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg 
-                   bg-white border border-gray-200 shadow-sm 
-                   hover:shadow transition text-gray-700 text-sm font-medium"
+        className="mb-4 px-3 py-2 rounded-lg bg-white border shadow text-sm"
       >
-        <span className="text-lg">←</span> Volver
+        ← Volver
       </button>
 
       <h1 className="text-2xl font-bold mb-4">Usuarios</h1>
 
-      {/* BUSCADOR */}
+      {/* BUSCAR */}
       <input
-        placeholder="Buscar nombre o usuario..."
+        className="w-full p-3 mb-3 border rounded-xl"
+        placeholder="Buscar por nombre o usuario"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full p-3 mb-3 border rounded-xl"
       />
 
       {/* FILTRO ROL */}
@@ -68,29 +54,29 @@ export default function AdminUsuarios() {
         value={rol}
         onChange={(e) => setRol(e.target.value)}
       >
-        <option value="">Todos los roles</option>
-        <option value="admin">ADMIN</option>
-        <option value="supervisor">SUPERVISOR</option>
-        <option value="deposito">DEPOSITO</option>
+        <option value="">Todos</option>
+        <option value="ADMIN">ADMIN</option>
+        <option value="SUPERVISOR">SUPERVISOR</option>
+        <option value="DEPOSITO">DEPOSITO</option>
       </select>
 
-      {/* LISTADO */}
+      {/* LISTA */}
       <div className="space-y-3">
         {usuarios.map((u) => (
           <div
             key={u.username}
-            className="bg-white rounded-xl shadow p-4 cursor-pointer"
             onClick={() => navigate(`/admin/usuarios/${u.username}`)}
+            className="bg-white rounded-xl shadow p-4 cursor-pointer"
           >
             <p className="font-bold">{u.nombre}</p>
             <p className="text-sm text-gray-600">@{u.username}</p>
 
-            <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 mt-2 inline-block">
-              {u.rol.toUpperCase()}
+            <span className="inline-block mt-2 text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+              {u.rol}
             </span>
 
             {!u.activo && (
-              <span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700 ml-2">
+              <span className="ml-2 text-xs px-2 py-1 rounded bg-red-100 text-red-700">
                 Inactivo
               </span>
             )}
@@ -98,14 +84,13 @@ export default function AdminUsuarios() {
         ))}
       </div>
 
-      {/* BOTÓN NUEVO USUARIO */}
+      {/* NUEVO */}
       <button
         onClick={() => navigate("/admin/usuarios/nuevo")}
         className="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-full shadow-lg"
       >
-        + Nuevo usuario
+        + Nuevo
       </button>
-
     </div>
   );
 }
