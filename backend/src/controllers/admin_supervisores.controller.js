@@ -16,7 +16,7 @@ export async function adminGetSupervisores(req, res) {
   try {
    const supervisores = await prisma.usuario.findMany({
   where: {
-    OR: [{ rol: "SUPERVISOR" }, { rol: "supervisor" }],
+    OR: [{ rol: "supervisor" }],
   },
   include: {
     serviciosAsignados: {
