@@ -243,8 +243,13 @@ function App() {
 
 <Route
   path="/admin/supervisores-servicios"
-  element={<AdminSupervisoresServicios />}
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <AdminSupervisoresServicios />
+    </ProtectedRoute>
+  }
 />
+
 
 
 
