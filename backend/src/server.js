@@ -41,11 +41,12 @@ api.use("/servicios", serviciosRoutes);
 /* =======================
    ADMIN (TODO BAJO /api)
 ======================= */
+api.use("/admin/supervisores", adminSupervisoresRoutes);
 api.use("/admin-users", adminUsuariosRoutes);
 api.use("/admin", adminMaquinasRoutes);
 api.use("/admin", adminPedidosRoutes);
 api.use("/admin", adminServiciosRoutes);
-api.use("/admin/supervisores", adminSupervisoresRoutes);
+
 
 /* =======================
    HEALTHCHECK
