@@ -7,14 +7,13 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.routes.js";
 import maquinasRoutes from "./routes/maquinas.routes.js";
 import pedidosRoutes from "./routes/pedidos.routes.js";
+import serviciosRoutes from "./routes/servicios.routes.js";
 
 import adminMaquinasRoutes from "./routes/adminMaquinas.routes.js";
 import adminPedidosRoutes from "./routes/adminPedidos.routes.js";
 import adminUsuariosRoutes from "./routes/admin_usuarios.routes.js";
 import adminServiciosRoutes from "./routes/adminServicios.routes.js";
 import adminSupervisoresRoutes from "./routes/admin_supervisores.routes.js";
-
-import serviciosRoutes from "./routes/servicios.routes.js";
 
 const app = express();
 
@@ -25,36 +24,36 @@ app.use(cors());
 app.use(express.json());
 
 // =======================
-// API ROOT
+// API ROUTER
 // =======================
 const api = express.Router();
-app.use("/api", api);
 
-// =======================
-// API ROUTES
-// =======================
+// Core
 api.use("/auth", authRoutes);
 api.use("/maquinas", maquinasRoutes);
 api.use("/pedidos", pedidosRoutes);
 api.use("/servicios", serviciosRoutes);
 
-// =======================
-// ADMIN
-// =======================
+// Admin
 api.use("/admin-users", adminUsuariosRoutes);
 api.use("/admin", adminMaquinasRoutes);
 api.use("/admin", adminPedidosRoutes);
 api.use("/admin", adminServiciosRoutes);
 
-// ✅ SUPERVISORES
+// ✅ Supervisores x servicios
 api.use("/admin/supervisores", adminSupervisoresRoutes);
 
-
-// =======================
-// HEALTHCHECK
-// =======================
+// Health
 api.get("/health", (req, res) => {
   res.status(200).json({ ok: true, ts: new Date().toISOString() });
+});
+
+// Montar /api
+app.use("/api", api);
+
+// ✅ CLAVE: si no matchea /api, devolvé 404 JSON (NO index.html)
+app.use("/api", (req, res) => {
+  res.status(404).json({ error: "API route not found", path: req.originalUrl });
 });
 
 // =======================
@@ -66,11 +65,13 @@ const FRONT_DIST = path.join(__dirname, "../public");
 
 app.use(express.static(FRONT_DIST));
 
-// SPA fallback
-app.get("*", (req, res) => {
+// ✅ SPA fallback, pero EXCLUYE /api
+app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(FRONT_DIST, "index.html"));
 });
 
+// =======================
+// START
 // =======================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
