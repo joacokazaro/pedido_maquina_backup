@@ -42,7 +42,7 @@ api.use("/servicios", serviciosRoutes);
 // ADMIN
 // =======================
 api.use("/admin-users", adminUsuariosRoutes);
-api.use("/admin-users", adminSupervisoresRoutes); // 👈 AHORA SÍ
+api.use("/admin", adminSupervisoresRoutes); // 👈 AHORA SÍ
 api.use("/admin", adminMaquinasRoutes);
 api.use("/admin", adminPedidosRoutes);
 api.use("/admin", adminServiciosRoutes);

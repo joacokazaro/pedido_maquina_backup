@@ -18,16 +18,30 @@ export default function AdminSupervisoresServicios() {
      CARGA INICIAL
   ========================== */
   useEffect(() => {
-  fetch(`${API_BASE}/admin-users/supervisores`)
-    .then((r) => r.json())
-    .then(setSupervisores)
-    .catch(() => setError("Error cargando supervisores"));
+  async function load() {
+    try {
+      const r1 = await fetch(`${API_BASE}/admin/supervisores`);
+      if (!r1.ok) throw new Error("No se pudieron cargar supervisores");
+      const data1 = await r1.json();
+      setSupervisores(Array.isArray(data1) ? data1 : []);
+    } catch (e) {
+      setSupervisores([]);
+      setError("Error cargando supervisores");
+    }
 
-  fetch(`${API_BASE}/admin/servicios`)
-    .then((r) => r.json())
-    .then(setServicios)
-    .catch(() => setError("Error cargando servicios"));
+    try {
+      const r2 = await fetch(`${API_BASE}/admin/servicios`);
+      if (!r2.ok) throw new Error("No se pudieron cargar servicios");
+      const data2 = await r2.json();
+      setServicios(Array.isArray(data2) ? data2 : []);
+    } catch (e) {
+      setServicios([]);
+      setError("Error cargando servicios");
+    }
+  }
+  load();
 }, []);
+
 
 
   /* =========================
@@ -64,7 +78,7 @@ export default function AdminSupervisoresServicios() {
 
   try {
     const res = await fetch(
-  `${API_BASE}/admin-users/supervisores/${supervisorSel.id}/servicios`,
+  `${API_BASE}/admin/supervisores/${supervisorSel.id}/servicios`,
   {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

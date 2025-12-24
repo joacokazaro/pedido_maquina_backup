@@ -15,18 +15,20 @@ function parseId(raw) {
 export async function adminGetSupervisores(req, res) {
   try {
     const supervisores = await prisma.usuario.findMany({
-  where: {
-  rol: { contains: "supervisor" },
-  },
-  include: {
-    serviciosAsignados: {
-      include: {
-        servicio: true,
+      where: {
+        rol: "supervisor", // ✅ exacto, como está en la BD
       },
-    },
-  },
-});
-
+      include: {
+        serviciosAsignados: {
+          include: {
+            servicio: true,
+          },
+        },
+      },
+      orderBy: {
+        username: "asc",
+      },
+    });
 
     const result = supervisores.map((s) => ({
       id: s.id,
@@ -42,11 +44,8 @@ export async function adminGetSupervisores(req, res) {
   }
 }
 
-
-
 /* ========================================================
    GET /admin/supervisores/:id/servicios
-   Servicios asignados a un supervisor
 ======================================================== */
 export async function adminGetServiciosSupervisor(req, res) {
   try {
@@ -76,7 +75,6 @@ export async function adminGetServiciosSupervisor(req, res) {
 
 /* ========================================================
    PUT /admin/supervisores/:id/servicios
-   Reemplaza servicios asignados
 ======================================================== */
 export async function adminAsignarServiciosSupervisor(req, res) {
   try {
@@ -88,27 +86,27 @@ export async function adminAsignarServiciosSupervisor(req, res) {
     }
 
     if (!Array.isArray(servicioIds)) {
-      return res
-        .status(400)
-        .json({ error: "servicioIds debe ser un array" });
+      return res.status(400).json({
+        error: "servicioIds debe ser un array",
+      });
     }
 
-    // 1. Borrar asignaciones actuales
-    await prisma.usuarioServicio.deleteMany({
-      where: { usuarioId: supervisorId },
-    });
+    await prisma.$transaction(async (tx) => {
+      // borrar asignaciones actuales
+      await tx.usuarioServicio.deleteMany({
+        where: { usuarioId: supervisorId },
+      });
 
-    // 2. Crear nuevas asignaciones (una por una)
-    await Promise.all(
-      servicioIds.map((servicioId) =>
-        prisma.usuarioServicio.create({
+      // crear nuevas
+      for (const servicioId of servicioIds) {
+        await tx.usuarioServicio.create({
           data: {
             usuarioId: supervisorId,
             servicioId,
           },
-        })
-      )
-    );
+        });
+      }
+    });
 
     res.json({ message: "Servicios asignados correctamente" });
   } catch (e) {
@@ -116,4 +114,3 @@ export async function adminAsignarServiciosSupervisor(req, res) {
     res.status(500).json({ error: "Error asignando servicios" });
   }
 }
-
