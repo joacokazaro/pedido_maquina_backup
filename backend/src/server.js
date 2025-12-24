@@ -17,62 +17,59 @@ import adminSupervisoresRoutes from "./routes/admin_supervisores.routes.js";
 
 const app = express();
 
-// =======================
-// MIDDLEWARES
-// =======================
+/* ======================= */
+/* MIDDLEWARES             */
+/* ======================= */
 app.use(cors());
 app.use(express.json());
 
-// =======================
-// API ROUTER
-// =======================
+/* ======================= */
+/* API ROUTER              */
+/* ======================= */
 const api = express.Router();
+app.use("/api", api);
 
-// Core
+/* ======================= */
+/* API ROUTES              */
+/* ======================= */
 api.use("/auth", authRoutes);
 api.use("/maquinas", maquinasRoutes);
 api.use("/pedidos", pedidosRoutes);
 api.use("/servicios", serviciosRoutes);
 
-// Admin
+/* ======================= */
+/* ADMIN                   */
+/* ======================= */
 api.use("/admin-users", adminUsuariosRoutes);
 api.use("/admin", adminMaquinasRoutes);
 api.use("/admin", adminPedidosRoutes);
 api.use("/admin", adminServiciosRoutes);
 
-// ✅ Supervisores x servicios
+// ✅ ESTA ES LA CLAVE
 api.use("/admin/supervisores", adminSupervisoresRoutes);
 
-// Health
+/* ======================= */
+/* HEALTHCHECK             */
+/* ======================= */
 api.get("/health", (req, res) => {
-  res.status(200).json({ ok: true, ts: new Date().toISOString() });
+  res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// Montar /api
-app.use("/api", api);
-
-// ✅ CLAVE: si no matchea /api, devolvé 404 JSON (NO index.html)
-app.use("/api", (req, res) => {
-  res.status(404).json({ error: "API route not found", path: req.originalUrl });
-});
-
-// =======================
-// FRONTEND
-// =======================
+/* ======================= */
+/* FRONTEND                */
+/* ======================= */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const FRONT_DIST = path.join(__dirname, "../public");
 
 app.use(express.static(FRONT_DIST));
 
-// ✅ SPA fallback, pero EXCLUYE /api
-app.get(/^\/(?!api).*/, (req, res) => {
+// ⚠️ SIEMPRE ÚLTIMO
+app.get("*", (req, res) => {
   res.sendFile(path.join(FRONT_DIST, "index.html"));
 });
 
-// =======================
-// START
-// =======================
+/* ======================= */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor activo en http://localhost:${PORT}`);
