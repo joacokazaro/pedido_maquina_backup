@@ -25,26 +25,32 @@ app.use(cors());
 app.use(express.json());
 
 // =======================
-// API ROUTES
+// API ROOT (CLAVE)
 // =======================
-app.use("/auth", authRoutes);
-app.use("/maquinas", maquinasRoutes);
-app.use("/pedidos", pedidosRoutes);
-app.use("/servicios", serviciosRoutes);
+const api = express.Router();
+app.use("/api", api);
 
 // =======================
-// ADMIN (prefijos ya permitidos por NGINX)
+// API ROUTES
 // =======================
-app.use("/admin-users", adminUsuariosRoutes);
-app.use("/admin-users", adminSupervisoresRoutes); // ✅ ACÁ
-app.use("/admin", adminMaquinasRoutes);
-app.use("/admin", adminPedidosRoutes);
-app.use("/admin", adminServiciosRoutes);
+api.use("/auth", authRoutes);
+api.use("/maquinas", maquinasRoutes);
+api.use("/pedidos", pedidosRoutes);
+api.use("/servicios", serviciosRoutes);
+
+// =======================
+// ADMIN
+// =======================
+api.use("/admin-users", adminUsuariosRoutes);
+api.use("/admin-users", adminSupervisoresRoutes); // 👈 AHORA SÍ
+api.use("/admin", adminMaquinasRoutes);
+api.use("/admin", adminPedidosRoutes);
+api.use("/admin", adminServiciosRoutes);
 
 // =======================
 // HEALTHCHECK
 // =======================
-app.get("/health", (req, res) => {
+api.get("/health", (req, res) => {
   res.status(200).json({ ok: true, ts: new Date().toISOString() });
 });
 
@@ -57,7 +63,7 @@ const FRONT_DIST = path.join(__dirname, "../public");
 
 app.use(express.static(FRONT_DIST));
 
-// SPA fallback (último)
+// SPA fallback
 app.get("*", (req, res) => {
   res.sendFile(path.join(FRONT_DIST, "index.html"));
 });
