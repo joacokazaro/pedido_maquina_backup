@@ -8,12 +8,12 @@ import {
 const router = Router();
 
 // GET /admin/supervisores
-router.get("/supervisores", adminGetSupervisores);
+router.get("/", adminGetSupervisores);
 
 // GET /admin/supervisores/:id/servicios
-router.get("/supervisores/:id/servicios", adminGetServiciosSupervisor);
+router.get("/:id/servicios", adminGetServiciosSupervisor);
 
 // PUT /admin/supervisores/:id/servicios
-router.put("/supervisores/:id/servicios", adminAsignarServiciosSupervisor);
+router.put("/:id/servicios", adminAsignarServiciosSupervisor);
 
 export default router;
