@@ -16,3 +16,6 @@ backend/public/
 # OS / Editor
 .DS_Store
 .vscode/
+
+backend/prisma/dev.db
+
