@@ -33,19 +33,24 @@ app.use("/api", api);
 // =======================
 // API ROUTES
 // =======================
-api.use("/auth", authRoutes);
-api.use("/maquinas", maquinasRoutes);
-api.use("/pedidos", pedidosRoutes);
-api.use("/servicios", serviciosRoutes);
+app.use("/auth", authRoutes);
+app.use("/maquinas", maquinasRoutes);
+app.use("/pedidos", pedidosRoutes);
+app.use("/servicios", serviciosRoutes);
 
 // =======================
-// ADMIN
+// ADMIN EXISTENTE (NO TOCAR)
 // =======================
-api.use("/admin-users", adminUsuariosRoutes);
-api.use("/admin", adminSupervisoresRoutes); // 👈 AHORA SÍ
-api.use("/admin", adminMaquinasRoutes);
-api.use("/admin", adminPedidosRoutes);
-api.use("/admin", adminServiciosRoutes);
+app.use("/admin-users", adminUsuariosRoutes);
+app.use("/admin", adminMaquinasRoutes);
+app.use("/admin", adminPedidosRoutes);
+app.use("/admin", adminServiciosRoutes);
+
+// =======================
+// ✅ SUPERVISORES (AISLADO)
+// =======================
+app.use("/admin/supervisores", adminSupervisoresRoutes);
+
 
 // =======================
 // HEALTHCHECK
