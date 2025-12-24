@@ -35,6 +35,7 @@ import AdminMaquinaForm from "./pages/AdminMaquinaForm";
 import AdminViewPedido from "./pages/AdminViewPedido";
 import AdminServicios from "./pages/AdminServicios";
 import AdminServicioForm from "./pages/AdminServicioForm";
+import AdminSupervisoresServicios from "./pages/AdminSupervisoresServicios";
 
 function App() {
   const [ready, setReady] = useState(false);
@@ -46,11 +47,11 @@ function App() {
 
     try {
       await waitForBackend({
-        retries: 12,      // ~30 segundos total
+        retries: 12, // ~30 segundos
         delayMs: 2500,
       });
       setReady(true);
-    } catch (e) {
+    } catch {
       setError(
         "El servidor se está iniciando (Render). Puede tardar unos segundos."
       );
@@ -61,13 +62,13 @@ function App() {
     boot();
   }, []);
 
-  // =============================
-  // PANTALLA DE ESPERA (GATE)
-  // =============================
+  /* =============================
+     PANTALLA DE ESPERA
+  ============================== */
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-        <div className="w-full max-w-sm rounded-2xl bg-white border border-gray-200 shadow-sm p-5">
+        <div className="w-full max-w-sm rounded-2xl bg-white border shadow-sm p-5">
           <p className="text-gray-900 font-semibold">
             Iniciando aplicación…
           </p>
@@ -98,16 +99,16 @@ function App() {
     );
   }
 
-  // =============================
-  // APP REAL (ROUTES)
-  // =============================
+  /* =============================
+     RUTAS
+  ============================== */
   return (
     <Routes>
       {/* LOGIN */}
       <Route path="/" element={<Login />} />
 
       {/* =============================
-                SUPERVISOR
+            SUPERVISOR
       ============================== */}
       <Route
         path="/supervisor"
@@ -146,7 +147,7 @@ function App() {
       />
 
       {/* =============================
-                DEPÓSITO
+              DEPÓSITO
       ============================== */}
       <Route
         path="/deposito"
@@ -185,7 +186,7 @@ function App() {
       />
 
       {/* =============================
-                  ADMIN
+                ADMIN
       ============================== */}
       <Route
         path="/admin"
@@ -196,11 +197,51 @@ function App() {
         }
       />
 
-      <Route path="/admin/pedidos" element={<AdminPedidos />} />
-      <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-      <Route path="/admin/usuarios/nuevo" element={<AdminUsuarioForm />} />
-      <Route path="/admin/usuarios/:username" element={<AdminUsuarioForm />} />
+      <Route
+        path="/admin/pedidos"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminPedidos />
+          </ProtectedRoute>
+        }
+      />
 
+      <Route
+        path="/admin/usuarios"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminUsuarios />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/usuarios/nuevo"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminUsuarioForm />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/usuarios/:username"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminUsuarioForm />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* SUPERVISORES x SERVICIOS */}
+      <Route
+        path="/admin/supervisores-servicios"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminSupervisoresServicios />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/admin/maquinas"
@@ -220,8 +261,6 @@ function App() {
         }
       />
 
-      <Route path="/admin/pedido/:id" element={<AdminViewPedido />} />
-
       <Route
         path="/admin/maquinas/:id"
         element={
@@ -231,16 +270,42 @@ function App() {
         }
       />
 
-      <Route path="/admin/servicios" element={<AdminServicios />} />
-      <Route path="/admin/servicios/nuevo" element={<AdminServicioForm />} />
-      <Route path="/admin/servicios/:id" element={<AdminServicioForm />} />
+      <Route
+        path="/admin/pedido/:id"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminViewPedido />
+          </ProtectedRoute>
+        }
+      />
 
+      <Route
+        path="/admin/servicios"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminServicios />
+          </ProtectedRoute>
+        }
+      />
 
+      <Route
+        path="/admin/servicios/nuevo"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminServicioForm />
+          </ProtectedRoute>
+        }
+      />
 
+      <Route
+        path="/admin/servicios/:id"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminServicioForm />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
-
-
-
   );
 }
 
