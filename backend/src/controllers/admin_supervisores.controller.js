@@ -14,21 +14,19 @@ function parseId(raw) {
 ======================================================== */
 export async function adminGetSupervisores(req, res) {
   try {
-    const supervisores = await prisma.usuario.findMany({
-      where: {
-        rol: "supervisor", // ✅ exacto, como está en la BD
-      },
+   const supervisores = await prisma.usuario.findMany({
+  where: {
+    rol: "SUPERVISOR",
+  },
+  include: {
+    serviciosAsignados: {
       include: {
-        serviciosAsignados: {
-          include: {
-            servicio: true,
-          },
-        },
+        servicio: true,
       },
-      orderBy: {
-        username: "asc",
-      },
-    });
+    },
+  },
+});
+
 
     const result = supervisores.map((s) => ({
       id: s.id,
