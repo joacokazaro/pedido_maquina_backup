@@ -1,6 +1,8 @@
 // src/App.jsx
 import { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+
+
 
 import { waitForBackend } from "./services/waitForBackend";
 
@@ -233,15 +235,19 @@ function App() {
         }
       />
 
-      {/* SUPERVISORES x SERVICIOS */}
-      <Route
-        path="/admin/supervisores-servicios"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminSupervisoresServicios />
-          </ProtectedRoute>
-        }
-      />
+     {/* SUPERVISORES x SERVICIOS */}
+<Route
+  path="/admin/supervisores"
+  element={<Navigate to="/admin/supervisores-servicios" replace />}
+/>
+
+<Route
+  path="/admin/supervisores-servicios"
+  element={<AdminSupervisoresServicios />}
+/>
+
+
+
 
       <Route
         path="/admin/maquinas"
