@@ -15,16 +15,34 @@ model Usuario {
   rol               String
   activo            Boolean           @default(true)
   createdAt         DateTime          @default(now())
+
+  // Relaciones
   historialAcciones HistorialPedido[]
   pedidosSupervisor Pedido[]          @relation("SupervisorPedidos")
+  serviciosAsignados UsuarioServicio[]
 }
 
 model Servicio {
   id        Int       @id @default(autoincrement())
   nombre    String    @unique
   createdAt DateTime  @default(now())
-  maquinas  Maquina[]
-  pedidos   Pedido[]
+
+  // Relaciones
+  maquinas     Maquina[]
+  pedidos      Pedido[]
+  supervisores UsuarioServicio[]
+}
+
+model UsuarioServicio {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int
+  servicioId Int
+  createdAt  DateTime @default(now())
+
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
+  servicio Servicio @relation(fields: [servicioId], references: [id])
+
+  @@unique([usuarioId, servicioId])
 }
 
 model Maquina {
@@ -35,6 +53,8 @@ model Maquina {
   estado       String          @default("disponible")
   servicioId   Int
   createdAt    DateTime        @default(now())
+
+  // Relaciones
   servicio     Servicio        @relation(fields: [servicioId], references: [id])
   asignaciones PedidoMaquina[]
 }
@@ -48,18 +68,21 @@ model Pedido {
   supervisorId     Int
   servicioId       Int
   createdAt        DateTime          @default(now())
-  historial        HistorialPedido[]
-  servicio         Servicio          @relation(fields: [servicioId], references: [id])
-  supervisor       Usuario           @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
-  asignadas        PedidoMaquina[]
+
+  // Relaciones
+  historial  HistorialPedido[]
+  asignadas  PedidoMaquina[]
+  servicio   Servicio @relation(fields: [servicioId], references: [id])
+  supervisor Usuario  @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
 }
 
 model PedidoMaquina {
   id        Int     @id @default(autoincrement())
   pedidoId  String
   maquinaId String
-  maquina   Maquina @relation(fields: [maquinaId], references: [id])
-  pedido    Pedido  @relation(fields: [pedidoId], references: [id])
+
+  pedido  Pedido  @relation(fields: [pedidoId], references: [id])
+  maquina Maquina @relation(fields: [maquinaId], references: [id])
 
   @@unique([pedidoId, maquinaId])
 }
@@ -71,6 +94,8 @@ model HistorialPedido {
   detalle   String?
   usuarioId Int
   fecha     DateTime @default(now())
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
-  pedido    Pedido   @relation(fields: [pedidoId], references: [id])
+
+  // Relaciones
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  pedido  Pedido  @relation(fields: [pedidoId], references: [id])
 }

@@ -12,6 +12,8 @@ import adminPedidosRoutes from "./routes/adminPedidos.routes.js";
 import adminUsuariosRoutes from "./routes/admin_usuarios.routes.js";
 import serviciosRoutes from "./routes/servicios.routes.js";
 import adminServiciosRoutes from "./routes/adminServicios.routes.js";
+import adminSupervisoresRoutes from "./routes/admin_supervisores.routes.js";
+
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use("/admin", adminPedidosRoutes);
 
 app.use("/servicios", serviciosRoutes);
 app.use("/admin", adminServiciosRoutes);
+app.use("/admin", adminSupervisoresRoutes);
+
 
 // =======================
 // HEALTHCHECK (ANTES DEL *)
@@ -66,6 +70,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor activo en http://localhost:${PORT}`);
 });
+
+
 
 // =======================
 // SHUTDOWN LIMPIO

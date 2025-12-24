@@ -74,6 +74,22 @@ export default function AdminHome() {
   </button>
 </section>
 
+{/* --- SUPERVISORES x SERVICIOS --- */}
+<section className="bg-white rounded-2xl shadow p-4">
+  <h2 className="text-lg font-semibold mb-2">Supervisores x Servicios</h2>
+  <p className="text-sm text-gray-600 mb-4">
+    Asigná rápidamente qué servicios puede operar cada supervisor.
+  </p>
+
+  <button
+    onClick={() => navigate("/admin/supervisores-servicios")}
+    className="w-full bg-teal-600 text-white py-3 rounded-xl font-semibold"
+  >
+    Asignar servicios a supervisores
+  </button>
+</section>
+
+
 
       </div>
     </div>
