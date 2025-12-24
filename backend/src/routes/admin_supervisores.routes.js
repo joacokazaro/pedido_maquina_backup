@@ -11,8 +11,13 @@ const router = Router();
    SUPERVISORES ↔ SERVICIOS
 ======================================================== */
 
-router.get("/supervisores", adminGetSupervisores);
-router.get("/supervisores/:id/servicios", adminGetServiciosSupervisor);
-router.put("/supervisores/:id/servicios", adminAsignarServiciosSupervisor);
+// GET /admin/supervisores
+router.get("/", adminGetSupervisores);
+
+// GET /admin/supervisores/:id/servicios
+router.get("/:id/servicios", adminGetServiciosSupervisor);
+
+// PUT /admin/supervisores/:id/servicios
+router.put("/:id/servicios", adminAsignarServiciosSupervisor);
 
 export default router;
