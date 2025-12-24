@@ -17,5 +17,5 @@ backend/public/
 .DS_Store
 .vscode/
 
-backend/prisma/dev.db
+
 
