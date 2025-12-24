@@ -20,7 +20,7 @@ export default function AdminSupervisoresServicios() {
   useEffect(() => {
   async function load() {
     try {
-      const r1 = await fetch(`${API_BASE}/admin/supervisores`);
+      const r1 = await fetch(`${API_BASE}/supervisores`);
       if (!r1.ok) throw new Error("No se pudieron cargar supervisores");
       const data1 = await r1.json();
       setSupervisores(Array.isArray(data1) ? data1 : []);
@@ -78,7 +78,7 @@ export default function AdminSupervisoresServicios() {
 
   try {
     const res = await fetch(
-  `${API_BASE}/admin/supervisores/${supervisorSel.id}/servicios`,
+  `${API_BASE}/supervisores/${supervisorSel.id}/servicios`,
   {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

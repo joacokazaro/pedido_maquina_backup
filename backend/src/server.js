@@ -38,10 +38,13 @@ api.use("/maquinas", maquinasRoutes);
 api.use("/pedidos", pedidosRoutes);
 api.use("/servicios", serviciosRoutes);
 
+// SUPERVISORES (API NORMAL)
+api.use("/supervisores", adminSupervisoresRoutes);
+
+
 /* =======================
    ADMIN (TODO BAJO /api)
 ======================= */
-api.use("/admin/supervisores", adminSupervisoresRoutes);
 api.use("/admin-users", adminUsuariosRoutes);
 api.use("/admin", adminMaquinasRoutes);
 api.use("/admin", adminPedidosRoutes);
