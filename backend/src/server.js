@@ -25,7 +25,7 @@ app.use(cors());
 app.use(express.json());
 
 // =======================
-// API ROUTES (NO TOCAR)
+// API ROUTES
 // =======================
 app.use("/auth", authRoutes);
 app.use("/maquinas", maquinasRoutes);
@@ -33,55 +33,37 @@ app.use("/pedidos", pedidosRoutes);
 app.use("/servicios", serviciosRoutes);
 
 // =======================
-// ADMIN EXISTENTE (NO TOCAR)
+// ADMIN (prefijos ya permitidos por NGINX)
 // =======================
 app.use("/admin-users", adminUsuariosRoutes);
+app.use("/admin-users", adminSupervisoresRoutes); // ✅ ACÁ
 app.use("/admin", adminMaquinasRoutes);
 app.use("/admin", adminPedidosRoutes);
-app.use("/admin", adminUsuariosRoutes);
 app.use("/admin", adminServiciosRoutes);
 
 // =======================
-// 👉 NUEVO: SUPERVISORES (CLAVE)
-// =======================
-app.use("/admin/supervisores", adminSupervisoresRoutes);
-
-// =======================
-// HEALTHCHECK (ANTES DEL *)
+// HEALTHCHECK
 // =======================
 app.get("/health", (req, res) => {
   res.status(200).json({ ok: true, ts: new Date().toISOString() });
 });
 
 // =======================
-// SERVIR FRONTEND (VITE BUILD)
+// FRONTEND
 // =======================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const FRONT_DIST = path.join(__dirname, "../public");
 
 app.use(express.static(FRONT_DIST));
 
-// =======================
-// SPA FALLBACK (ÚLTIMO)
-// =======================
+// SPA fallback (último)
 app.get("*", (req, res) => {
   res.sendFile(path.join(FRONT_DIST, "index.html"));
 });
 
 // =======================
-// START
-// =======================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor activo en http://localhost:${PORT}`);
-});
-
-// =======================
-// SHUTDOWN LIMPIO
-// =======================
-process.on("SIGINT", () => {
-  console.log("Servidor detenido");
-  process.exit(0);
 });

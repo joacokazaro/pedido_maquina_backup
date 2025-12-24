@@ -1,3 +1,4 @@
+//C:\Users\TBRHT\Desktop\pedido_maquina_backup\backend\src\routes\admin_supervisores.routes.js
 import { Router } from "express";
 import {
   adminGetSupervisores,

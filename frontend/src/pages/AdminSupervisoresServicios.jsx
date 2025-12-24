@@ -18,14 +18,17 @@ export default function AdminSupervisoresServicios() {
      CARGA INICIAL
   ========================== */
   useEffect(() => {
-    fetch(`${API_BASE}/admin/supervisores`)
-      .then((r) => r.json())
-      .then(setSupervisores);
+  fetch(`${API_BASE}/admin-users/supervisores`)
+    .then((r) => r.json())
+    .then(setSupervisores)
+    .catch(() => setError("Error cargando supervisores"));
 
-    fetch(`${API_BASE}/admin/servicios`)
-      .then((r) => r.json())
-      .then(setServicios);
-  }, []);
+  fetch(`${API_BASE}/admin/servicios`)
+    .then((r) => r.json())
+    .then(setServicios)
+    .catch(() => setError("Error cargando servicios"));
+}, []);
+
 
   /* =========================
      AL SELECCIONAR SUPERVISOR
@@ -61,13 +64,14 @@ export default function AdminSupervisoresServicios() {
 
   try {
     const res = await fetch(
-      `${API_BASE}/admin/supervisores/${supervisorSel.id}/servicios`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ servicioIds: seleccionados }),
-      }
-    );
+  `${API_BASE}/admin-users/supervisores/${supervisorSel.id}/servicios`,
+  {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ servicioIds: seleccionados }),
+  }
+);
+
 
     if (!res.ok) throw new Error();
 
