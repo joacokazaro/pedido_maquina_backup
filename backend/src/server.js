@@ -25,7 +25,7 @@ app.use(cors());
 app.use(express.json());
 
 // =======================
-// API ROOT (CLAVE)
+// API ROOT
 // =======================
 const api = express.Router();
 app.use("/api", api);
@@ -33,23 +33,21 @@ app.use("/api", api);
 // =======================
 // API ROUTES
 // =======================
-app.use("/auth", authRoutes);
-app.use("/maquinas", maquinasRoutes);
-app.use("/pedidos", pedidosRoutes);
-app.use("/servicios", serviciosRoutes);
+api.use("/auth", authRoutes);
+api.use("/maquinas", maquinasRoutes);
+api.use("/pedidos", pedidosRoutes);
+api.use("/servicios", serviciosRoutes);
 
 // =======================
-// ADMIN EXISTENTE (NO TOCAR)
+// ADMIN
 // =======================
-app.use("/admin-users", adminUsuariosRoutes);
-app.use("/admin", adminMaquinasRoutes);
-app.use("/admin", adminPedidosRoutes);
-app.use("/admin", adminServiciosRoutes);
+api.use("/admin-users", adminUsuariosRoutes);
+api.use("/admin", adminMaquinasRoutes);
+api.use("/admin", adminPedidosRoutes);
+api.use("/admin", adminServiciosRoutes);
 
-// =======================
-// ✅ SUPERVISORES (AISLADO)
-// =======================
-app.use("/admin/supervisores", adminSupervisoresRoutes);
+// ✅ SUPERVISORES
+api.use("/admin/supervisores", adminSupervisoresRoutes);
 
 
 // =======================
