@@ -85,7 +85,7 @@ jobs:
             npm install --omit=dev
 
             echo "♻️ Restarting backend"
-            /usr/local/bin/pm2 restart pedido-backend
+            /home/ubuntu/.nvm/versions/node/v20.19.6/bin/pm2 restart pedido-backend
 
             echo "🔁 Reloading nginx"
             sudo systemctl reload nginx
