@@ -54,8 +54,8 @@ jobs:
       - name: Copy frontend build
         run: |
           rsync -avz --delete \
-            frontend/dist/ \
-            prod:/var/www/pedido-maquina-backup/backend/public/
+          frontend/dist/ \
+          prod:/var/www/pedido-maquina-backup/frontend/dist/
 
       # ---------- BACKEND ----------
       - name: Deploy backend
