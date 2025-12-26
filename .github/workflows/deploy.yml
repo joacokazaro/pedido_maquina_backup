@@ -38,7 +38,7 @@ jobs:
           EOF
           chmod 600 ~/.ssh/id_ed25519
 
-          # known_hosts (no falla si no responde)
+          # known_hosts
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts || true
 
           # SSH config
@@ -56,7 +56,7 @@ jobs:
       # =========================
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=yes prod "echo SSH_OK"
+          ssh prod "echo SSH_OK"
 
       # =========================
       # DEPLOY FRONTEND
@@ -73,8 +73,22 @@ jobs:
       - name: Deploy backend
         run: |
           ssh prod << 'EOF'
-            cd /var/www/pedido-maquina-backup/backend
+            set -e
+
+            cd /var/www/pedido-maquina-backup
+
+            echo "📥 Pulling latest code"
+            git pull origin main
+
+            echo "📦 Installing backend deps"
+            cd backend
             npm install --omit=dev
+
+            echo "♻️ Restarting backend"
             pm2 restart pedido-backend
+
+            echo "🔁 Reloading nginx"
             sudo systemctl reload nginx
+
+            echo "✅ Deploy finished"
           EOF
