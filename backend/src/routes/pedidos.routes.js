@@ -15,6 +15,8 @@ import {
 
 const router = express.Router();
 
+
+router.get("/usuarios/:username/servicios", getServiciosDeUsuario);
 // =========================
 // CREAR / LISTAR
 // =========================
@@ -33,7 +35,7 @@ router.put("/:id/entregar", marcarEntregado);
 // ASIGNACIÓN
 // =========================
 router.post("/:id/asignar", asignarMaquinas);
-router.get("/usuarios/:username/servicios", getServiciosDeUsuario);
+
 
 // =========================
 // DEVOLUCIONES

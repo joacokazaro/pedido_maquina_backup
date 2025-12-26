@@ -10,54 +10,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ---------- CHECKOUT ----------
+      # =========================
+      # CHECKOUT
+      # =========================
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # ---------- FRONTEND ----------
+      # =========================
+      # FRONTEND - BUILD
+      # =========================
       - name: Build frontend
         working-directory: frontend
         run: |
           npm ci
           npm run build
 
-      # ---------- SSH SETUP ----------
+      # =========================
+      # SSH SETUP
+      # =========================
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
 
-          # Guardar key (ED25519)
+          # Private key
           cat << 'EOF' > ~/.ssh/id_ed25519
           ${{ secrets.SERVER_SSH_KEY }}
           EOF
-                    chmod 600 ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
 
-                    # known_hosts (no falla si no responde)
-                    ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts || true
+          # known_hosts (no falla si no responde)
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts || true
 
-                    # Config SSH
-                    cat << 'EOF' > ~/.ssh/config
+          # SSH config
+          cat << 'EOF' > ~/.ssh/config
           Host prod
             HostName ${{ secrets.SERVER_HOST }}
             User ${{ secrets.SERVER_USER }}
             IdentityFile ~/.ssh/id_ed25519
             IdentitiesOnly yes
           EOF
-                    chmod 600 ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
-      # ---------- TEST SSH ----------
+      # =========================
+      # TEST SSH
+      # =========================
       - name: Test SSH connection
         run: |
           ssh -o StrictHostKeyChecking=yes prod "echo SSH_OK"
 
-      # ---------- COPY FRONT ----------
-      - name: Copy frontend build
+      # =========================
+      # DEPLOY FRONTEND
+      # =========================
+      - name: Deploy frontend
         run: |
           rsync -avz --delete \
-          frontend/dist/ \
-          prod:/var/www/pedido-maquina-backup/frontend/dist/
+            frontend/dist/ \
+            prod:/var/www/pedido-maquina-backup/frontend/dist/
 
-      # ---------- BACKEND ----------
+      # =========================
+      # DEPLOY BACKEND
+      # =========================
       - name: Deploy backend
         run: |
           ssh prod << 'EOF'
