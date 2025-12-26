@@ -50,8 +50,9 @@ export default function CreatePedido() {
   // ✅ si fuera admin (si alguna vez lo usás acá): todos los servicios
   const url =
     user?.rol === "SUPERVISOR"
-      ? `${API_BASE}/usuarios/${encodeURIComponent(user.username)}/servicios`
+      ? `${API_BASE}/pedidos/usuarios/${encodeURIComponent(user.username)}/servicios`
       : `${API_BASE}/servicios`;
+
 
   fetch(url)
     .then((r) => r.json())
