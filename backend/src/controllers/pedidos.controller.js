@@ -79,6 +79,23 @@ export async function crearPedido(req, res) {
     if (!servicio)
       return res.status(404).json({ error: "Servicio no encontrado" });
 
+    // ✅ Validar que el supervisor tenga asignado ese servicio
+const asignacion = await prisma.usuarioServicio.findUnique({
+  where: {
+    usuarioId_servicioId: {
+      usuarioId: supervisor.id,
+      servicioId: servicio.id,
+    },
+  },
+});
+
+if (!asignacion) {
+  return res.status(403).json({
+    error: "No tenés permisos para crear pedidos para ese servicio",
+  });
+}
+
+
     const count = await prisma.pedido.count();
     const id = `P-${String(count + 1).padStart(4, "0")}`;
 
@@ -529,5 +546,31 @@ export async function completarFaltantes(req, res) {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Error declarando faltantes" });
+  }
+}
+
+export async function getServiciosDeUsuario(req, res) {
+  try {
+    const { username } = req.params;
+
+    const user = await prisma.usuario.findUnique({
+      where: { username },
+    });
+
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    const asignados = await prisma.usuarioServicio.findMany({
+      where: { usuarioId: user.id },
+      include: { servicio: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // devolvemos el mismo formato que /servicios: [{id, nombre}]
+    const servicios = asignados.map((x) => x.servicio);
+
+    res.json(servicios);
+  } catch (e) {
+    console.error("❌ getServiciosDeUsuario:", e);
+    res.status(500).json({ error: "Error obteniendo servicios del usuario" });
   }
 }

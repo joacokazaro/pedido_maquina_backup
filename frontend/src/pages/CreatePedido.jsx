@@ -44,14 +44,24 @@ export default function CreatePedido() {
      CARGAR SERVICIOS
   ========================== */
   useEffect(() => {
-    fetch(`${API_BASE}/servicios`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setServicios(data);
-        else setServicios([]);
-      })
-      .catch(() => setServicios([]));
-  }, []);
+  if (!user?.username) return;
+
+  // ✅ si es supervisor: solo sus servicios
+  // ✅ si fuera admin (si alguna vez lo usás acá): todos los servicios
+  const url =
+    user?.rol === "SUPERVISOR"
+      ? `${API_BASE}/usuarios/${encodeURIComponent(user.username)}/servicios`
+      : `${API_BASE}/servicios`;
+
+  fetch(url)
+    .then((r) => r.json())
+    .then((data) => {
+      if (Array.isArray(data)) setServicios(data);
+      else setServicios([]);
+    })
+    .catch(() => setServicios([]));
+}, [user?.username, user?.rol]);
+
 
   // Cerrar dropdown si clickeás afuera
   useEffect(() => {

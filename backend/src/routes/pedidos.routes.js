@@ -10,6 +10,7 @@ import {
   registrarDevolucion,
   confirmarDevolucion,
   completarFaltantes,
+  getServiciosDeUsuario
 } from "../controllers/pedidos.controller.js";
 
 const router = express.Router();
@@ -32,6 +33,7 @@ router.put("/:id/entregar", marcarEntregado);
 // ASIGNACIÓN
 // =========================
 router.post("/:id/asignar", asignarMaquinas);
+router.get("/usuarios/:username/servicios", getServiciosDeUsuario);
 
 // =========================
 // DEVOLUCIONES
