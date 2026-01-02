@@ -115,10 +115,20 @@ export default function ViewPedido() {
         onClick={() => navigate(-1)}
         className="mb-4 px-3 py-2 bg-white border rounded-lg"
       >
-        ← Volver
+      Volver
       </button>
 
-      <h1 className="text-2xl font-bold mb-3">Pedido {pedido.id}</h1>
+      <h1 className="text-2xl font-bold mb-1">Pedido {pedido.id}</h1>
+
+<div className="text-sm text-gray-600 mb-4 space-y-1">
+  <p>
+    Solicitante: <b>{pedido.supervisor ?? "—"}</b>
+  </p>
+  <p>
+    Titular: <b>{pedido.titular ?? "—"}</b>
+  </p>
+</div>
+
 
       <PedidoResumen pedido={pedido} />
 

@@ -273,6 +273,16 @@ function pedidoTieneMaquina(pedido, texto) {
 
       <h1 className="text-2xl font-bold mb-4">Gestión de Pedidos</h1>
 
+      <a
+  href={`${API_BASE}/admin/pedidos/export`}
+  className="inline-block mb-4 px-4 py-2 rounded-lg
+             bg-green-600 text-white text-sm font-semibold
+             hover:bg-green-700 transition"
+>
+  Exportar pedidos (CSV)
+</a>
+
+
       {/* FILTROS */}
       <div className="space-y-3 mb-4">
         <input

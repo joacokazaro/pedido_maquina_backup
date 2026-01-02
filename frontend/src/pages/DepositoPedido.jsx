@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { useAuth } from "../context/AuthContext";
 import HistorialPedido from "../components/HistorialPedido";
 import PedidoResumen from "../components/PedidoResumen";
-
 
 export default function DepositoPedido() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [pedido, setPedido] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -16,11 +18,10 @@ export default function DepositoPedido() {
     async function load() {
       try {
         const res = await fetch(`${API_BASE}/pedidos/${id}`);
-        if (!res.ok) throw new Error("No se encontró el pedido");
-
+        if (!res.ok) throw new Error();
         const data = await res.json();
         setPedido(data);
-      } catch (err) {
+      } catch {
         setError("Error cargando el pedido");
       } finally {
         setLoading(false);
@@ -32,6 +33,39 @@ export default function DepositoPedido() {
   if (loading) return <div className="p-6">Cargando pedido...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
   if (!pedido) return null;
+
+  function volverAlListado() {
+    if (user.rol === "SUPERVISOR") {
+      navigate("/supervisor/prestamos");
+    } else {
+      navigate("/deposito");
+    }
+  }
+
+  async function marcarEstado(nuevoEstado) {
+    await fetch(`${API_BASE}/pedidos/${id}/estado`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        estado: nuevoEstado,
+        usuario: user.username,
+      }),
+    });
+
+    volverAlListado();
+  }
+
+  async function entregarPedido() {
+    await fetch(`${API_BASE}/pedidos/${id}/entregar`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        usuario: user.username,
+      }),
+    });
+
+    volverAlListado();
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
@@ -46,87 +80,59 @@ export default function DepositoPedido() {
         <span className="text-lg">←</span> Volver
       </button>
 
-      {/* Título */}
       <h1 className="text-2xl font-bold mb-1">Pedido {pedido.id}</h1>
-      <p className="text-sm text-gray-600 mb-4">
-        Supervisor: <b>{pedido.supervisor}</b>
-      </p>
+
+      <div className="text-sm text-gray-600 mb-4 space-y-1">
+        <p>
+          Solicitante: <b>{pedido.supervisor ?? "—"}</b>
+        </p>
+        <p>
+          Titular: <b>{pedido.titular ?? "—"}</b>
+        </p>
+      </div>
 
       <PedidoResumen pedido={pedido} />
-
-      {/* Historial */}
       <HistorialPedido historial={pedido.historial} />
 
-
-      {/* BOTONES DE ACCIÓN */}
-
-      {/* Asignar SOLO en pendiente preparación */}
-      {pedido.estado === "PENDIENTE_PREPARACION" && (
-        <button
-          onClick={() => navigate(`/deposito/pedido/${id}/asignar`)}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-blue-700 transition mb-3"
-        >
-          Asignar máquinas
-        </button>
-      )}
+      {/* ACCIONES */}
 
       {pedido.estado === "PENDIENTE_PREPARACION" && (
-        <button
-          onClick={() => marcarEstado(id, "PREPARADO", navigate)}
-          className="w-full bg-yellow-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-yellow-700 transition mb-3"
-        >
-          Marcar como PREPARADO
-        </button>
+        <>
+          <button
+            onClick={() => navigate(`/deposito/pedido/${id}/asignar`)}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold mb-3"
+          >
+            Asignar máquinas
+          </button>
+
+          <button
+            onClick={() => marcarEstado("PREPARADO")}
+            className="w-full bg-yellow-600 text-white py-3 rounded-xl font-semibold mb-3"
+          >
+            Marcar como PREPARADO
+          </button>
+        </>
       )}
 
       {pedido.estado === "PREPARADO" && (
         <button
-          onClick={() => entregarPedido(id, navigate)}
-          className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-green-700 transition"
+          onClick={entregarPedido}
+          className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
         >
           Marcar como ENTREGADO
         </button>
       )}
 
-      {pedido.estado === "PENDIENTE_CONFIRMACION" && (
+      {["PENDIENTE_CONFIRMACION", "PENDIENTE_CONFIRMACION_FALTANTES"].includes(
+        pedido.estado
+      ) && (
         <button
           onClick={() => navigate(`/deposito/pedido/${id}/confirmar`)}
-          className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-orange-700 transition"
+          className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold"
         >
           Confirmar devolución
         </button>
       )}
-
-      {pedido.estado === "PENDIENTE_CONFIRMACION_FALTANTES" && (
-  <button
-    onClick={() => navigate(`/deposito/pedido/${id}/confirmar`)}
-    className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold shadow hover:bg-red-700 transition"
-  >
-    Confirmar faltantes devueltos
-  </button>
-)}
-
-
     </div>
   );
-}
-
-/* ===== AUXILIARES ===== */
-
-async function marcarEstado(id, nuevoEstado, navigate) {
-  await fetch(`${API_BASE}/pedidos/${id}/estado`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ estado: nuevoEstado, usuario: "deposito" }),
-  });
-  navigate("/deposito");
-}
-
-async function entregarPedido(id, navigate) {
-  await fetch(`${API_BASE}/pedidos/${id}/entregar`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuario: "deposito" }),
-  });
-  navigate("/deposito");
 }

@@ -67,6 +67,11 @@ model Pedido {
   itemsDevueltos   String?
   supervisorId     Int
   servicioId       Int
+
+  // 🔽 NUEVOS CAMPOS
+  destino          String            @default("DEPOSITO")
+  supervisorDestinoUsername String?  
+
   createdAt        DateTime          @default(now())
 
   // Relaciones
@@ -75,6 +80,7 @@ model Pedido {
   servicio   Servicio @relation(fields: [servicioId], references: [id])
   supervisor Usuario  @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
 }
+
 
 model PedidoMaquina {
   id        Int     @id @default(autoincrement())

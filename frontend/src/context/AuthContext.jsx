@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
   // 🔁 Restaurar sesión
   useEffect(() => {
     const savedUser = localStorage.getItem("authUser");
+
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
@@ -19,6 +20,7 @@ export function AuthProvider({ children }) {
         localStorage.removeItem("authUser");
       }
     }
+
     setLoading(false);
   }, []);
 
@@ -40,11 +42,15 @@ export function AuthProvider({ children }) {
     navigate("/");
   }
 
-  // ⛔️ IMPORTANTE: no renderizar nada hasta terminar loading
-  if (loading) return null;
-
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading, // 👈 CLAVE
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

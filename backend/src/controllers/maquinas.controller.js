@@ -35,9 +35,11 @@ function mapMaquinaResponse(m) {
     modelo: m.modelo,
     serie: m.serie,
     estado: m.estado,
+    servicioId: m.servicioId,
     servicio: m.servicio?.nombre ?? null,
   };
 }
+
 
 /* ========================================================
    GET /maquinas

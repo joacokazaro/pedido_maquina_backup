@@ -16,14 +16,16 @@ export async function adminGetSupervisores(req, res) {
   try {
    const supervisores = await prisma.usuario.findMany({
   where: {
-    OR: [{ rol: "supervisor" }],
+    rol: { in: ["supervisor", "deposito"] },
   },
   include: {
     serviciosAsignados: {
       include: { servicio: true },
     },
   },
+  orderBy: { username: "asc" },
 });
+
 
 
 
@@ -109,5 +111,38 @@ export async function adminAsignarServiciosSupervisor(req, res) {
   } catch (e) {
     console.error("adminAsignarServiciosSupervisor:", e);
     res.status(500).json({ error: "Error asignando servicios" });
+  }
+}
+
+/* ========================================================
+   GET /admin/usuarios-operativos
+   Supervisores + Depósito con servicios asignados
+======================================================== */
+export async function adminGetUsuariosOperativos(req, res) {
+  try {
+    const usuarios = await prisma.usuario.findMany({
+      where: {
+        rol: { in: ["supervisor", "deposito"] },
+      },
+      include: {
+        serviciosAsignados: {
+          include: { servicio: true },
+        },
+      },
+      orderBy: { username: "asc" },
+    });
+
+    const result = usuarios.map((u) => ({
+      id: u.id,
+      username: u.username,
+      nombre: u.nombre,
+      rol: u.rol,
+      servicios: u.serviciosAsignados.map((us) => us.servicio),
+    }));
+
+    res.json(result);
+  } catch (e) {
+    console.error("adminGetUsuariosOperativos:", e);
+    res.status(500).json({ error: "Error listando usuarios operativos" });
   }
 }

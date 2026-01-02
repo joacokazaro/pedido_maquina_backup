@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { useAuth } from "../context/AuthContext";
+
+
 
 export default function AsignarMaquinas() {
   const { id } = useParams();
@@ -14,31 +17,49 @@ export default function AsignarMaquinas() {
   const [justificacion, setJustificacion] = useState("");
   const [showJustificacion, setShowJustificacion] = useState(false);
   const [alerta, setAlerta] = useState("");
+  const [serviciosUsuario, setServiciosUsuario] = useState([]);
+
 
   const [solicitado, setSolicitado] = useState({});
+  const { user } = useAuth();
+
 
   /* =========================
      CARGA INICIAL
   ========================== */
   useEffect(() => {
-    fetch(`${API_BASE}
-/pedidos/${id}`)
-      .then((r) => r.json())
-      .then((p) => {
-        setPedido(p);
+  // Pedido
+  fetch(`${API_BASE}/pedidos/${id}`)
+    .then((r) => r.json())
+    .then((p) => {
+      setPedido(p);
 
-        const sol = {};
-        (p.itemsSolicitados ?? []).forEach(
-          (i) => (sol[i.tipo] = i.cantidad)
-        );
-        setSolicitado(sol);
-      });
+      const sol = {};
+      (p.itemsSolicitados ?? []).forEach(
+        (i) => (sol[i.tipo] = i.cantidad)
+      );
+      setSolicitado(sol);
+    });
 
-    fetch(`${API_BASE}
-/maquinas`)
-      .then((r) => r.json())
-      .then(setMaquinas);
-  }, [id]);
+  // Máquinas
+  fetch(`${API_BASE}/maquinas`)
+    .then((r) => r.json())
+    .then(setMaquinas);
+
+  // Servicios del supervisor
+  fetch(`/servicios/usuario/${user.username}`)
+    .then(async (r) => {
+      if (!r.ok) return [];
+      return r.json();
+    })
+    .then((data) => {
+      if (!Array.isArray(data)) return;
+      setServiciosUsuario(data.map((s) => s.id));
+    })
+    .catch(console.error);
+
+}, [id, user.username]);
+
 
   if (!pedido) return <div className="p-6">Cargando...</div>;
 
@@ -52,19 +73,30 @@ export default function AsignarMaquinas() {
   ];
 
   const filtradas = maquinas.filter((m) => {
-    if (m.estado !== "disponible") return false;
+  // 1️⃣ solo disponibles
+  if (m.estado !== "disponible") return false;
 
-    const texto = filtroTexto.toLowerCase();
-    const cumpleTexto =
-      m.id.toLowerCase().includes(texto) ||
-      m.tipo.toLowerCase().includes(texto) ||
-      (m.modelo ?? "").toLowerCase().includes(texto);
+  // 2️⃣ préstamo entre supervisores → filtrar por servicio
+  if (
+  ["SUPERVISOR", "DEPOSITO"].includes(pedido.destino) &&
+  !serviciosUsuario.includes(m.servicioId)
+) {
+  return false;
+}
 
-    const cumpleTipo =
-      filtroTipo === "TODOS" || m.tipo === filtroTipo;
 
-    return cumpleTexto && cumpleTipo;
-  });
+  // 3️⃣ filtros actuales
+  const texto = filtroTexto.toLowerCase();
+  const cumpleTexto =
+    m.id.toLowerCase().includes(texto) ||
+    m.tipo.toLowerCase().includes(texto) ||
+    (m.modelo ?? "").toLowerCase().includes(texto);
+
+  const cumpleTipo =
+    filtroTipo === "TODOS" || m.tipo === filtroTipo;
+
+  return cumpleTexto && cumpleTipo;
+});
 
   /* =========================
      SELECCIÓN
@@ -123,12 +155,13 @@ export default function AsignarMaquinas() {
         body: JSON.stringify({
           asignadas: seleccion.map((m) => m.id),
           justificacion: necesita ? justificacion : null,
-          usuario: "deposito",
+          usuario: user.username,
         }),
       }
     );
 
-    navigate("/deposito");
+    navigate(-1);
+
 
   }
 

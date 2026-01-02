@@ -248,3 +248,110 @@ export async function adminDeletePedido(req, res) {
     res.status(500).json({ error: "Error eliminando pedido" });
   }
 }
+
+export async function adminExportPedidos(req, res) {
+  const pedidos = await prisma.pedido.findMany({
+    include: {
+      supervisor: { select: { username: true } },
+      servicio: { select: { nombre: true } },
+      asignadas: { include: { maquina: true } },
+      historial: {
+        include: { usuario: { select: { username: true } } },
+        orderBy: { fecha: "asc" },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const rows = [];
+
+  // =========================
+  // HEADER
+  // =========================
+  rows.push([
+    "ID Pedido",
+    "Estado",
+    "Destino",
+    "Servicio",
+    "Supervisor",
+    "Fecha Creación",
+    "Última Actualización",
+    "Máquinas Asignadas",
+    "Máquinas Devueltas",
+    "Máquinas Faltantes",
+    "Observaciones / Comentarios",
+    "Tiene Faltantes",
+    "Historial Resumido",
+  ]);
+
+  pedidos.forEach((p) => {
+    const asignadas = p.asignadas.map(a => a.maquina.id);
+
+    let devueltas = [];
+    let faltantes = [];
+    let observaciones = [];
+    let historialResumen = [];
+
+    p.historial.forEach(h => {
+      historialResumen.push(
+        `${h.fecha.toISOString().slice(0, 10)} - ${h.accion} (${h.usuario?.username ?? "sistema"})`
+      );
+
+      if (h.detalle) {
+        let d;
+        try {
+          d = typeof h.detalle === "string"
+            ? JSON.parse(h.detalle)
+            : h.detalle;
+        } catch {
+          d = null;
+        }
+
+        if (d?.devueltas) devueltas.push(...d.devueltas);
+        if (d?.devueltasConfirmadas) devueltas.push(...d.devueltasConfirmadas);
+        if (d?.faltantes || d?.faltantesConfirmados)
+          faltantes.push(...(d.faltantes || d.faltantesConfirmados));
+
+        if (d?.observacion) observaciones.push(d.observacion);
+        if (d?.mensaje) observaciones.push(d.mensaje);
+      }
+    });
+
+    // quitar duplicados
+    devueltas = [...new Set(devueltas)];
+    faltantes = [...new Set(faltantes)];
+
+    rows.push([
+      p.id,
+      p.estado,
+      p.destino,
+      p.servicio?.nombre ?? "",
+      p.supervisor?.username ?? "",
+      p.createdAt.toISOString(),
+      p.historial.at(-1)?.fecha.toISOString() ?? "",
+      asignadas.join(" | "),
+      devueltas.join(" | "),
+      faltantes.join(" | "),
+      observaciones.join(" | "),
+      faltantes.length > 0 ? "SI" : "NO",
+      historialResumen.join(" || "),
+    ]);
+  });
+
+  const csv = rows
+    .map(r =>
+      r.map(v =>
+        `"${String(v ?? "").replaceAll('"', '""').replaceAll("\n", " ")}"`
+      ).join(",")
+    )
+    .join("\n");
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename=pedidos_${new Date().toISOString().slice(0,10)}.csv`
+  );
+
+  res.send(csv);
+}
+

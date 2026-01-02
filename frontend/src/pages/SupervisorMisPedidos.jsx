@@ -2,13 +2,18 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { useNavigate } from "react-router-dom";
 
-export default function SupervisorHome() {
+
+export default function SupervisorMisPedidos() {
   const { user } = useAuth();
 
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("TODOS");
+
+
+  const navigate = useNavigate();
 
   /* =========================
      CARGA DE PEDIDOS
@@ -130,6 +135,14 @@ export default function SupervisorHome() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center px-4 py-10">
+
+      <button
+  onClick={() => navigate("/supervisor")}
+  className="mb-4 self-start text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
+>
+  ← Volver al panel
+</button>
+
 
       {/* TÍTULO */}
       <h1 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">

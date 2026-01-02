@@ -19,10 +19,7 @@ export default function AdminViewPedido() {
     async function load() {
       try {
         setLoading(true);
-        const res = await fetch(
-          `${API_BASE}
-/pedidos/${encodeURIComponent(id)}`
-        );
+        const res = await fetch(`${API_BASE}/pedidos/${encodeURIComponent(id)}`);
         if (!res.ok) throw new Error("No se pudo cargar el pedido");
 
         const data = await res.json();
@@ -69,10 +66,18 @@ export default function AdminViewPedido() {
       </button>
 
       {/* HEADER */}
-      <h1 className="text-2xl font-bold mb-1">Pedido {pedido.id}</h1>
-      <p className="text-sm text-gray-600 mb-2">
-        Supervisor: <b>{pedido.supervisor}</b>
-      </p>
+<h1 className="text-2xl font-bold mb-1">Pedido {pedido.id}</h1>
+
+<div className="text-sm text-gray-600 mb-2 space-y-1">
+  <p>
+    Solicitante:{" "}
+    <b>{pedido.supervisorName ?? pedido.supervisor ?? "—"}</b>
+  </p>
+  <p>
+      Titular: <b>{pedido.titular ?? "—"}</b>
+  </p>
+</div>
+
 
       <span className="inline-block px-4 py-1.5 rounded-full bg-gray-200 text-gray-800 text-sm font-semibold mb-4">
         {estadoLabel(pedido.estado)}
@@ -139,10 +144,7 @@ export default function AdminViewPedido() {
           ))
         )}
       </div>
-
       <HistorialPedido historial={pedido.historial} />
-
-
     </div>
   );
 }

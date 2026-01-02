@@ -10,8 +10,11 @@ import {
   registrarDevolucion,
   confirmarDevolucion,
   completarFaltantes,
-  getServiciosDeUsuario
+  getServiciosDeUsuario,
+  getPrestamosSupervisor
 } from "../controllers/pedidos.controller.js";
+
+
 
 const router = express.Router();
 
@@ -43,5 +46,8 @@ router.post("/:id/asignar", asignarMaquinas);
 router.post("/:id/devolucion", registrarDevolucion);
 router.post("/:id/confirmar-devolucion", confirmarDevolucion);
 router.post("/:id/completar-faltantes", completarFaltantes);
+
+router.get("/prestamos/:username", getPrestamosSupervisor);
+
 
 export default router;

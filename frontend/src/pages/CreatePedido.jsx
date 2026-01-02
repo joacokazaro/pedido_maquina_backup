@@ -40,6 +40,18 @@ export default function CreatePedido() {
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
+  // DESTINO
+const [destino, setDestino] = useState("DEPOSITO"); // "DEPOSITO" | "SUPERVISOR"
+const [supervisores, setSupervisores] = useState([]);
+const [supervisorDestinoUsername, setSupervisorDestinoUsername] = useState("");
+
+
+// buscador supervisores
+const [supervisorQuery, setSupervisorQuery] = useState("");
+const [openSupervisores, setOpenSupervisores] = useState(false);
+const comboSupRef = useRef(null);
+
+
   /* =========================
      CARGAR SERVICIOS
   ========================== */
@@ -64,6 +76,33 @@ export default function CreatePedido() {
 }, [user?.username, user?.rol]);
 
 
+useEffect(() => {
+  if (!user?.username) return;
+
+  fetch(`${API_BASE}/supervisores`)
+    .then((r) => r.json())
+    .then((data) => {
+      const arr = Array.isArray(data) ? data : (data.supervisores || []);
+      // opcional: que no aparezca el mismo supervisor logueado
+      const filtrados = arr.filter((s) => String(s.username) !== String(user.username));
+      setSupervisores(filtrados);
+    })
+    .catch(() => setSupervisores([]));
+}, [user?.username]);
+
+
+useEffect(() => {
+  function onDown(e) {
+    if (!comboSupRef.current) return;
+    if (!comboSupRef.current.contains(e.target)) setOpenSupervisores(false);
+  }
+  document.addEventListener("mousedown", onDown);
+  return () => document.removeEventListener("mousedown", onDown);
+}, []);
+
+
+
+
   // Cerrar dropdown si clickeás afuera
   useEffect(() => {
     function onDown(e) {
@@ -85,6 +124,31 @@ export default function CreatePedido() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [servicioId, servicios]);
+
+const supervisoresFiltrados = useMemo(() => {
+  const q = supervisorQuery.trim().toLowerCase();
+  if (!q) return supervisores;
+  return supervisores.filter((s) => {
+    const nombre = (s.nombre || "").toLowerCase();
+    const username = (s.username || "").toLowerCase();
+    return nombre.includes(q) || username.includes(q);
+  });
+}, [supervisores, supervisorQuery]);
+
+function seleccionarSupervisorDestino(s) {
+  setSupervisorDestinoId(String(s.id ?? s.username)); 
+  // si tu backend usa id numérico, usá s.id
+  // si usa username, usá s.username
+  setSupervisorQuery(s.nombre ? `${s.nombre} (${s.username})` : s.username);
+  setOpenSupervisores(false);
+}
+
+function limpiarSupervisorDestino() {
+  setSupervisorDestinoId("");
+  setSupervisorQuery("");
+  setOpenSupervisores(false);
+}
+
 
   const serviciosFiltrados = useMemo(() => {
     const q = servicioQuery.trim().toLowerCase();
@@ -137,19 +201,29 @@ export default function CreatePedido() {
       return;
     }
 
-    try {
-      setLoading(true);
+    if (destino === "SUPERVISOR" && !supervisorDestinoUsername) {
+  setMensaje("Seleccioná el supervisor destino.");
+  return;
+}
 
-      const res = await fetch(`${API_BASE}/pedidos`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          supervisorUsername: user.username,
-          itemsSolicitados,
-          servicioId: Number(servicioId),
-          observacion: observacion.trim() || null,
-        }),
-      });
+    try {
+  setLoading(true);
+
+  const res = await fetch(`${API_BASE}/pedidos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      supervisorUsername: user.username,
+      itemsSolicitados,
+      servicioId: Number(servicioId),
+      observacion: observacion.trim() || null,
+
+      destino,
+      supervisorDestinoUsername:
+        destino === "SUPERVISOR" ? supervisorDestinoUsername : null,
+    }),
+  });
+
 
       const data = await res.json();
 
@@ -199,6 +273,46 @@ export default function CreatePedido() {
         Seleccioná la cantidad de máquinas que necesitás.
       </p>
 
+      {/* DESTINO DEL PEDIDO */}
+<div className="mb-6">
+  <label className="block text-sm font-medium mb-2">
+    ¿A quién le hacés el pedido? *
+  </label>
+
+  <div className="grid grid-cols-2 gap-3">
+    <button
+      type="button"
+      onClick={() => {
+        setDestino("DEPOSITO");
+        setSupervisorDestinoUsername("");
+        setSupervisorQuery("");
+      }}
+      className={`rounded-xl p-4 shadow border transition text-left
+        ${
+          destino === "DEPOSITO"
+            ? "bg-blue-600 text-white border-blue-600"
+            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+        }`}
+    >
+      <div className="font-semibold text-lg">Depósito</div>
+    </button>
+
+    <button
+      type="button"
+      onClick={() => setDestino("SUPERVISOR")}
+      className={`rounded-xl p-4 shadow border transition text-left
+        ${
+          destino === "SUPERVISOR"
+            ? "bg-blue-600 text-white border-blue-600"
+            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+        }`}
+    >
+      <div className="font-semibold text-lg">Supervisor</div>
+    </button>
+  </div>
+</div>
+
+
       {/* MAQUINAS */}
       <div className="space-y-4">
         {MACHINE_TYPES.map((tipo) => (
@@ -231,6 +345,104 @@ export default function CreatePedido() {
         ))}
       </div>
 
+      {/* SUPERVISOR DESTINO (solo si aplica) */}
+{destino === "SUPERVISOR" && (
+  <div className="mb-6" ref={comboSupRef}>
+    <label className="block text-sm font-medium mb-1">
+      Supervisor destino *
+    </label>
+
+    <div className="relative">
+      <input
+        value={supervisorQuery}
+        onChange={(e) => {
+          setSupervisorQuery(e.target.value);
+          setOpenSupervisores(true);
+          setSupervisorDestinoUsername("");
+        }}
+        onFocus={() => setOpenSupervisores(true)}
+        placeholder="Escribí para buscar…"
+        className="w-full bg-white rounded-xl shadow p-3 text-sm
+                   border border-gray-300 focus:ring-2
+                   focus:ring-blue-400 focus:outline-none pr-20"
+      />
+
+      <div className="absolute inset-y-0 right-2 flex items-center gap-2">
+        {supervisorQuery && (
+          <button
+            type="button"
+            onClick={() => {
+              setSupervisorDestinoUsername("");
+              setSupervisorQuery("");
+              setOpenSupervisores(false);
+            }}
+            className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+          >
+            ✕
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setOpenSupervisores((p) => !p)}
+          className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+        >
+          ▾
+        </button>
+      </div>
+
+      {openSupervisores && (
+        <div className="absolute z-20 mt-2 w-full bg-white rounded-xl shadow-lg
+                        border border-gray-200 overflow-hidden">
+          <div className="max-h-72 overflow-auto">
+            {supervisoresFiltrados.length === 0 ? (
+              <div className="p-3 text-sm text-gray-500">
+                No hay resultados
+              </div>
+            ) : (
+              supervisoresFiltrados.map((s) => {
+                const selected =
+                  supervisorDestinoUsername === s.username;
+
+                return (
+                  <button
+                    key={s.username}
+                    type="button"
+                    onClick={() => {
+                      setSupervisorDestinoUsername(s.username);
+                      setSupervisorQuery(
+                        s.nombre
+                          ? `${s.nombre} (${s.username})`
+                          : s.username
+                      );
+                      setOpenSupervisores(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50
+                      ${selected ? "bg-blue-50" : "bg-white"}`}
+                  >
+                    <div className="font-medium text-gray-800">
+                      {s.nombre || s.username}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      @{s.username}
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+
+    <div className="mt-2 text-xs text-gray-500">
+      {supervisorDestinoUsername
+        ? "Supervisor seleccionado correctamente."
+        : "Elegí el supervisor al que le vas a pedir las máquinas."}
+    </div>
+  </div>
+)}
+
+       
       {/* SERVICIO (BUSCABLE) */}
       <div className="mt-6" ref={comboRef}>
         <label className="block text-sm font-medium mb-1">
@@ -354,4 +566,6 @@ export default function CreatePedido() {
       </button>
     </div>
   );
+
+  
 }

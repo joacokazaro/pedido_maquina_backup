@@ -11,8 +11,11 @@ export default function DepositoHome() {
 /pedidos`)
       .then(res => res.json())
       .then(data => {
-        setPedidos(data);
-      });
+  const soloDeposito = data.filter(
+    (p) => p.destino === "DEPOSITO"
+  );
+  setPedidos(soloDeposito);
+});
   }, []);
 
   /* =========================

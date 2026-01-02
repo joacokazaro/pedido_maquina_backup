@@ -2,8 +2,6 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-
-
 import { waitForBackend } from "./services/waitForBackend";
 
 import Login from "./pages/Login";
@@ -12,10 +10,14 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // =============================
 // SUPERVISOR
 // =============================
-import SupervisorHome from "./pages/SupervisorHome";
+import SupervisorDashboard from "./pages/SupervisorDashboard";
+import SupervisorMisPedidos from "./pages/SupervisorMisPedidos";
+import SupervisorMisPrestamos from "./pages/SupervisorMisPrestamos";
+import SupervisorPrestamo from "./pages/SupervisorPrestamo";
 import CreatePedido from "./pages/CreatePedido";
 import ViewPedido from "./pages/ViewPedido";
 import RegistrarDevolucion from "./pages/RegistrarDevolucion";
+import AsignarMaquinasPrestamo from "./pages/AsignarMaquinasPrestamo";
 
 // =============================
 // DEPÓSITO
@@ -43,13 +45,16 @@ function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
 
+  // 👉 Roles que participan del ciclo OPERATIVO de préstamo
+  const ROLES_OPERATIVOS = ["SUPERVISOR", "DEPOSITO"];
+
   async function boot() {
     setReady(false);
     setError("");
 
     try {
       await waitForBackend({
-        retries: 12, // ~30 segundos
+        retries: 12,
         delayMs: 2500,
       });
       setReady(true);
@@ -76,7 +81,8 @@ function App() {
           </p>
 
           <p className="text-gray-600 text-sm mt-2">
-            {error || "Despertando el backend. Esto puede tardar unos segundos."}
+            {error ||
+              "Despertando el backend. Esto puede tardar unos segundos."}
           </p>
 
           <div className="mt-4 flex gap-2">
@@ -86,15 +92,6 @@ function App() {
             >
               Reintentar
             </button>
-
-            <a
-              href={import.meta.env.VITE_API_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 rounded-lg bg-gray-100 text-gray-800 text-sm font-medium"
-            >
-              Abrir backend
-            </a>
           </div>
         </div>
       </div>
@@ -110,13 +107,31 @@ function App() {
       <Route path="/" element={<Login />} />
 
       {/* =============================
-            SUPERVISOR
+            SUPERVISOR (VISTAS PROPIAS)
       ============================== */}
       <Route
         path="/supervisor"
         element={
           <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
-            <SupervisorHome />
+            <SupervisorDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/pedidos"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+            <SupervisorMisPedidos />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/prestamos"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+            <SupervisorMisPrestamos />
           </ProtectedRoute>
         }
       />
@@ -149,6 +164,38 @@ function App() {
       />
 
       {/* =============================
+            CICLO DE PRÉSTAMO (OPERATIVO)
+            SUPERVISOR + DEPÓSITO
+      ============================== */}
+
+      <Route
+        path="/supervisor/prestamo/:id"
+        element={
+          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
+            <SupervisorPrestamo />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/prestamo/:id/asignar"
+        element={
+          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
+            <AsignarMaquinasPrestamo />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/prestamo/:id/confirmar"
+        element={
+          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
+            <ConfirmarDevolucion />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* =============================
               DEPÓSITO
       ============================== */}
       <Route
@@ -163,7 +210,7 @@ function App() {
       <Route
         path="/deposito/pedido/:id"
         element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
+          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
             <DepositoPedido />
           </ProtectedRoute>
         }
@@ -172,7 +219,7 @@ function App() {
       <Route
         path="/deposito/pedido/:id/asignar"
         element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
+          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
             <AsignarMaquinas />
           </ProtectedRoute>
         }
@@ -181,7 +228,7 @@ function App() {
       <Route
         path="/deposito/pedido/:id/confirmar"
         element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
+          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
             <ConfirmarDevolucion />
           </ProtectedRoute>
         }
@@ -235,24 +282,19 @@ function App() {
         }
       />
 
-     {/* SUPERVISORES x SERVICIOS */}
-<Route
-  path="/admin/supervisores"
-  element={<Navigate to="/admin/supervisores-servicios" replace />}
-/>
+      <Route
+        path="/admin/supervisores"
+        element={<Navigate to="/admin/supervisores-servicios" replace />}
+      />
 
-<Route
-  path="/admin/supervisores-servicios"
-  element={
-    <ProtectedRoute allowedRoles={["ADMIN"]}>
-      <AdminSupervisoresServicios />
-    </ProtectedRoute>
-  }
-/>
-
-
-
-
+      <Route
+        path="/admin/supervisores-servicios"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminSupervisoresServicios />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/admin/maquinas"

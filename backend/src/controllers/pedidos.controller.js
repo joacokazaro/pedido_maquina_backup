@@ -24,9 +24,23 @@ function safeParse(value, fallback) {
 function mapPedidoParaFront(p) {
   return {
     ...p,
-    supervisor: p.supervisor?.username ?? null,
-    servicio: p.servicio?.nombre ?? null,
 
+    // =========================
+    // DESTINO / TITULAR
+    // =========================
+    destino: p.destino,
+
+    titular:
+      p.destino === "SUPERVISOR"
+        ? p.supervisorDestinoUsername
+        : "DEPÓSITO",
+
+    // =========================
+    // SOLICITANTE
+    // =========================
+    supervisor: p.supervisor?.username ?? null,
+
+    servicio: p.servicio?.nombre ?? null,
     itemsSolicitados: safeParse(p.itemsSolicitados, []),
     itemsDevueltos: safeParse(p.itemsDevueltos, []),
 
@@ -56,7 +70,12 @@ export async function crearPedido(req, res) {
       itemsSolicitados,
       observacion,
       servicioId,
+
+      // NUEVO
+      destino = "DEPOSITO",
+      supervisorDestinoUsername,
     } = req.body || {};
+
 
     if (!supervisorUsername)
       return res.status(400).json({ error: "Falta supervisorUsername" });
@@ -79,6 +98,17 @@ export async function crearPedido(req, res) {
     if (!servicio)
       return res.status(404).json({ error: "Servicio no encontrado" });
 
+    if (!["DEPOSITO", "SUPERVISOR"].includes(destino)) {
+  return res.status(400).json({ error: "Destino inválido" });
+}
+
+if (destino === "SUPERVISOR" && !supervisorDestinoUsername) {
+  return res
+    .status(400)
+    .json({ error: "Falta supervisor destino" });
+}
+
+
     // ✅ Validar que el supervisor tenga asignado ese servicio
 const asignacion = await prisma.usuarioServicio.findUnique({
   where: {
@@ -100,33 +130,39 @@ if (!asignacion) {
     const id = `P-${String(count + 1).padStart(4, "0")}`;
 
     const pedido = await prisma.pedido.create({
-      data: {
-        id,
-        estado: ESTADOS_PEDIDO.PENDIENTE_PREPARACION,
-        observacion: observacion || null,
-        itemsSolicitados: JSON.stringify(itemsSolicitados),
-        itemsDevueltos: null,
+  data: {
+    id,
+    estado: ESTADOS_PEDIDO.PENDIENTE_PREPARACION,
+    observacion: observacion || null,
+    itemsSolicitados: JSON.stringify(itemsSolicitados),
+    itemsDevueltos: null,
 
-        supervisorId: supervisor.id,
-        servicioId: servicio.id,
+    supervisorId: supervisor.id,
+    servicioId: servicio.id,
 
-        historial: {
-          create: {
-            accion: "CREADO",
-            usuarioId: supervisor.id,
-            detalle: observacion
-              ? JSON.stringify({ observacion })
-              : null,
-          },
-        },
+    // 🔽 NUEVO
+    destino,
+    supervisorDestinoUsername:
+      destino === "SUPERVISOR" ? supervisorDestinoUsername : null,
+
+    historial: {
+      create: {
+        accion: "CREADO",
+        usuarioId: supervisor.id,
+        detalle: observacion
+          ? JSON.stringify({ observacion })
+          : null,
       },
-      include: {
-        supervisor: true,
-        servicio: true,
-        asignadas: { include: { maquina: true } },
-        historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
-      },
-    });
+    },
+  },
+  include: {
+    supervisor: true,
+    servicio: true,
+    asignadas: { include: { maquina: true } },
+    historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
+  },
+});
+
 
     res.status(201).json({
       message: "Pedido creado correctamente",
@@ -574,3 +610,32 @@ export async function getServiciosDeUsuario(req, res) {
     res.status(500).json({ error: "Error obteniendo servicios del usuario" });
   }
 }
+
+/* ========================================================
+   LISTAR PRÉSTAMOS (PEDIDOS A MÍ)
+======================================================== */
+export async function getPrestamosSupervisor(req, res) {
+  const { username } = req.params;
+
+  try {
+    const pedidos = await prisma.pedido.findMany({
+      where: {
+        destino: "SUPERVISOR",
+        supervisorDestinoUsername: username,
+      },
+      include: {
+        supervisor: true, // quien pidió
+        servicio: true,
+        asignadas: { include: { maquina: true } },
+        historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(pedidos.map(mapPedidoParaFront));
+  } catch (e) {
+    console.error("❌ getPrestamosSupervisor:", e);
+    res.status(500).json({ error: "Error obteniendo préstamos" });
+  }
+}
+
