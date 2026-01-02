@@ -47,7 +47,7 @@ export default function AsignarMaquinas() {
     .then(setMaquinas);
 
   // Servicios del supervisor
-  fetch(`/servicios/usuario/${user.username}`)
+  fetch(`${API_BASE}/servicios/usuario/${user.username}`)
     .then(async (r) => {
       if (!r.ok) return [];
       return r.json();
@@ -147,8 +147,7 @@ export default function AsignarMaquinas() {
     }
 
     await fetch(
-      `${API_BASE}
-/pedidos/${id}/asignar`,
+      `${API_BASE}/pedidos/${id}/asignar`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
