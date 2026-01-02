@@ -18,8 +18,6 @@ export default function AsignarMaquinas() {
   const [showJustificacion, setShowJustificacion] = useState(false);
   const [alerta, setAlerta] = useState("");
   const [serviciosUsuario, setServiciosUsuario] = useState([]);
-
-
   const [solicitado, setSolicitado] = useState({});
   const { user } = useAuth();
 
@@ -59,7 +57,6 @@ export default function AsignarMaquinas() {
     .catch(console.error);
 
 }, [id, user.username]);
-
 
   if (!pedido) return <div className="p-6">Cargando...</div>;
 
@@ -251,34 +248,41 @@ export default function AsignarMaquinas() {
 
       {/* LISTA */}
       <div className="space-y-3">
-        {filtradas.map((m) => {
-          const selected = seleccion.some(
-            (s) => s.id === m.id
-          );
-          return (
-            <div
-              key={m.id}
-              onClick={() => toggleSeleccion(m)}
-              className={`p-4 rounded-xl shadow cursor-pointer ${
-                selected
-                  ? "bg-green-100 border border-green-400"
-                  : "bg-white"
-              }`}
-            >
-              <p className="text-sm font-semibold uppercase tracking-wide">
-                {m.tipo}
-              </p>
-              <p className="mt-1 text-base font-bold">
-                Código: {m.id}
-              </p>
-              {m.modelo && (
-                <p className="mt-1 text-xs text-gray-600">
-                  {m.modelo}
-                </p>
-              )}
-            </div>
-          );
-        })}
+       {filtradas.map((m) => {
+  const selected = seleccion.some((s) => s.id === m.id);
+  const servicioLabel = m.servicio || "Sin servicio";
+
+  return (
+    <div
+      key={m.id}
+      onClick={() => toggleSeleccion(m)}
+      className={`p-4 rounded-xl shadow cursor-pointer ${
+        selected
+          ? "bg-green-100 border border-green-400"
+          : "bg-white"
+      }`}
+    >
+      <p className="text-sm font-semibold uppercase tracking-wide">
+        {m.tipo}
+      </p>
+
+      <p className="mt-1 text-base font-bold">
+        Código: {m.id}
+      </p>
+
+      {m.modelo && (
+        <p className="mt-1 text-xs text-gray-600">
+          {m.modelo}
+        </p>
+      )}
+
+      <p className="mt-1 text-xs text-gray-600">
+        Servicio: <span className="font-medium">{servicioLabel}</span>
+      </p>
+    </div>
+  );
+})}
+
 
         {filtradas.length === 0 && (
           <p className="text-sm text-gray-500">
