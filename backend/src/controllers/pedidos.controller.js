@@ -38,7 +38,10 @@ function mapPedidoParaFront(p) {
     // =========================
     // SOLICITANTE
     // =========================
+    // `supervisor` conserva el username (contrato existente),
+    // `supervisorNombre` aporta el nombre completo para la UI.
     supervisor: p.supervisor?.username ?? null,
+    supervisorNombre: p.supervisor?.nombre ?? p.supervisor?.username ?? null,
 
     servicio: p.servicio?.nombre ?? null,
     itemsSolicitados: safeParse(p.itemsSolicitados, []),

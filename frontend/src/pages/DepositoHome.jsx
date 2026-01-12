@@ -87,7 +87,13 @@ export default function DepositoHome() {
           >
             {/* HEADER CARD */}
             <div className="flex justify-between items-center gap-2">
-              <h2 className="font-bold text-lg">{p.id}</h2>
+              <div>
+                <h2 className="font-bold text-lg">{p.id}</h2>
+                {/** Mostrar nombre completo del solicitante si existe */}
+                { (p.supervisorNombre || p.supervisor) && (
+                  <p className="text-sm text-gray-600">Solicitado por: {p.supervisorNombre || p.supervisor}</p>
+                ) }
+              </div>
 
               <div className="flex items-center gap-2">
                 {tieneFaltantes(p) && (
