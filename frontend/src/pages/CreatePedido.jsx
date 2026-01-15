@@ -31,6 +31,9 @@ export default function CreatePedido() {
   const [servicios, setServicios] = useState([]);
   const [servicioId, setServicioId] = useState("");
 
+  // tipos disponibles (para 'Otro')
+  const [availableTipos, setAvailableTipos] = useState([]);
+
   // 🔎 buscador servicios
   const [servicioQuery, setServicioQuery] = useState("");
   const [openServicios, setOpenServicios] = useState(false);
@@ -39,6 +42,11 @@ export default function CreatePedido() {
   const [observacion, setObservacion] = useState("");
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
+
+  // OTROS: tipo libre seleccionado y cantidad
+  const [otroTipo, setOtroTipo] = useState("");
+  const [otroCantidad, setOtroCantidad] = useState(1);
+  const [otros, setOtros] = useState([]); // array of { tipo, cantidad }
 
   // DESTINO
 const [destino, setDestino] = useState("DEPOSITO"); // "DEPOSITO" | "SUPERVISOR"
@@ -74,6 +82,27 @@ const comboSupRef = useRef(null);
     })
     .catch(() => setServicios([]));
 }, [user?.username, user?.rol]);
+
+/* =========================
+   CARGAR TIPOS (OTRO)
+========================= */
+useEffect(() => {
+  async function loadTipos() {
+    try {
+      const res = await fetch(`${API_BASE}/maquinas`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const tipos = Array.from(new Set(data.map((m) => String(m.tipo || "").trim()).filter(Boolean)));
+        tipos.sort();
+        setAvailableTipos(tipos);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  loadTipos();
+}, []);
 
 
 useEffect(() => {
@@ -191,6 +220,13 @@ function limpiarSupervisorDestino() {
       .filter(([_, cantidad]) => cantidad > 0)
       .map(([tipo, cantidad]) => ({ tipo, cantidad }));
 
+    // incluir 'otros' seleccionados
+    if (Array.isArray(otros) && otros.length) {
+      otros.forEach((o) => {
+        if (o.tipo && Number(o.cantidad) > 0) itemsSolicitados.push({ tipo: o.tipo, cantidad: Number(o.cantidad) });
+      });
+    }
+
     if (itemsSolicitados.length === 0) {
       setMensaje("Seleccioná al menos 1 máquina para pedir.");
       return;
@@ -242,6 +278,9 @@ function limpiarSupervisorDestino() {
       );
       setServicioId("");
       setServicioQuery("");
+      setOtros([]);
+      setOtroTipo("");
+      setOtroCantidad(1);
       setObservacion("");
 
       setTimeout(() => navigate("/supervisor"), 1200);
@@ -343,6 +382,76 @@ function limpiarSupervisorDestino() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* OTRO */}
+      <div className="mt-6 bg-white rounded-xl shadow p-4">
+        <h2 className="font-semibold mb-3">Otro</h2>
+
+        <div className="flex gap-2 items-center">
+          <select
+            value={otroTipo}
+            onChange={(e) => setOtroTipo(e.target.value)}
+            className="flex-1 p-2 rounded-xl border"
+          >
+            <option value="">-- Seleccioná un tipo --</option>
+            {availableTipos.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+
+          <input
+            type="number"
+            min={1}
+            value={otroCantidad}
+            onChange={(e) => setOtroCantidad(Number(e.target.value))}
+            className="w-24 p-2 rounded-xl border text-center"
+          />
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!otroTipo) return setMensaje("Seleccioná un tipo para 'Otro'.");
+              if (!otroCantidad || otroCantidad < 1) return setMensaje("Ingresá una cantidad válida.");
+
+              setOtros((prev) => {
+                // si ya existe tipo, sumar cantidades
+                const exists = prev.find((x) => x.tipo === otroTipo);
+                if (exists) {
+                  return prev.map((x) => x.tipo === otroTipo ? { ...x, cantidad: Number(x.cantidad) + Number(otroCantidad) } : x);
+                }
+                return [...prev, { tipo: otroTipo, cantidad: Number(otroCantidad) }];
+              });
+
+              // reset
+              setOtroTipo("");
+              setOtroCantidad(1);
+              setMensaje("");
+            }}
+            className="px-3 py-2 rounded-lg bg-blue-600 text-white"
+          >
+            Agregar
+          </button>
+        </div>
+
+        {otros.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {otros.map((o, idx) => (
+              <div key={`${o.tipo}-${idx}`} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                <div>
+                  <div className="font-medium">{o.tipo}</div>
+                  <div className="text-sm text-gray-600">Cantidad: {o.cantidad}</div>
+                </div>
+                <div>
+                  <button
+                    onClick={() => setOtros((prev) => prev.filter((_, i) => i !== idx))}
+                    className="px-2 py-1 rounded bg-red-100 text-red-700 text-sm"
+                  >Eliminar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* SUPERVISOR DESTINO (solo si aplica) */}
