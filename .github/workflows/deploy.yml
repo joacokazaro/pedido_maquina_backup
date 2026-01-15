@@ -67,6 +67,11 @@ jobs:
             frontend/dist/ \
             prod:/var/www/pedido-maquina-backup/frontend/dist/
 
+          # Also copy the built frontend to backend/public so the backend can serve the SPA
+          rsync -avz --delete \
+            frontend/dist/ \
+            prod:/var/www/pedido-maquina-backup/backend/public/
+
       # =========================
       # DEPLOY BACKEND
       # =========================

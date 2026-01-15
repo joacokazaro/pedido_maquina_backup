@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createServer } from "http";
+import { Server as IOServer } from "socket.io";
 
 // ROUTES
 import authRoutes from "./routes/auth.routes.js";
@@ -29,6 +31,12 @@ app.use(express.json());
 ======================= */
 const api = express.Router();
 app.use("/api", api);
+
+/* =======================
+   SOCKET.IO
+======================= */
+// We will create the HTTP server later and attach Socket.IO to it.
+
 
 /* =======================
    API ROUTES
@@ -72,11 +80,46 @@ app.use(express.static(FRONT_DIST));
 
 // SPA fallback (ÚLTIMO)
 app.get("*", (req, res) => {
-  res.sendFile(path.join(FRONT_DIST, "index.html"));
+   res.sendFile(path.join(FRONT_DIST, "index.html"));
 });
 
 /* ======================= */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor activo en http://localhost:${PORT}`);
+
+// Create HTTP server and attach Socket.IO
+const httpServer = createServer(app);
+
+const io = new IOServer(httpServer, {
+   cors: {
+      origin: true,
+      methods: ["GET", "POST"],
+   },
+});
+
+// Expose io via app so controllers can emit events: req.app.get('io')
+app.set("io", io);
+
+// Allow clients to join rooms
+io.on("connection", (socket) => {
+   console.log("Socket connected:", socket.id, "from", socket.handshake.address);
+
+   socket.on("join", ({ room }) => {
+      if (!room) return;
+      socket.join(room);
+      console.log(`Socket ${socket.id} joined room ${room}`);
+   });
+
+   socket.on("leave", ({ room }) => {
+      if (!room) return;
+      socket.leave(room);
+      console.log(`Socket ${socket.id} left room ${room}`);
+   });
+
+   socket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", socket.id, reason);
+   });
+});
+
+httpServer.listen(PORT, () => {
+   console.log(`Servidor activo en http://localhost:${PORT}`);
 });

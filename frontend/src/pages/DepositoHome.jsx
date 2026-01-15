@@ -7,15 +7,42 @@ export default function DepositoHome() {
   const [filtro, setFiltro] = useState("TODOS");
 
   useEffect(() => {
-    fetch(`${API_BASE}
-/pedidos`)
-      .then(res => res.json())
-      .then(data => {
-  const soloDeposito = data.filter(
-    (p) => p.destino === "DEPOSITO"
-  );
-  setPedidos(soloDeposito);
-});
+    const controller = new AbortController();
+
+    async function loadPedidos() {
+      try {
+        const res = await fetch(`${API_BASE}/pedidos`, { signal: controller.signal });
+        const data = await res.json();
+        const soloDeposito = data.filter((p) => p.destino === "DEPOSITO");
+        setPedidos(soloDeposito);
+      } catch (e) {
+        if (e.name !== 'AbortError') console.error(e);
+      }
+    }
+
+    loadPedidos();
+
+    const onCreated = (e) => {
+      const payload = e.detail;
+      if (payload?.destino === "DEPOSITO") {
+        // reload list to keep consistency
+        loadPedidos();
+      }
+    };
+
+    const onUpdated = (e) => {
+      const payload = e.detail;
+      if (payload?.destino === "DEPOSITO") loadPedidos();
+    };
+
+    window.addEventListener("pedido:created", onCreated);
+    window.addEventListener("pedido:updated", onUpdated);
+
+    return () => {
+      controller.abort();
+      window.removeEventListener("pedido:created", onCreated);
+      window.removeEventListener("pedido:updated", onUpdated);
+    };
   }, []);
 
   /* =========================

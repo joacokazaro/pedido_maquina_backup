@@ -50,7 +50,17 @@ export default function SupervisorMisPrestamos() {
     }
 
     cargarPedidos();
-    return () => controller.abort();
+    const onCreated = () => cargarPedidos();
+    const onUpdated = () => cargarPedidos();
+
+    window.addEventListener("pedido:created", onCreated);
+    window.addEventListener("pedido:updated", onUpdated);
+
+    return () => {
+      controller.abort();
+      window.removeEventListener("pedido:created", onCreated);
+      window.removeEventListener("pedido:updated", onUpdated);
+    };
   }, [user]);
 
   /* =========================

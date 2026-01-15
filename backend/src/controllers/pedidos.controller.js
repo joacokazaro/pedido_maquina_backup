@@ -63,6 +63,34 @@ function mapPedidoParaFront(p) {
   };
 }
 
+function emitPedidoEvent(req, eventName, pedidoFront) {
+  try {
+    const io = req.app && req.app.get && req.app.get("io");
+    if (!io) return;
+    console.log(`Emitting socket event ${eventName} for pedido ${pedidoFront.id} destino=${pedidoFront.destino} titular=${pedidoFront.titular} supervisor=${pedidoFront.supervisor}`);
+
+    // Emit to depósito room when destino is DEPOSITO
+    if (pedidoFront.destino === "DEPOSITO") {
+      io.to("DEPOSITO").emit(eventName, pedidoFront);
+      console.log(`-> emitted to room DEPOSITO`);
+    }
+
+    // If destino is supervisor, emit to that supervisor's personal room
+    if (pedidoFront.destino === "SUPERVISOR" && pedidoFront.titular) {
+      io.to(`USER:${pedidoFront.titular}`).emit(eventName, pedidoFront);
+      console.log(`-> emitted to room USER:${pedidoFront.titular}`);
+    }
+
+    // Also notify the original supervisor (who created the pedido)
+    if (pedidoFront.supervisor) {
+      io.to(`USER:${pedidoFront.supervisor}`).emit(eventName, pedidoFront);
+      console.log(`-> emitted to room USER:${pedidoFront.supervisor}`);
+    }
+  } catch (e) {
+    console.error("emitPedidoEvent error:", e);
+  }
+}
+
 /* ========================================================
    CREAR PEDIDO
 ======================================================== */
@@ -171,6 +199,13 @@ if (!asignacion) {
       message: "Pedido creado correctamente",
       pedido: mapPedidoParaFront(pedido),
     });
+    // Emit socket event
+    try {
+      const pedidoFront = mapPedidoParaFront(pedido);
+      emitPedidoEvent(req, "pedido:created", pedidoFront);
+    } catch (e) {
+      console.error("Error emitiendo evento pedido:created", e);
+    }
   } catch (e) {
     console.error("❌ crearPedido:", e);
     res.status(500).json({ error: "Error creando pedido" });
@@ -277,6 +312,12 @@ export async function actualizarEstadoPedido(req, res) {
       message: "Estado actualizado",
       pedido: mapPedidoParaFront(pedido),
     });
+    // Emit update
+    try {
+      emitPedidoEvent(req, "pedido:updated", mapPedidoParaFront(pedido));
+    } catch (e) {
+      console.error("Error emitiendo evento pedido:updated", e);
+    }
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Error actualizando estado" });
@@ -325,6 +366,11 @@ export async function marcarEntregado(req, res) {
       message: "Pedido marcado como ENTREGADO",
       pedido: mapPedidoParaFront(pedido),
     });
+    try {
+      emitPedidoEvent(req, "pedido:updated", mapPedidoParaFront(pedido));
+    } catch (e) {
+      console.error("Error emitiendo evento pedido:updated", e);
+    }
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Error marcando entregado" });
@@ -420,6 +466,11 @@ export async function asignarMaquinas(req, res) {
       message: "Máquinas asignadas",
       pedido: mapPedidoParaFront(pedidoActualizado),
     });
+    try {
+      emitPedidoEvent(req, "pedido:updated", mapPedidoParaFront(pedidoActualizado));
+    } catch (e) {
+      console.error("Error emitiendo evento pedido:updated", e);
+    }
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Error asignando máquinas" });
@@ -479,6 +530,11 @@ export async function registrarDevolucion(req, res) {
       message: "Devolución registrada",
       pedido: mapPedidoParaFront(actualizado),
     });
+    try {
+      emitPedidoEvent(req, "pedido:updated", mapPedidoParaFront(actualizado));
+    } catch (e) {
+      console.error("Error emitiendo evento pedido:updated", e);
+    }
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Error registrando devolución" });
@@ -538,6 +594,11 @@ export async function confirmarDevolucion(req, res) {
       message: "Devolución confirmada",
       pedido: mapPedidoParaFront(pedido),
     });
+    try {
+      emitPedidoEvent(req, "pedido:updated", mapPedidoParaFront(pedido));
+    } catch (e) {
+      console.error("Error emitiendo evento pedido:updated", e);
+    }
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Error confirmando devolución" });
@@ -582,6 +643,11 @@ export async function completarFaltantes(req, res) {
       message: "Faltantes declarados",
       pedido: mapPedidoParaFront(pedido),
     });
+    try {
+      emitPedidoEvent(req, "pedido:updated", mapPedidoParaFront(pedido));
+    } catch (e) {
+      console.error("Error emitiendo evento pedido:updated", e);
+    }
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Error declarando faltantes" });
