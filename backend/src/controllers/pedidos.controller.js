@@ -1,4 +1,5 @@
 import prisma from "../db/prisma.js";
+import { Prisma } from '@prisma/client';
 import {
   ESTADOS_PEDIDO,
   ESTADOS_PEDIDO_VALIDOS,
@@ -91,6 +92,48 @@ function emitPedidoEvent(req, eventName, pedidoFront) {
   }
 }
 
+// Devuelve el siguiente código `P-XXXX` basado en el máximo existente.
+async function getNextPedidoCode(prismaInstance) {
+  // RAW query en SQLite: extrae la parte numérica del id (SUBSTR empezando en 3)
+  const result = await prismaInstance.$queryRawUnsafe(
+    `SELECT MAX(CAST(SUBSTR(id, 3) AS INTEGER)) as maxNum FROM Pedido`
+  );
+  const maxNumRaw = result && result[0] && (result[0].maxNum ?? result[0].max_num);
+  const maxNum = maxNumRaw ? Number(maxNumRaw) : 0;
+  const next = maxNum + 1;
+  return `P-${String(next).padStart(4, '0')}`;
+}
+
+// Crea un pedido intentando varias veces si hay colisión de unicidad (P2002).
+// opts: { maxRetries?: number, include?: object }
+async function createPedidoWithRetry(prismaInstance, data, opts = {}) {
+  const maxRetries = opts.maxRetries ?? 5;
+  const include = opts.include;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const id = await getNextPedidoCode(prismaInstance);
+    try {
+      const payload = { id, ...data };
+      const createArgs = include
+        ? { data: payload, include }
+        : { data: payload };
+      return await prismaInstance.pedido.create(createArgs);
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        console.warn(`[createPedidoWithRetry] Colisión P2002 intentando id=${id}. intento ${attempt}/${maxRetries}`);
+        if (attempt === maxRetries) throw err;
+        // esperar brevemente para reducir posibilidad de condición de carrera
+        await new Promise((res) => setTimeout(res, 50 * attempt));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error('No se pudo generar un id único para Pedido después de varios intentos');
+}
+
 /* ========================================================
    CREAR PEDIDO
 ======================================================== */
@@ -157,42 +200,35 @@ if (!asignacion) {
 }
 
 
-    const count = await prisma.pedido.count();
-    const id = `P-${String(count + 1).padStart(4, "0")}`;
+    const pedido = await createPedidoWithRetry(prisma, {
+      estado: ESTADOS_PEDIDO.PENDIENTE_PREPARACION,
+      observacion: observacion || null,
+      itemsSolicitados: JSON.stringify(itemsSolicitados),
+      itemsDevueltos: null,
 
-    const pedido = await prisma.pedido.create({
-  data: {
-    id,
-    estado: ESTADOS_PEDIDO.PENDIENTE_PREPARACION,
-    observacion: observacion || null,
-    itemsSolicitados: JSON.stringify(itemsSolicitados),
-    itemsDevueltos: null,
+      supervisorId: supervisor.id,
+      servicioId: servicio.id,
 
-    supervisorId: supervisor.id,
-    servicioId: servicio.id,
+      // NUEVO
+      destino,
+      supervisorDestinoUsername:
+        destino === "SUPERVISOR" ? supervisorDestinoUsername : null,
 
-    // 🔽 NUEVO
-    destino,
-    supervisorDestinoUsername:
-      destino === "SUPERVISOR" ? supervisorDestinoUsername : null,
-
-    historial: {
-      create: {
-        accion: "CREADO",
-        usuarioId: supervisor.id,
-        detalle: observacion
-          ? JSON.stringify({ observacion })
-          : null,
+      historial: {
+        create: {
+          accion: "CREADO",
+          usuarioId: supervisor.id,
+          detalle: observacion ? JSON.stringify({ observacion }) : null,
+        },
       },
-    },
-  },
-  include: {
-    supervisor: true,
-    servicio: true,
-    asignadas: { include: { maquina: true } },
-    historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
-  },
-});
+    }, {
+      include: {
+        supervisor: true,
+        servicio: true,
+        asignadas: { include: { maquina: true } },
+        historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
+      },
+    });
 
 
     res.status(201).json({
