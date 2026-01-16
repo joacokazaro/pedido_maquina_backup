@@ -388,19 +388,19 @@ function limpiarSupervisorDestino() {
       <div className="mt-6 bg-white rounded-xl shadow p-4">
         <h2 className="font-semibold mb-3">Otro</h2>
 
-        <div className="flex gap-2 items-center flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
           <select
             value={otroTipo}
             onChange={(e) => setOtroTipo(e.target.value)}
-            className="flex-1 p-2 rounded-xl border min-w-0"
+            className="w-full sm:flex-1 p-2 rounded-xl border min-w-0"
           >
-            <option value="">-- Seleccioná un tipo --</option>
+            <option value="">Seleccioná un tipo</option>
             {availableTipos.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
               onClick={() => setOtroCantidad((c) => Math.max(1, (c || 1) - 1))}
@@ -410,7 +410,7 @@ function limpiarSupervisorDestino() {
               −
             </button>
 
-            <span className="text-xl w-12 text-center">{otroCantidad}</span>
+            <span className="text-xl px-3">{otroCantidad}</span>
 
             <button
               type="button"
