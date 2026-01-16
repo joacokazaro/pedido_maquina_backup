@@ -6,7 +6,7 @@ export default function HistorialPedido({ historial }) {
       <h2 className="text-lg font-semibold mb-3">Historial</h2>
 
       <div className="space-y-6">
-        {historial.map((h, idx) => {
+        {[...historial].slice().reverse().map((h, idx) => {
           const d = h.detalle || {};
 
           const tieneContenido =
@@ -22,74 +22,47 @@ export default function HistorialPedido({ historial }) {
             <div key={idx} className="flex gap-4">
               {/* Timeline */}
               <div className="flex flex-col items-center">
-                <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                 {idx !== historial.length - 1 && (
-                  <div className="flex-1 w-0.5 bg-gray-300"></div>
+                  <div className="flex-1 w-0.5 bg-gray-200"></div>
                 )}
               </div>
 
               {/* Contenido */}
               <div className="flex-1">
-                <p className="font-semibold text-sm">
-                  {h.accion.replaceAll("_", " ")}
-                </p>
+                <div className="flex items-baseline justify-between">
+                  <p className="font-semibold text-sm">
+                    {String(h.accion || "").replaceAll("_", " ")}
+                  </p>
+                  <p className="text-xs text-gray-500">{new Date(h.fecha).toLocaleString()}</p>
+                </div>
 
-                <p className="text-xs text-gray-500 mb-2">
-                  {new Date(h.fecha).toLocaleString()} · {h.usuario}
-                </p>
+                <p className="text-xs text-gray-500 mb-2">Por: <span className="font-medium text-gray-700">{h.usuario || '—'}</span></p>
 
                 {tieneContenido && (
-                  <div className="rounded-lg p-3 border bg-gray-50 space-y-3 text-xs">
+                  <div className="rounded-lg p-3 border bg-gray-50 space-y-3 text-sm">
 
-                    {renderLista(
-                      "Devueltas por supervisor",
-                      d.devueltas,
-                      "blue"
+                    {renderListaSimple("Devueltas por supervisor", d.devueltas)}
+                    {renderListaSimple("Faltantes informados", d.faltantes)}
+                    {renderListaSimple("Ingreso confirmado por depósito", d.devueltasConfirmadas)}
+                    {renderListaSimple("Faltantes confirmados finales", d.faltantesConfirmados)}
+                    {renderListaSimple("Faltantes devueltos posteriormente", d.devueltasDeclaradas)}
+
+                    {d.justificacion && String(d.justificacion).trim() !== "" && (
+                      <div className="border p-2 rounded bg-white">
+                        <p className="font-semibold text-sm">Justificación</p>
+                        <p className="text-sm text-gray-700">{d.justificacion}</p>
+                        <p className="text-xs text-gray-500 mt-1">Por: <span className="font-medium text-gray-700">{h.usuario || '—'}</span></p>
+                      </div>
                     )}
 
-                    {renderLista(
-                      "Faltantes informados",
-                      d.faltantes,
-                      "yellow"
+                    {d.observacion && String(d.observacion).trim() !== "" && (
+                      <div className="border p-2 rounded bg-white">
+                        <p className="font-semibold text-sm">Observación</p>
+                        <p className="text-sm text-gray-700">{d.observacion}</p>
+                        <p className="text-xs text-gray-500 mt-1">Por: <span className="font-medium text-gray-700">{h.usuario || '—'}</span></p>
+                      </div>
                     )}
-
-                    {renderLista(
-                      "Ingreso confirmado por depósito",
-                      d.devueltasConfirmadas,
-                      "green"
-                    )}
-
-                    {renderLista(
-                      "Faltantes confirmados finales",
-                      d.faltantesConfirmados,
-                      "red"
-                    )}
-
-                    {renderLista(
-                      "Faltantes devueltos posteriormente",
-                      d.devueltasDeclaradas,
-                      "orange"
-                    )}
-
-                    {d.justificacion &&
-                      String(d.justificacion).trim() !== "" && (
-                        <div className="bg-yellow-100 border border-yellow-500 p-2 rounded">
-                          <p className="font-semibold">
-                            Justificación del supervisor:
-                          </p>
-                          <p>{d.justificacion}</p>
-                        </div>
-                      )}
-
-                    {d.observacion &&
-                      String(d.observacion).trim() !== "" && (
-                        <div className="bg-blue-100 border border-blue-400 p-2 rounded">
-                          <p className="font-semibold">
-                            Observación de depósito:
-                          </p>
-                          <p>{d.observacion}</p>
-                        </div>
-                      )}
 
                   </div>
                 )}
@@ -106,21 +79,15 @@ export default function HistorialPedido({ historial }) {
    Helpers
 ========================= */
 
-function renderLista(titulo, items, color) {
+function renderListaSimple(titulo, items) {
   if (!items || items.length === 0) return null;
-
-  const colores = {
-    blue: "bg-blue-100 border-blue-400",
-    yellow: "bg-yellow-100 border-yellow-500",
-    green: "bg-green-100 border-green-500",
-    red: "bg-red-100 border-red-500",
-    orange: "bg-orange-100 border-orange-500"
-  };
-
   return (
-    <div className={`${colores[color]} border p-2 rounded`}>
-      <p className="font-semibold">{titulo}:</p>
-      <ul className="list-disc ml-5">
+    <div className="border p-2 rounded bg-white">
+      <div className="flex items-center justify-between mb-1">
+        <p className="font-semibold text-sm">{titulo}</p>
+        <p className="text-xs text-gray-500">{items.length} ítem{items.length>1?'s':''}</p>
+      </div>
+      <ul className="list-disc ml-5 text-sm text-gray-700">
         {items.map((i, idx) => (
           <li key={idx}>{i}</li>
         ))}
