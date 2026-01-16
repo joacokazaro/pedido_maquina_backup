@@ -388,11 +388,11 @@ function limpiarSupervisorDestino() {
       <div className="mt-6 bg-white rounded-xl shadow p-4">
         <h2 className="font-semibold mb-3">Otro</h2>
 
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           <select
             value={otroTipo}
             onChange={(e) => setOtroTipo(e.target.value)}
-            className="flex-1 p-2 rounded-xl border"
+            className="flex-1 p-2 rounded-xl border min-w-0"
           >
             <option value="">-- Seleccioná un tipo --</option>
             {availableTipos.map((t) => (
@@ -400,53 +400,85 @@ function limpiarSupervisorDestino() {
             ))}
           </select>
 
-          <input
-            type="number"
-            min={1}
-            value={otroCantidad}
-            onChange={(e) => setOtroCantidad(Number(e.target.value))}
-            className="w-24 p-2 rounded-xl border text-center"
-          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setOtroCantidad((c) => Math.max(1, (c || 1) - 1))}
+              className="w-10 h-10 rounded-full border border-gray-300 text-xl"
+              title="Disminuir"
+            >
+              −
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (!otroTipo) return setMensaje("Seleccioná un tipo para 'Otro'.");
-              if (!otroCantidad || otroCantidad < 1) return setMensaje("Ingresá una cantidad válida.");
+            <span className="text-xl w-12 text-center">{otroCantidad}</span>
 
-              setOtros((prev) => {
-                // si ya existe tipo, sumar cantidades
-                const exists = prev.find((x) => x.tipo === otroTipo);
-                if (exists) {
-                  return prev.map((x) => x.tipo === otroTipo ? { ...x, cantidad: Number(x.cantidad) + Number(otroCantidad) } : x);
-                }
-                return [...prev, { tipo: otroTipo, cantidad: Number(otroCantidad) }];
-              });
+            <button
+              type="button"
+              onClick={() => setOtroCantidad((c) => (c || 1) + 1)}
+              className="w-10 h-10 rounded-full bg-blue-600 text-white text-xl"
+              title="Aumentar"
+            >
+              +
+            </button>
 
-              // reset
-              setOtroTipo("");
-              setOtroCantidad(1);
-              setMensaje("");
-            }}
-            className="px-3 py-2 rounded-lg bg-blue-600 text-white"
-          >
-            Agregar
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (!otroTipo) return setMensaje("Seleccioná un tipo para 'Otro'.");
+                if (!otroCantidad || otroCantidad < 1) return setMensaje("Ingresá una cantidad válida.");
+
+                setOtros((prev) => {
+                  const exists = prev.find((x) => x.tipo === otroTipo);
+                  if (exists) {
+                    return prev.map((x) => x.tipo === otroTipo ? { ...x, cantidad: Number(x.cantidad) + Number(otroCantidad) } : x);
+                  }
+                  return [...prev, { tipo: otroTipo, cantidad: Number(otroCantidad) }];
+                });
+
+                // reset
+                setOtroTipo("");
+                setOtroCantidad(1);
+                setMensaje("");
+              }}
+              className="px-3 py-2 rounded-lg bg-blue-600 text-white whitespace-nowrap flex-shrink-0"
+            >
+              Agregar
+            </button>
+          </div>
         </div>
 
         {otros.length > 0 && (
           <div className="mt-3 space-y-2">
             {otros.map((o, idx) => (
-              <div key={`${o.tipo}-${idx}`} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                <div>
-                  <div className="font-medium">{o.tipo}</div>
-                  <div className="text-sm text-gray-600">Cantidad: {o.cantidad}</div>
-                </div>
-                <div>
+              <div key={`${o.tipo}-${idx}`} className="bg-white rounded-xl shadow flex items-center justify-between px-4 py-3">
+                <span className="font-semibold">{o.tipo}</span>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setOtros((prev) => prev.map((x, i) => i === idx ? { ...x, cantidad: Math.max(1, Number(x.cantidad) - 1) } : x))}
+                    className="w-10 h-10 rounded-full border border-gray-300 text-xl"
+                  >
+                    −
+                  </button>
+
+                  <span className="text-xl w-8 text-center">{o.cantidad}</span>
+
+                  <button
+                    type="button"
+                    onClick={() => setOtros((prev) => prev.map((x, i) => i === idx ? { ...x, cantidad: Number(x.cantidad) + 1 } : x))}
+                    className="w-10 h-10 rounded-full bg-blue-600 text-white text-xl"
+                  >
+                    +
+                  </button>
+
                   <button
                     onClick={() => setOtros((prev) => prev.filter((_, i) => i !== idx))}
                     className="px-2 py-1 rounded bg-red-100 text-red-700 text-sm"
-                  >Eliminar</button>
+                    title="Eliminar"
+                  >
+                    Eliminar
+                  </button>
                 </div>
               </div>
             ))}
