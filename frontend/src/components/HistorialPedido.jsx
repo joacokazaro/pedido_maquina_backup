@@ -6,7 +6,7 @@ export default function HistorialPedido({ historial }) {
       <h2 className="text-lg font-semibold mb-3">Historial</h2>
 
       <div className="space-y-6">
-        {[...historial].slice().reverse().map((h, idx) => {
+        {[...historial].map((h, idx) => {
           const d = h.detalle || {};
 
           const tieneContenido =
