@@ -80,6 +80,11 @@ jobs:
           ssh prod << 'EOF'
             set -e
 
+            # 🔥 Cargar NVM y usar Node 20
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm use 20
+
             cd /var/www/pedido-maquina-backup
 
             echo "📥 Pulling latest code"
@@ -96,11 +101,12 @@ jobs:
             npx prisma migrate deploy
 
             echo "♻️ Restarting backend"
-            /home/ubuntu/.nvm/versions/node/v20.19.6/bin/pm2 restart pedido-backend
+            pm2 restart pedido-backend
 
             echo "🔁 Reloading nginx"
             sudo systemctl reload nginx
 
             echo "✅ Deploy finished"
           EOF
+
 
