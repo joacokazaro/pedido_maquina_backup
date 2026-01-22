@@ -8,6 +8,7 @@ import {
 import {
   crearNotificacionesParaUsuarios,
   getUsuariosDepositoIds,
+  getUsuariosAdminIds,
 } from "../services/notificaciones.service.js";
 
 /* ========================================================
@@ -757,6 +758,23 @@ export async function confirmarDevolucion(req, res) {
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
+
+    try {
+      if (Array.isArray(faltantes) && faltantes.length > 0) {
+        const adminIds = await getUsuariosAdminIds();
+        await notificarUsuarios({
+          req,
+          pedido,
+          actorId: u.id,
+          usuarioIds: adminIds,
+          tipo: "DISCREPANCIA_DEVOLUCION",
+          estado: pedido.estado,
+          mensaje: `Discrepancia en pedido ${pedido.id}: faltantes confirmados (${faltantes.length})`,
+        });
+      }
+    } catch (e) {
+      console.error("Error creando notificaciones admin (confirmarDevolucion):", e);
+    }
 
     try {
       await notificarUsuarios({

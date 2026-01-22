@@ -75,3 +75,11 @@ export async function getUsuariosDepositoIds() {
   });
   return depositos.map((u) => u.id);
 }
+
+export async function getUsuariosAdminIds() {
+  const admins = await prisma.usuario.findMany({
+    where: { rol: "admin", activo: true },
+    select: { id: true },
+  });
+  return admins.map((u) => u.id);
+}
