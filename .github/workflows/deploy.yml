@@ -72,7 +72,7 @@ jobs:
             frontend/dist/ \
             prod:/var/www/pedido-maquina-backup/backend/public/
 
-      # =========================
+            # =========================
       # DEPLOY BACKEND
       # =========================
       - name: Deploy backend
@@ -89,6 +89,12 @@ jobs:
             cd backend
             npm install --omit=dev
 
+            echo "🧬 Generating Prisma client"
+            npx prisma generate
+
+            echo "🗄️ Running Prisma migrations"
+            npx prisma migrate deploy
+
             echo "♻️ Restarting backend"
             /home/ubuntu/.nvm/versions/node/v20.19.6/bin/pm2 restart pedido-backend
 
@@ -97,3 +103,4 @@ jobs:
 
             echo "✅ Deploy finished"
           EOF
+
