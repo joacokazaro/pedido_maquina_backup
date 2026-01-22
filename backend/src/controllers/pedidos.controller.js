@@ -5,6 +5,10 @@ import {
   ESTADOS_PEDIDO_VALIDOS,
   normalizeEstadoPedido,
 } from "../constants/estadosPedidos.js";
+import {
+  crearNotificacionesParaUsuarios,
+  getUsuariosDepositoIds,
+} from "../services/notificaciones.service.js";
 
 /* ========================================================
    HELPERS
@@ -90,6 +94,20 @@ function emitPedidoEvent(req, eventName, pedidoFront) {
   } catch (e) {
     console.error("emitPedidoEvent error:", e);
   }
+}
+
+async function notificarUsuarios({ req, pedido, actorId, usuarioIds, tipo, mensaje, estado }) {
+  const ids = (usuarioIds || []).filter((id) => id && id !== actorId);
+  if (ids.length === 0) return;
+
+  await crearNotificacionesParaUsuarios({
+    req,
+    usuarioIds: ids,
+    pedidoId: pedido?.id || null,
+    tipo,
+    estado,
+    mensaje,
+  });
 }
 
 // Devuelve el siguiente código `P-XXXX` basado en el máximo existente.
@@ -230,6 +248,42 @@ if (!asignacion) {
       },
     });
 
+    try {
+      if (destino === "DEPOSITO") {
+        const depositoIds = await getUsuariosDepositoIds();
+        await notificarUsuarios({
+          req,
+          pedido,
+          actorId: supervisor.id,
+          usuarioIds: depositoIds,
+          tipo: "PEDIDO_CREADO",
+          estado: pedido.estado,
+          mensaje: `Nuevo pedido ${pedido.id} creado por ${supervisor.username}`,
+        });
+      }
+
+      if (destino === "SUPERVISOR" && supervisorDestinoUsername) {
+        const supDestino = await prisma.usuario.findUnique({
+          where: { username: supervisorDestinoUsername },
+          select: { id: true, username: true },
+        });
+
+        if (supDestino) {
+          await notificarUsuarios({
+            req,
+            pedido,
+            actorId: supervisor.id,
+            usuarioIds: [supDestino.id],
+            tipo: "PEDIDO_CREADO",
+            estado: pedido.estado,
+            mensaje: `Nuevo préstamo ${pedido.id} solicitado por ${supervisor.username}`,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Error creando notificaciones (crearPedido):", e);
+    }
+
 
     res.status(201).json({
       message: "Pedido creado correctamente",
@@ -344,6 +398,20 @@ export async function actualizarEstadoPedido(req, res) {
       },
     });
 
+    try {
+      await notificarUsuarios({
+        req,
+        pedido,
+        actorId: u.id,
+        usuarioIds: [pedido.supervisorId],
+        tipo: "ESTADO_ACTUALIZADO",
+        estado: estadoNorm,
+        mensaje: `Pedido ${pedido.id} actualizado a ${estadoNorm}`,
+      });
+    } catch (e) {
+      console.error("Error creando notificaciones (actualizarEstadoPedido):", e);
+    }
+
     res.json({
       message: "Estado actualizado",
       pedido: mapPedidoParaFront(pedido),
@@ -397,6 +465,20 @@ export async function marcarEntregado(req, res) {
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
+
+    try {
+      await notificarUsuarios({
+        req,
+        pedido,
+        actorId: u.id,
+        usuarioIds: [pedido.supervisorId],
+        tipo: "PEDIDO_ENTREGADO",
+        estado: pedido.estado,
+        mensaje: `Pedido ${pedido.id} marcado como ENTREGADO`,
+      });
+    } catch (e) {
+      console.error("Error creando notificaciones (marcarEntregado):", e);
+    }
 
     res.json({
       message: "Pedido marcado como ENTREGADO",
@@ -498,6 +580,20 @@ export async function asignarMaquinas(req, res) {
       });
     });
 
+    try {
+      await notificarUsuarios({
+        req,
+        pedido: pedidoActualizado,
+        actorId: u.id,
+        usuarioIds: [pedidoActualizado.supervisorId],
+        tipo: "PEDIDO_PREPARADO",
+        estado: pedidoActualizado.estado,
+        mensaje: `Pedido ${pedidoActualizado.id} preparado (máquinas asignadas)`,
+      });
+    } catch (e) {
+      console.error("Error creando notificaciones (asignarMaquinas):", e);
+    }
+
     res.json({
       message: "Máquinas asignadas",
       pedido: mapPedidoParaFront(pedidoActualizado),
@@ -561,6 +657,42 @@ export async function registrarDevolucion(req, res) {
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
+
+    try {
+      if (actualizado.destino === "DEPOSITO") {
+        const depositoIds = await getUsuariosDepositoIds();
+        await notificarUsuarios({
+          req,
+          pedido: actualizado,
+          actorId: u.id,
+          usuarioIds: depositoIds,
+          tipo: "DEVOLUCION_REGISTRADA",
+          estado: actualizado.estado,
+          mensaje: `Devolución registrada en pedido ${actualizado.id}`,
+        });
+      }
+
+      if (actualizado.destino === "SUPERVISOR" && actualizado.supervisorDestinoUsername) {
+        const supDestino = await prisma.usuario.findUnique({
+          where: { username: actualizado.supervisorDestinoUsername },
+          select: { id: true },
+        });
+
+        if (supDestino) {
+          await notificarUsuarios({
+            req,
+            pedido: actualizado,
+            actorId: u.id,
+            usuarioIds: [supDestino.id],
+            tipo: "DEVOLUCION_REGISTRADA",
+            estado: actualizado.estado,
+            mensaje: `Devolución registrada en préstamo ${actualizado.id}`,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Error creando notificaciones (registrarDevolucion):", e);
+    }
 
     res.json({
       message: "Devolución registrada",
@@ -626,6 +758,20 @@ export async function confirmarDevolucion(req, res) {
       },
     });
 
+    try {
+      await notificarUsuarios({
+        req,
+        pedido,
+        actorId: u.id,
+        usuarioIds: [pedido.supervisorId],
+        tipo: "DEVOLUCION_CONFIRMADA",
+        estado: pedido.estado,
+        mensaje: `Devolución confirmada en pedido ${pedido.id}`,
+      });
+    } catch (e) {
+      console.error("Error creando notificaciones (confirmarDevolucion):", e);
+    }
+
     res.json({
       message: "Devolución confirmada",
       pedido: mapPedidoParaFront(pedido),
@@ -674,6 +820,42 @@ export async function completarFaltantes(req, res) {
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
+
+    try {
+      if (pedido.destino === "DEPOSITO") {
+        const depositoIds = await getUsuariosDepositoIds();
+        await notificarUsuarios({
+          req,
+          pedido,
+          actorId: u.id,
+          usuarioIds: depositoIds,
+          tipo: "FALTANTES_DECLARADOS",
+          estado: pedido.estado,
+          mensaje: `Faltantes declarados en pedido ${pedido.id}`,
+        });
+      }
+
+      if (pedido.destino === "SUPERVISOR" && pedido.supervisorDestinoUsername) {
+        const supDestino = await prisma.usuario.findUnique({
+          where: { username: pedido.supervisorDestinoUsername },
+          select: { id: true },
+        });
+
+        if (supDestino) {
+          await notificarUsuarios({
+            req,
+            pedido,
+            actorId: u.id,
+            usuarioIds: [supDestino.id],
+            tipo: "FALTANTES_DECLARADOS",
+            estado: pedido.estado,
+            mensaje: `Faltantes declarados en préstamo ${pedido.id}`,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Error creando notificaciones (completarFaltantes):", e);
+    }
 
     res.json({
       message: "Faltantes declarados",

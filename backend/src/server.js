@@ -17,6 +17,7 @@ import adminServiciosRoutes from "./routes/adminServicios.routes.js";
 import adminSupervisoresRoutes from "./routes/admin_supervisores.routes.js";
 
 import serviciosRoutes from "./routes/servicios.routes.js";
+import notificacionesRoutes from "./routes/notificaciones.routes.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ api.use("/auth", authRoutes);
 api.use("/maquinas", maquinasRoutes);
 api.use("/pedidos", pedidosRoutes);
 api.use("/servicios", serviciosRoutes);
+api.use("/notificaciones", notificacionesRoutes);
 
 // SUPERVISORES (API NORMAL)
 api.use("/supervisores", adminSupervisoresRoutes);

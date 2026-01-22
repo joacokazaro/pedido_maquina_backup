@@ -20,6 +20,7 @@ model Usuario {
   historialAcciones HistorialPedido[]
   pedidosSupervisor Pedido[]          @relation("SupervisorPedidos")
   serviciosAsignados UsuarioServicio[]
+  notificaciones    Notificacion[]
 }
 
 model Servicio {
@@ -79,6 +80,7 @@ model Pedido {
   asignadas  PedidoMaquina[]
   servicio   Servicio @relation(fields: [servicioId], references: [id])
   supervisor Usuario  @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
+  notificaciones Notificacion[]
 }
 
 
@@ -104,4 +106,21 @@ model HistorialPedido {
   // Relaciones
   usuario Usuario @relation(fields: [usuarioId], references: [id])
   pedido  Pedido  @relation(fields: [pedidoId], references: [id])
+}
+
+model Notificacion {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  pedidoId  String?
+  tipo      String
+  estado    String?
+  mensaje   String
+  leida     Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  pedido  Pedido? @relation(fields: [pedidoId], references: [id])
+
+  @@index([usuarioId, leida])
+  @@index([pedidoId])
 }

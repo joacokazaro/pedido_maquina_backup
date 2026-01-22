@@ -1,6 +1,6 @@
 // src/App.jsx
 import { useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import { waitForBackend } from "./services/waitForBackend";
 
@@ -40,8 +40,12 @@ import AdminViewPedido from "./pages/AdminViewPedido";
 import AdminServicios from "./pages/AdminServicios";
 import AdminServicioForm from "./pages/AdminServicioForm";
 import AdminSupervisoresServicios from "./pages/AdminSupervisoresServicios";
+import Notificaciones from "./components/Notificaciones";
+import { useAuth } from "./context/AuthContext";
 
 function App() {
+  const { user } = useAuth();
+  const location = useLocation();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
 
@@ -102,7 +106,9 @@ function App() {
      RUTAS
   ============================== */
   return (
-    <Routes>
+    <>
+      {user && location.pathname !== "/" && <Notificaciones />}
+      <Routes>
       {/* LOGIN */}
       <Route path="/" element={<Login />} />
 
@@ -358,7 +364,8 @@ function App() {
           </ProtectedRoute>
         }
       />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
