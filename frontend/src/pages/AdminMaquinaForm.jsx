@@ -79,7 +79,31 @@ export default function AdminMaquinaForm() {
     setSaving(true);
     setError("");
 
+    if (!esEdicion && String(form.id || "").trim() === "") {
+      setSaving(false);
+      setError("El código (id) es obligatorio");
+      return;
+    }
+
+    if (String(form.tipo || "").trim() === "" || String(form.modelo || "").trim() === "" || String(form.servicioId || "").trim() === "") {
+      setSaving(false);
+      setError("Tipo, modelo y servicio son obligatorios");
+      return;
+    }
+
     try {
+      const payload = {
+        tipo: form.tipo,
+        modelo: form.modelo,
+        serie: form.serie,
+        estado: form.estado,
+        servicioId: form.servicioId ? Number(form.servicioId) : null,
+      };
+
+      if (!esEdicion) {
+        payload.id = String(form.id).trim();
+      }
+
       const res = await fetch(
         esEdicion
           ? `${API_BASE}/admin/maquinas/${encodeURIComponent(id)}`
@@ -87,13 +111,7 @@ export default function AdminMaquinaForm() {
         {
           method: esEdicion ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            tipo: form.tipo,
-            modelo: form.modelo,
-            serie: form.serie,
-            estado: form.estado,
-            servicioId: form.servicioId || null
-          })
+          body: JSON.stringify(payload),
         }
       );
 
@@ -137,7 +155,14 @@ export default function AdminMaquinaForm() {
           </div>
         )}
 
-        <input disabled value={form.id} className="w-full p-2 rounded-xl border bg-gray-100" />
+        <input
+          name="id"
+          value={form.id}
+          onChange={handleChange}
+          disabled={esEdicion}
+          className={`w-full p-2 rounded-xl border ${esEdicion ? "bg-gray-100" : "bg-white"}`}
+          placeholder="Código (id)"
+        />
 
         <input name="tipo" value={form.tipo} onChange={handleChange} className="w-full p-2 rounded-xl border" placeholder="Tipo" />
         <input name="modelo" value={form.modelo} onChange={handleChange} className="w-full p-2 rounded-xl border" placeholder="Modelo" />
@@ -158,6 +183,32 @@ export default function AdminMaquinaForm() {
           {saving ? "Guardando..." : "Guardar"}
         </button>
       </form>
+
+      {esEdicion && (
+        <button
+          onClick={async () => {
+            if (!confirm("¿Eliminar esta máquina? Esta acción no se puede deshacer.")) return;
+
+            try {
+              const res = await fetch(`${API_BASE}/admin/maquinas/${encodeURIComponent(id)}`, {
+                method: "DELETE",
+              });
+
+              if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || "Error eliminando máquina");
+              }
+
+              navigate("/admin/maquinas");
+            } catch (e) {
+              setError(e.message || "Error eliminando máquina");
+            }
+          }}
+          className="mt-4 w-full bg-red-600 text-white py-2.5 rounded-xl"
+        >
+          Eliminar
+        </button>
+      )}
     </div>
   );
 }

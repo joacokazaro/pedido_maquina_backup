@@ -56,8 +56,8 @@ export async function adminGetUsuarios(req, res) {
     if (search && normalizeString(search)) {
       const q = normalizeString(search);
       where.OR = [
-        { username: { contains: q, mode: "insensitive" } },
-        { nombre: { contains: q, mode: "insensitive" } },
+        { username: { contains: q } },
+        { nombre: { contains: q } },
       ];
     }
 

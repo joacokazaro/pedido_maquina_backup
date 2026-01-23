@@ -19,8 +19,8 @@ export default function AdminUsuarios() {
         : `${API_BASE}/admin-users`;
 
     const res = await fetch(url);
-    const data = await res.json();
-    setUsuarios(data);
+    const data = await res.json().catch(() => null);
+    setUsuarios(Array.isArray(data) ? data : []);
   }
 
   useEffect(() => {
