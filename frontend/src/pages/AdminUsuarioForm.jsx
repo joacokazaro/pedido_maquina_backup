@@ -12,10 +12,12 @@ export default function AdminUsuarioForm() {
     nombre: "",
     rol: "SUPERVISOR",
     password: "",
+    activo: true,
   });
 
-  const [showDelete, setShowDelete] = useState(false);
   const [error, setError] = useState("");
+  const [showToggle, setShowToggle] = useState(false);
+  const [nextActivo, setNextActivo] = useState(true);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -29,6 +31,7 @@ export default function AdminUsuarioForm() {
         nombre: data.nombre || "",
         rol: data.rol,
         password: "",
+        activo: data.activo !== false,
       });
     }
 
@@ -46,6 +49,7 @@ export default function AdminUsuarioForm() {
     const payload = {
       nombre: form.nombre,
       rol: form.rol.toLowerCase(),
+      activo: Boolean(form.activo),
     };
 
     if (!isEdit) payload.username = form.username;
@@ -72,23 +76,25 @@ export default function AdminUsuarioForm() {
     navigate("/admin/usuarios");
   }
 
-  async function eliminarUsuario() {
+  async function toggleActivo(nextValue) {
+    if (!isEdit) return;
     setError("");
 
-    const res = await fetch(
-      `${API_BASE}/admin-users/${username}`,
-      { method: "DELETE" }
-    );
+    const res = await fetch(`${API_BASE}/admin-users/${username}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: nextValue }),
+    });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      setError(data.error || "Error eliminando usuario");
-      setShowDelete(false);
+      setError(data.error || "Error actualizando usuario");
       return;
     }
 
-    navigate("/admin/usuarios");
+    setForm((prev) => ({ ...prev, activo: nextValue }));
+    setShowToggle(false);
   }
 
   return (
@@ -102,9 +108,14 @@ export default function AdminUsuarioForm() {
         ← Volver
       </button>
 
-      <h1 className="text-2xl font-bold mb-4">
-        {isEdit ? "Editar usuario" : "Nuevo usuario"}
-      </h1>
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold">
+          {isEdit ? "Editar usuario" : "Nuevo usuario"}
+        </h1>
+        {isEdit && !form.activo && (
+          <p className="text-sm text-red-600 mt-1">Usuario inactivo</p>
+        )}
+      </div>
 
       {/* ERROR */}
       {error && (
@@ -172,43 +183,54 @@ export default function AdminUsuarioForm() {
         Guardar
       </button>
 
-      {/* ELIMINAR */}
+      {/* ACTIVAR/DESACTIVAR */}
       {isEdit && (
         <button
-          onClick={() => setShowDelete(true)}
-          className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white p-3 rounded-xl font-semibold shadow"
+          onClick={() => {
+            setNextActivo(!form.activo);
+            setShowToggle(true);
+          }}
+          className={`w-full mt-4 text-white p-3 rounded-xl font-semibold shadow ${
+            form.activo
+              ? "bg-red-600 hover:bg-red-700"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
         >
-          Eliminar usuario
+          {form.activo ? "Desactivar usuario" : "Reactivar usuario"}
         </button>
       )}
 
-      {/* MODAL ELIMINAR */}
-      {showDelete && (
+      {/* MODAL ACTIVAR/DESACTIVAR */}
+      {showToggle && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm">
             <h2 className="text-lg font-bold mb-2">
-              Eliminar usuario
+              {nextActivo ? "Reactivar usuario" : "Desactivar usuario"}
             </h2>
 
             <p className="text-sm text-gray-600 mb-4">
-              Esta acción es irreversible.  
-              ¿Seguro que querés eliminar el usuario
-              <b> @{form.username}</b>?
+              {nextActivo
+                ? "¿Seguro que querés reactivar este usuario?"
+                : "¿Seguro que querés desactivar este usuario?"}
             </p>
 
             <div className="flex gap-3">
               <button
-                onClick={() => setShowDelete(false)}
+                onClick={() => setShowToggle(false)}
                 className="flex-1 p-2 rounded-lg border"
               >
                 Cancelar
               </button>
 
               <button
-                onClick={eliminarUsuario}
-                className="flex-1 p-2 rounded-lg bg-red-600 text-white"
+                onClick={() => toggleActivo(nextActivo)}
+                className={`flex-1 p-2 rounded-lg text-white ${
+                  nextActivo
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
               >
-                Eliminar
+                {nextActivo ? "Reactivar" : "Desactivar"}
               </button>
             </div>
           </div>

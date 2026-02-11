@@ -234,6 +234,16 @@ export async function adminDeleteUsuario(req, res) {
 
     const usuario = await prisma.usuario.findUnique({
       where: { username },
+      include: {
+        _count: {
+          select: {
+            historialAcciones: true,
+            pedidosSupervisor: true,
+            serviciosAsignados: true,
+            notificaciones: true,
+          },
+        },
+      },
     });
 
     if (!usuario) {
@@ -253,11 +263,15 @@ export async function adminDeleteUsuario(req, res) {
       }
     }
 
-    await prisma.usuario.delete({
+    const actualizado = await prisma.usuario.update({
       where: { username },
+      data: { activo: false },
     });
 
-    res.json({ message: "Usuario eliminado correctamente" });
+    res.json({
+      message: "Usuario desactivado correctamente",
+      usuario: mapUsuarioResponse(actualizado),
+    });
   } catch (e) {
     console.error("adminDeleteUsuario:", e);
     res.status(500).json({ error: "Error eliminando usuario" });
