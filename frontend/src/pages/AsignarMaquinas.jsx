@@ -15,6 +15,7 @@ export default function AsignarMaquinas() {
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("TODOS");
   const [justificacion, setJustificacion] = useState("");
+  const [observacion, setObservacion] = useState("");
   const [showJustificacion, setShowJustificacion] = useState(false);
   const [alerta, setAlerta] = useState("");
   const [serviciosUsuario, setServiciosUsuario] = useState([]);
@@ -151,6 +152,7 @@ export default function AsignarMaquinas() {
         body: JSON.stringify({
           asignadas: seleccion.map((m) => m.id),
           justificacion: necesita ? justificacion : null,
+          observacion: observacion && String(observacion).trim().length > 0 ? observacion : null,
           usuario: user.username,
         }),
       }
@@ -301,6 +303,16 @@ export default function AsignarMaquinas() {
 
       {/* BARRA INFERIOR */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t shadow-lg p-4">
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Observación (opcional)</label>
+          <textarea
+            className="w-full p-2 border rounded-lg"
+            rows={2}
+            value={observacion}
+            onChange={(e) => setObservacion(e.target.value)}
+            placeholder="Agregar una observación opcional..."
+          />
+        </div>
         <p className="text-sm mb-2 text-gray-700">
           Seleccionadas: <b>{seleccion.length}</b>
         </p>

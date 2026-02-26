@@ -13,6 +13,7 @@ export default function DepositoPedido() {
   const [pedido, setPedido] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [observacion, setObservacion] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -61,6 +62,7 @@ export default function DepositoPedido() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         usuario: user.username,
+        observacion: observacion && String(observacion).trim().length > 0 ? observacion : null,
       }),
     });
 
@@ -92,6 +94,16 @@ export default function DepositoPedido() {
       </div>
 
       <PedidoResumen pedido={pedido} />
+      <div className="mb-4 bg-white p-3 rounded-xl border">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Observación al entregar (opcional)</label>
+        <textarea
+          className="w-full p-2 border rounded-lg"
+          rows={2}
+          value={observacion}
+          onChange={(e) => setObservacion(e.target.value)}
+          placeholder="Agregar una observación opcional al marcar como entregado..."
+        />
+      </div>
       <HistorialPedido historial={pedido.historial} />
 
       {/* ACCIONES */}

@@ -13,6 +13,7 @@ export default function SupervisorPrestamo() {
   const [pedido, setPedido] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [observacion, setObservacion] = useState("");
   const { user } = useAuth();
 
 
@@ -60,6 +61,16 @@ export default function SupervisorPrestamo() {
   </p>
 
       <PedidoResumen pedido={pedido} />
+      <div className="mb-4 bg-white p-3 rounded-xl border">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Observación al entregar (opcional)</label>
+        <textarea
+          className="w-full p-2 border rounded-lg"
+          rows={2}
+          value={observacion}
+          onChange={(e) => setObservacion(e.target.value)}
+          placeholder="Agregar una observación opcional al marcar como entregado..."
+        />
+      </div>
 
       {/* Historial */}
       <HistorialPedido historial={pedido.historial} />
@@ -91,7 +102,7 @@ export default function SupervisorPrestamo() {
 {pedido.estado === "PREPARADO" && (
   <button
     onClick={() =>
-      entregarPedido(id, navigate, user.username)
+      entregarPedido(id, navigate, user.username, observacion)
     }
     className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold"
   >
@@ -138,12 +149,13 @@ async function marcarEstado(id, nuevoEstado, navigate, username) {
 }
 
 
-async function entregarPedido(id, navigate, username) {
+async function entregarPedido(id, navigate, username, observacion) {
   await fetch(`${API_BASE}/pedidos/${id}/entregar`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       usuario: username, // 👈 supervisor real
+      observacion: observacion && String(observacion).trim().length > 0 ? observacion : null,
     }),
   });
 

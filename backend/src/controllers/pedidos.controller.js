@@ -502,7 +502,7 @@ export async function marcarEntregado(req, res) {
 export async function asignarMaquinas(req, res) {
   try {
     const { id } = req.params;
-    const { asignadas, justificacion, usuario } = req.body;
+    const { asignadas, justificacion, usuario, observacion } = req.body;
 
     const u = await getUsuarioByUsername(usuario);
     if (!u) return res.status(404).json({ error: "Usuario no encontrado" });
@@ -568,6 +568,7 @@ export async function asignarMaquinas(req, res) {
                 solicitado: solicitadoMap,
                 asignadoPorTipo,
                 ...(requiereJustificacion ? { justificacion } : {}),
+                ...(observacion ? { observacion } : {}),
               }),
             },
           },
