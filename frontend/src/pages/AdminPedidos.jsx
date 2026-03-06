@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmModal";
+import { EstadoBadge, formatEstado } from "../utils/estadoPedido.jsx";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 
@@ -11,6 +14,10 @@ export default function AdminPedidos() {
   const [estadoFiltro, setEstadoFiltro] = useState("TODOS");
   const [search, setSearch] = useState("");
   const [pedidoAEliminar, setPedidoAEliminar] = useState(null);
+  const [pedidoACancelar, setPedidoACancelar] = useState(null);
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
+  const { user } = useAuth();
+  const [menuOpenId, setMenuOpenId] = useState(null);
 
 
   /* ============================
@@ -249,6 +256,7 @@ function pedidoTieneMaquina(pedido, texto) {
     "ENTREGADO",
     "PENDIENTE_CONFIRMACION",
     "CERRADO",
+    "CANCELADO",
     "CERRADO_CON_FALTANTES",
   ];
 
@@ -299,7 +307,7 @@ function pedidoTieneMaquina(pedido, texto) {
         >
           {estados.map(e => (
             <option key={e} value={e}>
-              {e.replaceAll("_", " ")}
+              {formatEstado(e)}
             </option>
           ))}
         </select>
@@ -310,7 +318,8 @@ function pedidoTieneMaquina(pedido, texto) {
         {filtrarPedidos().map(p => (
           <div
             key={p.id}
-            className="bg-white shadow p-4 rounded-xl hover:shadow-md transition"
+            className="bg-white shadow p-4 rounded-xl hover:shadow-md transition relative"
+            onClick={() => setMenuOpenId(null)}
           >
             <div className="flex justify-between items-center gap-2">
               <span className="font-bold">{p.id}</span>
@@ -322,17 +331,37 @@ function pedidoTieneMaquina(pedido, texto) {
                   </span>
                 )}
 
-                <span className="text-xs px-3 py-1 rounded-full bg-gray-200">
-                  {p.estado.replaceAll("_", " ")}
-                </span>
+                <EstadoBadge estado={p.estado} />
+                {/* 3-dots actions menu */}
+                <div className="relative">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === p.id ? null : p.id); }}
+                    className="ml-2 w-9 h-9 flex items-center justify-center rounded-full bg-white border text-gray-600 hover:bg-gray-50"
+                    aria-label="Más opciones"
+                  >
+                    ⋮
+                  </button>
 
-                <button
-  onClick={() => setPedidoAEliminar(p)}
-  className="ml-2 px-2 py-1 text-xs rounded-md 
-             bg-red-100 text-red-700 hover:bg-red-200"
->
-  Eliminar
-</button>
+                  {menuOpenId === p.id && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50 ring-1 ring-black ring-opacity-5">
+                      <button
+                        onClick={() => { setPedidoAEliminar(p); setMenuOpenId(null); }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center gap-2"
+                      >
+                        <span>🗑️</span> Eliminar
+                      </button>
+
+                      {p.estado !== "CANCELADO" && (
+                        <button
+                          onClick={() => { setPedidoACancelar(p); setConfirmCancelOpen(true); setMenuOpenId(null); }}
+                          className="w-full text-left px-4 py-2 text-sm text-yellow-800 hover:bg-yellow-50 flex items-center gap-2"
+                        >
+                          <span>🚫</span> Marcar como CANCELADO
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
 
               </div>
             </div>
@@ -392,6 +421,34 @@ function pedidoTieneMaquina(pedido, texto) {
       </div>
     </div>
   </div>
+)}
+
+      {pedidoACancelar && (
+  <ConfirmModal
+    open={confirmCancelOpen}
+    title={`Aprobar cancelación`}
+    message={`¿Confirmás marcar el pedido ${pedidoACancelar.id} como CANCELADO? Esto liberará las máquinas asignadas.`}
+    confirmLabel="Marcar CANCELADO"
+    cancelLabel="Cancelar"
+    onCancel={() => { setConfirmCancelOpen(false); setPedidoACancelar(null); }}
+    onConfirm={async () => {
+      setConfirmCancelOpen(false);
+      try {
+        const res = await fetch(`${API_BASE}/admin/pedidos/${pedidoACancelar.id}/aprobar-cancelacion`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuario: user?.username }),
+        });
+        if (!res.ok) throw new Error("Error aprobando cancelación");
+      } catch (e) {
+        console.error(e);
+        alert("Error al marcar como CANCELADO");
+      } finally {
+        setPedidoACancelar(null);
+        loadPedidos();
+      }
+    }}
+  />
 )}
 
     </div>

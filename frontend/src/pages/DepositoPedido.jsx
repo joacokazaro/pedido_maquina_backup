@@ -4,6 +4,7 @@ import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import HistorialPedido from "../components/HistorialPedido";
 import PedidoResumen from "../components/PedidoResumen";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function DepositoPedido() {
   const { id } = useParams();
@@ -14,6 +15,7 @@ export default function DepositoPedido() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [observacion, setObservacion] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -134,6 +136,39 @@ export default function DepositoPedido() {
           Marcar como ENTREGADO
         </button>
       )}
+
+      {/* Solicitar cancelación (vista depósito): mostrar cuando el pedido tenga destino DEPOSITO */}
+      {pedido.destino === "DEPOSITO" && (user?.rol || "").toLowerCase() === "deposito" &&
+        !["CANCELADO", "CERRADO", "PENDIENTE_CANCELACION"].includes(pedido.estado) && (
+          <>
+            <button
+              onClick={() => setConfirmOpen(true)}
+              className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold mt-3"
+            >
+              Solicitar cancelación
+            </button>
+
+            <ConfirmModal
+              open={confirmOpen}
+              title={`Solicitar cancelación`}
+              message={`¿Confirmás solicitar la cancelación del pedido ${pedido.id}?`}
+              confirmLabel="Solicitar"
+              cancelLabel="Cancelar"
+              requireComment={true}
+              commentPlaceholder="Motivo de la solicitud de cancelación..."
+              onCancel={() => setConfirmOpen(false)}
+              onConfirm={async (comment) => {
+                setConfirmOpen(false);
+                await fetch(`${API_BASE}/pedidos/${id}/solicitar-cancelacion`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ usuario: user.username, observacion: comment }),
+                });
+                volverAlListado();
+              }}
+            />
+          </>
+        )}
 
       {["PENDIENTE_CONFIRMACION", "PENDIENTE_CONFIRMACION_FALTANTES"].includes(
         pedido.estado

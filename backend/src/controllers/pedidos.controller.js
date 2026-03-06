@@ -306,6 +306,73 @@ if (!asignacion) {
 /* ========================================================
    LISTAR TODOS
 ======================================================== */
+export async function solicitarCancelacion(req, res) {
+  try {
+    const { id } = req.params;
+    const { usuario, observacion } = req.body;
+
+    const u = await getUsuarioByUsername(usuario);
+    if (!u) return res.status(404).json({ error: "Usuario no encontrado" });
+
+    const pedido = await prisma.pedido.findUnique({ where: { id }, include: { supervisor: true } });
+    if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+
+    // Determinar autorización: solo el receptor puede solicitar cancelación.
+    // - Si destino === 'DEPOSITO' => solo usuarios con rol 'deposito'.
+    // - Si destino === 'SUPERVISOR' => solo el supervisor destino (supervisorDestinoUsername).
+    let autorizado = false;
+    if (pedido.destino === "DEPOSITO") {
+      if (u.rol === "deposito") autorizado = true;
+    } else if (pedido.destino === "SUPERVISOR") {
+      if (pedido.supervisorDestinoUsername && pedido.supervisorDestinoUsername === u.username) autorizado = true;
+    }
+
+    if (!autorizado) {
+      return res.status(403).json({ error: "No autorizado para solicitar cancelación" });
+    }
+
+    const actualizado = await prisma.pedido.update({
+      where: { id },
+      data: {
+        estado: ESTADOS_PEDIDO.PENDIENTE_CANCELACION,
+        historial: {
+          create: {
+            accion: "CANCELACION_SOLICITADA",
+            usuarioId: u.id,
+            detalle: observacion ? JSON.stringify({ observacion }) : null,
+          },
+        },
+      },
+      include: {
+        supervisor: true,
+        servicio: true,
+        asignadas: { include: { maquina: true } },
+        historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
+      },
+    });
+
+    try {
+      const adminIds = await getUsuariosAdminIds();
+      await notificarUsuarios({
+        req,
+        pedido: actualizado,
+        actorId: u.id,
+        usuarioIds: adminIds,
+        tipo: "SOLICITUD_CANCELACION",
+        estado: actualizado.estado,
+        mensaje: `Solicitud de cancelación para pedido ${actualizado.id} por ${u.username}`,
+      });
+    } catch (e) {
+      console.error("Error notificando admins (solicitarCancelacion):", e);
+    }
+
+    res.json({ message: "Solicitud de cancelación enviada", pedido: mapPedidoParaFront(actualizado) });
+    try { emitPedidoEvent(req, "pedido:updated", mapPedidoParaFront(actualizado)); } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Error solicitando cancelación" });
+  }
+}
 export async function getPedidos(req, res) {
   const pedidos = await prisma.pedido.findMany({
     include: {

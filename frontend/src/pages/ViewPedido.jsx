@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import HistorialPedido from "../components/HistorialPedido";
 import PedidoResumen from "../components/PedidoResumen";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function ViewPedido() {
   const { id } = useParams();
@@ -13,10 +14,12 @@ export default function ViewPedido() {
   const [seleccion, setSeleccion] = useState([]);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // ✅ USUARIO REAL DESDE AUTH
   const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
   const usuario = authUser.username;
+  const rol = (authUser.rol || "").toLowerCase();
 
   /* =========================
      GUARDIA DE SESIÓN
@@ -172,6 +175,43 @@ export default function ViewPedido() {
           Registrar devolución
         </button>
       )}
+
+      {/* Solicitar cancelación (si el usuario es el receptor) */}
+      {((pedido.destino === "DEPOSITO" && rol === "deposito") || (pedido.destino === "SUPERVISOR" && pedido.titular === usuario)) &&
+        !["CANCELADO", "CERRADO", "PENDIENTE_CANCELACION"].includes(pedido.estado) && (
+          <>
+            <button
+              onClick={() => setConfirmOpen(true)}
+              className="w-full bg-red-600 text-white py-3 rounded-xl mt-3"
+            >
+              Solicitar cancelación
+            </button>
+
+            <ConfirmModal
+              open={confirmOpen}
+              title={`Solicitar cancelación`}
+              message={`¿Confirmás solicitar la cancelación del pedido ${pedido.id}?`}
+              confirmLabel="Solicitar"
+              cancelLabel="Cancelar"
+              requireComment={true}
+              commentPlaceholder="Motivo de la solicitud de cancelación..."
+              onCancel={() => setConfirmOpen(false)}
+              onConfirm={async (comment) => {
+                setConfirmOpen(false);
+                try {
+                  await fetch(`${API_BASE}/pedidos/${id}/solicitar-cancelacion`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ usuario, observacion: comment }),
+                  });
+                } catch (e) {
+                  console.error(e);
+                }
+                navigate(-1);
+              }}
+            />
+          </>
+        )}
     </div>
   );
 }

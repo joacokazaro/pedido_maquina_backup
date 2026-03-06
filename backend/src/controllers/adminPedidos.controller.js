@@ -1,4 +1,5 @@
 import prisma from "../db/prisma.js";
+import { crearNotificacionesParaUsuarios } from "../services/notificaciones.service.js";
 
 /* ========================================================
    CONSTANTES Y HELPERS
@@ -246,6 +247,77 @@ export async function adminDeletePedido(req, res) {
   } catch (e) {
     console.error("adminDeletePedido:", e);
     res.status(500).json({ error: "Error eliminando pedido" });
+  }
+}
+
+/* ========================================================
+   POST /admin/pedidos/:id/aprobar-cancelacion
+   Admin approves a cancellation request: cancel order, free machines
+======================================================== */
+export async function adminAprobarCancelacion(req, res) {
+  try {
+    const { id } = req.params;
+    const { usuario } = req.body || {};
+
+    // validar admin
+    const admin = await prisma.usuario.findUnique({ where: { username: usuario } });
+    if (!admin || admin.rol !== "admin") return res.status(403).json({ error: "No autorizado" });
+
+    const pedido = await prisma.pedido.findUnique({
+      where: { id },
+      include: { asignadas: { include: { maquina: true } }, supervisor: true },
+    });
+
+    if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
+
+    if (pedido.estado !== "PENDIENTE_CANCELACION")
+      return res.status(400).json({ error: "Pedido no está en PENDIENTE_CANCELACION" });
+
+    const maquinasIds = pedido.asignadas.map(a => a.maquinaId);
+
+    const actualizado = await prisma.$transaction(async (tx) => {
+      if (maquinasIds.length > 0) {
+        await tx.maquina.updateMany({ where: { id: { in: maquinasIds } }, data: { estado: "disponible" } });
+      }
+
+      await tx.pedidoMaquina.deleteMany({ where: { pedidoId: id } });
+
+      return tx.pedido.update({
+        where: { id },
+        data: {
+          estado: "CANCELADO",
+          historial: {
+            create: {
+              accion: "CANCELADO",
+              usuarioId: admin.id,
+              detalle: JSON.stringify({ mensaje: "Cancelado por admin" }),
+            },
+          },
+        },
+        include: { asignadas: { include: { maquina: true } }, historial: { include: { usuario: { select: { username: true } } }, orderBy: { fecha: "asc" } }, supervisor: true, servicio: true },
+      });
+    });
+
+    // Notificar al supervisor solicitante
+    try {
+      if (pedido.supervisor && pedido.supervisor.id) {
+        await crearNotificacionesParaUsuarios({
+          req,
+          usuarioIds: [pedido.supervisor.id],
+          pedidoId: pedido.id,
+          tipo: "CANCELACION_APROBADA",
+          estado: actualizado.estado,
+          mensaje: `La cancelación del pedido ${pedido.id} fue aprobada por ${usuario}`,
+        });
+      }
+    } catch (e) {
+      console.error("Error notificando supervisor (adminAprobarCancelacion):", e);
+    }
+
+    res.json({ message: "Cancelación aprobada", pedido: actualizado });
+  } catch (e) {
+    console.error("adminAprobarCancelacion:", e);
+    res.status(500).json({ error: "Error aprobando cancelación" });
   }
 }
 

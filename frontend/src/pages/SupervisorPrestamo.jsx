@@ -4,6 +4,7 @@ import { API_BASE } from "../services/apiBase";
 import HistorialPedido from "../components/HistorialPedido";
 import PedidoResumen from "../components/PedidoResumen";
 import { useAuth } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmModal";
 
 
 
@@ -15,6 +16,7 @@ export default function SupervisorPrestamo() {
   const [error, setError] = useState("");
   const [observacion, setObservacion] = useState("");
   const { user } = useAuth();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
 
   useEffect(() => {
@@ -128,6 +130,39 @@ export default function SupervisorPrestamo() {
     Confirmar faltantes devueltos
   </button>
 )}
+
+     {/* Solicitar cancelación (receptor) */}
+    {((pedido.destino === "DEPOSITO" && (user?.rol || "").toLowerCase() === "deposito") || (pedido.destino === "SUPERVISOR" && pedido.titular === user.username)) &&
+       !["CANCELADO", "CERRADO", "PENDIENTE_CANCELACION"].includes(pedido.estado) && (
+         <>
+           <button
+             onClick={() => setConfirmOpen(true)}
+             className="w-full bg-red-600 text-white py-3 rounded-xl font-semibold mt-3"
+           >
+             Solicitar cancelación
+           </button>
+
+           <ConfirmModal
+             open={confirmOpen}
+             title={`Solicitar cancelación`}
+             message={`¿Confirmás solicitar la cancelación del pedido ${pedido.id}?`}
+             confirmLabel="Solicitar"
+             cancelLabel="Cancelar"
+             requireComment={true}
+             commentPlaceholder="Motivo de la solicitud de cancelación..."
+             onCancel={() => setConfirmOpen(false)}
+             onConfirm={async (comment) => {
+               setConfirmOpen(false);
+               await fetch(`${API_BASE}/pedidos/${id}/solicitar-cancelacion`, {
+                 method: "POST",
+                 headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({ usuario: user.username, observacion: comment }),
+               });
+               navigate(-1);
+             }}
+           />
+         </>
+       )}
 
     </div>
   );

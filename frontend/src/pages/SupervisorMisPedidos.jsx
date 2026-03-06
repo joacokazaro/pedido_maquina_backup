@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { EstadoBadge } from "../utils/estadoPedido.jsx";
 import { Link } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useNavigate } from "react-router-dom";
@@ -67,39 +68,7 @@ export default function SupervisorMisPedidos() {
      HELPERS
   ========================== */
 
-  function getEstadoLabel(estado) {
-    switch (estado) {
-      case "PENDIENTE_PREPARACION":
-        return "Pendiente de preparación";
-      case "PREPARADO":
-        return "Preparado";
-      case "ENTREGADO":
-        return "Entregado";
-      case "PENDIENTE_CONFIRMACION":
-        return "Pend. confirmación";
-      case "CERRADO":
-        return "Cerrado";
-      default:
-        return estado;
-    }
-  }
-
-  function getEstadoClasses(estado) {
-    switch (estado) {
-      case "PENDIENTE_PREPARACION":
-        return "bg-yellow-100 text-yellow-700";
-      case "PREPARADO":
-        return "bg-blue-100 text-blue-700";
-      case "ENTREGADO":
-        return "bg-green-100 text-green-700";
-      case "PENDIENTE_CONFIRMACION":
-        return "bg-orange-100 text-orange-700";
-      case "CERRADO":
-        return "bg-gray-300 text-gray-800";
-      default:
-        return "bg-gray-200 text-gray-700";
-    }
-  }
+  // Estado badge provided by utils -> EstadoBadge
 
   function tieneFaltantes(pedido) {
     if (pedido.estado !== "CERRADO") return false;
@@ -218,13 +187,7 @@ export default function SupervisorMisPedidos() {
                     </span>
                   )}
 
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${getEstadoClasses(
-                      p.estado
-                    )}`}
-                  >
-                    {getEstadoLabel(p.estado)}
-                  </span>
+                  <EstadoBadge estado={p.estado} />
                 </div>
               </div>
 

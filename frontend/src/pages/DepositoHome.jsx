@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { EstadoBadge } from "../utils/estadoPedido.jsx";
 
 export default function DepositoHome() {
   const [pedidos, setPedidos] = useState([]);
@@ -129,23 +130,7 @@ export default function DepositoHome() {
                   </span>
                 )}
 
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    p.estado === "PENDIENTE_PREPARACION"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : p.estado === "PREPARADO"
-                      ? "bg-blue-100 text-blue-800"
-                      : p.estado === "ENTREGADO"
-                      ? "bg-green-100 text-green-700"
-                      : p.estado === "PENDIENTE_CONFIRMACION"
-                      ? "bg-orange-200 text-orange-800"
-                      : p.estado === "CERRADO"
-                      ? "bg-gray-300 text-gray-800"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
-                >
-                  {p.estado.replace("_", " ")}
-                </span>
+                <EstadoBadge estado={p.estado} />
               </div>
             </div>
 

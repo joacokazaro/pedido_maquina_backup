@@ -1,12 +1,14 @@
+import { EstadoBadge } from "../utils/estadoPedido.jsx";
+
 export default function PedidoResumen({ pedido }) {
   if (!pedido) return null;
 
   return (
     <>
       {/* ESTADO */}
-      <span className="inline-block mb-3 px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
-        {pedido.estado.replace("_", " ")}
-      </span>
+      <div className="mb-3">
+        <EstadoBadge estado={pedido.estado} />
+      </div>
 
       {/* SERVICIO */}
       {pedido.servicio && (

@@ -11,7 +11,8 @@ import {
   confirmarDevolucion,
   completarFaltantes,
   getServiciosDeUsuario,
-  getPrestamosSupervisor
+  getPrestamosSupervisor,
+  solicitarCancelacion,
 } from "../controllers/pedidos.controller.js";
 
 
@@ -33,6 +34,7 @@ router.get("/:id", getPedidoById);
 // =========================
 router.put("/:id/estado", actualizarEstadoPedido);
 router.put("/:id/entregar", marcarEntregado);
+router.post("/:id/solicitar-cancelacion", solicitarCancelacion);
 
 // =========================
 // ASIGNACIÓN
