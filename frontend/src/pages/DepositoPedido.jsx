@@ -41,7 +41,7 @@ export default function DepositoPedido() {
     if (user.rol === "SUPERVISOR") {
       navigate("/supervisor/prestamos");
     } else {
-      navigate("/deposito");
+      navigate("/deposito/pedidos");
     }
   }
 

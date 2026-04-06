@@ -22,7 +22,9 @@ import AsignarMaquinasPrestamo from "./pages/AsignarMaquinasPrestamo";
 // =============================
 // DEPÓSITO
 // =============================
+import DepositoDashboard from "./pages/DepositoDashboard";
 import DepositoHome from "./pages/DepositoHome";
+import DepositoMaquinas from "./pages/DepositoMaquinas";
 import DepositoPedido from "./pages/DepositoPedido";
 import AsignarMaquinas from "./pages/AsignarMaquinas";
 import ConfirmarDevolucion from "./pages/ConfirmarDevolucion";
@@ -208,7 +210,25 @@ function App() {
         path="/deposito"
         element={
           <ProtectedRoute allowedRoles={["DEPOSITO"]}>
+            <DepositoDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/deposito/pedidos"
+        element={
+          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
             <DepositoHome />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/deposito/maquinas"
+        element={
+          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
+            <DepositoMaquinas />
           </ProtectedRoute>
         }
       />

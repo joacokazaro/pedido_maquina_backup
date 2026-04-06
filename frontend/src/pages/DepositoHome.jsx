@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { EstadoBadge } from "../utils/estadoPedido.jsx";
 
 export default function DepositoHome() {
+  const navigate = useNavigate();
   const [pedidos, setPedidos] = useState([]);
   const [filtro, setFiltro] = useState("TODOS");
 
@@ -79,6 +80,13 @@ export default function DepositoHome() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
+      <button
+        onClick={() => navigate("/deposito")}
+        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow transition text-gray-700 text-sm font-medium"
+      >
+        ← Volver al panel
+      </button>
+
       <h1 className="text-3xl font-bold mb-6 text-center">
         Pedidos a gestionar
       </h1>

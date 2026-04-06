@@ -60,7 +60,7 @@ export default function ConfirmarDevolucion() {
 
   function volverAlListado() {
     if (user.rol === "DEPOSITO") {
-      navigate("/deposito");
+      navigate("/deposito/pedidos");
     } else {
       navigate("/supervisor/prestamos");
     }
