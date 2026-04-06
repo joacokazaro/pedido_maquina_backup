@@ -71,7 +71,57 @@ export async function adminGetMaquinas(req, res) {
       orderBy: [{ tipo: "asc" }, { id: "asc" }],
     });
 
-    res.json(maquinas);
+    const maquinasIds = maquinas.map((m) => m.id);
+
+    const asignacionesActivas = maquinasIds.length
+      ? await prisma.pedidoMaquina.findMany({
+          where: {
+            maquinaId: { in: maquinasIds },
+            pedido: {
+              estado: {
+                notIn: ["CERRADO", "CANCELADO"],
+              },
+            },
+          },
+          include: {
+            pedido: {
+              select: {
+                id: true,
+                estado: true,
+                createdAt: true,
+                destino: true,
+                servicio: {
+                  select: { id: true, nombre: true },
+                },
+              },
+            },
+          },
+          orderBy: {
+            pedido: {
+              createdAt: "desc",
+            },
+          },
+        })
+      : [];
+
+    const asignacionPorMaquina = new Map();
+    for (const a of asignacionesActivas) {
+      if (!asignacionPorMaquina.has(a.maquinaId)) {
+        asignacionPorMaquina.set(a.maquinaId, {
+          pedidoId: a.pedido.id,
+          estadoPedido: a.pedido.estado,
+          destino: a.pedido.destino,
+          servicio: a.pedido.servicio,
+        });
+      }
+    }
+
+    const result = maquinas.map((m) => ({
+      ...m,
+      asignacion: asignacionPorMaquina.get(m.id) || null,
+    }));
+
+    res.json(result);
   } catch (e) {
     console.error("adminGetMaquinas:", e);
     res.status(500).json({ error: "Error listando máquinas" });

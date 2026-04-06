@@ -165,6 +165,17 @@ export default function AdminMaquinas() {
                 Servicio: <b>{m.servicio.nombre}</b>
               </p>
             )}
+
+            {m.estado === "asignada" && (
+              <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+                <p>
+                  Servicio original: <b>{m.servicio?.nombre || "-"}</b>
+                </p>
+                <p>
+                  Servicio de préstamo: <b>{m.asignacion?.servicio?.nombre || "-"}</b>
+                </p>
+              </div>
+            )}
           </button>
         ))}
       </div>
