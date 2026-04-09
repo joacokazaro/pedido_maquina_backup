@@ -1,11 +1,16 @@
 // routes/servicios.routes.js
 import express from "express";
-import { getServicios,
-        getServiciosPorUsuario
- } from "../controllers/servicios.controller.js";
+import {
+        getServicios,
+        getServiciosCatalogo,
+        getServicioCatalogoById,
+        getServiciosPorUsuario,
+} from "../controllers/servicios.controller.js";
 
 const router = express.Router();
 
+router.get("/catalogo", getServiciosCatalogo);
+router.get("/catalogo/:id", getServicioCatalogoById);
 router.get("/", getServicios);
 router.get("/usuario/:username", getServiciosPorUsuario);
 

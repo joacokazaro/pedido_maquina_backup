@@ -44,6 +44,19 @@ export default function DepositoDashboard() {
             Accedé al listado operativo para preparar, entregar y confirmar devoluciones.
           </p>
         </Link>
+
+        <Link
+          to="/deposito/servicios"
+          className="bg-white rounded-2xl shadow p-8 hover:shadow-lg transition border border-gray-200 flex flex-col items-center text-center sm:col-span-2"
+        >
+          <span className="text-5xl mb-4">🏷</span>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            Máquinas en Servicio
+          </h2>
+          <p className="text-gray-500 text-sm max-w-lg">
+            Consultá los servicios cargados y las máquinas asociadas, sin permisos de edición.
+          </p>
+        </Link>
       </div>
     </div>
   );
