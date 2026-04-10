@@ -12,6 +12,35 @@ const ESTADOS_MAQUINA_VALIDOS = [
   "baja",
 ];
 
+const ESTADOS_PEDIDO_INACTIVOS = ["CERRADO", "CANCELADO"];
+
+const MAQUINA_RELATIONS = {
+  servicio: true,
+  asignaciones: {
+    where: {
+      pedido: {
+        estado: {
+          notIn: ESTADOS_PEDIDO_INACTIVOS,
+        },
+      },
+    },
+    orderBy: { id: "desc" },
+    take: 1,
+    include: {
+      pedido: {
+        include: {
+          supervisor: {
+            select: {
+              username: true,
+              nombre: true,
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
 /* ========================================================
    HELPERS
 ======================================================== */
@@ -29,6 +58,21 @@ function normalizeEstado(raw) {
 }
 
 function mapMaquinaResponse(m) {
+  const asignacionActiva = m.asignaciones?.[0] ?? null;
+  const pedidoActivo = asignacionActiva?.pedido
+    ? {
+        id: asignacionActiva.pedido.id,
+        estado: asignacionActiva.pedido.estado,
+        destino: asignacionActiva.pedido.destino,
+        supervisor: asignacionActiva.pedido.supervisor?.username ?? null,
+        supervisorNombre:
+          asignacionActiva.pedido.supervisor?.nombre ??
+          asignacionActiva.pedido.supervisor?.username ??
+          null,
+        titular: asignacionActiva.pedido.supervisorDestinoUsername ?? null,
+      }
+    : null;
+
   return {
     id: m.id,
     tipo: m.tipo,
@@ -37,6 +81,7 @@ function mapMaquinaResponse(m) {
     estado: m.estado,
     servicioId: m.servicioId,
     servicio: m.servicio?.nombre ?? null,
+    pedidoActivo,
   };
 }
 
@@ -48,7 +93,7 @@ function mapMaquinaResponse(m) {
 export async function getMaquinas(req, res) {
   try {
     const maquinas = await prisma.maquina.findMany({
-      include: { servicio: true },
+      include: MAQUINA_RELATIONS,
       orderBy: { id: "asc" },
     });
 
@@ -69,7 +114,7 @@ export async function getMaquinaById(req, res) {
 
     const maquina = await prisma.maquina.findUnique({
       where: { id },
-      include: { servicio: true },
+      include: MAQUINA_RELATIONS,
     });
 
     if (!maquina) {
@@ -102,7 +147,7 @@ export async function getMaquinasPorTipo(req, res) {
           mode: "insensitive",
         },
       },
-      include: { servicio: true },
+      include: MAQUINA_RELATIONS,
       orderBy: { id: "asc" },
     });
 
