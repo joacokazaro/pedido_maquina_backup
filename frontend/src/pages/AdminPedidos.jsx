@@ -426,7 +426,7 @@ function pedidoTieneMaquina(pedido, texto) {
       {pedidoACancelar && (
   <ConfirmModal
     open={confirmCancelOpen}
-    title={`Aprobar cancelación`}
+    title={`Cancelar pedido`}
     message={`¿Confirmás marcar el pedido ${pedidoACancelar.id} como CANCELADO? Esto liberará las máquinas asignadas.`}
     confirmLabel="Marcar CANCELADO"
     cancelLabel="Cancelar"
@@ -439,10 +439,13 @@ function pedidoTieneMaquina(pedido, texto) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ usuario: user?.username }),
         });
-        if (!res.ok) throw new Error("Error aprobando cancelación");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || "Error cancelando pedido");
+        }
       } catch (e) {
         console.error(e);
-        alert("Error al marcar como CANCELADO");
+        alert(e.message || "Error al marcar como CANCELADO");
       } finally {
         setPedidoACancelar(null);
         loadPedidos();

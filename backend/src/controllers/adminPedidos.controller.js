@@ -270,10 +270,14 @@ export async function adminAprobarCancelacion(req, res) {
 
     if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
 
-    if (pedido.estado !== "PENDIENTE_CANCELACION")
-      return res.status(400).json({ error: "Pedido no está en PENDIENTE_CANCELACION" });
+    if (pedido.estado === "CANCELADO")
+      return res.status(400).json({ error: "Pedido ya está CANCELADO" });
 
     const maquinasIds = pedido.asignadas.map(a => a.maquinaId);
+    const accionHistorial = pedido.estado === "PENDIENTE_CANCELACION" ? "CANCELADO" : "CANCELADO_ADMIN";
+    const detalleHistorial = pedido.estado === "PENDIENTE_CANCELACION"
+      ? { mensaje: "Cancelado por admin" }
+      : { mensaje: "Cancelado directamente por admin", estadoAnterior: pedido.estado };
 
     const actualizado = await prisma.$transaction(async (tx) => {
       if (maquinasIds.length > 0) {
@@ -288,9 +292,9 @@ export async function adminAprobarCancelacion(req, res) {
           estado: "CANCELADO",
           historial: {
             create: {
-              accion: "CANCELADO",
+              accion: accionHistorial,
               usuarioId: admin.id,
-              detalle: JSON.stringify({ mensaje: "Cancelado por admin" }),
+              detalle: JSON.stringify(detalleHistorial),
             },
           },
         },
@@ -305,16 +309,18 @@ export async function adminAprobarCancelacion(req, res) {
           req,
           usuarioIds: [pedido.supervisor.id],
           pedidoId: pedido.id,
-          tipo: "CANCELACION_APROBADA",
+          tipo: pedido.estado === "PENDIENTE_CANCELACION" ? "CANCELACION_APROBADA" : "PEDIDO_CANCELADO_ADMIN",
           estado: actualizado.estado,
-          mensaje: `La cancelación del pedido ${pedido.id} fue aprobada por ${usuario}`,
+          mensaje: pedido.estado === "PENDIENTE_CANCELACION"
+            ? `La cancelación del pedido ${pedido.id} fue aprobada por ${usuario}`
+            : `El pedido ${pedido.id} fue cancelado por ${usuario}`,
         });
       }
     } catch (e) {
       console.error("Error notificando supervisor (adminAprobarCancelacion):", e);
     }
 
-    res.json({ message: "Cancelación aprobada", pedido: actualizado });
+    res.json({ message: "Pedido cancelado", pedido: actualizado });
   } catch (e) {
     console.error("adminAprobarCancelacion:", e);
     res.status(500).json({ error: "Error aprobando cancelación" });
