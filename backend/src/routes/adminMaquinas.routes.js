@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   adminGetMaquinas,
   adminGetMaquinaById,
+  adminGetPedidosHistoricosByMaquina,
   adminCreateMaquina,
   adminUpdateMaquina,
   adminDeleteMaquina,
@@ -17,6 +18,9 @@ router.get("/maquinas", adminGetMaquinas);
 
 // STOCK RESUMEN
 router.get("/maquinas/stock-resumen", adminResumenStock);
+
+// HISTÓRICO DE PEDIDOS POR MÁQUINA
+router.get("/maquinas/:id/pedidos-historicos", adminGetPedidosHistoricosByMaquina);
 
 // OBTENER UNA
 router.get("/maquinas/:id", adminGetMaquinaById);

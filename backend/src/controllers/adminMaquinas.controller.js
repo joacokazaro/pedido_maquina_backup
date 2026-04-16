@@ -183,6 +183,81 @@ export async function adminGetMaquinaById(req, res) {
 }
 
 /* ========================================================
+   GET /admin/maquinas/:id/pedidos-historicos
+======================================================== */
+export async function adminGetPedidosHistoricosByMaquina(req, res) {
+  try {
+    const { id } = req.params;
+
+    const maquina = await prisma.maquina.findUnique({
+      where: { id },
+      include: {
+        servicio: {
+          select: { id: true, nombre: true },
+        },
+      },
+    });
+
+    if (!maquina) {
+      return res.status(404).json({ error: "Máquina no encontrada" });
+    }
+
+    const asignaciones = await prisma.pedidoMaquina.findMany({
+      where: { maquinaId: id },
+      include: {
+        pedido: {
+          select: {
+            id: true,
+            estado: true,
+            destino: true,
+            supervisorDestinoUsername: true,
+            createdAt: true,
+            servicio: {
+              select: { id: true, nombre: true },
+            },
+            supervisor: {
+              select: {
+                id: true,
+                username: true,
+                nombre: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        pedido: {
+          createdAt: "desc",
+        },
+      },
+    });
+
+    res.json({
+      maquina: {
+        id: maquina.id,
+        tipo: maquina.tipo,
+        modelo: maquina.modelo,
+        serie: maquina.serie,
+        estado: maquina.estado,
+        servicio: maquina.servicio,
+      },
+      pedidos: asignaciones.map((asignacion) => ({
+        id: asignacion.pedido.id,
+        estado: asignacion.pedido.estado,
+        destino: asignacion.pedido.destino,
+        supervisorDestinoUsername: asignacion.pedido.supervisorDestinoUsername,
+        createdAt: asignacion.pedido.createdAt,
+        servicio: asignacion.pedido.servicio,
+        supervisor: asignacion.pedido.supervisor,
+      })),
+    });
+  } catch (e) {
+    console.error("adminGetPedidosHistoricosByMaquina:", e);
+    res.status(500).json({ error: "Error obteniendo histórico de pedidos" });
+  }
+}
+
+/* ========================================================
    POST /admin/maquinas
 ======================================================== */
 export async function adminCreateMaquina(req, res) {

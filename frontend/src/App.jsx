@@ -40,6 +40,7 @@ import AdminUsuarioForm from "./pages/AdminUsuarioForm";
 import AdminPedidos from "./pages/AdminPedidos";
 import AdminMaquinas from "./pages/AdminMaquinas";
 import AdminMaquinaForm from "./pages/AdminMaquinaForm";
+import AdminMaquinaHistorial from "./pages/AdminMaquinaHistorial";
 import AdminViewPedido from "./pages/AdminViewPedido";
 import AdminServicios from "./pages/AdminServicios";
 import AdminServicioForm from "./pages/AdminServicioForm";
@@ -356,6 +357,15 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminMaquinaForm />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/maquinas/:id/pedidos-historicos"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminMaquinaHistorial />
           </ProtectedRoute>
         }
       />
