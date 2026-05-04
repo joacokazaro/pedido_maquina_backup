@@ -34,6 +34,7 @@ La aplicación está pensada para uso interno, con control total de usuarios y d
 - Confirmar devoluciones
 - Registrar faltantes o inconsistencias
 - Consultar máquinas por servicio en modo solo lectura
+- Consultar máquinas por supervisor, separando máquinas fijas y temporales
 
 ### 🛠️ Administrador
 - Gestionar usuarios
@@ -57,6 +58,7 @@ La aplicación está pensada para uso interno, con control total de usuarios y d
    - Asigna máquinas disponibles
    - Actualiza el estado del pedido
    - Puede consultar máquinas agrupadas por servicio
+   - Puede consultar máquinas agrupadas por supervisor, distinguiendo las de servicio y las asignadas por pedido
 
 3. Finalizado el uso:
    - El Supervisor registra la devolución
@@ -77,6 +79,11 @@ La aplicación está pensada para uso interno, con control total de usuarios y d
 - Detalle de servicio con máquinas asociadas
 - Validación para impedir eliminar servicios con máquinas asociadas
 - Catálogo read-only para depósito: "Máquinas en Servicio"
+
+### Máquinas por Supervisor
+- Panel read-only para depósito
+- Selector de supervisores con rol supervisor
+- Visualización separada entre máquinas fijas del supervisor y máquinas temporales asignadas por pedidos activos
 
 ### Supervisores x Servicios
 - Asignación de servicios habilitados a supervisores y depósito
@@ -129,6 +136,7 @@ pedido_maquina_backup
 │  │  │  ├─ AdminServicios.jsx
 │  │  │  ├─ AdminServicioForm.jsx
 │  │  │  ├─ AdminSupervisoresServicios.jsx
+│  │  │  ├─ DepositoSupervisores.jsx
 │  │  │  ├─ DepositoServicios.jsx
 │  │  │  └─ DepositoServicioDetalle.jsx
 │  │  ├─ components
@@ -173,6 +181,8 @@ pedido_maquina_backup
 
 ### Supervisores x Servicios
 - `GET /api/supervisores`
+- `GET /api/supervisores/catalogo`
+- `GET /api/supervisores/:id/maquinas`
 - `GET /api/supervisores/:id/servicios`
 - `PUT /api/supervisores/:id/servicios`
 
@@ -184,6 +194,7 @@ pedido_maquina_backup
 - `/deposito`
 - `/deposito/pedidos`
 - `/deposito/maquinas`
+- `/deposito/supervisores`
 - `/deposito/servicios`
 - `/deposito/servicios/:id`
 
@@ -217,6 +228,7 @@ npm run dev
 
 - Los servicios son una entidad central del sistema: vinculan máquinas, pedidos y permisos operativos.
 - La vista "Máquinas en Servicio" para depósito es solo lectura y reutiliza endpoints públicos de catálogo, sin acceso a edición.
+- La vista "Máquinas por Supervisor" para depósito es solo lectura y separa máquinas fijas por servicios asignados de máquinas temporales vinculadas a pedidos activos.
 - La asignación de servicios condiciona qué pedidos puede crear un supervisor y qué máquinas puede operar.
 
 
