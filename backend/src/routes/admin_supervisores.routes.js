@@ -3,10 +3,15 @@ import {
   adminGetSupervisores,
   adminGetServiciosSupervisor,
   adminAsignarServiciosSupervisor,
-  adminGetUsuariosOperativos
+  adminGetUsuariosOperativos,
+  getSupervisoresCatalogo,
+  getMaquinasPorSupervisor,
 } from "../controllers/admin_supervisores.controller.js";
 
 const router = Router();
+
+router.get("/catalogo", getSupervisoresCatalogo);
+router.get("/:id/maquinas", getMaquinasPorSupervisor);
 
 // GET /admin/supervisores
 router.get("/", adminGetSupervisores);

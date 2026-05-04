@@ -28,6 +28,7 @@ import DepositoMaquinas from "./pages/DepositoMaquinas";
 import DepositoPedido from "./pages/DepositoPedido";
 import DepositoServicios from "./pages/DepositoServicios";
 import DepositoServicioDetalle from "./pages/DepositoServicioDetalle";
+import DepositoSupervisores from "./pages/DepositoSupervisores";
 import AsignarMaquinas from "./pages/AsignarMaquinas";
 import ConfirmarDevolucion from "./pages/ConfirmarDevolucion";
 
@@ -250,6 +251,15 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["DEPOSITO"]}>
             <DepositoServicioDetalle />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/deposito/supervisores"
+        element={
+          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
+            <DepositoSupervisores />
           </ProtectedRoute>
         }
       />
