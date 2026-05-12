@@ -137,6 +137,17 @@ export default function DepositoPedido() {
         </button>
       )}
 
+      {pedido.destino === "DEPOSITO" &&
+        (user?.rol || "").toLowerCase() === "deposito" &&
+        pedido.estado === "ENTREGADO" && (
+          <button
+            onClick={() => navigate(`/deposito/pedido/${id}/confirmar`)}
+            className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold mt-3"
+          >
+            Registrar devolución directa
+          </button>
+        )}
+
       {/* Solicitar cancelación (vista depósito): mostrar cuando el pedido tenga destino DEPOSITO */}
       {pedido.destino === "DEPOSITO" && (user?.rol || "").toLowerCase() === "deposito" &&
         !["CANCELADO", "CERRADO", "PENDIENTE_CANCELACION"].includes(pedido.estado) && (

@@ -789,6 +789,38 @@ export async function confirmarDevolucion(req, res) {
     const u = await getUsuarioByUsername(usuario);
     if (!u) return res.status(404).json({ error: "Usuario no encontrado" });
 
+    const pedidoActual = await prisma.pedido.findUnique({
+      where: { id },
+      include: { asignadas: true },
+    });
+    if (!pedidoActual)
+      return res.status(404).json({ error: "Pedido no encontrado" });
+
+    const puedeConfirmarDirectoDeposito =
+      pedidoActual.destino === "DEPOSITO" &&
+      u.rol === "deposito" &&
+      pedidoActual.estado === ESTADOS_PEDIDO.ENTREGADO;
+
+    const puedeConfirmarFlujoNormal = [
+      ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION,
+      ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION_FALTANTES,
+    ].includes(pedidoActual.estado);
+
+    if (!puedeConfirmarFlujoNormal && !puedeConfirmarDirectoDeposito) {
+      return res.status(400).json({
+        error: "El pedido no está en un estado válido para confirmar devolución",
+      });
+    }
+
+    const asignadasIds = pedidoActual.asignadas.map((a) => a.maquinaId);
+    const todasValidas = [...devueltas, ...faltantes].every((maquinaId) =>
+      asignadasIds.includes(maquinaId)
+    );
+
+    if (!todasValidas) {
+      return res.status(400).json({ error: "Hay máquinas que no pertenecen al pedido" });
+    }
+
     await prisma.$transaction(async tx => {
       if (devueltas.length)
         await tx.maquina.updateMany({
@@ -807,13 +839,19 @@ export async function confirmarDevolucion(req, res) {
       where: { id },
       data: {
         estado: ESTADOS_PEDIDO.CERRADO,
+        itemsDevueltos: JSON.stringify(devueltas),
         historial: {
           create: {
-            accion: "DEVOLUCION_CONFIRMADA",
+            accion: puedeConfirmarDirectoDeposito
+              ? "DEVOLUCION_CONFIRMADA_DIRECTA"
+              : "DEVOLUCION_CONFIRMADA",
             usuarioId: u.id,
             detalle: JSON.stringify({
               devueltasConfirmadas: devueltas,
               faltantesConfirmados: faltantes,
+              ...(puedeConfirmarDirectoDeposito
+                ? { devolucionDirectaDeposito: true }
+                : {}),
               ...(observacion ? { observacion } : {}),
             }),
           },

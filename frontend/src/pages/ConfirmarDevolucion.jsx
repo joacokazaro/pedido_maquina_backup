@@ -37,12 +37,20 @@ export default function ConfirmarDevolucion() {
         declaradas = reg?.detalle?.devueltasDeclaradas || [];
       }
 
+      if (
+        data.estado === "ENTREGADO" &&
+        data.destino === "DEPOSITO" &&
+        (user?.rol || "").toUpperCase() === "DEPOSITO"
+      ) {
+        declaradas = (data.itemsAsignados || []).map((m) => m.id);
+      }
+
       setSeleccion(declaradas);
       setLoading(false);
     }
 
     load();
-  }, [id]);
+  }, [id, user?.rol]);
 
   if (loading || !pedido) {
     return <div className="p-6">Cargando información...</div>;
@@ -99,6 +107,14 @@ export default function ConfirmarDevolucion() {
       </button>
 
       <h1 className="text-2xl font-bold mb-4">Confirmar devolución</h1>
+
+      {pedido.estado === "ENTREGADO" &&
+        pedido.destino === "DEPOSITO" &&
+        (user?.rol || "").toUpperCase() === "DEPOSITO" && (
+          <p className="mb-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+            Estás registrando una devolución directa desde depósito sin que el supervisor la haya cargado previamente.
+          </p>
+        )}
 
       <div className="bg-white rounded-xl shadow p-4 mb-4 space-y-3">
         {asignadas.map((m) => {
