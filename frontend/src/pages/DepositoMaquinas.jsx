@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 
@@ -173,7 +173,17 @@ export default function DepositoMaquinas() {
                     Servicio de préstamo: <b>{m.asignacion.servicio?.nombre || "-"}</b>
                   </p>
                   <p>
-                    Pedido activo: <b>{m.asignacion.pedidoId || "-"}</b>
+                    Pedido activo:{" "}
+                    {m.asignacion.pedidoId ? (
+                      <Link
+                        to={`/deposito/pedido/${encodeURIComponent(m.asignacion.pedidoId)}`}
+                        className="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-800"
+                      >
+                        {m.asignacion.pedidoId}
+                      </Link>
+                    ) : (
+                      <b>-</b>
+                    )}
                   </p>
                 </>
               ) : (
