@@ -12,6 +12,15 @@ export default function Notificaciones() {
   const [notificaciones, setNotificaciones] = useState([]);
   const [error, setError] = useState("");
 
+  function filtrarNotificacionesPorRol(items) {
+    if (!Array.isArray(items)) return [];
+
+    return items.filter((item) => {
+      if (item?.tipo !== "PRESTAMO_PROLONGADO") return true;
+      return user?.rol === "DEPOSITO";
+    });
+  }
+
   useEffect(() => {
     if (!user?.username) return;
 
@@ -21,7 +30,7 @@ export default function Notificaciones() {
       const n = e.detail;
       if (!n) return;
 
-      setNotificaciones((prev) => [n, ...prev]);
+      setNotificaciones((prev) => filtrarNotificacionesPorRol([n, ...prev]));
     }
 
     window.addEventListener("notificacion:created", onCreated);
@@ -51,7 +60,7 @@ export default function Notificaciones() {
       if (!res.ok) throw new Error();
 
       const data = await res.json();
-      setNotificaciones(Array.isArray(data) ? data : []);
+      setNotificaciones(filtrarNotificacionesPorRol(data));
     } catch {
       setError("Error cargando notificaciones");
     }

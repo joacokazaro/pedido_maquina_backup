@@ -18,6 +18,7 @@ import adminSupervisoresRoutes from "./routes/admin_supervisores.routes.js";
 
 import serviciosRoutes from "./routes/servicios.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
+import { iniciarMonitorPrestamosProlongados } from "./services/notificaciones.service.js";
 
 const app = express();
 
@@ -100,6 +101,8 @@ const io = new IOServer(httpServer, {
 
 // Expose io via app so controllers can emit events: req.app.get('io')
 app.set("io", io);
+
+iniciarMonitorPrestamosProlongados({ io });
 
 // Allow clients to join rooms
 io.on("connection", (socket) => {
