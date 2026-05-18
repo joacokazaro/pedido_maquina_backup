@@ -13,6 +13,12 @@ const ESTADOS_PEDIDO_VALIDOS = [
   "CERRADO",
 ];
 
+const ESTADOS_PEDIDO_EDITABLES_ADMIN = [
+  "PENDIENTE_PREPARACION",
+  "PREPARADO",
+  "ENTREGADO",
+];
+
 function normalizeEstadoPedido(raw) {
   return String(raw || "")
     .trim()
@@ -205,6 +211,196 @@ export async function adminUpdateEstado(req, res) {
   } catch (err) {
     console.error("adminUpdateEstado:", err);
     res.status(500).json({ error: "Error interno del servidor" });
+  }
+}
+
+/* ========================================================
+   PUT /admin/pedidos/:id
+   Admin edits pedido observation and assigned machines
+======================================================== */
+export async function adminUpdatePedido(req, res) {
+  try {
+    const { id } = req.params;
+    const { usuario, observacion, asignadas, servicioId } = req.body || {};
+
+    const admin = await prisma.usuario.findUnique({
+      where: { username: usuario },
+      select: { id: true, rol: true, username: true },
+    });
+
+    if (!admin || admin.rol !== "admin") {
+      return res.status(403).json({ error: "No autorizado" });
+    }
+
+    if (!Array.isArray(asignadas)) {
+      return res.status(400).json({ error: "asignadas debe ser un array" });
+    }
+
+    const servicioIdNum = Number(servicioId);
+    if (!servicioIdNum) {
+      return res.status(400).json({ error: "servicioId es obligatorio" });
+    }
+
+    const asignadasIds = [...new Set(asignadas.map((item) => String(item || "").trim()).filter(Boolean))];
+
+    const pedido = await prisma.pedido.findUnique({
+      where: { id },
+      include: {
+        asignadas: true,
+      },
+    });
+
+    if (!pedido) {
+      return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+
+    if (!ESTADOS_PEDIDO_EDITABLES_ADMIN.includes(pedido.estado)) {
+      return res.status(409).json({
+        error: "Solo se pueden editar pedidos en preparación, preparados o entregados",
+      });
+    }
+
+    const servicio = await prisma.servicio.findUnique({
+      where: { id: servicioIdNum },
+      select: { id: true, nombre: true },
+    });
+
+    if (!servicio) {
+      return res.status(404).json({ error: "Servicio no encontrado" });
+    }
+
+    const actualesIds = pedido.asignadas.map((item) => item.maquinaId);
+    const actualesSet = new Set(actualesIds);
+    const nuevasSet = new Set(asignadasIds);
+
+    const maquinasAgregar = asignadasIds.filter((maquinaId) => !actualesSet.has(maquinaId));
+    const maquinasQuitar = actualesIds.filter((maquinaId) => !nuevasSet.has(maquinaId));
+
+    if (maquinasAgregar.length > 0) {
+      const maquinasDisponibles = await prisma.maquina.findMany({
+        where: { id: { in: maquinasAgregar } },
+        select: { id: true, estado: true },
+      });
+
+      if (maquinasDisponibles.length !== maquinasAgregar.length) {
+        return res.status(400).json({ error: "Hay máquinas inexistentes en la selección" });
+      }
+
+      const noDisponibles = maquinasDisponibles.filter((maquina) => maquina.estado !== "disponible");
+      if (noDisponibles.length > 0) {
+        return res.status(409).json({
+          error: `Las siguientes máquinas no están libres: ${noDisponibles.map((maquina) => maquina.id).join(", ")}`,
+        });
+      }
+
+      const asignacionesActivas = await prisma.pedidoMaquina.findMany({
+        where: {
+          maquinaId: { in: maquinasAgregar },
+          pedidoId: { not: id },
+          pedido: {
+            estado: {
+              notIn: ["CERRADO", "CANCELADO"],
+            },
+          },
+        },
+        select: { maquinaId: true, pedidoId: true },
+      });
+
+      if (asignacionesActivas.length > 0) {
+        return res.status(409).json({
+          error: `Las siguientes máquinas ya están asignadas a otro pedido: ${asignacionesActivas
+            .map((item) => item.maquinaId)
+            .join(", ")}`,
+        });
+      }
+    }
+
+    const detalle = {
+      mensaje: "Pedido editado por administrador",
+      maquinasQuitadas: maquinasQuitar,
+      maquinasAgregadas: maquinasAgregar,
+      servicioAnteriorId: pedido.servicioId,
+      servicioNuevoId: servicio.id,
+    };
+
+    if (typeof observacion === "string") {
+      detalle.observacion = observacion.trim() || null;
+    }
+
+    const estadoSiguiente =
+      pedido.estado === "PREPARADO" && asignadasIds.length === 0
+        ? "PENDIENTE_PREPARACION"
+        : pedido.estado;
+
+    const actualizado = await prisma.$transaction(async (tx) => {
+      if (maquinasQuitar.length > 0) {
+        await tx.pedidoMaquina.deleteMany({
+          where: {
+            pedidoId: id,
+            maquinaId: { in: maquinasQuitar },
+          },
+        });
+
+        await tx.maquina.updateMany({
+          where: { id: { in: maquinasQuitar } },
+          data: { estado: "disponible" },
+        });
+      }
+
+      if (maquinasAgregar.length > 0) {
+        await tx.pedidoMaquina.createMany({
+          data: maquinasAgregar.map((maquinaId) => ({
+            pedidoId: id,
+            maquinaId,
+          })),
+        });
+
+        await tx.maquina.updateMany({
+          where: { id: { in: maquinasAgregar } },
+          data: { estado: "asignada" },
+        });
+      }
+
+      return tx.pedido.update({
+        where: { id },
+        data: {
+          observacion:
+            typeof observacion === "string"
+              ? observacion.trim() || null
+              : pedido.observacion,
+          servicioId: servicio.id,
+          estado: estadoSiguiente,
+          historial: {
+            create: {
+              accion: "ADMIN_EDICION_PEDIDO",
+              usuarioId: admin.id,
+              detalle: JSON.stringify(detalle),
+            },
+          },
+        },
+        include: {
+          supervisor: { select: { username: true } },
+          servicio: { select: { id: true, nombre: true } },
+          asignadas: { include: { maquina: true } },
+          historial: {
+            include: { usuario: { select: { username: true } } },
+            orderBy: { fecha: "asc" },
+          },
+        },
+      });
+    });
+
+    res.json({
+      message: "Pedido actualizado correctamente",
+      pedido: {
+        ...actualizado,
+        supervisorName: actualizado.supervisor?.username ?? "—",
+        servicioName: actualizado.servicio?.nombre ?? null,
+      },
+    });
+  } catch (err) {
+    console.error("adminUpdatePedido:", err);
+    res.status(500).json({ error: "Error actualizando pedido" });
   }
 }
 

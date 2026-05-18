@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   adminListPedidos,
   adminGetPedido,
+  adminUpdatePedido,
   adminUpdateEstado,
   adminDeletePedido,
   adminAprobarCancelacion,
@@ -13,6 +14,7 @@ const router = Router();
 router.get("/pedidos/export", adminExportPedidos);
 router.get("/pedidos", adminListPedidos);
 router.get("/pedidos/:id", adminGetPedido);
+router.put("/pedidos/:id", adminUpdatePedido);
 router.put("/pedidos/:id/estado", adminUpdateEstado);
 router.post("/pedidos/:id/aprobar-cancelacion", adminAprobarCancelacion);
 router.delete("/pedidos/:id", adminDeletePedido);
