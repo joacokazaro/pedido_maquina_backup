@@ -102,6 +102,15 @@ export default function AdminMaquinas() {
         </div>
       </header>
 
+      <a
+        href={`${API_BASE}/admin/maquinas/export`}
+        className="inline-block mb-4 px-4 py-2 rounded-lg
+                   bg-green-600 text-white text-sm font-semibold
+                   hover:bg-green-700 transition"
+      >
+        Exportar máquinas (CSV)
+      </a>
+
       {resumen && (
         <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
           {Object.entries(resumen.porEstado || {}).map(([estado, cant]) => (

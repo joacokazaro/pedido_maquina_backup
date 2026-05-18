@@ -35,6 +35,10 @@ function normalizeEstado(raw) {
   return "disponible";
 }
 
+function escapeCsv(value) {
+  return `"${String(value ?? "").replaceAll('"', '""').replaceAll("\n", " ")}"`;
+}
+
 /* ========================================================
    GET /admin/maquinas
 ======================================================== */
@@ -463,5 +467,106 @@ export async function adminResumenStock(req, res) {
   } catch (e) {
     console.error("adminResumenStock:", e);
     res.status(500).json({ error: "Error obteniendo resumen de stock" });
+  }
+}
+
+/* ========================================================
+   GET /admin/maquinas/export
+======================================================== */
+export async function adminExportMaquinas(req, res) {
+  try {
+    const maquinas = await prisma.maquina.findMany({
+      include: {
+        servicio: {
+          select: { id: true, nombre: true },
+        },
+      },
+      orderBy: [{ tipo: "asc" }, { id: "asc" }],
+    });
+
+    const maquinasIds = maquinas.map((maquina) => maquina.id);
+
+    const asignacionesActivas = maquinasIds.length
+      ? await prisma.pedidoMaquina.findMany({
+          where: {
+            maquinaId: { in: maquinasIds },
+            pedido: {
+              estado: {
+                notIn: ["CERRADO", "CANCELADO"],
+              },
+            },
+          },
+          include: {
+            pedido: {
+              select: {
+                id: true,
+                estado: true,
+                destino: true,
+                createdAt: true,
+                servicio: {
+                  select: { id: true, nombre: true },
+                },
+              },
+            },
+          },
+          orderBy: {
+            pedido: {
+              createdAt: "desc",
+            },
+          },
+        })
+      : [];
+
+    const asignacionPorMaquina = new Map();
+    for (const asignacion of asignacionesActivas) {
+      if (!asignacionPorMaquina.has(asignacion.maquinaId)) {
+        asignacionPorMaquina.set(asignacion.maquinaId, asignacion.pedido);
+      }
+    }
+
+    const rows = [
+      [
+        "Codigo",
+        "Tipo",
+        "Modelo",
+        "Serie",
+        "Estado",
+        "Servicio Original",
+        "Pedido Activo",
+        "Estado Pedido Activo",
+        "Destino Pedido Activo",
+        "Servicio Prestamo",
+      ],
+    ];
+
+    for (const maquina of maquinas) {
+      const asignacion = asignacionPorMaquina.get(maquina.id);
+
+      rows.push([
+        maquina.id,
+        maquina.tipo,
+        maquina.modelo,
+        maquina.serie,
+        maquina.estado,
+        maquina.servicio?.nombre ?? "",
+        asignacion?.id ?? "",
+        asignacion?.estado ?? "",
+        asignacion?.destino ?? "",
+        asignacion?.servicio?.nombre ?? "",
+      ]);
+    }
+
+    const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=maquinas_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+
+    res.send(csv);
+  } catch (e) {
+    console.error("adminExportMaquinas:", e);
+    res.status(500).json({ error: "Error exportando máquinas" });
   }
 }

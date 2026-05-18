@@ -8,12 +8,14 @@ import {
   adminUpdateMaquina,
   adminDeleteMaquina,
   adminCambiarEstado,
-  adminResumenStock
+  adminResumenStock,
+  adminExportMaquinas
 } from "../controllers/adminMaquinas.controller.js";
 
 const router = Router();
 
 // LISTADO CON FILTROS
+router.get("/maquinas/export", adminExportMaquinas);
 router.get("/maquinas", adminGetMaquinas);
 
 // STOCK RESUMEN
