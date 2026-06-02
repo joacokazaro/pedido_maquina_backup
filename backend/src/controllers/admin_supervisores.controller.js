@@ -286,6 +286,12 @@ export async function getMaquinasPorSupervisor(req, res) {
             nombre: true,
           },
         },
+        servicio: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
         asignadas: {
           include: {
             maquina: {
@@ -312,6 +318,12 @@ export async function getMaquinasPorSupervisor(req, res) {
 
         return {
           ...mapMaquinaSupervisor(asignacion.maquina),
+          servicioActual: pedido.servicio
+            ? {
+                id: pedido.servicio.id,
+                nombre: pedido.servicio.nombre,
+              }
+            : null,
           pedido: {
             id: pedido.id,
             estado: pedido.estado,

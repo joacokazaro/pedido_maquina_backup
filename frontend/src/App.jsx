@@ -11,6 +11,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // SUPERVISOR
 // =============================
 import SupervisorDashboard from "./pages/SupervisorDashboard";
+import SupervisorMaquinas from "./pages/SupervisorMaquinas";
+import SupervisorMaquinaDetalle from "./pages/SupervisorMaquinaDetalle";
 import SupervisorMisPedidos from "./pages/SupervisorMisPedidos";
 import SupervisorMisPrestamos from "./pages/SupervisorMisPrestamos";
 import SupervisorPrestamo from "./pages/SupervisorPrestamo";
@@ -135,6 +137,24 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
             <SupervisorMisPedidos />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/maquinas"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+            <SupervisorMaquinas />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/maquinas/:id"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+            <SupervisorMaquinaDetalle />
           </ProtectedRoute>
         }
       />
