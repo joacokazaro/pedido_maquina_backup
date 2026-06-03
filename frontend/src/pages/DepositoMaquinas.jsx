@@ -25,6 +25,11 @@ export default function DepositoMaquinas() {
   const [tipoFiltro, setTipoFiltro] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("");
 
+  const serviciosUsuarioSet = useMemo(
+    () => new Set(serviciosUsuario.map((servicioId) => String(servicioId))),
+    [serviciosUsuario]
+  );
+
   useEffect(() => {
     if (!user?.username) return;
 
@@ -59,10 +64,27 @@ export default function DepositoMaquinas() {
   }, [user?.username]);
 
   const maquinas = useMemo(() => {
-    let data = allMaquinas.filter((m) => serviciosUsuario.includes(m.servicio?.id));
+    let data = allMaquinas.map((maquina) => {
+      const maquinaEsPropia = serviciosUsuarioSet.has(String(maquina.servicio?.id || ""));
+      const estadoVisible =
+        maquinaEsPropia && maquina.asignacion && maquina.estado === "disponible"
+          ? "asignada"
+          : !maquinaEsPropia &&
+              maquina.asignacion &&
+              ["asignada", "no_devuelta"].includes(maquina.estado)
+          ? "disponible"
+          : maquina.estado;
+
+      return {
+        ...maquina,
+        maquinaEsPropia,
+        estadoVisible,
+        asignacionVisible: maquinaEsPropia ? maquina.asignacion : null,
+      };
+    });
 
     if (tipoFiltro) data = data.filter((m) => m.tipo === tipoFiltro);
-    if (estadoFiltro) data = data.filter((m) => m.estado === estadoFiltro);
+    if (estadoFiltro) data = data.filter((m) => m.estadoVisible === estadoFiltro);
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -72,8 +94,8 @@ export default function DepositoMaquinas() {
         m.modelo?.toLowerCase().includes(q) ||
         m.serie?.toLowerCase().includes(q) ||
         m.servicio?.nombre?.toLowerCase().includes(q) ||
-        m.asignacion?.servicio?.nombre?.toLowerCase().includes(q) ||
-        m.asignacion?.pedidoId?.toLowerCase().includes(q)
+        m.asignacionVisible?.servicio?.nombre?.toLowerCase().includes(q) ||
+        m.asignacionVisible?.pedidoId?.toLowerCase().includes(q)
       );
     }
 
@@ -102,9 +124,9 @@ export default function DepositoMaquinas() {
 
       <header className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Mis máquinas</h1>
+          <h1 className="text-2xl font-bold">Máquinas</h1>
           <p className="text-xs text-gray-600">
-            Máquinas de los servicios asignados a tu usuario.
+            Todas las máquinas. Los préstamos activos solo se marcan para las de tus servicios.
           </p>
         </div>
       </header>
@@ -153,8 +175,8 @@ export default function DepositoMaquinas() {
                 <p className="text-xs text-gray-500">Código: <b>{m.id}</b></p>
               </div>
 
-              <span className={estadoBadgeClass(m.estado)}>
-                {m.estado}
+              <span className={estadoBadgeClass(m.estadoVisible)}>
+                {m.estadoVisible}
               </span>
             </div>
 
@@ -167,19 +189,19 @@ export default function DepositoMaquinas() {
                 Servicio original: <b>{m.servicio?.nombre || "-"}</b>
               </p>
 
-              {m.asignacion ? (
+              {m.asignacionVisible ? (
                 <>
                   <p>
-                    Servicio de préstamo: <b>{m.asignacion.servicio?.nombre || "-"}</b>
+                    Servicio de préstamo: <b>{m.asignacionVisible.servicio?.nombre || "-"}</b>
                   </p>
                   <p>
                     Pedido activo:{" "}
-                    {m.asignacion.pedidoId ? (
+                    {m.asignacionVisible.pedidoId ? (
                       <Link
-                        to={`/deposito/pedido/${encodeURIComponent(m.asignacion.pedidoId)}`}
+                        to={`/deposito/pedido/${encodeURIComponent(m.asignacionVisible.pedidoId)}`}
                         className="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-800"
                       >
-                        {m.asignacion.pedidoId}
+                        {m.asignacionVisible.pedidoId}
                       </Link>
                     ) : (
                       <b>-</b>

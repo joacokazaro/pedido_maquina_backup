@@ -25,10 +25,10 @@ export default function DepositoDashboard() {
         >
           <span className="text-5xl mb-4">🛠</span>
           <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Mis máquinas
+            Máquinas
           </h2>
           <p className="text-gray-500 text-sm">
-            Revisá tus máquinas y dónde están asignadas si fueron prestadas.
+            Revisá todas las máquinas y los préstamos activos de las que pertenecen a tus servicios.
           </p>
         </Link>
 
