@@ -23,8 +23,18 @@ function mapUsuarioResponse(u) {
     nombre: u.nombre,
     rol: u.rol.toUpperCase(), // el front lo espera así
     activo: u.activo,
+    vtoCarnetConductor: u.vtoCarnetConductor,
     createdAt: u.createdAt,
   };
+}
+
+function parseNullableDate(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
 /* =====================================================
@@ -104,17 +114,22 @@ export async function adminGetUsuarioByUsername(req, res) {
 ===================================================== */
 export async function adminCreateUsuario(req, res) {
   try {
-    const { username, nombre, rol, password } = req.body || {};
+    const { username, nombre, rol, password, vtoCarnetConductor } = req.body || {};
 
     const usernameNorm = normalizeString(username);
     const nombreNorm = normalizeString(nombre);
     const rolNorm = normalizeRol(rol);
     const passwordNorm = normalizeString(password);
+    const vtoCarnetConductorDate = parseNullableDate(vtoCarnetConductor);
 
     if (!usernameNorm || !rolNorm || !passwordNorm) {
       return res.status(400).json({
         error: "username, rol y password son obligatorios",
       });
+    }
+
+    if (vtoCarnetConductor !== undefined && vtoCarnetConductorDate === undefined) {
+      return res.status(400).json({ error: "vtoCarnetConductor inválido" });
     }
 
     if (!ROLES_VALIDOS.includes(rolNorm)) {
@@ -140,6 +155,7 @@ export async function adminCreateUsuario(req, res) {
         password: passwordNorm, // plano (decisión del proyecto)
         rol: rolNorm,
         activo: true,
+        vtoCarnetConductor: vtoCarnetConductorDate ?? null,
       },
     });
 
@@ -159,10 +175,15 @@ export async function adminCreateUsuario(req, res) {
 export async function adminUpdateUsuario(req, res) {
   try {
     const username = normalizeString(req.params.username);
-    const { nombre, rol, password, activo } = req.body || {};
+    const { nombre, rol, password, activo, vtoCarnetConductor } = req.body || {};
 
     if (!username) {
       return res.status(400).json({ error: "Username requerido" });
+    }
+
+    const vtoCarnetConductorDate = parseNullableDate(vtoCarnetConductor);
+    if (vtoCarnetConductor !== undefined && vtoCarnetConductorDate === undefined) {
+      return res.status(400).json({ error: "vtoCarnetConductor inválido" });
     }
 
     const usuario = await prisma.usuario.findUnique({
@@ -202,6 +223,10 @@ export async function adminUpdateUsuario(req, res) {
 
     if (typeof password === "string" && password.trim() !== "") {
       data.password = password.trim();
+    }
+
+    if (vtoCarnetConductor !== undefined) {
+      data.vtoCarnetConductor = vtoCarnetConductorDate;
     }
 
     const actualizado = await prisma.usuario.update({

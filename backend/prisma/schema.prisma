@@ -14,6 +14,7 @@ model Usuario {
   password          String?
   rol               String
   activo            Boolean           @default(true)
+  vtoCarnetConductor DateTime?
   createdAt         DateTime          @default(now())
 
   // Relaciones
@@ -21,6 +22,9 @@ model Usuario {
   pedidosSupervisor Pedido[]          @relation("SupervisorPedidos")
   serviciosAsignados UsuarioServicio[]
   notificaciones    Notificacion[]
+  vehiculosAsignados Vehiculo[]       @relation("ConductorActualVehiculo")
+  historialVehiculos VehiculoAsignacion[] @relation("VehiculoAsignadoAUsuario")
+  asignacionesRealizadasVehiculo VehiculoAsignacion[] @relation("VehiculoAsignadoPorUsuario")
 }
 
 model Servicio {
@@ -32,6 +36,14 @@ model Servicio {
   maquinas     Maquina[]
   pedidos      Pedido[]
   supervisores UsuarioServicio[]
+}
+
+model Seguro {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique
+  createdAt DateTime   @default(now())
+
+  vehiculos Vehiculo[]
 }
 
 model UsuarioServicio {
@@ -58,6 +70,54 @@ model Maquina {
   // Relaciones
   servicio     Servicio        @relation(fields: [servicioId], references: [id])
   asignaciones PedidoMaquina[]
+}
+
+model Vehiculo {
+  id                      String               @id
+  empresa                 String
+  estado                  String               @default("activo")
+  vehiculo                String
+  patente                 String               @unique
+  modelo                  String
+  numeroPoliza            String?
+  motor                   String
+  chasis                  String
+  tipoCobertura           String
+  seguroId                Int
+  conductorActualId       Int?
+  vtoSeguro               DateTime?
+  vtoSeguroAplica         Boolean              @default(true)
+  vtoMatafuego            DateTime?
+  vtoMatafuegoAplica      Boolean              @default(true)
+  vtoItv                  DateTime?
+  vtoItvAplica            Boolean              @default(true)
+  obleaGnc                DateTime?
+  obleaGncAplica          Boolean              @default(true)
+  pruebaHidraulicaGnc     DateTime?
+  pruebaHidraulicaGncAplica Boolean            @default(true)
+  tarjetaVerde            Boolean              @default(false)
+  createdAt               DateTime             @default(now())
+
+  seguro                  Seguro               @relation(fields: [seguroId], references: [id])
+  conductorActual         Usuario?             @relation("ConductorActualVehiculo", fields: [conductorActualId], references: [id])
+  historialAsignaciones   VehiculoAsignacion[]
+}
+
+model VehiculoAsignacion {
+  id            Int       @id @default(autoincrement())
+  vehiculoId    String
+  usuarioId     Int
+  asignadoPorId Int?
+  fechaDesde    DateTime  @default(now())
+  fechaHasta    DateTime?
+  observacion   String?
+
+  vehiculo      Vehiculo  @relation(fields: [vehiculoId], references: [id])
+  usuario       Usuario   @relation("VehiculoAsignadoAUsuario", fields: [usuarioId], references: [id])
+  asignadoPor   Usuario?  @relation("VehiculoAsignadoPorUsuario", fields: [asignadoPorId], references: [id])
+
+  @@index([vehiculoId, fechaHasta])
+  @@index([usuarioId, fechaHasta])
 }
 
 model Pedido {

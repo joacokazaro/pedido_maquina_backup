@@ -67,9 +67,9 @@ export default function AdminMaquinaHistorial() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="text-sm text-blue-600 underline"
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
         >
-          Volver
+          ← Volver
         </button>
 
         <div className="rounded-2xl bg-white p-5 shadow">

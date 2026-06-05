@@ -108,7 +108,7 @@ export default function AdminMaquinas() {
                    bg-green-600 text-white text-sm font-semibold
                    hover:bg-green-700 transition"
       >
-        Exportar máquinas (CSV)
+        Exportar máquinas (Excel)
       </a>
 
       {resumen && (

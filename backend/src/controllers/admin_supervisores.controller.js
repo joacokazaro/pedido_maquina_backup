@@ -33,6 +33,36 @@ function mapMaquinaSupervisor(maquina) {
   };
 }
 
+function mapVehiculoSupervisor(vehiculo) {
+  return {
+    id: vehiculo.id,
+    empresa: vehiculo.empresa,
+    estado: vehiculo.estado,
+    vehiculo: vehiculo.vehiculo,
+    patente: vehiculo.patente,
+    modelo: vehiculo.modelo,
+    numeroPoliza: vehiculo.numeroPoliza,
+    motor: vehiculo.motor,
+    chasis: vehiculo.chasis,
+    tipoCobertura: vehiculo.tipoCobertura,
+    tarjetaVerde: vehiculo.tarjetaVerde,
+    seguro: vehiculo.seguro
+      ? {
+          id: vehiculo.seguro.id,
+          nombre: vehiculo.seguro.nombre,
+        }
+      : null,
+    conductorActual: vehiculo.conductorActual
+      ? {
+          id: vehiculo.conductorActual.id,
+          username: vehiculo.conductorActual.username,
+          nombre: vehiculo.conductorActual.nombre,
+          vtoCarnetConductor: vehiculo.conductorActual.vtoCarnetConductor,
+        }
+      : null,
+  };
+}
+
 /* ========================================================
    GET /admin/supervisores
    Lista supervisores + servicios asignados
@@ -351,5 +381,65 @@ export async function getMaquinasPorSupervisor(req, res) {
   } catch (e) {
     console.error("getMaquinasPorSupervisor:", e);
     res.status(500).json({ error: "Error obteniendo máquinas del supervisor" });
+  }
+}
+
+/* ========================================================
+   GET /supervisores/:id/vehiculos
+   Vehículos asignados actualmente al usuario
+======================================================== */
+export async function getVehiculosPorSupervisor(req, res) {
+  try {
+    const supervisorId = parseId(req.params.id);
+    if (!supervisorId) {
+      return res.status(400).json({ error: "ID de usuario inválido" });
+    }
+
+    const usuario = await prisma.usuario.findFirst({
+      where: {
+        id: supervisorId,
+        rol: "supervisor",
+        activo: true,
+      },
+      select: {
+        id: true,
+        username: true,
+        nombre: true,
+        rol: true,
+        vtoCarnetConductor: true,
+      },
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ error: "Supervisor no encontrado" });
+    }
+
+    const vehiculos = await prisma.vehiculo.findMany({
+      where: {
+        conductorActualId: supervisorId,
+      },
+      include: {
+        seguro: {
+          select: { id: true, nombre: true },
+        },
+        conductorActual: {
+          select: {
+            id: true,
+            username: true,
+            nombre: true,
+            vtoCarnetConductor: true,
+          },
+        },
+      },
+      orderBy: [{ empresa: "asc" }, { vehiculo: "asc" }, { id: "asc" }],
+    });
+
+    res.json({
+      supervisor: usuario,
+      vehiculos: vehiculos.map(mapVehiculoSupervisor),
+    });
+  } catch (e) {
+    console.error("getVehiculosPorSupervisor:", e);
+    res.status(500).json({ error: "Error obteniendo vehículos del supervisor" });
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import ConfirmModal from "../components/ConfirmModal";
 
 const ESTADOS = [
   "disponible",
@@ -10,6 +11,12 @@ const ESTADOS = [
   "reparacion",
   "baja"
 ];
+
+function buildTiposOptions(maquinas, tipoActual) {
+  return Array.from(
+    new Set([...(maquinas || []).map(maquina => maquina.tipo).filter(Boolean), tipoActual].filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
+}
 
 export default function AdminMaquinaForm() {
   const { id } = useParams();
@@ -26,9 +33,11 @@ export default function AdminMaquinaForm() {
   });
 
   const [servicios, setServicios] = useState([]);
+  const [tipos, setTipos] = useState([]);
   const [asignacion, setAsignacion] = useState(null);
   const [loading, setLoading] = useState(esEdicion);
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -37,12 +46,15 @@ export default function AdminMaquinaForm() {
         setLoading(true);
         setError("");
 
-        const [maqRes, servRes] = await Promise.all([
+        const [maqRes, servRes, maqsRes] = await Promise.all([
           esEdicion
             ? fetch(`${API_BASE}/admin/maquinas/${encodeURIComponent(id)}`)
             : Promise.resolve(null),
-          fetch(`${API_BASE}/servicios`)
+          fetch(`${API_BASE}/servicios`),
+          fetch(`${API_BASE}/admin/maquinas`)
         ]);
+
+        const maqs = await maqsRes.json();
 
         if (esEdicion) {
           const data = await maqRes.json();
@@ -55,6 +67,9 @@ export default function AdminMaquinaForm() {
             servicioId: data.servicio?.id || ""
           });
           setAsignacion(data.asignacion || null);
+          setTipos(buildTiposOptions(maqs, data.tipo));
+        } else {
+          setTipos(buildTiposOptions(maqs, ""));
         }
 
         setServicios(await servRes.json());
@@ -72,6 +87,25 @@ export default function AdminMaquinaForm() {
   function handleChange(e) {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+  }
+
+  async function handleDelete() {
+    try {
+      const res = await fetch(`${API_BASE}/admin/maquinas/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Error eliminando máquina");
+      }
+
+      navigate("/admin/maquinas");
+    } catch (e) {
+      setError(e.message || "Error eliminando máquina");
+    } finally {
+      setConfirmDeleteOpen(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -133,14 +167,17 @@ export default function AdminMaquinaForm() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <header className="mb-4 flex justify-between">
-        <button onClick={() => navigate(-1)} className="text-xs text-blue-600 underline">
-          Volver
+      <header className="mb-4">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
+        >
+          ← Volver
         </button>
         <h1 className="text-lg font-bold">
           {esEdicion ? "Editar máquina" : "Nueva máquina"}
         </h1>
-        <div />
       </header>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow p-4 space-y-3">
@@ -174,7 +211,17 @@ export default function AdminMaquinaForm() {
           placeholder="Código (id)"
         />
 
-        <input name="tipo" value={form.tipo} onChange={handleChange} className="w-full p-2 rounded-xl border" placeholder="Tipo" />
+        <select
+          name="tipo"
+          value={form.tipo}
+          onChange={handleChange}
+          className="w-full p-2 rounded-xl border"
+        >
+          <option value="">— Seleccionar tipo —</option>
+          {tipos.map(tipo => (
+            <option key={tipo} value={tipo}>{tipo}</option>
+          ))}
+        </select>
         <input name="modelo" value={form.modelo} onChange={handleChange} className="w-full p-2 rounded-xl border" placeholder="Modelo" />
         <input name="serie" value={form.serie} onChange={handleChange} className="w-full p-2 rounded-xl border" placeholder="Serie" />
 
@@ -196,29 +243,23 @@ export default function AdminMaquinaForm() {
 
       {esEdicion && (
         <button
-          onClick={async () => {
-            if (!confirm("¿Eliminar esta máquina? Esta acción no se puede deshacer.")) return;
-
-            try {
-              const res = await fetch(`${API_BASE}/admin/maquinas/${encodeURIComponent(id)}`, {
-                method: "DELETE",
-              });
-
-              if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.error || "Error eliminando máquina");
-              }
-
-              navigate("/admin/maquinas");
-            } catch (e) {
-              setError(e.message || "Error eliminando máquina");
-            }
-          }}
+          type="button"
+          onClick={() => setConfirmDeleteOpen(true)}
           className="mt-4 w-full bg-red-600 text-white py-2.5 rounded-xl"
         >
           Eliminar
         </button>
       )}
+
+      <ConfirmModal
+        open={confirmDeleteOpen}
+        title="Eliminar máquina"
+        message={`¿Confirmás eliminar la máquina ${form.id || id}? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

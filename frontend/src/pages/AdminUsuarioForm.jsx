@@ -13,6 +13,7 @@ export default function AdminUsuarioForm() {
     rol: "SUPERVISOR",
     password: "",
     activo: true,
+    vtoCarnetConductor: "",
   });
 
   const [error, setError] = useState("");
@@ -32,6 +33,7 @@ export default function AdminUsuarioForm() {
         rol: data.rol,
         password: "",
         activo: data.activo !== false,
+        vtoCarnetConductor: data.vtoCarnetConductor ? new Date(data.vtoCarnetConductor).toISOString().slice(0, 10) : "",
       });
     }
 
@@ -50,6 +52,7 @@ export default function AdminUsuarioForm() {
       nombre: form.nombre,
       rol: form.rol.toLowerCase(),
       activo: Boolean(form.activo),
+      vtoCarnetConductor: form.vtoCarnetConductor || null,
     };
 
     if (!isEdit) payload.username = form.username;
@@ -174,6 +177,20 @@ export default function AdminUsuarioForm() {
           setForm({ ...form, password: e.target.value })
         }
       />
+
+      <div className="mb-3">
+        <label className="mb-1 block text-xs font-semibold text-gray-600">
+          Vto. carnet conductor
+        </label>
+        <input
+          type="date"
+          className="w-full rounded-xl border bg-white p-3"
+          value={form.vtoCarnetConductor}
+          onChange={(e) =>
+            setForm({ ...form, vtoCarnetConductor: e.target.value })
+          }
+        />
+      </div>
 
       {/* GUARDAR */}
       <button

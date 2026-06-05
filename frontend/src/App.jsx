@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // =============================
 import SupervisorDashboard from "./pages/SupervisorDashboard";
 import SupervisorMaquinas from "./pages/SupervisorMaquinas";
+import SupervisorVehiculos from "./pages/SupervisorVehiculos";
 import SupervisorMaquinaDetalle from "./pages/SupervisorMaquinaDetalle";
 import SupervisorMisPedidos from "./pages/SupervisorMisPedidos";
 import SupervisorMisPrestamos from "./pages/SupervisorMisPrestamos";
@@ -44,9 +45,14 @@ import AdminPedidos from "./pages/AdminPedidos";
 import AdminMaquinas from "./pages/AdminMaquinas";
 import AdminMaquinaForm from "./pages/AdminMaquinaForm";
 import AdminMaquinaHistorial from "./pages/AdminMaquinaHistorial";
+import AdminVehiculos from "./pages/AdminVehiculos";
+import AdminVehiculoForm from "./pages/AdminVehiculoForm";
+import AdminVehiculoHistorial from "./pages/AdminVehiculoHistorial";
+import AdminVehiculosImport from "./pages/AdminVehiculosImport";
 import AdminViewPedido from "./pages/AdminViewPedido";
 import AdminServicios from "./pages/AdminServicios";
 import AdminServicioForm from "./pages/AdminServicioForm";
+import AdminSeguros from "./pages/AdminSeguros";
 import AdminSupervisoresServicios from "./pages/AdminSupervisoresServicios";
 import Notificaciones from "./components/Notificaciones";
 import { useAuth } from "./context/AuthContext";
@@ -146,6 +152,15 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
             <SupervisorMaquinas />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/vehiculos"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+            <SupervisorVehiculos />
           </ProtectedRoute>
         }
       />
@@ -410,6 +425,51 @@ function App() {
       />
 
       <Route
+        path="/admin/vehiculos"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminVehiculos />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/vehiculos/nuevo"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminVehiculoForm />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/vehiculos/importar"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminVehiculosImport />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/vehiculos/:id/historial"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminVehiculoHistorial />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/vehiculos/:id"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminVehiculoForm />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/admin/pedido/:id"
         element={
           <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -441,6 +501,15 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminServicioForm />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/seguros"
+        element={
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminSeguros />
           </ProtectedRoute>
         }
       />

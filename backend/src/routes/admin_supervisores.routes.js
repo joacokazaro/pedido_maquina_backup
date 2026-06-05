@@ -6,12 +6,14 @@ import {
   adminGetUsuariosOperativos,
   getSupervisoresCatalogo,
   getMaquinasPorSupervisor,
+  getVehiculosPorSupervisor,
 } from "../controllers/admin_supervisores.controller.js";
 
 const router = Router();
 
 router.get("/catalogo", getSupervisoresCatalogo);
 router.get("/:id/maquinas", getMaquinasPorSupervisor);
+router.get("/:id/vehiculos", getVehiculosPorSupervisor);
 
 // GET /admin/supervisores
 router.get("/", adminGetSupervisores);

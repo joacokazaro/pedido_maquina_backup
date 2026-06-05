@@ -14,6 +14,8 @@ import adminMaquinasRoutes from "./routes/adminMaquinas.routes.js";
 import adminPedidosRoutes from "./routes/adminPedidos.routes.js";
 import adminUsuariosRoutes from "./routes/admin_usuarios.routes.js";
 import adminServiciosRoutes from "./routes/adminServicios.routes.js";
+import adminSegurosRoutes from "./routes/adminSeguros.routes.js";
+import adminVehiculosRoutes from "./routes/adminVehiculos.routes.js";
 import adminSupervisoresRoutes from "./routes/admin_supervisores.routes.js";
 
 import serviciosRoutes from "./routes/servicios.routes.js";
@@ -60,6 +62,8 @@ api.use("/admin-users", adminUsuariosRoutes);
 api.use("/admin", adminMaquinasRoutes);
 api.use("/admin", adminPedidosRoutes);
 api.use("/admin", adminServiciosRoutes);
+api.use("/admin", adminSegurosRoutes);
+api.use("/admin", adminVehiculosRoutes);
 
 
 

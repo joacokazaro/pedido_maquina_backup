@@ -9,6 +9,12 @@ export default function AdminHome() {
       icon: "🛠",
     },
     {
+      title: "Vehículos",
+      description: "Gestioná vehículos, seguros, conductores asignados y documentación.",
+      to: "/admin/vehiculos",
+      icon: "🚗",
+    },
+    {
       title: "Pedidos",
       description: "Visualizá y auditá pedidos, cambios de estado e historial operativo.",
       to: "/admin/pedidos",
@@ -31,7 +37,6 @@ export default function AdminHome() {
       description: "Asigná rápidamente qué servicios puede operar cada supervisor.",
       to: "/admin/supervisores-servicios",
       icon: "🧩",
-      featured: true,
     },
   ];
 
@@ -42,7 +47,7 @@ export default function AdminHome() {
           Panel de administración
         </h1>
         <p className="mt-2 text-sm text-gray-500 sm:text-base">
-          Gestioná máquinas, pedidos y usuarios del sistema.
+          Gestioná máquinas, vehículos, pedidos y usuarios del sistema.
         </p>
       </header>
 
@@ -51,10 +56,7 @@ export default function AdminHome() {
           <Link
             key={section.title}
             to={section.to}
-            className={[
-              "group rounded-2xl border border-gray-200 bg-white p-8 text-center shadow transition hover:-translate-y-1 hover:shadow-lg",
-              section.featured ? "sm:col-span-2" : "",
-            ].join(" ")}
+            className="group rounded-2xl border border-gray-200 bg-white p-8 text-center shadow transition hover:-translate-y-1 hover:shadow-lg"
           >
             <span className="mb-4 block text-5xl">{section.icon}</span>
             <h2 className="mb-2 text-xl font-bold text-gray-800">

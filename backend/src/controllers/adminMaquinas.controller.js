@@ -1,4 +1,5 @@
 import prisma from "../db/prisma.js";
+import xlsx from "xlsx";
 
 /* ========================================================
    CONSTANTES
@@ -33,10 +34,6 @@ function normalizeEstado(raw) {
     return "reparacion";
 
   return "disponible";
-}
-
-function escapeCsv(value) {
-  return `"${String(value ?? "").replaceAll('"', '""').replaceAll("\n", " ")}"`;
 }
 
 /* ========================================================
@@ -524,20 +521,18 @@ export async function adminExportMaquinas(req, res) {
       }
     }
 
-    const rows = [
-      [
-        "Codigo",
-        "Tipo",
-        "Modelo",
-        "Serie",
-        "Estado",
-        "Servicio Original",
-        "Pedido Activo",
-        "Estado Pedido Activo",
-        "Destino Pedido Activo",
-        "Servicio Prestamo",
-      ],
-    ];
+    const rows = [[
+      "Codigo",
+      "Tipo",
+      "Modelo",
+      "Serie",
+      "Estado",
+      "Servicio Original",
+      "Pedido Activo",
+      "Estado Pedido Activo",
+      "Destino Pedido Activo",
+      "Servicio Prestamo",
+    ]];
 
     for (const maquina of maquinas) {
       const asignacion = asignacionPorMaquina.get(maquina.id);
@@ -556,15 +551,22 @@ export async function adminExportMaquinas(req, res) {
       ]);
     }
 
-    const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+    const workbook = xlsx.utils.book_new();
+    const worksheet = xlsx.utils.aoa_to_sheet(rows);
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Maquinas");
 
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=maquinas_${new Date().toISOString().slice(0, 10)}.csv`
+      `attachment; filename=maquinas_${new Date().toISOString().slice(0, 10)}.xlsx`
     );
 
-    res.send(csv);
+    res.send(buffer);
   } catch (e) {
     console.error("adminExportMaquinas:", e);
     res.status(500).json({ error: "Error exportando máquinas" });

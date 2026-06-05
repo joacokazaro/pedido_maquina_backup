@@ -18,7 +18,7 @@ export default function SupervisorDashboard() {
         Panel del Supervisor
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
         <Link
           to="/supervisor/maquinas"
           className="bg-white rounded-2xl shadow p-8 hover:shadow-lg transition border border-gray-200 flex flex-col items-center text-center"
@@ -29,6 +29,19 @@ export default function SupervisorDashboard() {
           </h2>
           <p className="text-gray-500 text-sm">
             Consultá tus máquinas y filtrá por servicio, estado o serie
+          </p>
+        </Link>
+
+        <Link
+          to="/supervisor/vehiculos"
+          className="bg-white rounded-2xl shadow p-8 hover:shadow-lg transition border border-gray-200 flex flex-col items-center text-center"
+        >
+          <span className="text-5xl mb-4">🚗</span>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            Mis vehículos
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Revisá los vehículos asignados actualmente a tu usuario.
           </p>
         </Link>
         
