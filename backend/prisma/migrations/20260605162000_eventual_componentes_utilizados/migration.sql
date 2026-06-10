@@ -1,0 +1,1 @@
+ALTER TABLE "Eventual" ADD COLUMN "componentesUtilizados" TEXT;

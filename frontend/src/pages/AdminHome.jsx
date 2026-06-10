@@ -21,6 +21,12 @@ export default function AdminHome() {
       icon: "🧾",
     },
     {
+      title: "Eventuales",
+      description: "Gestioná kits, historial de eventuales y el alta de nuevos registros.",
+      to: "/admin/eventuales",
+      icon: "🧰",
+    },
+    {
       title: "Usuarios",
       description: "Gestioná altas, bajas, edición de perfiles y roles del sistema.",
       to: "/admin/usuarios",

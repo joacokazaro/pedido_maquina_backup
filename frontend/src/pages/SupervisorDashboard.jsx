@@ -73,6 +73,19 @@ export default function SupervisorDashboard() {
           </p>
         </Link>
 
+        <Link
+          to="/supervisor/eventuales"
+          className="bg-white rounded-2xl shadow p-8 hover:shadow-lg transition border border-gray-200 flex flex-col items-center text-center"
+        >
+          <span className="text-5xl mb-4">🧱</span>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">
+            Mis eventuales
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Revisá los eventuales asignados y el detalle completo de sus kits.
+          </p>
+        </Link>
+
       </div>
     </div>
   );

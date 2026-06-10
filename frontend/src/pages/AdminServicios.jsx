@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { useAuth } from "../context/AuthContext";
 
 export default function AdminServicios() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const rolUpper = String(user?.rol || "").toUpperCase();
+  const isReadOnly = rolUpper === "CONSULTOR";
 
   const [servicios, setServicios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -168,12 +172,14 @@ export default function AdminServicios() {
               </div>
             </button>
 
-            <button
-              onClick={() => setServicioAEliminar(s)}
-              className="ml-3 text-xs text-red-600 hover:underline"
-            >
-              Eliminar
-            </button>
+            {!isReadOnly ? (
+              <button
+                onClick={() => setServicioAEliminar(s)}
+                className="ml-3 text-xs text-red-600 hover:underline"
+              >
+                Eliminar
+              </button>
+            ) : null}
           </div>
         ))}
 
@@ -185,15 +191,17 @@ export default function AdminServicios() {
       </div>
 
       {/* FAB */}
-      <div className="fixed bottom-4 right-4">
-        <button
-          onClick={() => navigate("/admin/servicios/nuevo")}
-          className="w-14 h-14 rounded-full bg-orange-600
-                     text-white text-2xl shadow-lg"
-        >
-          +
-        </button>
-      </div>
+      {!isReadOnly ? (
+        <div className="fixed bottom-4 right-4">
+          <button
+            onClick={() => navigate("/admin/servicios/nuevo")}
+            className="w-14 h-14 rounded-full bg-orange-600
+                       text-white text-2xl shadow-lg"
+          >
+            +
+          </button>
+        </div>
+      ) : null}
 
       {/* MODAL ELIMINAR */}
       {servicioAEliminar && (

@@ -128,55 +128,62 @@ export default function AdminUsuarioForm() {
       )}
 
       {/* USERNAME */}
-      <input
-        placeholder="Usuario"
-        disabled={isEdit}
-        className={`w-full p-3 mb-3 border rounded-xl ${
-          isEdit ? "bg-gray-100 cursor-not-allowed" : "bg-white"
-        }`}
-        value={form.username}
-        onChange={(e) =>
-          setForm({ ...form, username: e.target.value })
-        }
-      />
+      <div className="mb-3">
+        <label className="mb-1 block text-xs font-semibold text-gray-600">Usuario</label>
+        <input
+          disabled={isEdit}
+          className={`w-full p-3 border rounded-xl ${
+            isEdit ? "bg-gray-100 cursor-not-allowed" : "bg-white"
+          }`}
+          value={form.username}
+          onChange={(e) =>
+            setForm({ ...form, username: e.target.value })
+          }
+        />
+      </div>
 
       {/* NOMBRE */}
-      <input
-        placeholder="Nombre completo"
-        className="w-full p-3 mb-3 border rounded-xl bg-white"
-        value={form.nombre}
-        onChange={(e) =>
-          setForm({ ...form, nombre: e.target.value })
-        }
-      />
+      <div className="mb-3">
+        <label className="mb-1 block text-xs font-semibold text-gray-600">Nombre completo</label>
+        <input
+          className="w-full p-3 border rounded-xl bg-white"
+          value={form.nombre}
+          onChange={(e) =>
+            setForm({ ...form, nombre: e.target.value })
+          }
+        />
+      </div>
 
       {/* ROL */}
-      <select
-        className="w-full p-3 mb-3 border rounded-xl bg-white"
-        value={form.rol}
-        onChange={(e) =>
-          setForm({ ...form, rol: e.target.value })
-        }
-      >
+      <div className="mb-3">
+        <label className="mb-1 block text-xs font-semibold text-gray-600">Rol</label>
+        <select
+          className="w-full p-3 border rounded-xl bg-white"
+          value={form.rol}
+          onChange={(e) =>
+            setForm({ ...form, rol: e.target.value })
+          }
+        >
         <option value="ADMIN">ADMIN</option>
         <option value="SUPERVISOR">SUPERVISOR</option>
         <option value="DEPOSITO">DEPOSITO</option>
+        <option value="COORDINADOR">COORDINADOR</option>
+        <option value="CONSULTOR">CONSULTOR</option>
       </select>
+        </div>
 
       {/* PASSWORD */}
-      <input
-        type="password"
-        placeholder={
-          isEdit
-            ? "Contraseña (dejar vacío para no cambiar)"
-            : "Contraseña"
-        }
-        className="w-full p-3 mb-3 border rounded-xl bg-white"
-        value={form.password}
-        onChange={(e) =>
-          setForm({ ...form, password: e.target.value })
-        }
-      />
+      <div className="mb-3">
+        <label className="mb-1 block text-xs font-semibold text-gray-600">Contraseña{isEdit ? " (dejar vacío para no cambiar)" : ""}</label>
+        <input
+          type="password"
+          className="w-full p-3 border rounded-xl bg-white"
+          value={form.password}
+          onChange={(e) =>
+            setForm({ ...form, password: e.target.value })
+          }
+        />
+      </div>
 
       <div className="mb-3">
         <label className="mb-1 block text-xs font-semibold text-gray-600">

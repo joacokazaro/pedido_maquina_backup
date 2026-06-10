@@ -6,6 +6,7 @@ import { waitForBackend } from "./services/waitForBackend";
 
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ConsultorHome from "./pages/ConsultorHome";
 
 // =============================
 // SUPERVISOR
@@ -54,7 +55,17 @@ import AdminServicios from "./pages/AdminServicios";
 import AdminServicioForm from "./pages/AdminServicioForm";
 import AdminSeguros from "./pages/AdminSeguros";
 import AdminSupervisoresServicios from "./pages/AdminSupervisoresServicios";
+import AdminEventualesPanel from "./pages/AdminEventualesPanel";
+import AdminEventualesHistorial from "./pages/AdminEventualesHistorial";
+import AdminEventualForm from "./pages/AdminEventualForm";
+import AdminEventualDetalle from "./pages/AdminEventualDetalle";
+import AdminKits from "./pages/AdminKits";
+import AdminKitForm from "./pages/AdminKitForm";
+import CoordinadorHome from "./pages/CoordinadorHome";
+import SupervisorMisEventuales from "./pages/SupervisorMisEventuales";
+import SupervisorEventualDetalle from "./pages/SupervisorEventualDetalle";
 import Notificaciones from "./components/Notificaciones";
+import AdminLayout from "./layouts/AdminLayout";
 import { useAuth } from "./context/AuthContext";
 
 function App() {
@@ -65,7 +76,29 @@ function App() {
 
   // 👉 Roles que participan del ciclo OPERATIVO de préstamo
   const ROLES_OPERATIVOS = ["SUPERVISOR", "DEPOSITO"];
+  const renderAdminOnlyPage = (page) => (
+    <ProtectedRoute allowedRoles={["ADMIN"]}>
+      <AdminLayout>{page}</AdminLayout>
+    </ProtectedRoute>
+  );
 
+  const renderBackofficePage = (page) => (
+    <ProtectedRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
+      <AdminLayout>{page}</AdminLayout>
+    </ProtectedRoute>
+  );
+
+  const renderReadOnlyModulesPage = (page) => (
+    <ProtectedRoute allowedRoles={["ADMIN", "COORDINADOR", "CONSULTOR"]}>
+      <AdminLayout>{page}</AdminLayout>
+    </ProtectedRoute>
+  );
+
+  const renderAdminConsultorPage = (page) => (
+    <ProtectedRoute allowedRoles={["ADMIN", "CONSULTOR"]}>
+      <AdminLayout>{page}</AdminLayout>
+    </ProtectedRoute>
+  );
   async function boot() {
     setReady(false);
     setError("");
@@ -121,7 +154,7 @@ function App() {
   ============================== */
   return (
     <>
-      {user && location.pathname !== "/" && <Notificaciones />}
+      {user && location.pathname !== "/" && user.rol !== "ADMIN" && <Notificaciones />}
       <Routes>
       {/* LOGIN */}
       <Route path="/" element={<Login />} />
@@ -188,6 +221,24 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
             <CreatePedido />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/eventuales"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+            <SupervisorMisEventuales />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/supervisor/eventuales/:id"
+        element={
+          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+            <SupervisorEventualDetalle />
           </ProtectedRoute>
         }
       />
@@ -331,47 +382,33 @@ function App() {
       ============================== */}
       <Route
         path="/admin"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminHome />
-          </ProtectedRoute>
-        }
+        element={renderReadOnlyModulesPage(
+          String(user?.rol || "").toUpperCase() === "COORDINADOR"
+            ? <CoordinadorHome />
+            : String(user?.rol || "").toUpperCase() === "CONSULTOR"
+              ? <ConsultorHome />
+              : <AdminHome />
+        )}
       />
 
       <Route
         path="/admin/pedidos"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminPedidos />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminPedidos />)}
       />
 
       <Route
         path="/admin/usuarios"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminUsuarios />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminUsuarios />)}
       />
 
       <Route
         path="/admin/usuarios/nuevo"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminUsuarioForm />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminUsuarioForm />)}
       />
 
       <Route
         path="/admin/usuarios/:username"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminUsuarioForm />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminUsuarioForm />)}
       />
 
       <Route
@@ -381,137 +418,126 @@ function App() {
 
       <Route
         path="/admin/supervisores-servicios"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminSupervisoresServicios />
-          </ProtectedRoute>
-        }
+        element={renderAdminConsultorPage(<AdminSupervisoresServicios />)}
       />
 
       <Route
         path="/admin/maquinas"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminMaquinas />
-          </ProtectedRoute>
-        }
+        element={renderReadOnlyModulesPage(<AdminMaquinas />)}
       />
 
       <Route
         path="/admin/maquinas/nueva"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminMaquinaForm />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminMaquinaForm />)}
       />
 
       <Route
         path="/admin/maquinas/:id/pedidos-historicos"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminMaquinaHistorial />
-          </ProtectedRoute>
-        }
+        element={renderReadOnlyModulesPage(<AdminMaquinaHistorial />)}
       />
 
       <Route
         path="/admin/maquinas/:id"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminMaquinaForm />
-          </ProtectedRoute>
-        }
+        element={renderReadOnlyModulesPage(<AdminMaquinaForm />)}
       />
 
       <Route
         path="/admin/vehiculos"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminVehiculos />
-          </ProtectedRoute>
-        }
+        element={renderReadOnlyModulesPage(<AdminVehiculos />)}
       />
 
       <Route
         path="/admin/vehiculos/nuevo"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminVehiculoForm />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminVehiculoForm />)}
       />
 
       <Route
         path="/admin/vehiculos/importar"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminVehiculosImport />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminVehiculosImport />)}
       />
 
       <Route
         path="/admin/vehiculos/:id/historial"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminVehiculoHistorial />
-          </ProtectedRoute>
-        }
+        element={renderReadOnlyModulesPage(<AdminVehiculoHistorial />)}
       />
 
       <Route
         path="/admin/vehiculos/:id"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminVehiculoForm />
-          </ProtectedRoute>
-        }
+        element={renderReadOnlyModulesPage(<AdminVehiculoForm />)}
       />
 
       <Route
         path="/admin/pedido/:id"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminViewPedido />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminViewPedido />)}
       />
 
       <Route
         path="/admin/servicios"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminServicios />
-          </ProtectedRoute>
-        }
+        element={renderAdminConsultorPage(<AdminServicios />)}
       />
 
       <Route
         path="/admin/servicios/nuevo"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminServicioForm />
-          </ProtectedRoute>
-        }
+        element={renderAdminOnlyPage(<AdminServicioForm />)}
       />
 
       <Route
         path="/admin/servicios/:id"
+        element={renderAdminConsultorPage(<AdminServicioForm />)}
+      />
+
+      <Route
+        path="/admin/seguros"
+        element={renderAdminOnlyPage(<AdminSeguros />)}
+      />
+
+      <Route
+        path="/admin/eventuales"
+        element={renderReadOnlyModulesPage(<AdminEventualesPanel />)}
+      />
+
+      <Route
+        path="/admin/eventuales/historial"
+        element={renderReadOnlyModulesPage(<AdminEventualesHistorial />)}
+      />
+
+      <Route
+        path="/admin/eventuales/nuevo"
+        element={renderAdminOnlyPage(<AdminEventualForm />)}
+      />
+
+      <Route
+        path="/admin/eventuales/:id"
+        element={renderReadOnlyModulesPage(<AdminEventualDetalle />)}
+      />
+
+      <Route
+        path="/admin/eventuales/:id/corregir"
+        element={renderAdminOnlyPage(<AdminEventualForm />)}
+      />
+
+      <Route
+        path="/admin/eventuales/:id/finalizar"
         element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminServicioForm />
+          <ProtectedRoute allowedRoles={["COORDINADOR"]}>
+            <AdminLayout><AdminEventualForm modoFinalizacionCoordinador /></AdminLayout>
           </ProtectedRoute>
         }
       />
 
       <Route
-        path="/admin/seguros"
-        element={
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
-            <AdminSeguros />
-          </ProtectedRoute>
-        }
+        path="/admin/kits"
+        element={renderReadOnlyModulesPage(<AdminKits />)}
+      />
+
+      <Route
+        path="/admin/kits/nuevo"
+        element={renderAdminOnlyPage(<AdminKitForm />)}
+      />
+
+      <Route
+        path="/admin/kits/:id"
+        element={renderReadOnlyModulesPage(<AdminKitForm />)}
       />
       </Routes>
     </>

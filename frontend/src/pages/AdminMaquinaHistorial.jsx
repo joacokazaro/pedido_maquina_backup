@@ -21,6 +21,7 @@ export default function AdminMaquinaHistorial() {
 
   const [maquina, setMaquina] = useState(null);
   const [pedidos, setPedidos] = useState([]);
+  const [eventuales, setEventuales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -42,6 +43,7 @@ export default function AdminMaquinaHistorial() {
         const data = await res.json();
         setMaquina(data.maquina || null);
         setPedidos(data.pedidos || []);
+        setEventuales(data.eventuales || []);
       } catch (e) {
         console.error(e);
         setError(e.message || "Error cargando historial");
@@ -149,6 +151,63 @@ export default function AdminMaquinaHistorial() {
                       className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white"
                     >
                       Ver pedido
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="my-6 border-t border-gray-200" />
+
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Participó en {eventuales.length} eventual{eventuales.length === 1 ? "" : "es"}
+            </h2>
+          </div>
+
+          {eventuales.length === 0 ? (
+            <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500">
+              Esta máquina todavía no figura en ningún eventual.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {eventuales.map((eventual) => (
+                <div
+                  key={eventual.id}
+                  className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="space-y-1 text-sm text-gray-700">
+                      <p className="text-base font-semibold text-gray-900">
+                        Eventual #{eventual.id} - {eventual.nombre}
+                      </p>
+                      <p>
+                        <span className="font-medium">Estado:</span> {formatEstado(eventual.estado)}
+                      </p>
+                      <p>
+                        <span className="font-medium">Fecha alta:</span> {formatFecha(eventual.createdAt)}
+                      </p>
+                      <p>
+                        <span className="font-medium">Fecha inicio:</span> {formatFecha(eventual.fechaInicio)}
+                      </p>
+                      <p>
+                        <span className="font-medium">Fecha fin:</span> {formatFecha(eventual.fechaFin)}
+                      </p>
+                      <p>
+                        <span className="font-medium">Supervisor:</span> {eventual.supervisor?.nombre || eventual.supervisor?.username || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Kit:</span> {eventual.kit?.nombre || "-"}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/eventuales/${encodeURIComponent(eventual.id)}`)}
+                      className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+                    >
+                      Ver eventual
                     </button>
                   </div>
                 </div>

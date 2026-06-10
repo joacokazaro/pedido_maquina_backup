@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
+import { useAuth } from "../context/AuthContext";
 
 const ESTADOS = [
   "disponible",
@@ -21,7 +22,10 @@ function buildTiposOptions(maquinas, tipoActual) {
 export default function AdminMaquinaForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const esEdicion = Boolean(id);
+  const rolUpper = String(user?.rol || "").toUpperCase();
+  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
 
   const [form, setForm] = useState({
     id: "",
@@ -110,6 +114,7 @@ export default function AdminMaquinaForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (isReadOnly) return;
     setSaving(true);
     setError("");
 
@@ -181,6 +186,9 @@ export default function AdminMaquinaForm() {
       </header>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow p-4 space-y-3">
+        {isReadOnly ? (
+          <p className="text-xs text-slate-600 bg-slate-100 p-2 rounded">Modo solo lectura.</p>
+        ) : null}
         {error && (
           <p className="text-xs text-red-600 bg-red-50 p-2 rounded">{error}</p>
         )}
@@ -202,46 +210,68 @@ export default function AdminMaquinaForm() {
           </button>
         )}
 
-        <input
-          name="id"
-          value={form.id}
-          onChange={handleChange}
-          disabled={esEdicion}
-          className={`w-full p-2 rounded-xl border ${esEdicion ? "bg-gray-100" : "bg-white"}`}
-          placeholder="Código (id)"
-        />
+        <div className="mb-3">
+          <label className="mb-1 block text-xs font-semibold text-gray-600">Código (id)</label>
+          <input
+            name="id"
+            value={form.id}
+            onChange={handleChange}
+            disabled={esEdicion || isReadOnly}
+            className={`w-full p-2 rounded-xl border ${esEdicion ? "bg-gray-100" : "bg-white"}`}
+          />
+        </div>
 
-        <select
-          name="tipo"
-          value={form.tipo}
-          onChange={handleChange}
-          className="w-full p-2 rounded-xl border"
-        >
-          <option value="">— Seleccionar tipo —</option>
-          {tipos.map(tipo => (
-            <option key={tipo} value={tipo}>{tipo}</option>
-          ))}
-        </select>
-        <input name="modelo" value={form.modelo} onChange={handleChange} className="w-full p-2 rounded-xl border" placeholder="Modelo" />
-        <input name="serie" value={form.serie} onChange={handleChange} className="w-full p-2 rounded-xl border" placeholder="Serie" />
+        <div className="mb-3">
+          <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
+          <select
+            name="tipo"
+            value={form.tipo}
+            onChange={handleChange}
+            disabled={isReadOnly}
+            className="w-full p-2 rounded-xl border"
+          >
+            <option value="">— Seleccionar tipo —</option>
+            {tipos.map(tipo => (
+              <option key={tipo} value={tipo}>{tipo}</option>
+            ))}
+          </select>
+        </div>
 
-        <select name="servicioId" value={form.servicioId} onChange={handleChange} className="w-full p-2 rounded-xl border">
-          <option value="">— Seleccionar servicio —</option>
-          {servicios.map(s => (
-            <option key={s.id} value={s.id}>{s.nombre}</option>
-          ))}
-        </select>
+        <div className="mb-3">
+          <label className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
+          <input name="modelo" value={form.modelo} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
+        </div>
 
-        <select name="estado" value={form.estado} onChange={handleChange} className="w-full p-2 rounded-xl border">
-          {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
-        </select>
+        <div className="mb-3">
+          <label className="mb-1 block text-xs font-semibold text-gray-600">Serie</label>
+          <input name="serie" value={form.serie} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
+        </div>
 
-        <button disabled={saving} className="w-full bg-blue-600 text-white py-2.5 rounded-xl">
-          {saving ? "Guardando..." : "Guardar"}
-        </button>
+        <div className="mb-3">
+          <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio</label>
+          <select name="servicioId" value={form.servicioId} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
+            <option value="">— Seleccionar servicio —</option>
+            {servicios.map(s => (
+              <option key={s.id} value={s.id}>{s.nombre}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-3">
+          <label className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
+          <select name="estado" value={form.estado} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
+            {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </div>
+
+        {!isReadOnly ? (
+          <button disabled={saving} className="w-full bg-blue-600 text-white py-2.5 rounded-xl">
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+        ) : null}
       </form>
 
-      {esEdicion && (
+      {esEdicion && !isReadOnly && (
         <button
           type="button"
           onClick={() => setConfirmDeleteOpen(true)}

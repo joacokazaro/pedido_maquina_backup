@@ -17,9 +17,11 @@ import adminServiciosRoutes from "./routes/adminServicios.routes.js";
 import adminSegurosRoutes from "./routes/adminSeguros.routes.js";
 import adminVehiculosRoutes from "./routes/adminVehiculos.routes.js";
 import adminSupervisoresRoutes from "./routes/admin_supervisores.routes.js";
+import adminEventualesRoutes from "./routes/adminEventuales.routes.js";
 
 import serviciosRoutes from "./routes/servicios.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
+import eventualesRoutes from "./routes/eventuales.routes.js";
 import { iniciarMonitorPrestamosProlongados } from "./services/notificaciones.service.js";
 
 const app = express();
@@ -50,6 +52,7 @@ api.use("/maquinas", maquinasRoutes);
 api.use("/pedidos", pedidosRoutes);
 api.use("/servicios", serviciosRoutes);
 api.use("/notificaciones", notificacionesRoutes);
+api.use("/eventuales", eventualesRoutes);
 
 // SUPERVISORES (API NORMAL)
 api.use("/supervisores", adminSupervisoresRoutes);
@@ -64,6 +67,7 @@ api.use("/admin", adminPedidosRoutes);
 api.use("/admin", adminServiciosRoutes);
 api.use("/admin", adminSegurosRoutes);
 api.use("/admin", adminVehiculosRoutes);
+api.use("/admin", adminEventualesRoutes);
 
 
 

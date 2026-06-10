@@ -3,6 +3,7 @@ import { loginRequest } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { io as ioClient } from "socket.io-client";
 import { API_BASE } from "../services/apiBase";
+import ConfirmModal from "../components/ConfirmModal";
 
 const AuthContext = createContext();
 
@@ -61,7 +62,8 @@ export function AuthProvider({ children }) {
 
     if (savedUser) {
       try {
-        const u = JSON.parse(savedUser);
+        const uraw = JSON.parse(savedUser);
+        const u = { ...uraw, rol: String(uraw.rol || "").toUpperCase() };
         setUser(u);
         initSocket(u);
       } catch {
@@ -81,18 +83,24 @@ export function AuthProvider({ children }) {
   async function login(username, password) {
     const data = await loginRequest(username, password);
 
-    setUser(data.user);
-    localStorage.setItem("authUser", JSON.stringify(data.user));
+    const normalized = { ...data.user, rol: String(data.user.rol || "").toUpperCase() };
+    setUser(normalized);
+    localStorage.setItem("authUser", JSON.stringify(normalized));
 
-    initSocket(data.user);
+    initSocket(normalized);
 
     // Redirección por rol
-    if (data.user.rol === "SUPERVISOR") navigate("/supervisor");
-    if (data.user.rol === "DEPOSITO") navigate("/deposito");
-    if (data.user.rol === "ADMIN") navigate("/admin");
+    const rol = String(normalized.rol || "").toUpperCase();
+    if (rol === "SUPERVISOR") navigate("/supervisor");
+    if (rol === "DEPOSITO") navigate("/deposito");
+    if (rol === "ADMIN") navigate("/admin");
+    if (rol === "COORDINADOR") navigate("/admin");
+    if (rol === "CONSULTOR") navigate("/admin");
   }
 
-  function logout() {
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  function doLogout() {
     setUser(null);
     localStorage.removeItem("authUser");
     try {
@@ -104,6 +112,24 @@ export function AuthProvider({ children }) {
     navigate("/");
   }
 
+  function logout() {
+    // immediate logout (kept for backward compatibility)
+    doLogout();
+  }
+
+  function confirmLogout() {
+    setLogoutConfirmOpen(true);
+  }
+
+  function handleCancelLogout() {
+    setLogoutConfirmOpen(false);
+  }
+
+  function handleConfirmLogout() {
+    setLogoutConfirmOpen(false);
+    doLogout();
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -111,10 +137,22 @@ export function AuthProvider({ children }) {
         loading, // 👈 CLAVE
         socket,
         login,
-        logout,
+          logout,
+          confirmLogout,
       }}
     >
-      {children}
+        {children}
+
+        <ConfirmModal
+          open={logoutConfirmOpen}
+          title="Confirmar cierre de sesión"
+          message="¿Estás seguro que querés salir?"
+          onCancel={handleCancelLogout}
+          onConfirm={handleConfirmLogout}
+          confirmLabel="Salir"
+          cancelLabel="Cancelar"
+          tone="danger"
+        />
     </AuthContext.Provider>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { useAuth } from "../context/AuthContext";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -10,6 +11,9 @@ const ESTADOS = [
 
 export default function AdminVehiculos() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const rolUpper = String(user?.rol || "").toUpperCase();
+  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
   const [vehiculos, setVehiculos] = useState([]);
   const [seguros, setSeguros] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
@@ -111,18 +115,22 @@ export default function AdminVehiculos() {
         </div>
 
         <div className="flex gap-2">
-          <button
-            onClick={() => navigate("/admin/vehiculos/importar")}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white disabled:bg-amber-300"
-          >
-            Importar Excel
-          </button>
-          <button
-            onClick={() => navigate("/admin/seguros")}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
-          >
-            Seguros
-          </button>
+          {!isReadOnly ? (
+            <>
+              <button
+                onClick={() => navigate("/admin/vehiculos/importar")}
+                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white disabled:bg-amber-300"
+              >
+                Importar Excel
+              </button>
+              <button
+                onClick={() => navigate("/admin/seguros")}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
+              >
+                Seguros
+              </button>
+            </>
+          ) : null}
           <a
             href={`${API_BASE}/admin/vehiculos/export`}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white"
@@ -201,12 +209,14 @@ export default function AdminVehiculos() {
         )}
       </div>
 
-      <button
-        onClick={() => navigate("/admin/vehiculos/nuevo")}
-        className="fixed bottom-4 right-4 h-14 w-14 rounded-full bg-blue-600 text-2xl text-white shadow-lg"
-      >
-        +
-      </button>
+      {!isReadOnly ? (
+        <button
+          onClick={() => navigate("/admin/vehiculos/nuevo")}
+          className="fixed bottom-4 right-4 h-14 w-14 rounded-full bg-blue-600 text-2xl text-white shadow-lg"
+        >
+          +
+        </button>
+      ) : null}
     </div>
   );
 }

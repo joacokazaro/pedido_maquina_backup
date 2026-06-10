@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { useAuth } from "../context/AuthContext";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -14,6 +15,9 @@ const ESTADOS = [
 
 export default function AdminMaquinas() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const rolUpper = String(user?.rol || "").toUpperCase();
+  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
 
   const [allMaquinas, setAllMaquinas] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -195,14 +199,16 @@ export default function AdminMaquinas() {
         ))}
       </div>
 
-      <div className="fixed bottom-4 right-4">
-        <button
-          onClick={() => navigate("/admin/maquinas/nueva")}
-          className="rounded-full w-14 h-14 bg-blue-600 text-white text-2xl shadow-lg"
-        >
-          +
-        </button>
-      </div>
+      {!isReadOnly ? (
+        <div className="fixed bottom-4 right-4">
+          <button
+            onClick={() => navigate("/admin/maquinas/nueva")}
+            className="rounded-full w-14 h-14 bg-blue-600 text-white text-2xl shadow-lg"
+          >
+            +
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

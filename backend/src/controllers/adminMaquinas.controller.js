@@ -233,6 +233,44 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
       },
     });
 
+    const eventuales = await prisma.eventual.findMany({
+      where: {
+        kit: {
+          maquinas: {
+            some: {
+              maquinaId: id,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        nombre: true,
+        estado: true,
+        fechaInicio: true,
+        fechaFin: true,
+        createdAt: true,
+        activo: true,
+        supervisor: {
+          select: {
+            id: true,
+            username: true,
+            nombre: true,
+          },
+        },
+        kit: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+      },
+      orderBy: [
+        { fechaInicio: "desc" },
+        { createdAt: "desc" },
+      ],
+    });
+
     res.json({
       maquina: {
         id: maquina.id,
@@ -251,6 +289,7 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
         servicio: asignacion.pedido.servicio,
         supervisor: asignacion.pedido.supervisor,
       })),
+      eventuales,
     });
   } catch (e) {
     console.error("adminGetPedidosHistoricosByMaquina:", e);

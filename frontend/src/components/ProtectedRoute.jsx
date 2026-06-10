@@ -9,7 +9,10 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return null; // o loader si querés
   }
 
-  if (!allowedRoles.includes(user.rol)) {
+  const userRolUpper = String(user?.rol || "").toUpperCase();
+  const allowedUpper = (Array.isArray(allowedRoles) ? allowedRoles : []).map((r) => String(r || "").toUpperCase());
+
+  if (!allowedUpper.includes(userRolUpper)) {
     return <Navigate to="/" replace />;
   }
 

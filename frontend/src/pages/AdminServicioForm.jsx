@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { useAuth } from "../context/AuthContext";
 
 export default function AdminServicioForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isReadOnly = String(user?.rol || "").toUpperCase() === "CONSULTOR";
   const esEdicion = Boolean(id);
 
   const [nombre, setNombre] = useState("");
@@ -28,6 +31,7 @@ export default function AdminServicioForm() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (isReadOnly) return;
     setSaving(true);
     setError("");
 
@@ -75,6 +79,9 @@ export default function AdminServicioForm() {
         onSubmit={handleSubmit}
         className="bg-white rounded-xl shadow p-4 space-y-3"
       >
+        {isReadOnly ? (
+          <p className="text-xs text-slate-600 bg-slate-100 p-2 rounded">Modo solo lectura.</p>
+        ) : null}
         {error && (
           <p className="text-xs text-red-600 bg-red-50 p-2 rounded">
             {error}
@@ -88,16 +95,19 @@ export default function AdminServicioForm() {
           <input
             value={nombre}
             onChange={e => setNombre(e.target.value)}
+            disabled={isReadOnly}
             className="w-full p-2 border rounded-xl"
           />
         </div>
 
-        <button
-          disabled={saving}
-          className="w-full bg-orange-600 text-white py-2 rounded-xl font-semibold"
-        >
-          {saving ? "Guardando..." : "Guardar"}
-        </button>
+        {!isReadOnly ? (
+          <button
+            disabled={saving}
+            className="w-full bg-orange-600 text-white py-2 rounded-xl font-semibold"
+          >
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+        ) : null}
       </form>
 
       {esEdicion && maquinas.length > 0 && (

@@ -20,11 +20,13 @@ model Usuario {
   // Relaciones
   historialAcciones HistorialPedido[]
   pedidosSupervisor Pedido[]          @relation("SupervisorPedidos")
+  eventualesResponsable Eventual[]    @relation("SupervisorEventuales")
   serviciosAsignados UsuarioServicio[]
   notificaciones    Notificacion[]
   vehiculosAsignados Vehiculo[]       @relation("ConductorActualVehiculo")
   historialVehiculos VehiculoAsignacion[] @relation("VehiculoAsignadoAUsuario")
   asignacionesRealizadasVehiculo VehiculoAsignacion[] @relation("VehiculoAsignadoPorUsuario")
+  historialEventuales HistorialEventual[]
 }
 
 model Servicio {
@@ -70,6 +72,7 @@ model Maquina {
   // Relaciones
   servicio     Servicio        @relation(fields: [servicioId], references: [id])
   asignaciones PedidoMaquina[]
+  kits         KitMaquina[]
 }
 
 model Vehiculo {
@@ -101,6 +104,78 @@ model Vehiculo {
   seguro                  Seguro               @relation(fields: [seguroId], references: [id])
   conductorActual         Usuario?             @relation("ConductorActualVehiculo", fields: [conductorActualId], references: [id])
   historialAsignaciones   VehiculoAsignacion[]
+  kits                    KitVehiculo[]
+}
+
+model Kit {
+  id            Int          @id @default(autoincrement())
+  nombre        String       @unique
+  observaciones String?
+  estado        String       @default("disponible")
+  activo        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+
+  maquinas      KitMaquina[]
+  vehiculos     KitVehiculo[]
+  eventuales    Eventual[]
+}
+
+model KitMaquina {
+  id        Int      @id @default(autoincrement())
+  kitId     Int
+  maquinaId String
+  createdAt DateTime @default(now())
+
+  kit       Kit      @relation(fields: [kitId], references: [id])
+  maquina   Maquina  @relation(fields: [maquinaId], references: [id])
+
+  @@unique([maquinaId])
+  @@unique([kitId, maquinaId])
+}
+
+model KitVehiculo {
+  id         Int      @id @default(autoincrement())
+  kitId      Int
+  vehiculoId String
+  createdAt  DateTime @default(now())
+
+  kit         Kit      @relation(fields: [kitId], references: [id])
+  vehiculo    Vehiculo @relation(fields: [vehiculoId], references: [id])
+
+  @@unique([vehiculoId])
+  @@unique([kitId, vehiculoId])
+}
+
+model Eventual {
+  id            Int                 @id @default(autoincrement())
+  nombre        String              @unique
+  supervisorId  Int
+  kitId         Int?
+  estado        String              @default("activo")
+  fechaInicio   DateTime?
+  fechaFin      DateTime?
+  observaciones String?
+  componentesUtilizados String?
+  activo        Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+
+  supervisor    Usuario             @relation("SupervisorEventuales", fields: [supervisorId], references: [id])
+  kit           Kit?                @relation(fields: [kitId], references: [id])
+  historial     HistorialEventual[]
+}
+
+model HistorialEventual {
+  id         Int      @id @default(autoincrement())
+  eventualId Int
+  accion     String
+  detalle    String?
+  usuarioId  Int
+  fecha      DateTime @default(now())
+
+  eventual   Eventual @relation(fields: [eventualId], references: [id])
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@index([eventualId, fecha])
 }
 
 model VehiculoAsignacion {

@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import { useAuth } from "../context/AuthContext";
 
 export default function AdminSupervisoresServicios() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isReadOnly = String(user?.rol || "").toUpperCase() === "CONSULTOR";
 
   const [supervisores, setSupervisores] = useState([]);
   const [servicios, setServicios] = useState([]);
@@ -59,6 +62,7 @@ export default function AdminSupervisoresServicios() {
      CHECKBOX SERVICIOS
   ========================== */
   function toggleServicio(id) {
+    if (isReadOnly) return;
     setSeleccionados((prev) =>
       prev.includes(id)
         ? prev.filter((x) => x !== id)
@@ -70,6 +74,7 @@ export default function AdminSupervisoresServicios() {
      GUARDAR
   ========================== */
   async function guardar() {
+  if (isReadOnly) return;
   if (!supervisorSel) return;
 
   setGuardando(true);
@@ -121,6 +126,9 @@ export default function AdminSupervisoresServicios() {
         <p className="text-sm text-gray-600">
           Seleccioná un supervisor y asignale los servicios que puede operar.
         </p>
+        {isReadOnly ? (
+          <p className="mt-1 text-xs text-slate-600">Modo solo lectura.</p>
+        ) : null}
       </div>
 
       {/* Selector supervisor */}
@@ -184,6 +192,7 @@ export default function AdminSupervisoresServicios() {
                   type="checkbox"
                   checked={seleccionados.includes(srv.id)}
                   onChange={() => toggleServicio(srv.id)}
+                  disabled={isReadOnly}
                   className="w-4 h-4"
                 />
                 <span>{srv.nombre}</span>
@@ -204,13 +213,15 @@ export default function AdminSupervisoresServicios() {
 )}
 
 
-          <button
-            disabled={guardando}
-            onClick={guardar}
-            className="w-full bg-teal-600 text-white py-3 rounded-xl font-semibold disabled:opacity-50"
-          >
-            {guardando ? "Guardando..." : "Guardar asignación"}
-          </button>
+          {!isReadOnly ? (
+            <button
+              disabled={guardando}
+              onClick={guardar}
+              className="w-full bg-teal-600 text-white py-3 rounded-xl font-semibold disabled:opacity-50"
+            >
+              {guardando ? "Guardando..." : "Guardar asignación"}
+            </button>
+          ) : null}
         </div>
       )}
     </div>
