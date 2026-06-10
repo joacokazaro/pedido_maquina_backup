@@ -63,6 +63,19 @@ function extractObservationItems(historial = []) {
       continue;
     }
 
+    if (entry.accion === "COORDINADOR_OBSERVACION_POSTERIOR" && detalle?.observacion) {
+      items.push({
+        id: `${entry.id}-coord-post`,
+        etapa,
+        autor,
+        fecha: entry.fecha,
+        mensaje: String(detalle.observacion).trim(),
+        origen: "coordinador",
+        tipo: "posterior",
+      });
+      continue;
+    }
+
     if (entry.accion === "EVENTUAL_CREADO") {
       const mensaje = String(detalle?.inicial?.observacionesPrevias || detalle?.inicial?.observaciones || "").trim();
       if (mensaje) {
@@ -326,13 +339,22 @@ export default function AdminEventualDetalle() {
 
       <div className="mt-6 mb-8 flex flex-wrap justify-end gap-2">
         {isCoordinador ? (
-          <button
-            type="button"
-            onClick={() => navigate(`/admin/eventuales/${eventual.id}/finalizar`)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
-          >
-            Finalizar eventual
-          </button>
+          String(eventual.estado || "").toLowerCase() === "finalizado" ? (
+            <button
+              onClick={() => navigate(`/admin/eventuales/${eventual.id}/corregir`)}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Corregir eventual
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate(`/admin/eventuales/${eventual.id}/finalizar`)}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Finalizar eventual
+            </button>
+          )
         ) : isConsultor ? null : (
           <>
             <button

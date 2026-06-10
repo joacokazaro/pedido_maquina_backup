@@ -154,7 +154,7 @@ function App() {
   ============================== */
   return (
     <>
-      {user && location.pathname !== "/" && user.rol !== "ADMIN" && <Notificaciones />}
+      {user && location.pathname !== "/" && user.rol !== "ADMIN" && !location.pathname.startsWith("/admin") && <Notificaciones />}
       <Routes>
       {/* LOGIN */}
       <Route path="/" element={<Login />} />
@@ -513,7 +513,7 @@ function App() {
 
       <Route
         path="/admin/eventuales/:id/corregir"
-        element={renderAdminOnlyPage(<AdminEventualForm />)}
+        element={renderBackofficePage(<AdminEventualForm />)}
       />
 
       <Route

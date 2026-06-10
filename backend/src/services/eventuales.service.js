@@ -387,7 +387,7 @@ async function getVehiculosCatalogo(tx = prisma) {
 function parseComponentesUtilizados(value) {
   const parsed = parseJson(value);
   if (!parsed) {
-    return { maquinaIds: [], vehiculoIds: [] };
+    return { maquinaIds: [], vehiculoIds: [], kitSnapshot: null };
   }
 
   const maquinaIds = uniqueStrings(
@@ -406,20 +406,50 @@ function parseComponentesUtilizados(value) {
         : []
   );
 
-  return { maquinaIds, vehiculoIds };
+  const rawKitSnapshot = parsed.kitSnapshot && typeof parsed.kitSnapshot === "object"
+    ? parsed.kitSnapshot
+    : null;
+
+  return { maquinaIds, vehiculoIds, kitSnapshot: rawKitSnapshot };
 }
 
-function serializeComponentesUtilizados(maquinaIds, vehiculoIds) {
+function serializeComponentesUtilizados(maquinaIds, vehiculoIds, kitSnapshot = null) {
   const normalized = {
     maquinaIds: uniqueStrings(maquinaIds),
     vehiculoIds: uniqueStrings(vehiculoIds),
   };
 
-  if (!normalized.maquinaIds.length && !normalized.vehiculoIds.length) {
+  if (!normalized.maquinaIds.length && !normalized.vehiculoIds.length && !kitSnapshot) {
     return null;
   }
 
+  if (kitSnapshot) {
+    normalized.kitSnapshot = kitSnapshot;
+  }
+
   return JSON.stringify(normalized);
+}
+
+function buildPersistedKitSnapshot(snapshot) {
+  if (!snapshot) return null;
+
+  return {
+    id: snapshot.id,
+    nombre: snapshot.nombre,
+    observaciones: snapshot.observaciones || null,
+    estado: snapshot.estado,
+    activo: snapshot.activo,
+    createdAt: snapshot.createdAt,
+    maquinas: Array.isArray(snapshot.maquinas) ? snapshot.maquinas : [],
+    vehiculos: Array.isArray(snapshot.vehiculos) ? snapshot.vehiculos : [],
+    resumen: snapshot.resumen || {
+      maquinas: Array.isArray(snapshot.maquinas) ? snapshot.maquinas.length : 0,
+      vehiculos: Array.isArray(snapshot.vehiculos) ? snapshot.vehiculos.length : 0,
+      bloqueos: 0,
+    },
+    bloqueadoParaAsignacion: Boolean(snapshot.bloqueadoParaAsignacion),
+    bloqueos: Array.isArray(snapshot.bloqueos) ? snapshot.bloqueos : [],
+  };
 }
 
 function getIdsFromKitSnapshot(snapshot) {
@@ -779,6 +809,28 @@ function mapHistorialEntry(entry) {
   };
 }
 
+function getSnapshotFromHistorial(historialEntries = []) {
+  if (!Array.isArray(historialEntries)) return null;
+
+  let last = null;
+  for (const entry of historialEntries) {
+    const detalle = parseJson(entry?.detalle);
+    if (!detalle) continue;
+
+    const candidate = detalle.actual || detalle.inicial || null;
+    if (!candidate) continue;
+
+    if (candidate.kit || candidate.componentesUtilizados) {
+      last = {
+        kit: candidate.kit || null,
+        componentesUtilizados: candidate.componentesUtilizados || null,
+      };
+    }
+  }
+
+  return last;
+}
+
 function buildEventualSummary(eventual) {
   return {
     id: eventual.id,
@@ -872,7 +924,47 @@ export async function getEventualDetail(eventualId) {
 
   const kitDetalle = eventual.kitId ? await getKitDetail(eventual.kitId) : null;
   const componentesIds = parseComponentesUtilizados(eventual.componentesUtilizados);
-  const componentesSnapshot = eventual.componentesUtilizados
+  const historialSnapshot = getSnapshotFromHistorial(eventual.historial);
+
+  // Detecta datos legacy donde componentesUtilizados quedó desfasado respecto al kit del eventual.
+  function isComponentesStale() {
+    if (!eventual.componentesUtilizados || !kitDetalle) return false;
+    const kitMaquinaIds = new Set((kitDetalle.maquinas || []).map((m) => m.id));
+    const kitVehiculoIds = new Set((kitDetalle.vehiculos || []).map((v) => v.id));
+    const savedMaquinas = componentesIds.maquinaIds || [];
+    const savedVehiculos = componentesIds.vehiculoIds || [];
+    const maquinasStale =
+      savedMaquinas.length > 0 &&
+      kitMaquinaIds.size > 0 &&
+      !savedMaquinas.some((id) => kitMaquinaIds.has(id));
+    const vehiculosStale =
+      savedVehiculos.length > 0 &&
+      kitVehiculoIds.size > 0 &&
+      !savedVehiculos.some((id) => kitVehiculoIds.has(id));
+    return maquinasStale || vehiculosStale;
+  }
+
+  const stale = isComponentesStale();
+  const hasStoredKitSnapshot = Boolean(componentesIds.kitSnapshot);
+  const storedSnapshot = hasStoredKitSnapshot ? buildPersistedKitSnapshot(componentesIds.kitSnapshot) : null;
+  const historialComponentes = historialSnapshot?.componentesUtilizados && typeof historialSnapshot.componentesUtilizados === "object"
+    ? historialSnapshot.componentesUtilizados
+    : null;
+  const historialKit = historialSnapshot?.kit && typeof historialSnapshot.kit === "object"
+    ? buildPersistedKitSnapshot(historialSnapshot.kit)
+    : null;
+
+  const componentesSnapshot = storedSnapshot
+    ? {
+        maquinas: storedSnapshot.maquinas || [],
+        vehiculos: storedSnapshot.vehiculos || [],
+      }
+    : historialComponentes
+      ? {
+          maquinas: Array.isArray(historialComponentes.maquinas) ? historialComponentes.maquinas : [],
+          vehiculos: Array.isArray(historialComponentes.vehiculos) ? historialComponentes.vehiculos : [],
+        }
+    : eventual.componentesUtilizados && !stale
     ? await buildComponentesSnapshotFromIds(componentesIds.maquinaIds, componentesIds.vehiculoIds)
     : kitDetalle
       ? {
@@ -881,31 +973,63 @@ export async function getEventualDetail(eventualId) {
         }
       : { maquinas: [], vehiculos: [] };
 
-  return {
-    ...buildEventualSummary(eventual),
-    kit: kitDetalle
+  const resolvedMaquinaIds = storedSnapshot
+    ? uniqueStrings((storedSnapshot.maquinas || []).map((item) => item.id))
+    : historialComponentes
+      ? uniqueStrings((historialComponentes.maquinas || []).map((item) => item.id))
+    : eventual.componentesUtilizados && !stale
+    ? componentesIds.maquinaIds
+    : (kitDetalle?.maquinas || []).map((item) => item.id);
+  const resolvedVehiculoIds = storedSnapshot
+    ? uniqueStrings((storedSnapshot.vehiculos || []).map((item) => item.id))
+    : historialComponentes
+      ? uniqueStrings((historialComponentes.vehiculos || []).map((item) => item.id))
+    : eventual.componentesUtilizados && !stale
+    ? componentesIds.vehiculoIds
+    : (kitDetalle?.vehiculos || []).map((item) => item.id);
+
+  const kitResolved = storedSnapshot
+    ? storedSnapshot
+    : historialKit
+      ? {
+          ...historialKit,
+          maquinas: componentesSnapshot.maquinas,
+          vehiculos: componentesSnapshot.vehiculos,
+          resumen: {
+            maquinas: componentesSnapshot.maquinas.length,
+            vehiculos: componentesSnapshot.vehiculos.length,
+            bloqueos: historialKit.resumen?.bloqueos || 0,
+          },
+        }
+    : kitDetalle
       ? {
           id: kitDetalle.id,
           nombre: kitDetalle.nombre,
           estado: kitDetalle.estado,
           observaciones: kitDetalle.observaciones,
-          maquinas: kitDetalle.maquinas,
-          vehiculos: kitDetalle.vehiculos,
-          resumen: kitDetalle.resumen,
+          maquinas: componentesSnapshot.maquinas,
+          vehiculos: componentesSnapshot.vehiculos,
+          resumen: {
+            maquinas: componentesSnapshot.maquinas.length,
+            vehiculos: componentesSnapshot.vehiculos.length,
+            bloqueos: kitDetalle.resumen?.bloqueos || 0,
+          },
           bloqueadoParaAsignacion: kitDetalle.bloqueadoParaAsignacion,
           bloqueos: kitDetalle.bloqueos,
+          activo: kitDetalle.activo,
+          createdAt: kitDetalle.createdAt,
         }
-      : null,
+      : null;
+
+  return {
+    ...buildEventualSummary(eventual),
+    kit: kitResolved,
     componentesUtilizados: {
-      maquinaIds: eventual.componentesUtilizados
-        ? componentesIds.maquinaIds
-        : (kitDetalle?.maquinas || []).map((item) => item.id),
-      vehiculoIds: eventual.componentesUtilizados
-        ? componentesIds.vehiculoIds
-        : (kitDetalle?.vehiculos || []).map((item) => item.id),
+      maquinaIds: resolvedMaquinaIds,
+      vehiculoIds: resolvedVehiculoIds,
       maquinas: componentesSnapshot.maquinas,
       vehiculos: componentesSnapshot.vehiculos,
-      personalizados: Boolean(eventual.componentesUtilizados),
+      personalizados: Boolean(eventual.componentesUtilizados) && !stale,
     },
     historial: eventual.historial.map(mapHistorialEntry),
   };
@@ -946,6 +1070,17 @@ async function validateKitAssignment(kitId, eventualId = null, tx = prisma) {
 
 function toDateOrNull(value) {
   if (value === null || value === undefined || value === "") return null;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      const [, year, month, day] = match;
+      // Guardar como fecha estable en UTC evita corrimientos por timezone.
+      return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 12, 0, 0));
+    }
+  }
+
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
@@ -1054,21 +1189,30 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
       : { maquinas: [], vehiculos: [] };
 
   const kitBaseIds = getIdsFromKitSnapshot(validatedKit.snapshot);
-  const selectedMachineIds = data.maquinaIds ?? (data.kitId ? kitBaseIds.maquinaIds : []);
-  const selectedVehicleIds = data.vehiculoIds ?? (data.kitId ? kitBaseIds.vehiculoIds : []);
+  // Si el kit cambió respecto al guardado anterior, siempre usamos la composición base del nuevo kit
+  // para evitar que queden componentesUtilizados de un kit anterior.
+  const kitChanged = Boolean(existing && Number(existing.kitId) !== Number(data.kitId));
+  const selectedMachineIds = kitChanged
+    ? kitBaseIds.maquinaIds
+    : (data.maquinaIds ?? (data.kitId ? kitBaseIds.maquinaIds : []));
+  const selectedVehicleIds = kitChanged
+    ? kitBaseIds.vehiculoIds
+    : (data.vehiculoIds ?? (data.kitId ? kitBaseIds.vehiculoIds : []));
   const componentesSnapshot = await buildComponentesSnapshotFromIds(selectedMachineIds, selectedVehicleIds);
   ensureComponentesExist(componentesSnapshot, selectedMachineIds, selectedVehicleIds);
 
-  const componentesIgualesAlKit =
-    Boolean(data.kitId) &&
-    sameIds(kitBaseIds.maquinaIds, selectedMachineIds) &&
-    sameIds(kitBaseIds.vehiculoIds, selectedVehicleIds);
+  const kitSnapshotActual = buildKitSnapshotWithComponentes(validatedKit.snapshot, componentesSnapshot);
 
+  // Persistimos SIEMPRE el snapshot de componentes/kit cuando hay kit para asegurar trazabilidad
+  // aunque el kit se modifique más adelante.
   const componentesUtilizados = data.kitId
-    ? (componentesIgualesAlKit ? null : serializeComponentesUtilizados(selectedMachineIds, selectedVehicleIds))
+    ? serializeComponentesUtilizados(
+        selectedMachineIds,
+        selectedVehicleIds,
+        buildPersistedKitSnapshot(kitSnapshotActual)
+      )
     : null;
 
-  const kitSnapshotActual = validatedKit.snapshot;
   const isFinalizedEdit = Boolean(existing && tieneCierreSupervisorPrevio);
   const observacionesPreviasPersistidas = existing
     ? (isFinalizedEdit ? existing.observaciones : data.observaciones)
@@ -1123,7 +1267,7 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
             fechaFin: data.fechaFin,
             observaciones: observacionesPreviasPersistidas,
             observacionesPrevias: observacionesPreviasPersistidas,
-            observacionesPosteriores: isFinalizedEdit ? data.observacionesPosteriores : null,
+            observacionesPosteriores: data.observacionesPosteriores || null,
             supervisor,
             kit: kitSnapshotActual,
             componentesUtilizados: componentesSnapshot,
@@ -1152,11 +1296,15 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
       },
     });
 
-    if (existing && tieneCierreSupervisorPrevio && data.observacionesPosteriores) {
+    if (existing && data.observacionesPosteriores) {
+      const accionObservacion = String(actor.rol || "").toLowerCase() === "coordinador"
+        ? "COORDINADOR_OBSERVACION_POSTERIOR"
+        : "ADMIN_OBSERVACION_POSTERIOR";
+
       await tx.historialEventual.create({
         data: {
           eventualId: saved.id,
-          accion: "ADMIN_OBSERVACION_POSTERIOR",
+          accion: accionObservacion,
           detalle: JSON.stringify({ observacion: data.observacionesPosteriores, tipo: "posterior" }),
           usuarioId: actor.id,
         },

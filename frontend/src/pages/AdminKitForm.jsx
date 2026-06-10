@@ -30,7 +30,6 @@ export default function AdminKitForm() {
   const [conflictosPendientes, setConflictosPendientes] = useState([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
-  const [savedId, setSavedId] = useState(null);
   const [reactivating, setReactivating] = useState(false);
 
   useEffect(() => {
@@ -147,7 +146,6 @@ export default function AdminKitForm() {
       }
 
       // show success modal and redirect to kits list on confirm
-      setSavedId(data.id);
       setSuccessOpen(true);
     } catch (saveError) {
       console.error(saveError);
@@ -241,7 +239,19 @@ export default function AdminKitForm() {
                 <div className="space-y-2">
                   {maquinasSeleccionadas.map((item) => (
                     <div key={item.id} className="rounded-lg border border-slate-200 p-3">
-                      <p className="text-sm font-semibold text-slate-900">{item.tipo} {item.id}</p>
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-slate-900">{item.tipo} {item.id}</p>
+                        {!isReadOnly && !composicionBloqueada ? (
+                          <button
+                            type="button"
+                            onClick={() => toggle(setMaquinaIds, maquinaIds, item.id)}
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-700 hover:bg-red-100 hover:text-red-700"
+                            title="Quitar máquina"
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </div>
                       <p className="text-xs text-slate-500">{item.modelo} · {item.serie || "Sin serie"}</p>
                       <p className="text-xs text-slate-500">Estado: {item.estado}</p>
                     </div>
@@ -258,7 +268,19 @@ export default function AdminKitForm() {
                 <div className="space-y-2">
                   {vehiculosSeleccionados.map((item) => (
                     <div key={item.id} className="rounded-lg border border-slate-200 p-3">
-                      <p className="text-sm font-semibold text-slate-900">{item.vehiculo} {item.id}</p>
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-slate-900">{item.vehiculo} {item.id}</p>
+                        {!isReadOnly && !composicionBloqueada ? (
+                          <button
+                            type="button"
+                            onClick={() => toggle(setVehiculoIds, vehiculoIds, item.id)}
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-700"
+                            title="Quitar vehículo"
+                          >
+                            ×
+                          </button>
+                        ) : null}
+                      </div>
                       <p className="text-xs text-slate-500">{item.modelo} · {item.patente}</p>
                       <p className="text-xs text-slate-500">Estado: {item.estado}</p>
                     </div>

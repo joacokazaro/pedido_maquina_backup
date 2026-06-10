@@ -4,7 +4,7 @@ function parseDateValue(value) {
 
   if (typeof value === "string") {
     const trimmed = value.trim();
-    const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
     if (match) {
       const [, year, month, day] = match;
       return new Date(Number(year), Number(month) - 1, Number(day));

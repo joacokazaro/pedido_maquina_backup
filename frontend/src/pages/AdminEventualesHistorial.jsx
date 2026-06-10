@@ -15,7 +15,6 @@ export default function AdminEventualesHistorial() {
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("");
   const [supervisorFiltro, setSupervisorFiltro] = useState("");
-  const [activoFiltro, setActivoFiltro] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -46,8 +45,6 @@ export default function AdminEventualesHistorial() {
     return eventuales.filter((item) => {
       if (estadoFiltro && item.estado !== estadoFiltro) return false;
       if (supervisorFiltro && String(item.supervisor?.id || "") !== supervisorFiltro) return false;
-      if (activoFiltro === "true" && !item.activo) return false;
-      if (activoFiltro === "false" && item.activo) return false;
       if (!query) return true;
 
       return [
@@ -60,7 +57,7 @@ export default function AdminEventualesHistorial() {
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query));
     });
-  }, [eventuales, search, estadoFiltro, supervisorFiltro, activoFiltro]);
+  }, [eventuales, search, estadoFiltro, supervisorFiltro]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
@@ -105,12 +102,6 @@ export default function AdminEventualesHistorial() {
                 {supervisor.nombre || supervisor.username}
               </option>
             ))}
-          </select>
-
-          <select className="rounded-xl border p-2 text-sm" value={activoFiltro} onChange={(event) => setActivoFiltro(event.target.value)}>
-            <option value="">Todos</option>
-            <option value="true">Activos</option>
-            <option value="false">Baja logica</option>
           </select>
 
           <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
