@@ -159,6 +159,67 @@ export default function SupervisorEventualDetalle() {
       </div>
 
       <HistorialEventual historial={eventual.historial} compact />
+
+          {(Array.isArray(eventual.trabajosRealizados) && eventual.trabajosRealizados.length > 0) ||
+           (Array.isArray(eventual.serviciosExtrasSubcontratados) && eventual.serviciosExtrasSubcontratados.length > 0) ? (
+            <div className="rounded-2xl bg-white p-5 shadow space-y-5">
+              <h2 className="text-lg font-semibold text-gray-900">Información de los trabajos realizados</h2>
+
+              {Array.isArray(eventual.trabajosRealizados) && eventual.trabajosRealizados.length > 0 ? (
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Trabajos realizados</h3>
+                  <div className="overflow-x-auto rounded-xl border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Trabajo</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Cantidad</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Unidad</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y bg-white">
+                        {eventual.trabajosRealizados.map((t, idx) => (
+                          <tr key={idx}>
+                            <td className="px-3 py-2 font-medium text-gray-900">{t.label || t.tipo}</td>
+                            <td className="px-3 py-2 text-right text-gray-900">{t.cantidad}</td>
+                            <td className="px-3 py-2 text-gray-600">{t.unidadLabel || t.unidadMedida}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : null}
+
+              {Array.isArray(eventual.serviciosExtrasSubcontratados) && eventual.serviciosExtrasSubcontratados.length > 0 ? (
+                <div>
+                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Servicios extras subcontratados</h3>
+                  <div className="overflow-x-auto rounded-xl border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Servicio</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Cantidad</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Unidad</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y bg-white">
+                        {eventual.serviciosExtrasSubcontratados.map((s, idx) => (
+                          <tr key={idx}>
+                            <td className="px-3 py-2 font-medium text-gray-900">{s.descripcion}</td>
+                            <td className="px-3 py-2 text-right text-gray-900">{s.cantidad}</td>
+                            <td className="px-3 py-2 text-gray-600">{s.unidadLabel || s.unidadMedida}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Sin servicios extras subcontratados registrados.</p>
+              )}
+            </div>
+          ) : null}
     </div>
   );
 }

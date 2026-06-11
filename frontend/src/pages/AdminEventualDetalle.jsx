@@ -277,9 +277,71 @@ export default function AdminEventualDetalle() {
         )}
       </div>
 
+      {(Array.isArray(eventual.trabajosRealizados) && eventual.trabajosRealizados.length > 0) ||
+      (Array.isArray(eventual.serviciosExtrasSubcontratados) && eventual.serviciosExtrasSubcontratados.length > 0) ? (
+        <div className="rounded-2xl border border-violet-200/80 bg-gradient-to-br from-violet-50/60 to-white p-5 shadow-[0_10px_30px_-18px_rgba(124,58,237,0.35)] space-y-5">
+          <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+            Información de los trabajos realizados
+          </h2>
+
+          {Array.isArray(eventual.trabajosRealizados) && eventual.trabajosRealizados.length > 0 ? (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Trabajos realizados</h3>
+              <div className="overflow-x-auto rounded-xl border border-violet-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-violet-50/70">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Trabajo</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Cantidad</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Unidad</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-violet-100 bg-white">
+                    {eventual.trabajosRealizados.map((t, idx) => (
+                      <tr key={idx}>
+                        <td className="px-3 py-2 font-medium text-gray-900">{t.label || t.tipo}</td>
+                        <td className="px-3 py-2 text-right text-gray-900">{t.cantidad}</td>
+                        <td className="px-3 py-2 text-gray-600">{t.unidadLabel || t.unidadMedida}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+
+          {Array.isArray(eventual.serviciosExtrasSubcontratados) && eventual.serviciosExtrasSubcontratados.length > 0 ? (
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Servicios extras subcontratados</h3>
+              <div className="overflow-x-auto rounded-xl border border-violet-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-violet-50/70">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Servicio</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Cantidad</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Unidad</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-violet-100 bg-white">
+                    {eventual.serviciosExtrasSubcontratados.map((s, idx) => (
+                      <tr key={idx}>
+                        <td className="px-3 py-2 font-medium text-gray-900">{s.descripcion}</td>
+                        <td className="px-3 py-2 text-right text-gray-900">{s.cantidad}</td>
+                        <td className="px-3 py-2 text-gray-600">{s.unidadLabel || s.unidadMedida}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <section className="grid gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/60 to-white p-3 shadow-[0_10px_30px_-18px_rgba(217,119,6,0.4)]">
-            <HistorialEventual historial={eventual.historial} separateObservations />
+          <HistorialEventual historial={eventual.historial} separateObservations />
         </div>
 
         <aside className="h-fit rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/60 to-white p-4 shadow-[0_10px_30px_-18px_rgba(5,150,105,0.38)] space-y-3">

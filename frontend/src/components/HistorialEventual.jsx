@@ -195,6 +195,81 @@ export default function HistorialEventual({ historial }) {
           )}
         </div>
       </div>
+
+      {/* Trabajos realizados registrados por el coordinador */}
+      {(() => {
+        const coordEntry = [...historial]
+          .reverse()
+          .find((entry) => {
+            if (entry.accion !== "COORDINADOR_OBSERVACION_POSTERIOR") return false;
+            const d = parseDetalle(entry.detalle) || {};
+            return Array.isArray(d.trabajosRealizados) && d.trabajosRealizados.length > 0;
+          });
+        if (!coordEntry) return null;
+        const detalle = parseDetalle(coordEntry.detalle) || {};
+        const trabajos = Array.isArray(detalle.trabajosRealizados) ? detalle.trabajosRealizados : [];
+        const servicios = Array.isArray(detalle.serviciosExtrasSubcontratados) ? detalle.serviciosExtrasSubcontratados : [];
+        const autor = coordEntry.usuario?.nombre || coordEntry.usuario?.username || "-";
+        return (
+          <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trabajos realizados (coordinador)</p>
+              <span className="text-xs text-slate-400">{autor} · {formatDateTime(coordEntry.fecha)}</span>
+            </div>
+
+            {trabajos.length > 0 ? (
+              <div className="overflow-x-auto rounded-xl border border-slate-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Trabajo</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Detalle</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Cantidad</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Unidad</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y bg-white">
+                    {trabajos.map((t, idx) => (
+                      <tr key={idx}>
+                        <td className="px-3 py-2 font-medium text-gray-900">{t.label || t.tipo}</td>
+                        <td className="px-3 py-2 text-gray-600">{t.tipo === "OTRO" ? (t.descripcionOtro || "-") : "-"}</td>
+                        <td className="px-3 py-2 text-right text-gray-900">{t.cantidad}</td>
+                        <td className="px-3 py-2 text-gray-600">{t.unidadLabel || t.unidadMedida}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+
+            {servicios.length > 0 ? (
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Servicios extras subcontratados</p>
+                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Servicio</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Cantidad</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Unidad</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y bg-white">
+                      {servicios.map((s, idx) => (
+                        <tr key={idx}>
+                          <td className="px-3 py-2 font-medium text-gray-900">{s.descripcion}</td>
+                          <td className="px-3 py-2 text-right text-gray-900">{s.cantidad}</td>
+                          <td className="px-3 py-2 text-gray-600">{s.unidadLabel || s.unidadMedida}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        );
+      })()}
     </div>
   );
 }

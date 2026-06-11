@@ -3,6 +3,19 @@ import prisma from "../db/prisma.js";
 export const ESTADOS_EVENTUAL_VALIDOS = ["activo", "finalizado", "cancelado"];
 export const ESTADOS_KIT_VALIDOS = ["disponible", "asignado"];
 
+const TIPOS_TRABAJO_VALIDOS = [
+  "PODA_MENOR_2M",
+  "PODA_ALTURA",
+  "RETIRO_PODA",
+  "DESMALEZADO",
+  "DESMONTE",
+  "CORTE_CESPED",
+  "CORTE_BARRIDO",
+  "OTRO",
+];
+
+const UNIDADES_MEDIDA_VALIDAS = ["UNIDAD", "M2", "M3", "METROS_LINEALES", "HORAS"];
+
 const ESTADOS_PEDIDO_INACTIVOS = ["CERRADO", "CANCELADO"];
 
 function normalizeText(value) {
@@ -35,6 +48,79 @@ function parseJson(value) {
   } catch {
     return null;
   }
+}
+
+function validateTrabajosRealizados(items) {
+  if (!Array.isArray(items)) return [];
+
+  const errors = [];
+  items.forEach((item, idx) => {
+    const label = `Trabajo ${idx + 1}`;
+    if (!item || typeof item !== "object") {
+      errors.push(`${label}: dato inválido`);
+      return;
+    }
+    if (!TIPOS_TRABAJO_VALIDOS.includes(item.tipo)) {
+      errors.push(`${label}: tipo de trabajo inválido`);
+    }
+    if (item.tipo === "OTRO" && !normalizeText(item.descripcionOtro)) {
+      errors.push(`${label}: la descripción es obligatoria para tipo "Otro"`);
+    }
+    const cantidad = Number(item.cantidad);
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      errors.push(`${label}: la cantidad debe ser un número mayor a 0`);
+    }
+    if (!UNIDADES_MEDIDA_VALIDAS.includes(item.unidadMedida)) {
+      errors.push(`${label}: unidad de medida inválida`);
+    }
+  });
+
+  return errors;
+}
+
+function validateServiciosExtras(items) {
+  if (!Array.isArray(items)) return [];
+
+  const errors = [];
+  items.forEach((item, idx) => {
+    const label = `Servicio extra ${idx + 1}`;
+    if (!item || typeof item !== "object") {
+      errors.push(`${label}: dato inválido`);
+      return;
+    }
+    if (!normalizeText(item.descripcion)) {
+      errors.push(`${label}: la descripción es obligatoria`);
+    }
+    const cantidad = Number(item.cantidad);
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      errors.push(`${label}: la cantidad debe ser un número mayor a 0`);
+    }
+    if (!UNIDADES_MEDIDA_VALIDAS.includes(item.unidadMedida)) {
+      errors.push(`${label}: unidad de medida inválida`);
+    }
+  });
+
+  return errors;
+}
+
+function normalizeTrabajoItem(item) {
+  return {
+    tipo: normalizeText(item.tipo),
+    label: normalizeText(item.label),
+    descripcionOtro: item.tipo === "OTRO" ? normalizeText(item.descripcionOtro) : null,
+    cantidad: Number(item.cantidad),
+    unidadMedida: normalizeText(item.unidadMedida),
+    unidadLabel: normalizeText(item.unidadLabel),
+  };
+}
+
+function normalizeServicioExtraItem(item) {
+  return {
+    descripcion: normalizeText(item.descripcion),
+    cantidad: Number(item.cantidad),
+    unidadMedida: normalizeText(item.unidadMedida),
+    unidadLabel: normalizeText(item.unidadLabel),
+  };
 }
 
 function buildError(message, status = 400, payload = null) {
@@ -1031,6 +1117,8 @@ export async function getEventualDetail(eventualId) {
       vehiculos: componentesSnapshot.vehiculos,
       personalizados: Boolean(eventual.componentesUtilizados) && !stale,
     },
+    trabajosRealizados: parseJson(eventual.trabajosRealizados) || [],
+    serviciosExtrasSubcontratados: parseJson(eventual.serviciosExtrasSubcontratados) || [],
     historial: eventual.historial.map(mapHistorialEntry),
   };
 }
@@ -1086,6 +1174,9 @@ function toDateOrNull(value) {
 }
 
 function buildEventualPayload(payload) {
+  const trabajosRaw = Array.isArray(payload.trabajosRealizados) ? payload.trabajosRealizados : (parseJson(payload.trabajosRealizados) || []);
+  const serviciosRaw = Array.isArray(payload.serviciosExtrasSubcontratados) ? payload.serviciosExtrasSubcontratados : (parseJson(payload.serviciosExtrasSubcontratados) || []);
+
   return {
     nombre: normalizeText(payload.nombre),
     supervisorId: Number(payload.supervisorId),
@@ -1100,6 +1191,8 @@ function buildEventualPayload(payload) {
     observacionesPosteriores: normalizeNullableText(payload.observacionesPosteriores),
     maquinaIds: Array.isArray(payload.maquinaIds) ? uniqueStrings(payload.maquinaIds) : null,
     vehiculoIds: Array.isArray(payload.vehiculoIds) ? uniqueStrings(payload.vehiculoIds) : null,
+    trabajosRealizados: Array.isArray(trabajosRaw) ? trabajosRaw : [],
+    serviciosExtrasSubcontratados: Array.isArray(serviciosRaw) ? serviciosRaw : [],
   };
 }
 
@@ -1121,6 +1214,21 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
 
   if (data.fechaInicio && data.fechaFin && data.fechaFin < data.fechaInicio) {
     throw buildError("La fecha de finalización no puede ser menor a la fecha de inicio", 400);
+  }
+
+  // Validar trabajos realizados
+  const trabajosErrors = validateTrabajosRealizados(data.trabajosRealizados);
+  const serviciosErrors = validateServiciosExtras(data.serviciosExtrasSubcontratados);
+
+  if (trabajosErrors.length > 0) {
+    throw buildError(`Trabajos realizados inválidos: ${trabajosErrors.join("; ")}`, 400);
+  }
+  if (serviciosErrors.length > 0) {
+    throw buildError(`Servicios extras inválidos: ${serviciosErrors.join("; ")}`, 400);
+  }
+
+  if (data.estado === "finalizado" && data.trabajosRealizados.length === 0) {
+    throw buildError("Debe cargar al menos un trabajo realizado para finalizar el eventual", 400);
   }
 
   const duplicate = await prisma.eventual.findFirst({
@@ -1213,6 +1321,11 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
       )
     : null;
 
+  const trabajosNormalizados = data.trabajosRealizados.map(normalizeTrabajoItem);
+  const serviciosNormalizados = data.serviciosExtrasSubcontratados.map(normalizeServicioExtraItem);
+  const trabajosJson = trabajosNormalizados.length > 0 ? JSON.stringify(trabajosNormalizados) : null;
+  const serviciosJson = serviciosNormalizados.length > 0 ? JSON.stringify(serviciosNormalizados) : null;
+
   const isFinalizedEdit = Boolean(existing && tieneCierreSupervisorPrevio);
   const observacionesPreviasPersistidas = existing
     ? (isFinalizedEdit ? existing.observaciones : data.observaciones)
@@ -1231,6 +1344,8 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
             fechaFin: data.fechaFin,
             observaciones: observacionesPreviasPersistidas,
             componentesUtilizados,
+            trabajosRealizados: trabajosJson,
+            serviciosExtrasSubcontratados: serviciosJson,
           },
         })
       : await tx.eventual.create({
@@ -1243,6 +1358,8 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
             fechaFin: data.fechaFin,
             observaciones: data.observaciones,
             componentesUtilizados,
+            trabajosRealizados: trabajosJson,
+            serviciosExtrasSubcontratados: serviciosJson,
             activo: true,
           },
         });
@@ -1301,11 +1418,25 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
         ? "COORDINADOR_OBSERVACION_POSTERIOR"
         : "ADMIN_OBSERVACION_POSTERIOR";
 
+      const detalleObservacion = {
+        observacion: data.observacionesPosteriores,
+        tipo: "posterior",
+      };
+
+      if (String(actor.rol || "").toLowerCase() === "coordinador") {
+        if (trabajosNormalizados.length > 0) {
+          detalleObservacion.trabajosRealizados = trabajosNormalizados;
+        }
+        if (serviciosNormalizados.length > 0) {
+          detalleObservacion.serviciosExtrasSubcontratados = serviciosNormalizados;
+        }
+      }
+
       await tx.historialEventual.create({
         data: {
           eventualId: saved.id,
           accion: accionObservacion,
-          detalle: JSON.stringify({ observacion: data.observacionesPosteriores, tipo: "posterior" }),
+          detalle: JSON.stringify(detalleObservacion),
           usuarioId: actor.id,
         },
       });

@@ -156,6 +156,8 @@ model Eventual {
   fechaFin      DateTime?
   observaciones String?
   componentesUtilizados String?
+  trabajosRealizados    String?
+  serviciosExtrasSubcontratados String?
   activo        Boolean             @default(true)
   createdAt     DateTime            @default(now())
 

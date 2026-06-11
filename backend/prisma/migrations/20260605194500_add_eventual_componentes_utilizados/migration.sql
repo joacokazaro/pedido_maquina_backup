@@ -1,0 +1,2 @@
+-- Migration file restored to satisfy Prisma migration history.
+-- No-op intentionally.

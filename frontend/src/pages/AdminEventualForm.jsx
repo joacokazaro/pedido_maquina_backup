@@ -7,6 +7,33 @@ import { toDateInputValue } from "../utils/date";
 
 const ESTADOS = ["activo", "finalizado", "cancelado"];
 
+const TIPOS_TRABAJO = [
+  { value: "PODA_MENOR_2M", label: "Poda < 2mtrs" },
+  { value: "PODA_ALTURA", label: "Poda en altura" },
+  { value: "RETIRO_PODA", label: "Retiro de Poda" },
+  { value: "DESMALEZADO", label: "Desmalezado" },
+  { value: "DESMONTE", label: "Desmonte" },
+  { value: "CORTE_CESPED", label: "Corte de Cesped" },
+  { value: "CORTE_BARRIDO", label: "Corte y Barrido" },
+  { value: "OTRO", label: "Otro" },
+];
+
+const UNIDADES_MEDIDA = [
+  { value: "UNIDAD", label: "Unidad" },
+  { value: "M2", label: "M2" },
+  { value: "M3", label: "M3" },
+  { value: "METROS_LINEALES", label: "Metros lineales" },
+  { value: "HORAS", label: "Horas" },
+];
+
+function emptyTrabajo() {
+  return { tipo: "", label: "", descripcionOtro: "", cantidad: "", unidadMedida: "", unidadLabel: "" };
+}
+
+function emptyServicioExtra() {
+  return { descripcion: "", cantidad: "", unidadMedida: "", unidadLabel: "" };
+}
+
 function stripSupervisorTaggedLines(text) {
   const value = String(text || "");
   if (!value.trim()) return "";
@@ -71,6 +98,9 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const userRolUpper = String(user?.rol || "").toUpperCase();
   const isCoordinadorFinalizacion = Boolean(modoFinalizacionCoordinador && userRolUpper === "COORDINADOR" && isEdit);
   const isCoordinador = userRolUpper === "COORDINADOR";
+  const canEditTrabajosRealizados = isCoordinadorFinalizacion || isEdit;
+  const [trabajosSavedAt, setTrabajosSavedAt] = useState(null);
+  const [savedFlag, setSavedFlag] = useState(false);
 
   const [form, setForm] = useState({
     nombre: "",
@@ -102,6 +132,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const [coordinadorObservacionesPosteriores, setCoordinadorObservacionesPosteriores] = useState([]);
   const [bloquearObservacionesPrevias, setBloquearObservacionesPrevias] = useState(false);
   const [componentesModalOpen, setComponentesModalOpen] = useState(false);
+  const [trabajosRealizados, setTrabajosRealizados] = useState([]);
+  const [serviciosExtrasSubcontratados, setServiciosExtrasSubcontratados] = useState([]);
 
   useEffect(() => {
     async function load() {
@@ -156,6 +188,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           setMaquinaIds(eventual.componentesUtilizados?.maquinaIds || (eventual.kit?.maquinas || []).map((item) => item.id));
           setVehiculoIds(eventual.componentesUtilizados?.vehiculoIds || (eventual.kit?.vehiculos || []).map((item) => item.id));
           previousKitIdRef.current = eventual.kit?.id ? String(eventual.kit.id) : "";
+                  setTrabajosRealizados(Array.isArray(eventual.trabajosRealizados) ? eventual.trabajosRealizados : []);
+                  setServiciosExtrasSubcontratados(Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : []);
         }
       } catch (loadError) {
         console.error(loadError);
@@ -300,6 +334,25 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         throw new Error("La fecha de finalización no puede ser menor a la fecha de inicio");
       }
 
+      if (canEditTrabajosRealizados) {
+        if (form.estado === "finalizado" && trabajosRealizados.length === 0) {
+          throw new Error("Debe cargar al menos un trabajo realizado para finalizar el eventual");
+        }
+        for (let i = 0; i < trabajosRealizados.length; i++) {
+          const t = trabajosRealizados[i];
+          if (!t.tipo) throw new Error(`Trabajo ${i + 1}: seleccioná el tipo de trabajo`);
+          if (!t.cantidad || Number(t.cantidad) <= 0) throw new Error(`Trabajo ${i + 1}: la cantidad debe ser mayor a 0`);
+          if (!t.unidadMedida) throw new Error(`Trabajo ${i + 1}: seleccioná la unidad de medida`);
+          if (t.tipo === "OTRO" && !String(t.descripcionOtro || "").trim()) throw new Error(`Trabajo ${i + 1}: ingresá la descripción para tipo "Otro"`);
+        }
+        for (let i = 0; i < serviciosExtrasSubcontratados.length; i++) {
+          const s = serviciosExtrasSubcontratados[i];
+          if (!String(s.descripcion || "").trim()) throw new Error(`Servicio extra ${i + 1}: ingresá la descripción`);
+          if (!s.cantidad || Number(s.cantidad) <= 0) throw new Error(`Servicio extra ${i + 1}: la cantidad debe ser mayor a 0`);
+          if (!s.unidadMedida) throw new Error(`Servicio extra ${i + 1}: seleccioná la unidad de medida`);
+        }
+      }
+
       const response = await fetch(
         isEdit ? `${API_BASE}/admin/eventuales/${encodeURIComponent(id)}` : `${API_BASE}/admin/eventuales`,
         {
@@ -317,6 +370,17 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             observacionesPosteriores: isEdit ? form.observacionesPosteriores : undefined,
             maquinaIds: isEdit ? maquinaIds : undefined,
             vehiculoIds: isEdit ? vehiculoIds : undefined,
+            trabajosRealizados: canEditTrabajosRealizados ? trabajosRealizados.map((t) => ({
+              ...t,
+              label: TIPOS_TRABAJO.find((x) => x.value === t.tipo)?.label || t.tipo,
+              unidadLabel: UNIDADES_MEDIDA.find((x) => x.value === t.unidadMedida)?.label || t.unidadMedida,
+              cantidad: Number(t.cantidad),
+            })) : undefined,
+            serviciosExtrasSubcontratados: canEditTrabajosRealizados ? serviciosExtrasSubcontratados.map((s) => ({
+              ...s,
+              unidadLabel: UNIDADES_MEDIDA.find((x) => x.value === s.unidadMedida)?.label || s.unidadMedida,
+              cantidad: Number(s.cantidad),
+            })) : undefined,
           }),
         }
       );
@@ -329,6 +393,10 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         throw new Error(data.error || "No se pudo guardar el eventual");
       }
 
+      // mark trabajos as saved visually
+      setTrabajosSavedAt(new Date());
+      setSavedFlag(true);
+      setTimeout(() => setSavedFlag(false), 3000);
       setSuccessOpen(true);
     } catch (saveError) {
       console.error(saveError);
@@ -391,6 +459,14 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         </div>
       ) : null}
 
+      {canEditTrabajosRealizados ? (
+        <div className="mb-1 flex items-center gap-3">
+          <span className="flex-1 border-t border-slate-200" />
+          <span className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-extrabold uppercase tracking-widest text-slate-600 md:text-base">Información del eventual</span>
+          <span className="flex-1 border-t border-slate-200" />
+        </div>
+      ) : null}
+
       <div className="rounded-2xl bg-white p-4 shadow space-y-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
@@ -432,7 +508,17 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Estado</label>
-            <select className="w-full rounded-xl border p-3 text-sm" value={form.estado} onChange={(event) => updateField("estado", event.target.value)}>
+            <select
+              className={`w-full rounded-xl border-2 p-3.5 text-base font-bold uppercase shadow-sm transition ${
+                String(form.estado) === "finalizado"
+                  ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                  : String(form.estado) === "cancelado"
+                    ? "border-rose-500 bg-rose-50 text-rose-800"
+                    : "border-blue-500 bg-blue-50 text-blue-800"
+              }`}
+              value={form.estado}
+              onChange={(event) => updateField("estado", event.target.value)}
+            >
               {ESTADOS.map((estado) => (
                 <option key={estado} value={estado}>{estado}</option>
               ))}
@@ -619,14 +705,6 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           </div>
         ) : null}
 
-        <div className="flex flex-wrap justify-end gap-2">
-          <button onClick={() => navigate(-1)} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700">
-            Cancelar
-          </button>
-          <button onClick={save} disabled={saving || (kitNoDisponiblePorUso && !isCoordinador) || hasInvalidDateRange()} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">
-            {saving ? "Guardando..." : isCoordinadorFinalizacion ? "Guardar información complementaria" : isEdit ? "Guardar correccion" : "Crear eventual"}
-          </button>
-        </div>
       </div>
 
       {isEdit && form.kitId && componentesModalOpen ? (
@@ -804,12 +882,214 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         hideCancel={true}
       />
 
-      {isCoordinadorFinalizacion ? (
-        <div className="mt-6 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-4">
-          <h2 className="text-base font-semibold text-slate-900">Sección 2 · Información complementaria</h2>
-          <p className="mt-1 text-sm text-slate-600">Esta sección se desarrollará más adelante.</p>
-        </div>
+      {canEditTrabajosRealizados ? (
+        <>
+          <div className="mt-4 flex items-center gap-3">
+                    <span className="flex-1 border-t border-slate-200" />
+                    <span className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-extrabold uppercase tracking-widest text-slate-600 md:text-base">Información de los trabajos realizados</span>
+                    <span className="flex-1 border-t border-slate-200" />
+          </div>
+
+          <div className="rounded-2xl bg-white p-4 shadow space-y-6">
+
+                    {/* ── Trabajos realizados ── */}
+                    <div>
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <h2 className="text-base font-semibold text-gray-900">Trabajos realizados</h2>
+                            {trabajosSavedAt ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">✓ Guardado</span>
+                            ) : null}
+                          </div>
+                          {form.estado === "finalizado" ? (
+                            <p className="text-xs text-gray-500">Obligatorio al finalizar. Cargá al menos un renglón.</p>
+                          ) : (
+                            <p className="text-xs text-gray-500">Opcional si el eventual se cancela.</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setTrabajosRealizados((prev) => [...prev, emptyTrabajo()])}
+                          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
+                        >
+                          + Agregar trabajo
+                        </button>
+                      </div>
+
+                      {trabajosRealizados.length === 0 ? (
+                        <p className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500">
+                          No hay trabajos cargados. Hacé clic en "Agregar trabajo" para empezar.
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          {trabajosRealizados.map((trabajo, idx) => (
+                            <div key={idx} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Trabajo {idx + 1}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setTrabajosRealizados((prev) => prev.filter((_, i) => i !== idx))}
+                                  className="rounded-lg border border-rose-200 px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+
+                              <div className="grid gap-3 md:grid-cols-3">
+                                <div>
+                                  <label className="mb-1 block text-xs font-medium text-gray-700">Tipo de trabajo</label>
+                                  <select
+                                    className="w-full rounded-xl border p-2.5 text-sm"
+                                    value={trabajo.tipo}
+                                    onChange={(e) => {
+                                      const tipo = e.target.value;
+                                      setTrabajosRealizados((prev) => prev.map((item, i) => i === idx ? { ...item, tipo, descripcionOtro: tipo !== "OTRO" ? "" : item.descripcionOtro } : item));
+                                    }}
+                                  >
+                                    <option value="">Seleccionar tipo...</option>
+                                    {TIPOS_TRABAJO.map((t) => (
+                                      <option key={t.value} value={t.value}>{t.label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="mb-1 block text-xs font-medium text-gray-700">Cantidad</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    className="w-full rounded-xl border p-2.5 text-sm"
+                                    value={trabajo.cantidad}
+                                    onChange={(e) => setTrabajosRealizados((prev) => prev.map((item, i) => i === idx ? { ...item, cantidad: e.target.value } : item))}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="mb-1 block text-xs font-medium text-gray-700">Unidad de medida</label>
+                                  <select
+                                    className="w-full rounded-xl border p-2.5 text-sm"
+                                    value={trabajo.unidadMedida}
+                                    onChange={(e) => setTrabajosRealizados((prev) => prev.map((item, i) => i === idx ? { ...item, unidadMedida: e.target.value } : item))}
+                                  >
+                                    <option value="">Seleccionar unidad...</option>
+                                    {UNIDADES_MEDIDA.map((u) => (
+                                      <option key={u.value} value={u.value}>{u.label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+
+                              {trabajo.tipo === "OTRO" ? (
+                                <div>
+                                  <label className="mb-1 block text-xs font-medium text-gray-700">Descripción del trabajo (obligatoria)</label>
+                                  <input
+                                    type="text"
+                                    className="w-full rounded-xl border p-2.5 text-sm"
+                                    placeholder="Describí brevemente el trabajo realizado..."
+                                    value={trabajo.descripcionOtro}
+                                    onChange={(e) => setTrabajosRealizados((prev) => prev.map((item, i) => i === idx ? { ...item, descripcionOtro: e.target.value } : item))}
+                                  />
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Servicios extras subcontratados ── */}
+                    <div className="border-t border-slate-100 pt-5">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h2 className="text-base font-semibold text-gray-900">Servicios extras subcontratados</h2>
+                          <p className="text-xs text-gray-500">Opcional. Si cargás un renglón, debe estar completo.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setServiciosExtrasSubcontratados((prev) => [...prev, emptyServicioExtra()])}
+                          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                        >
+                          + Agregar servicio extra
+                        </button>
+                      </div>
+
+                      {serviciosExtrasSubcontratados.length === 0 ? (
+                        <p className="rounded-xl border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500">
+                          No hay servicios extras cargados.
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          {serviciosExtrasSubcontratados.map((servicio, idx) => (
+                            <div key={idx} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Servicio extra {idx + 1}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setServiciosExtrasSubcontratados((prev) => prev.filter((_, i) => i !== idx))}
+                                  className="rounded-lg border border-rose-200 px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+
+                              <div className="grid gap-3 md:grid-cols-3">
+                                <div className="md:col-span-1">
+                                  <label className="mb-1 block text-xs font-medium text-gray-700">Descripción</label>
+                                  <input
+                                    type="text"
+                                    className="w-full rounded-xl border p-2.5 text-sm"
+                                    placeholder="Descripción del servicio..."
+                                    value={servicio.descripcion}
+                                    onChange={(e) => setServiciosExtrasSubcontratados((prev) => prev.map((item, i) => i === idx ? { ...item, descripcion: e.target.value } : item))}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="mb-1 block text-xs font-medium text-gray-700">Cantidad</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    className="w-full rounded-xl border p-2.5 text-sm"
+                                    value={servicio.cantidad}
+                                    onChange={(e) => setServiciosExtrasSubcontratados((prev) => prev.map((item, i) => i === idx ? { ...item, cantidad: e.target.value } : item))}
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="mb-1 block text-xs font-medium text-gray-700">Unidad de medida</label>
+                                  <select
+                                    className="w-full rounded-xl border p-2.5 text-sm"
+                                    value={servicio.unidadMedida}
+                                    onChange={(e) => setServiciosExtrasSubcontratados((prev) => prev.map((item, i) => i === idx ? { ...item, unidadMedida: e.target.value } : item))}
+                                  >
+                                    <option value="">Seleccionar unidad...</option>
+                                    {UNIDADES_MEDIDA.map((u) => (
+                                      <option key={u.value} value={u.value}>{u.label}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+          </div>
+        </>
       ) : null}
+
+      <div className="mt-6 flex flex-wrap justify-end gap-2 rounded-2xl bg-white p-4 shadow">
+        <button onClick={() => navigate(-1)} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700">
+          Cancelar
+        </button>
+        <button onClick={save} disabled={saving || (kitNoDisponiblePorUso && !isCoordinador) || hasInvalidDateRange()} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">
+          {saving ? "Guardando..." : savedFlag ? "Guardado" : isCoordinadorFinalizacion ? "Guardar información complementaria" : isEdit ? "Guardar correccion" : "Crear eventual"}
+        </button>
+      </div>
     </div>
   );
 }
