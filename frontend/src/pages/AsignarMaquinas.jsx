@@ -106,9 +106,17 @@ export default function AsignarMaquinas() {
         setSolicitado(sol);
       });
 
-    fetch(`${API_BASE}/maquinas`)
-      .then((r) => r.json())
-      .then(setMaquinas);
+    Promise.all([
+      fetch(`${API_BASE}/maquinas`).then((r) => r.json()),
+      fetch(`${API_BASE}/vehiculos?conductorUsername=${encodeURIComponent(user.username)}`).then((r) => r.json()),
+    ])
+      .then(([maqs, vehs]) => {
+        const combined = [];
+        if (Array.isArray(maqs)) combined.push(...maqs.map((m) => ({ ...m, esVehiculo: false })));
+        if (Array.isArray(vehs)) combined.push(...vehs.map((v) => ({ ...v, esVehiculo: true })));
+        setMaquinas(combined);
+      })
+      .catch(console.error);
 
     fetch(`${API_BASE}/servicios/usuario/${user.username}`)
       .then(async (r) => {
@@ -129,10 +137,10 @@ export default function AsignarMaquinas() {
   ];
 
   const filtradas = maquinas
-    .filter((m) => {
+      .filter((m) => {
       if (
         ["SUPERVISOR", "DEPOSITO"].includes(pedido.destino) &&
-        !serviciosUsuario.includes(m.servicioId)
+        m.servicioId && !serviciosUsuario.includes(m.servicioId)
       ) {
         return false;
       }
@@ -177,8 +185,8 @@ export default function AsignarMaquinas() {
     const asignadosPorTipo = {};
 
     seleccion.forEach((maquina) => {
-      asignadosPorTipo[maquina.tipo] =
-        (asignadosPorTipo[maquina.tipo] || 0) + 1;
+      const tipoKey = maquina.esVehiculo ? "VEHICULO" : maquina.tipo;
+      asignadosPorTipo[tipoKey] = (asignadosPorTipo[tipoKey] || 0) + 1;
     });
 
     for (const tipo in solicitado) {
@@ -194,7 +202,7 @@ export default function AsignarMaquinas() {
     setAlerta("");
 
     if (seleccion.length === 0) {
-      setAlerta("Debes seleccionar al menos 1 maquina para continuar.");
+      setAlerta("Debes seleccionar al menos 1 recurso para continuar.");
       return;
     }
 
@@ -205,11 +213,15 @@ export default function AsignarMaquinas() {
       return;
     }
 
+    const maquinasSeleccionadas = seleccion.filter(s => !s.esVehiculo).map(s => s.id);
+    const vehiculosSeleccionados = seleccion.filter(s => s.esVehiculo).map(s => s.id);
+
     await fetch(`${API_BASE}/pedidos/${id}/asignar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        asignadas: seleccion.map((maquina) => maquina.id),
+        asignadas: maquinasSeleccionadas,
+        vehiculos: vehiculosSeleccionados,
         justificacion: necesitaJustificacion ? justificacion : null,
         observacion:
           observacion && String(observacion).trim().length > 0
@@ -249,9 +261,9 @@ export default function AsignarMaquinas() {
         ) : (
           <div className="flex flex-wrap gap-2">
             {Object.entries(solicitado).map(([tipo, cantidad]) => {
-              const asignadasTipo = seleccion.filter(
-                (maquina) => maquina.tipo === tipo
-              ).length;
+              const asignadasTipo = tipo === "VEHICULO"
+                ? seleccion.filter((s) => s.esVehiculo).length
+                : seleccion.filter((maquina) => maquina.tipo === tipo).length;
 
               return (
                 <div

@@ -129,9 +129,8 @@ export async function adminGetPedido(req, res) {
       include: {
         supervisor: { select: { username: true } },
         servicio: { select: { nombre: true } },
-        asignadas: {
-          include: { maquina: true },
-        },
+        asignadas: { include: { maquina: true } },
+        vehiculosAsignadas: { include: { vehiculo: true } },
         historial: {
           include: { usuario: { select: { username: true } } },
           orderBy: { fecha: "asc" },
@@ -221,7 +220,7 @@ export async function adminUpdateEstado(req, res) {
 export async function adminUpdatePedido(req, res) {
   try {
     const { id } = req.params;
-    const { usuario, observacion, asignadas, servicioId } = req.body || {};
+    const { usuario, observacion, asignadas, servicioId, vehiculos } = req.body || {};
 
     const admin = await prisma.usuario.findUnique({
       where: { username: usuario },
@@ -232,21 +231,24 @@ export async function adminUpdatePedido(req, res) {
       return res.status(403).json({ error: "No autorizado" });
     }
 
-    if (!Array.isArray(asignadas)) {
-      return res.status(400).json({ error: "asignadas debe ser un array" });
-    }
+    const asignadasIds = Array.isArray(asignadas)
+      ? [...new Set(asignadas.map((item) => String(item || "").trim()).filter(Boolean))]
+      : [];
+
+    const vehiculosIds = Array.isArray(vehiculos)
+      ? [...new Set(vehiculos.map((item) => String(item || "").trim()).filter(Boolean))]
+      : [];
 
     const servicioIdNum = Number(servicioId);
     if (!servicioIdNum) {
       return res.status(400).json({ error: "servicioId es obligatorio" });
     }
 
-    const asignadasIds = [...new Set(asignadas.map((item) => String(item || "").trim()).filter(Boolean))];
-
     const pedido = await prisma.pedido.findUnique({
       where: { id },
       include: {
         asignadas: true,
+        vehiculosAsignadas: true,
       },
     });
 
@@ -276,7 +278,14 @@ export async function adminUpdatePedido(req, res) {
     const maquinasAgregar = asignadasIds.filter((maquinaId) => !actualesSet.has(maquinaId));
     const maquinasQuitar = actualesIds.filter((maquinaId) => !nuevasSet.has(maquinaId));
 
-    if (maquinasAgregar.length > 0) {
+    const actualesVehiculosIds = (pedido.vehiculosAsignadas || []).map((item) => item.vehiculoId);
+    const actualesVehiculosSet = new Set(actualesVehiculosIds);
+    const nuevasVehiculosSet = new Set(vehiculosIds);
+
+    const vehiculosAgregar = vehiculosIds.filter((vehId) => !actualesVehiculosSet.has(vehId));
+    const vehiculosQuitar = actualesVehiculosIds.filter((vehId) => !nuevasVehiculosSet.has(vehId));
+
+      if (maquinasAgregar.length > 0) {
       const maquinasDisponibles = await prisma.maquina.findMany({
         where: { id: { in: maquinasAgregar } },
         select: { id: true, estado: true },
@@ -284,6 +293,38 @@ export async function adminUpdatePedido(req, res) {
 
       if (maquinasDisponibles.length !== maquinasAgregar.length) {
         return res.status(400).json({ error: "Hay máquinas inexistentes en la selección" });
+      }
+
+      if (vehiculosAgregar.length > 0) {
+        const vehiculosExistentes = await prisma.vehiculo.findMany({
+          where: { id: { in: vehiculosAgregar } },
+          select: { id: true },
+        });
+
+        if (vehiculosExistentes.length !== vehiculosAgregar.length) {
+          return res.status(400).json({ error: "Hay vehículos inexistentes en la selección" });
+        }
+
+        const asignacionesActivasVeh = await prisma.pedidoVehiculo.findMany({
+          where: {
+            vehiculoId: { in: vehiculosAgregar },
+            pedidoId: { not: id },
+            pedido: {
+              estado: {
+                notIn: ["CERRADO", "CANCELADO"],
+              },
+            },
+          },
+          select: { vehiculoId: true, pedidoId: true },
+        });
+
+        if (asignacionesActivasVeh.length > 0) {
+          return res.status(409).json({
+            error: `Los siguientes vehículos ya están asignados a otro pedido: ${asignacionesActivasVeh
+              .map((item) => item.vehiculoId)
+              .join(", ")}`,
+          });
+        }
       }
 
       const noDisponibles = maquinasDisponibles.filter((maquina) => maquina.estado !== "disponible");
@@ -319,6 +360,8 @@ export async function adminUpdatePedido(req, res) {
       mensaje: "Pedido editado por administrador",
       maquinasQuitadas: maquinasQuitar,
       maquinasAgregadas: maquinasAgregar,
+      vehiculosQuitadas: vehiculosQuitar,
+      vehiculosAgregadas: vehiculosAgregar,
       servicioAnteriorId: pedido.servicioId,
       servicioNuevoId: servicio.id,
     };
@@ -358,6 +401,19 @@ export async function adminUpdatePedido(req, res) {
         await tx.maquina.updateMany({
           where: { id: { in: maquinasAgregar } },
           data: { estado: "asignada" },
+        });
+      }
+
+      // Vehículos: quitar/crear relaciones en PedidoVehiculo
+      if (vehiculosQuitar.length > 0) {
+        await tx.pedidoVehiculo.deleteMany({
+          where: { pedidoId: id, vehiculoId: { in: vehiculosQuitar } },
+        });
+      }
+
+      if (vehiculosAgregar.length > 0) {
+        await tx.pedidoVehiculo.createMany({
+          data: vehiculosAgregar.map((vehId) => ({ pedidoId: id, vehiculoId: vehId })),
         });
       }
 
@@ -433,6 +489,7 @@ export async function adminDeletePedido(req, res) {
 
       /* 2️⃣ Borrar relaciones */
       await tx.pedidoMaquina.deleteMany({ where: { pedidoId: id } });
+      await tx.pedidoVehiculo.deleteMany({ where: { pedidoId: id } });
       await tx.historialPedido.deleteMany({ where: { pedidoId: id } });
 
       /* 3️⃣ Borrar pedido */

@@ -6,6 +6,8 @@ import { useAuth } from "../context/AuthContext";
 const ESTADOS = [
   { value: "", label: "Todos" },
   { value: "activo", label: "Activo" },
+  { value: "asignada", label: "Prestado (Asignado a pedido)" },
+  { value: "conFaltantes", label: "Con faltantes" },
   { value: "baja", label: "Baja" },
 ];
 
@@ -21,6 +23,7 @@ export default function AdminVehiculos() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("");
+  const [faltanteFiltro, setFaltanteFiltro] = useState("");
   const [empresaFiltro, setEmpresaFiltro] = useState("");
   const [seguroFiltro, setSeguroFiltro] = useState("");
   const [conductorFiltro, setConductorFiltro] = useState("");
@@ -69,7 +72,18 @@ export default function AdminVehiculos() {
   const filtered = useMemo(() => {
     let data = [...vehiculos];
 
-    if (estadoFiltro) data = data.filter((item) => item.estado === estadoFiltro);
+    if (estadoFiltro) {
+      if (estadoFiltro === "conFaltantes") {
+        data = data.filter((item) => item.pedidoActivo?.conFaltantes || item.esFaltante);
+      } else {
+        data = data.filter((item) => item.estado === estadoFiltro);
+      }
+    }
+
+    if (faltanteFiltro) {
+      if (faltanteFiltro === "si") data = data.filter((item) => item.esFaltante);
+      if (faltanteFiltro === "no") data = data.filter((item) => !item.esFaltante);
+    }
     if (empresaFiltro) data = data.filter((item) => item.empresa === empresaFiltro);
     if (seguroFiltro) data = data.filter((item) => String(item.seguro?.id || "") === seguroFiltro);
     if (conductorFiltro) data = data.filter((item) => String(item.conductorActual?.id || "") === conductorFiltro);
@@ -162,6 +176,12 @@ export default function AdminVehiculos() {
             ))}
           </select>
 
+          <select className="rounded-xl border p-2 text-xs" value={faltanteFiltro} onChange={(e) => setFaltanteFiltro(e.target.value)}>
+            <option value="">Todos</option>
+            <option value="si">Faltantes</option>
+            <option value="no">No faltantes</option>
+          </select>
+
           <select className="rounded-xl border p-2 text-xs" value={seguroFiltro} onChange={(e) => setSeguroFiltro(e.target.value)}>
             <option value="">Todos los seguros</option>
             {seguros.map((seguro) => (
@@ -195,6 +215,12 @@ export default function AdminVehiculos() {
                 <p className="text-xs text-gray-500">Póliza: <b>{vehiculo.numeroPoliza || "-"}</b></p>
                 <p className="mt-1 text-xs text-gray-500">Seguro: <b>{vehiculo.seguro?.nombre || "-"}</b></p>
                 <p className="text-xs text-gray-500">Conductor: <b>{vehiculo.conductorActual?.nombre || vehiculo.conductorActual?.username || "Sin asignar"}</b></p>
+                {vehiculo.esFaltante && (
+                  <p className="mt-2 text-xs font-semibold text-red-600">Faltante en pedido(s): {vehiculo.faltantePedidos?.join(", ")}</p>
+                )}
+                {vehiculo.pedidoActivo && (
+                  <p className="mt-2 text-xs text-amber-700">Prestado en pedido <b>{vehiculo.pedidoActivo.id}</b> {vehiculo.pedidoActivo.titular ? `para ${vehiculo.pedidoActivo.titular}` : ''}</p>
+                )}
               </div>
 
               <span className={vehiculo.estado === "activo" ? "rounded-full bg-green-100 px-2 py-1 text-[10px] font-semibold uppercase text-green-700" : "rounded-full bg-gray-200 px-2 py-1 text-[10px] font-semibold uppercase text-gray-600"}>

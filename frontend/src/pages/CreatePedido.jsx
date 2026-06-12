@@ -12,6 +12,7 @@ const MACHINE_TYPES = [
   "MOTOGUADAÑA",
   "CARGADOR",
   "BOMBA DESINFECCION",
+  "VEHICULO",
 ];
 
 export default function CreatePedido() {
@@ -309,7 +310,7 @@ function limpiarSupervisorDestino() {
 
       <h1 className="text-2xl font-bold mb-4">Nuevo pedido</h1>
       <p className="text-sm text-gray-600 mb-4">
-        Seleccioná la cantidad de máquinas que necesitás.
+        Seleccioná la cantidad de máquinas o vehículos que necesitás.
       </p>
 
       {/* DESTINO DEL PEDIDO */}
@@ -587,7 +588,7 @@ function limpiarSupervisorDestino() {
       {/* SERVICIO (BUSCABLE) */}
       <div className="mt-6" ref={comboRef}>
         <label className="block text-sm font-medium mb-1">
-          Servicio donde se utilizarán las máquinas *
+          Servicio donde se utilizarán los recursos *
         </label>
 
         <div className="relative">

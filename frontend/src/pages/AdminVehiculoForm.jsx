@@ -4,7 +4,15 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 
-const ESTADOS = ["activo", "baja"];
+const ESTADOS = [
+  "disponible",
+  "asignada",
+  "no_devuelta",
+  "fuera_servicio",
+  "reparacion",
+  "baja",
+  "activo",
+];
 
 const DATE_FIELDS = [
   { key: "vtoSeguro", label: "Vto. seguro", aplicaKey: "vtoSeguroAplica" },
@@ -266,6 +274,15 @@ export default function AdminVehiculoForm() {
           </button>
         )}
       </div>
+
+      {isEdit && vehiculo?.pedidoActivo && (
+        <div className="mb-4 rounded-lg border-l-4 border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+          <strong>Prestado en pedido {vehiculo.pedidoActivo.id}</strong>
+          {vehiculo.pedidoActivo.conFaltantes ? (
+            <span className="ml-2 text-xs font-medium text-amber-700">· Con faltantes</span>
+          ) : null}
+        </div>
+      )}
 
       {error && <div className="mb-3 rounded-lg bg-red-100 p-3 text-sm text-red-700">{error}</div>}
       {isReadOnly ? <div className="mb-3 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">Modo solo lectura.</div> : null}

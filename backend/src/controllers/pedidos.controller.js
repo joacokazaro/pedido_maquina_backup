@@ -53,12 +53,20 @@ function mapPedidoParaFront(p) {
     itemsSolicitados: safeParse(p.itemsSolicitados, []),
     itemsDevueltos: safeParse(p.itemsDevueltos, []),
 
-    itemsAsignados: (p.asignadas || []).map(a => ({
-      id: a.maquina.id,
-      tipo: a.maquina.tipo,
-      modelo: a.maquina.modelo,
-      serie: a.maquina.serie,
-    })),
+    itemsAsignados: [
+      ...(p.asignadas || []).map(a => ({
+        id: a.maquina.id,
+        tipo: a.maquina.tipo,
+        modelo: a.maquina.modelo,
+        serie: a.maquina.serie,
+      })),
+      ...(p.vehiculosAsignadas || []).map(v => ({
+        id: v.vehiculo.id,
+        tipo: (v.vehiculo.vehiculo || "VEHICULO").toString(),
+        modelo: v.vehiculo.modelo || null,
+        serie: v.vehiculo.patente || null,
+      })),
+    ],
 
     historial: (p.historial || []).map(h => ({
       accion: h.accion,
@@ -245,6 +253,7 @@ if (!asignacion) {
         supervisor: true,
         servicio: true,
         asignadas: { include: { maquina: true } },
+        vehiculosAsignadas: { include: { vehiculo: true } },
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
@@ -347,6 +356,7 @@ export async function solicitarCancelacion(req, res) {
         supervisor: true,
         servicio: true,
         asignadas: { include: { maquina: true } },
+        vehiculosAsignadas: { include: { vehiculo: true } },
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
@@ -379,6 +389,7 @@ export async function getPedidos(req, res) {
       supervisor: true,
       servicio: true,
       asignadas: { include: { maquina: true } },
+      vehiculosAsignadas: { include: { vehiculo: true } },
       historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
     },
     orderBy: { createdAt: "desc" },
@@ -400,6 +411,7 @@ export async function getPedidosSupervisor(req, res) {
       supervisor: true,
       servicio: true,
       asignadas: { include: { maquina: true } },
+      vehiculosAsignadas: { include: { vehiculo: true } },
       historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
     },
     orderBy: { createdAt: "desc" },
@@ -418,6 +430,7 @@ export async function getPedidoById(req, res) {
       supervisor: true,
       servicio: true,
       asignadas: { include: { maquina: true } },
+      vehiculosAsignadas: { include: { vehiculo: true } },
       historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
     },
   });
@@ -462,6 +475,7 @@ export async function actualizarEstadoPedido(req, res) {
         supervisor: true,
         servicio: true,
         asignadas: { include: { maquina: true } },
+        vehiculosAsignadas: { include: { vehiculo: true } },
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
@@ -530,6 +544,7 @@ export async function marcarEntregado(req, res) {
         supervisor: true,
         servicio: true,
         asignadas: { include: { maquina: true } },
+        vehiculosAsignadas: { include: { vehiculo: true } },
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
@@ -569,17 +584,17 @@ export async function marcarEntregado(req, res) {
 export async function asignarMaquinas(req, res) {
   try {
     const { id } = req.params;
-    const { asignadas, justificacion, usuario, observacion } = req.body;
+    const { asignadas, vehiculos = [], justificacion, usuario, observacion } = req.body;
 
     const u = await getUsuarioByUsername(usuario);
     if (!u) return res.status(404).json({ error: "Usuario no encontrado" });
 
-    if (!Array.isArray(asignadas) || asignadas.length === 0)
-      return res.status(400).json({ error: "Debe enviar máquinas" });
+    if ((!Array.isArray(asignadas) || asignadas.length === 0) && (!Array.isArray(vehiculos) || vehiculos.length === 0))
+      return res.status(400).json({ error: "Debe enviar máquinas o vehículos" });
 
     const pedido = await prisma.pedido.findUnique({
       where: { id },
-      include: { asignadas: true },
+      include: { asignadas: true, vehiculosAsignadas: true },
     });
     if (!pedido)
       return res.status(404).json({ error: "Pedido no encontrado" });
@@ -590,14 +605,16 @@ export async function asignarMaquinas(req, res) {
       solicitadoMap[i.tipo] = i.cantidad;
     });
 
-    const maquinas = await prisma.maquina.findMany({
-      where: { id: { in: asignadas } },
-    });
+    const maquinas = Array.isArray(asignadas) && asignadas.length ? await prisma.maquina.findMany({ where: { id: { in: asignadas } } }) : [];
+    const vehiculosArr = Array.isArray(vehiculos) && vehiculos.length ? await prisma.vehiculo.findMany({ where: { id: { in: vehiculos } } }) : [];
 
     const asignadoPorTipo = {};
     maquinas.forEach(m => {
       asignadoPorTipo[m.tipo] = (asignadoPorTipo[m.tipo] || 0) + 1;
     });
+    if (vehiculosArr.length) {
+      asignadoPorTipo['VEHICULO'] = (asignadoPorTipo['VEHICULO'] || 0) + vehiculosArr.length;
+    }
 
     const requiereJustificacion = Object.keys(solicitadoMap).some(
       t => (asignadoPorTipo[t] || 0) !== solicitadoMap[t]
@@ -608,20 +625,23 @@ export async function asignarMaquinas(req, res) {
 
     const pedidoActualizado = await prisma.$transaction(async tx => {
       await tx.pedidoMaquina.deleteMany({ where: { pedidoId: id } });
+      await tx.pedidoVehiculo.deleteMany({ where: { pedidoId: id } });
 
-     for (const mid of asignadas) {
-  await tx.pedidoMaquina.create({
-    data: {
-      pedidoId: id,
-      maquinaId: mid,
-    },
-  });
-}
+      for (const mid of (asignadas || [])) {
+        await tx.pedidoMaquina.create({ data: { pedidoId: id, maquinaId: mid } });
+      }
 
-      await tx.maquina.updateMany({
-        where: { id: { in: asignadas } },
-        data: { estado: "asignada" },
-      });
+      for (const vid of (vehiculos || [])) {
+        await tx.pedidoVehiculo.create({ data: { pedidoId: id, vehiculoId: vid } });
+      }
+
+      if (asignadas && asignadas.length) {
+        await tx.maquina.updateMany({ where: { id: { in: asignadas } }, data: { estado: "asignada" } });
+      }
+
+      // No actualizar `vehiculo.estado` aquí: mantenemos `Vehiculo.estado` como
+      // campo administrativo (activo/baja). La asignación queda representada
+      // por `PedidoVehiculo`.
 
       return tx.pedido.update({
         where: { id },
@@ -644,6 +664,7 @@ export async function asignarMaquinas(req, res) {
           supervisor: true,
           servicio: true,
           asignadas: { include: { maquina: true } },
+          vehiculosAsignadas: { include: { vehiculo: true } },
           historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
         },
       });
@@ -691,12 +712,14 @@ export async function registrarDevolucion(req, res) {
 
     const pedido = await prisma.pedido.findUnique({
       where: { id },
-      include: { asignadas: true },
+      include: { asignadas: true, vehiculosAsignadas: true },
     });
     if (!pedido)
       return res.status(404).json({ error: "Pedido no encontrado" });
 
-    const asignadasIds = pedido.asignadas.map(a => a.maquinaId);
+    const asignadasMaquinasIds = pedido.asignadas.map(a => a.maquinaId);
+    const asignadasVehiculosIds = (pedido.vehiculosAsignadas || []).map(a => a.vehiculoId);
+    const asignadasIds = [...asignadasMaquinasIds, ...asignadasVehiculosIds];
     const faltantes = asignadasIds.filter(idm => !devueltas.includes(idm));
 
     if (faltantes.length > 0 && !justificacion)
@@ -791,7 +814,7 @@ export async function confirmarDevolucion(req, res) {
 
     const pedidoActual = await prisma.pedido.findUnique({
       where: { id },
-      include: { asignadas: true },
+      include: { asignadas: true, vehiculosAsignadas: true },
     });
     if (!pedidoActual)
       return res.status(404).json({ error: "Pedido no encontrado" });
@@ -812,27 +835,32 @@ export async function confirmarDevolucion(req, res) {
       });
     }
 
-    const asignadasIds = pedidoActual.asignadas.map((a) => a.maquinaId);
-    const todasValidas = [...devueltas, ...faltantes].every((maquinaId) =>
-      asignadasIds.includes(maquinaId)
+    const asignadasMaquinasIds = pedidoActual.asignadas.map((a) => a.maquinaId);
+    const asignadasVehiculosIds = (pedidoActual.vehiculosAsignadas || []).map((a) => a.vehiculoId);
+    const todasValidas = [...devueltas, ...faltantes].every((itemId) =>
+      asignadasMaquinasIds.includes(itemId) || asignadasVehiculosIds.includes(itemId)
     );
 
     if (!todasValidas) {
-      return res.status(400).json({ error: "Hay máquinas que no pertenecen al pedido" });
+      return res.status(400).json({ error: "Hay máquinas o vehículos que no pertenecen al pedido" });
     }
 
-    await prisma.$transaction(async tx => {
-      if (devueltas.length)
-        await tx.maquina.updateMany({
-          where: { id: { in: devueltas } },
-          data: { estado: "disponible" },
-        });
+    const devueltasMaquinas = devueltas.filter((id) => asignadasMaquinasIds.includes(id));
+    const devueltasVehiculos = devueltas.filter((id) => asignadasVehiculosIds.includes(id));
 
-      if (faltantes.length)
-        await tx.maquina.updateMany({
-          where: { id: { in: faltantes } },
-          data: { estado: "no_devuelta" },
-        });
+    const faltantesMaquinas = faltantes.filter((id) => asignadasMaquinasIds.includes(id));
+    const faltantesVehiculos = faltantes.filter((id) => asignadasVehiculosIds.includes(id));
+
+    await prisma.$transaction(async tx => {
+      if (devueltasMaquinas.length)
+        await tx.maquina.updateMany({ where: { id: { in: devueltasMaquinas } }, data: { estado: "disponible" } });
+
+      if (faltantesMaquinas.length)
+        await tx.maquina.updateMany({ where: { id: { in: faltantesMaquinas } }, data: { estado: "no_devuelta" } });
+
+      // No modificamos `vehiculo.estado` al confirmar devoluciones; la
+      // información de devolución/pendientes queda en el `Pedido` y en
+      // `PedidoVehiculo`/`PedidoMaquina`.
     });
 
     const pedido = await prisma.pedido.update({
@@ -861,6 +889,7 @@ export async function confirmarDevolucion(req, res) {
         supervisor: true,
         servicio: true,
         asignadas: { include: { maquina: true } },
+        vehiculosAsignadas: { include: { vehiculo: true } },
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
@@ -941,6 +970,7 @@ export async function completarFaltantes(req, res) {
         supervisor: true,
         servicio: true,
         asignadas: { include: { maquina: true } },
+        vehiculosAsignadas: { include: { vehiculo: true } },
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
     });
@@ -1038,6 +1068,7 @@ export async function getPrestamosSupervisor(req, res) {
         supervisor: true, // quien pidió
         servicio: true,
         asignadas: { include: { maquina: true } },
+        vehiculosAsignadas: { include: { vehiculo: true } },
         historial: { include: { usuario: true }, orderBy: { fecha: "asc" } },
       },
       orderBy: { createdAt: "desc" },

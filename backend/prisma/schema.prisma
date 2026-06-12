@@ -105,6 +105,7 @@ model Vehiculo {
   conductorActual         Usuario?             @relation("ConductorActualVehiculo", fields: [conductorActualId], references: [id])
   historialAsignaciones   VehiculoAsignacion[]
   kits                    KitVehiculo[]
+  asignacionesPedido      PedidoVehiculo[]
 }
 
 model Kit {
@@ -215,6 +216,7 @@ model Pedido {
   // Relaciones
   historial  HistorialPedido[]
   asignadas  PedidoMaquina[]
+  vehiculosAsignadas PedidoVehiculo[]
   servicio   Servicio @relation(fields: [servicioId], references: [id])
   supervisor Usuario  @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
   notificaciones Notificacion[]
@@ -230,6 +232,17 @@ model PedidoMaquina {
   maquina Maquina @relation(fields: [maquinaId], references: [id])
 
   @@unique([pedidoId, maquinaId])
+}
+
+model PedidoVehiculo {
+  id         Int      @id @default(autoincrement())
+  pedidoId   String
+  vehiculoId String
+
+  pedido   Pedido   @relation(fields: [pedidoId], references: [id])
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id])
+
+  @@unique([pedidoId, vehiculoId])
 }
 
 model HistorialPedido {

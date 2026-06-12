@@ -62,6 +62,9 @@ export default function AdminVehiculoHistorial() {
               <p><span className="font-semibold">ID:</span> {vehiculo.id}</p>
               <p><span className="font-semibold">Patente:</span> {vehiculo.patente}</p>
               <p><span className="font-semibold">Empresa:</span> {vehiculo.empresa}</p>
+              {vehiculo.pedidoActivo ? (
+                <p className="col-span-2 text-amber-700">Prestado en pedido <b>{vehiculo.pedidoActivo.id}</b>{vehiculo.pedidoActivo.conFaltantes ? ' · Con faltantes' : ''}</p>
+              ) : null}
             </div>
           )}
         </div>

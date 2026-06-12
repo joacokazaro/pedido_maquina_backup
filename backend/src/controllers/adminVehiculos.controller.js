@@ -1,7 +1,49 @@
 import prisma from "../db/prisma.js";
 import xlsx from "xlsx";
 
-const ESTADOS_VEHICULO_VALIDOS = ["activo", "baja"];
+function computeFaltantesFinalesFromHistorial(historial) {
+  if (!Array.isArray(historial) || historial.length === 0) return [];
+
+  const faltantes = new Set();
+  const devueltas = new Set();
+
+  for (const h of historial) {
+    if (!h || !h.detalle) continue;
+    let d = null;
+    try {
+      d = typeof h.detalle === "string" ? JSON.parse(h.detalle) : h.detalle;
+    } catch (e) {
+      d = null;
+    }
+    const f = d?.faltantes || d?.faltantesConfirmados || [];
+    const dv = [].concat(d?.devueltas || [], d?.devueltasConfirmadas || [], d?.devueltasDeclaradas || []);
+
+    if (Array.isArray(f)) {
+      for (const id of f) if (id) faltantes.add(String(id));
+    }
+
+    if (Array.isArray(dv)) {
+      for (const id of dv) if (id) devueltas.add(String(id));
+    }
+  }
+
+  // quitar devueltas
+  for (const id of devueltas) {
+    if (faltantes.has(id)) faltantes.delete(id);
+  }
+
+  return Array.from(faltantes);
+}
+
+const ESTADOS_VEHICULO_VALIDOS = [
+  "disponible",
+  "asignada",
+  "no_devuelta",
+  "fuera_servicio",
+  "reparacion",
+  "baja",
+  "activo",
+];
 
 function normalizeString(value) {
   if (value === null || value === undefined) return "";
@@ -14,8 +56,13 @@ function normalizeNullableString(value) {
 }
 
 function normalizeEstadoVehiculo(value) {
-  const normalized = normalizeString(value).toLowerCase();
-  return ESTADOS_VEHICULO_VALIDOS.includes(normalized) ? normalized : "activo";
+  const v = normalizeString(value).toLowerCase();
+  if (ESTADOS_VEHICULO_VALIDOS.includes(v)) return v;
+  if (v === "no devuelta" || v === "nodevuelta") return "no_devuelta";
+  if (v === "fuera de servicio") return "fuera_servicio";
+  if (v === "en reparacion" || v === "en reparación" || v === "reparación") return "reparacion";
+  if (v === "activo") return "activo";
+  return "disponible";
 }
 
 function normalizeBoolean(value, fallback = false) {
@@ -115,11 +162,32 @@ function parseExcelDate(value) {
 
 function mapVehiculo(vehiculo) {
   const asignacionActual = (vehiculo.historialAsignaciones || []).find((item) => !item.fechaHasta) || null;
+  const asignacionPedido = (vehiculo.asignacionesPedido || [])[0] || null;
+
+  const pedidoActivo = asignacionPedido?.pedido
+    ? {
+        id: asignacionPedido.pedido.id,
+        estado: asignacionPedido.pedido.estado,
+        destino: asignacionPedido.pedido.destino,
+        supervisor: asignacionPedido.pedido.supervisor?.username ?? null,
+        supervisorNombre:
+          asignacionPedido.pedido.supervisor?.nombre ??
+          asignacionPedido.pedido.supervisor?.username ??
+          null,
+        titular: asignacionPedido.pedido.supervisorDestinoUsername ?? null,
+        conFaltantes: false,
+      }
+    : null;
+
+  if (pedidoActivo && asignacionPedido.pedido.historial?.length) {
+    const finales = computeFaltantesFinalesFromHistorial(asignacionPedido.pedido.historial);
+    pedidoActivo.conFaltantes = asignacionPedido.pedido.estado === "CERRADO" && finales.length > 0;
+  }
 
   return {
     id: vehiculo.id,
     empresa: vehiculo.empresa,
-    estado: vehiculo.estado,
+    estado: vehiculo.estado === "baja" ? "baja" : pedidoActivo ? "asignada" : vehiculo.estado,
     vehiculo: vehiculo.vehiculo,
     patente: vehiculo.patente,
     modelo: vehiculo.modelo,
@@ -165,6 +233,7 @@ function mapVehiculo(vehiculo) {
             : null,
         }
       : null,
+    pedidoActivo,
   };
 }
 
@@ -304,11 +373,56 @@ export async function adminGetVehiculos(req, res) {
             },
           },
         },
+        asignacionesPedido: {
+          where: {
+            pedido: { estado: { notIn: ["CERRADO", "CANCELADO"] } },
+          },
+          take: 1,
+          orderBy: { id: "desc" },
+          include: {
+            pedido: {
+              include: {
+                supervisor: { select: { username: true, nombre: true } },
+                historial: {
+                  where: { accion: "DEVOLUCION_CONFIRMADA" },
+                  orderBy: { fecha: "desc" },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: [{ empresa: "asc" }, { vehiculo: "asc" }, { id: "asc" }],
     });
 
-    res.json(vehiculos.map(mapVehiculo));
+    // Buscar pedidos cerrados con devolucion confirmada que contengan faltantes
+    const pedidosCerrados = await prisma.pedido.findMany({
+      where: { estado: "CERRADO" },
+      include: { historial: { orderBy: { fecha: "asc" } } },
+    });
+
+    // Mapear ID de recurso (maquina/vehiculo) -> lista de pedidos donde figura como faltante final
+    const faltanteMap = {};
+    for (const p of pedidosCerrados) {
+      const finales = computeFaltantesFinalesFromHistorial(p.historial || []);
+      if (!finales || finales.length === 0) continue;
+      for (const id of finales) {
+        const key = String(id);
+        faltanteMap[key] = faltanteMap[key] || [];
+        faltanteMap[key].push(p.id);
+      }
+    }
+
+    const resultado = vehiculos.map((v) => {
+      const mapped = mapVehiculo(v);
+      const faltantesPedidos = faltanteMap[String(v.id)] || [];
+      mapped.esFaltante = faltantesPedidos.length > 0;
+      mapped.faltantePedidos = faltantesPedidos;
+      return mapped;
+    });
+
+    res.json(resultado);
   } catch (e) {
     console.error("adminGetVehiculos:", e);
     res.status(500).json({ error: "Error listando vehículos" });
@@ -338,6 +452,14 @@ export async function adminGetVehiculoById(req, res) {
               select: { id: true, username: true, nombre: true },
             },
           },
+        },
+        asignacionesPedido: {
+          where: {
+            pedido: { estado: { notIn: ["CERRADO", "CANCELADO"] } },
+          },
+          take: 1,
+          orderBy: { id: "desc" },
+          include: { pedido: { include: { supervisor: { select: { username: true, nombre: true } }, historial: { orderBy: { fecha: "asc" } } } } },
         },
       },
     });

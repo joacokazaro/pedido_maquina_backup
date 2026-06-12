@@ -17,6 +17,39 @@ const ESTADOS_PEDIDO_ACTIVOS = [
   "PENDIENTE_CANCELACION",
 ];
 
+function computeFaltantesFinalesFromHistorial(historial) {
+  if (!Array.isArray(historial) || historial.length === 0) return [];
+
+  const faltantes = new Set();
+  const devueltas = new Set();
+
+  for (const h of historial) {
+    if (!h || !h.detalle) continue;
+    let d = null;
+    try {
+      d = typeof h.detalle === "string" ? JSON.parse(h.detalle) : h.detalle;
+    } catch (e) {
+      d = null;
+    }
+    const f = d?.faltantes || d?.faltantesConfirmados || [];
+    const dv = [].concat(d?.devueltas || [], d?.devueltasConfirmadas || [], d?.devueltasDeclaradas || []);
+
+    if (Array.isArray(f)) {
+      for (const id of f) if (id) faltantes.add(String(id));
+    }
+
+    if (Array.isArray(dv)) {
+      for (const id of dv) if (id) devueltas.add(String(id));
+    }
+  }
+
+  for (const id of devueltas) {
+    if (faltantes.has(id)) faltantes.delete(id);
+  }
+
+  return Array.from(faltantes);
+}
+
 function mapMaquinaSupervisor(maquina) {
   return {
     id: maquina.id,
@@ -430,13 +463,58 @@ export async function getVehiculosPorSupervisor(req, res) {
             vtoCarnetConductor: true,
           },
         },
+        asignacionesPedido: {
+          where: {
+            pedido: { estado: { notIn: ["CERRADO", "CANCELADO"] } },
+          },
+          take: 1,
+          orderBy: { id: "desc" },
+          include: {
+            pedido: {
+              include: {
+                supervisor: { select: { username: true, nombre: true } },
+                historial: {
+                  where: { accion: "DEVOLUCION_CONFIRMADA" },
+                  orderBy: { fecha: "desc" },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: [{ empresa: "asc" }, { vehiculo: "asc" }, { id: "asc" }],
     });
 
     res.json({
       supervisor: usuario,
-      vehiculos: vehiculos.map(mapVehiculoSupervisor),
+      vehiculos: vehiculos.map((v) => {
+        const mapped = mapVehiculoSupervisor(v);
+        const asignacionPedido = (v.asignacionesPedido || [])[0] || null;
+        if (asignacionPedido && asignacionPedido.pedido) {
+          mapped.pedidoActivo = {
+            id: asignacionPedido.pedido.id,
+            estado: asignacionPedido.pedido.estado,
+            destino: asignacionPedido.pedido.destino,
+            supervisor: asignacionPedido.pedido.supervisor?.username ?? null,
+            supervisorNombre:
+              asignacionPedido.pedido.supervisor?.nombre ??
+              asignacionPedido.pedido.supervisor?.username ??
+              null,
+            titular: asignacionPedido.pedido.supervisorDestinoUsername ?? null,
+          };
+          // detectar faltantes a partir del historial de devolucion (considerando devoluciones posteriores)
+          mapped.pedidoActivo.conFaltantes = false;
+          if (asignacionPedido.pedido.historial?.length) {
+            const finales = computeFaltantesFinalesFromHistorial(asignacionPedido.pedido.historial || []);
+            mapped.pedidoActivo.conFaltantes = asignacionPedido.pedido.estado === "CERRADO" && finales.length > 0;
+          }
+
+          if (mapped.estado !== "baja") mapped.estado = "asignada";
+        }
+
+        return mapped;
+      }),
     });
   } catch (e) {
     console.error("getVehiculosPorSupervisor:", e);

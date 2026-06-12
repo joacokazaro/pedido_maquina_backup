@@ -80,6 +80,7 @@ async function crearAlertasPrestamoProlongado({ io, now = new Date() } = {}) {
         },
       },
       asignadas: { select: { id: true } },
+      vehiculosAsignadas: { select: { id: true } },
       historial: {
         where: { accion: "ENTREGADO" },
         orderBy: { fecha: "desc" },
@@ -108,10 +109,10 @@ async function crearAlertasPrestamoProlongado({ io, now = new Date() } = {}) {
 
     if (existentes.length > 0) continue;
 
-    const cantidadMaquinas = pedido.asignadas.length;
+    const cantidadMaquinas = pedido.asignadas.length + (pedido.vehiculosAsignadas?.length || 0);
     const supervisorDestino =
       pedido.supervisor?.nombre || pedido.supervisor?.username || "supervisor";
-    const mensaje = `Pedido ${pedido.id}: ${cantidadMaquinas} maquina${cantidadMaquinas === 1 ? "" : "s"} entregada${cantidadMaquinas === 1 ? "" : "s"} a ${supervisorDestino} hace ${formatDuracionPrestamo(elapsedMs)}.`;
+    const mensaje = `Pedido ${pedido.id}: ${cantidadMaquinas} item${cantidadMaquinas === 1 ? "" : "s"} entregado${cantidadMaquinas === 1 ? "" : "s"} a ${supervisorDestino} hace ${formatDuracionPrestamo(elapsedMs)}.`;
 
     const notificaciones = await crearNotificacionesParaUsuarios({
       io,

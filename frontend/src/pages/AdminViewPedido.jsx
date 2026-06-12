@@ -39,17 +39,20 @@ export default function AdminViewPedido() {
         if (!maquinasRes.ok) throw new Error("No se pudieron cargar las máquinas");
         if (!serviciosRes.ok) throw new Error("No se pudieron cargar los servicios");
 
-        const [pedidoData, maquinasData, serviciosData] = await Promise.all([
+        const [pedidoData, maquinasData, serviciosData, vehiculosData] = await Promise.all([
           pedidoRes.json(),
           maquinasRes.json(),
           serviciosRes.json(),
+          fetch(`${API_BASE}/admin/vehiculos`).then((r) => r.json()),
         ]);
 
         setPedido(pedidoData);
         setObservacion(pedidoData.observacion || "");
         setServicioId(String(pedidoData.servicioId || ""));
         setSeleccion((pedidoData.itemsAsignados || []).map((item) => item.id));
-        setMaquinas(Array.isArray(maquinasData) ? maquinasData : []);
+        const maquinasArr = Array.isArray(maquinasData) ? maquinasData.map(m => ({ ...m, esVehiculo: false })) : [];
+        const vehiculosArr = Array.isArray(vehiculosData) ? vehiculosData.map(v => ({ ...v, esVehiculo: true, asignacion: v.asignacionActual })) : [];
+        setMaquinas([...maquinasArr, ...vehiculosArr]);
         setServicios(Array.isArray(serviciosData) ? serviciosData : []);
       } catch (err) {
         console.error(err);
@@ -130,6 +133,9 @@ export default function AdminViewPedido() {
     setError("");
 
     try {
+      const maquinasSeleccionadas = seleccion.filter(sid => maquinas.some(m => m.id === sid && !m.esVehiculo));
+      const vehiculosSeleccionadas = seleccion.filter(sid => maquinas.some(m => m.id === sid && m.esVehiculo));
+
       const res = await fetch(`${API_BASE}/admin/pedidos/${encodeURIComponent(id)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -137,7 +143,8 @@ export default function AdminViewPedido() {
           usuario: user.username,
           observacion,
           servicioId: Number(servicioId),
-          asignadas: seleccion,
+          asignadas: maquinasSeleccionadas,
+          vehiculos: vehiculosSeleccionadas,
         }),
       });
 

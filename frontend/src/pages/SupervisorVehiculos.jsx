@@ -6,6 +6,8 @@ import { API_BASE } from "../services/apiBase";
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
   { value: "activo", label: "Activo" },
+  { value: "asignada", label: "Prestado (Asignado a pedido)" },
+  { value: "conFaltantes", label: "Con faltantes" },
   { value: "baja", label: "Baja" },
 ];
 
@@ -51,8 +53,13 @@ export default function SupervisorVehiculos() {
 
   const vehiculos = useMemo(() => {
     let data = Array.isArray(payload?.vehiculos) ? [...payload.vehiculos] : [];
-
-    if (estadoFiltro) data = data.filter((item) => item.estado === estadoFiltro);
+    if (estadoFiltro) {
+      if (estadoFiltro === "conFaltantes") {
+        data = data.filter((item) => item.pedidoActivo?.conFaltantes || item.esFaltante);
+      } else {
+        data = data.filter((item) => item.estado === estadoFiltro);
+      }
+    }
     if (empresaFiltro) data = data.filter((item) => item.empresa === empresaFiltro);
 
     if (search.trim()) {
@@ -110,6 +117,9 @@ export default function SupervisorVehiculos() {
                 <p className="text-xs text-gray-500">Póliza: <b>{vehiculo.numeroPoliza || "-"}</b></p>
                 <p className="text-xs text-gray-500">Seguro: <b>{vehiculo.seguro?.nombre || "-"}</b></p>
                 <p className="text-xs text-gray-500">Tarjeta verde: <b>{vehiculo.tarjetaVerde ? "Tiene" : "No tiene"}</b></p>
+                {vehiculo.pedidoActivo && (
+                  <p className="mt-2 text-xs text-amber-700">Prestado en pedido <b>{vehiculo.pedidoActivo.id}</b> {vehiculo.pedidoActivo.titular ? `para ${vehiculo.pedidoActivo.titular}` : ''}</p>
+                )}
               </div>
 
               <span className={vehiculo.estado === "activo" ? "rounded-full bg-green-100 px-2 py-1 text-[10px] font-semibold uppercase text-green-700" : "rounded-full bg-gray-200 px-2 py-1 text-[10px] font-semibold uppercase text-gray-600"}>

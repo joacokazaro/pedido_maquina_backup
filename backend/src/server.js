@@ -8,6 +8,7 @@ import { Server as IOServer } from "socket.io";
 // ROUTES
 import authRoutes from "./routes/auth.routes.js";
 import maquinasRoutes from "./routes/maquinas.routes.js";
+import vehiculosRoutes from "./routes/vehiculos.routes.js";
 import pedidosRoutes from "./routes/pedidos.routes.js";
 
 import adminMaquinasRoutes from "./routes/adminMaquinas.routes.js";
@@ -49,6 +50,7 @@ app.use("/api", api);
 ======================= */
 api.use("/auth", authRoutes);
 api.use("/maquinas", maquinasRoutes);
+api.use("/vehiculos", vehiculosRoutes);
 api.use("/pedidos", pedidosRoutes);
 api.use("/servicios", serviciosRoutes);
 api.use("/notificaciones", notificacionesRoutes);
