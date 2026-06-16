@@ -35,7 +35,8 @@ model Servicio {
   createdAt DateTime  @default(now())
 
   // Relaciones
-  maquinas     Maquina[]
+  maquinas     Maquina[] @relation("ServicioPrincipalMaquina")
+  maquinasAmortizacion Maquina[] @relation("ServicioAmortizacionMaquina")
   pedidos      Pedido[]
   supervisores UsuarioServicio[]
 }
@@ -67,10 +68,24 @@ model Maquina {
   serie        String?
   estado       String          @default("disponible")
   servicioId   Int
+  fechaCompra  DateTime?
+  proveedorFactura String?
+  empresa      String?
+  anio         Int?
+  amortizacion Int?
+  antiguedad   Int?
+  valorUsadaDolares Float?
+  valorUsadaPesos Float?
+  valorNuevaDolares Float?
+  valorNuevaPesos Float?
+  origenInfo   String?
+  servicioAmortizacionId Int?
+  comentarios  String?
   createdAt    DateTime        @default(now())
 
   // Relaciones
-  servicio     Servicio        @relation(fields: [servicioId], references: [id])
+  servicio     Servicio        @relation("ServicioPrincipalMaquina", fields: [servicioId], references: [id])
+  servicioAmortizacion Servicio? @relation("ServicioAmortizacionMaquina", fields: [servicioAmortizacionId], references: [id])
   asignaciones PedidoMaquina[]
   kits         KitMaquina[]
 }

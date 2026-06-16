@@ -13,6 +13,22 @@ const ESTADOS = [
   "baja"
 ];
 
+const EMPRESAS = ["Pulizia", "Pazar"];
+
+function toDateInputValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
+function toNullableNumber(value) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return null;
+  const num = Number(normalized);
+  return Number.isFinite(num) ? num : null;
+}
+
 function buildTiposOptions(maquinas, tipoActual) {
   return Array.from(
     new Set([...(maquinas || []).map(maquina => maquina.tipo).filter(Boolean), tipoActual].filter(Boolean))
@@ -33,7 +49,20 @@ export default function AdminMaquinaForm() {
     modelo: "",
     serie: "",
     estado: "disponible",
-    servicioId: ""
+    servicioId: "",
+    fechaCompra: "",
+    proveedorFactura: "",
+    empresa: "",
+    anio: "",
+    amortizacion: "",
+    antiguedad: "",
+    valorUsadaDolares: "",
+    valorUsadaPesos: "",
+    valorNuevaDolares: "",
+    valorNuevaPesos: "",
+    origenInfo: "",
+    servicioAmortizacionId: "",
+    comentarios: ""
   });
 
   const [servicios, setServicios] = useState([]);
@@ -68,7 +97,20 @@ export default function AdminMaquinaForm() {
             modelo: data.modelo,
             serie: data.serie || "",
             estado: data.estado,
-            servicioId: data.servicio?.id || ""
+            servicioId: data.servicio?.id || "",
+            fechaCompra: toDateInputValue(data.fechaCompra),
+            proveedorFactura: data.proveedorFactura || "",
+            empresa: data.empresa || "",
+            anio: data.anio ?? "",
+            amortizacion: data.amortizacion ?? "",
+            antiguedad: data.antiguedad ?? "",
+            valorUsadaDolares: data.valorUsadaDolares ?? "",
+            valorUsadaPesos: data.valorUsadaPesos ?? "",
+            valorNuevaDolares: data.valorNuevaDolares ?? "",
+            valorNuevaPesos: data.valorNuevaPesos ?? "",
+            origenInfo: data.origenInfo || "",
+            servicioAmortizacionId: data.servicioAmortizacion?.id || "",
+            comentarios: data.comentarios || ""
           });
           setAsignacion(data.asignacion || null);
           setTipos(buildTiposOptions(maqs, data.tipo));
@@ -137,6 +179,18 @@ export default function AdminMaquinaForm() {
         serie: form.serie,
         estado: form.estado,
         servicioId: form.servicioId ? Number(form.servicioId) : null,
+        fechaCompra: form.fechaCompra || null,
+        proveedorFactura: form.proveedorFactura || null,
+        empresa: form.empresa || null,
+        anio: form.anio === "" ? null : Number(form.anio),
+        amortizacion: form.amortizacion === "" ? null : Number(form.amortizacion),
+        valorUsadaDolares: toNullableNumber(form.valorUsadaDolares),
+        valorUsadaPesos: toNullableNumber(form.valorUsadaPesos),
+        valorNuevaDolares: toNullableNumber(form.valorNuevaDolares),
+        valorNuevaPesos: toNullableNumber(form.valorNuevaPesos),
+        origenInfo: form.origenInfo || null,
+        servicioAmortizacionId: form.servicioAmortizacionId ? Number(form.servicioAmortizacionId) : null,
+        comentarios: form.comentarios || null,
       };
 
       if (!esEdicion) {
@@ -262,6 +316,180 @@ export default function AdminMaquinaForm() {
           <select name="estado" value={form.estado} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
             {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
           </select>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">Datos de compra y valuación</h2>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Fecha de compra</label>
+              <input
+                type="date"
+                name="fechaCompra"
+                value={form.fechaCompra}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Empresa</label>
+              <select
+                name="empresa"
+                value={form.empresa}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              >
+                <option value="">— Seleccionar empresa —</option>
+                {EMPRESAS.map((empresa) => (
+                  <option key={empresa} value={empresa}>{empresa}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Proveedor / N° factura</label>
+              <input
+                name="proveedorFactura"
+                value={form.proveedorFactura}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Año</label>
+              <input
+                type="number"
+                name="anio"
+                value={form.anio}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Antigüedad (años)</label>
+              <input
+                name="antiguedad"
+                value={form.anio === "" ? "" : Math.max(new Date().getFullYear() - Number(form.anio), 0)}
+                disabled
+                className="w-full p-2 rounded-xl border bg-gray-100"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Amortización (int)</label>
+              <input
+                type="number"
+                name="amortizacion"
+                value={form.amortizacion}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio para amortización</label>
+              <select
+                name="servicioAmortizacionId"
+                value={form.servicioAmortizacionId}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              >
+                <option value="">— Sin servicio específico —</option>
+                {servicios.map((s) => (
+                  <option key={s.id} value={s.id}>{s.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor usada (USD)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="valorUsadaDolares"
+                value={form.valorUsadaDolares}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta usada (pesos)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="valorUsadaPesos"
+                value={form.valorUsadaPesos}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta nueva (USD)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="valorNuevaDolares"
+                value={form.valorNuevaDolares}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta nueva (pesos)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="valorNuevaPesos"
+                value={form.valorNuevaPesos}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Origen info</label>
+              <input
+                name="origenInfo"
+                value={form.origenInfo}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Comentarios</label>
+              <textarea
+                name="comentarios"
+                value={form.comentarios}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                rows={3}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+          </div>
         </div>
 
         {!isReadOnly ? (

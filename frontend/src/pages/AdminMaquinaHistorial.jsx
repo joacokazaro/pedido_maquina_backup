@@ -15,6 +15,22 @@ function formatFecha(fecha) {
   });
 }
 
+function formatSoloFecha(fecha) {
+  if (!fecha) return "-";
+  return new Date(fecha).toLocaleDateString("es-AR");
+}
+
+function formatMoneda(valor, currency) {
+  if (valor === null || valor === undefined || valor === "") return "-";
+  const num = Number(valor);
+  if (!Number.isFinite(num)) return "-";
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
 export default function AdminMaquinaHistorial() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -96,6 +112,45 @@ export default function AdminMaquinaHistorial() {
               <p>
                 <span className="font-semibold">Estado:</span> {formatEstado(maquina.estado)}
               </p>
+                <p>
+                  <span className="font-semibold">Fecha compra:</span> {formatSoloFecha(maquina.fechaCompra)}
+                </p>
+                <p>
+                  <span className="font-semibold">Empresa:</span> {maquina.empresa || "-"}
+                </p>
+                <p className="md:col-span-2">
+                  <span className="font-semibold">Proveedor / N° factura:</span> {maquina.proveedorFactura || "-"}
+                </p>
+                <p>
+                  <span className="font-semibold">Año:</span> {maquina.anio ?? "-"}
+                </p>
+                <p>
+                  <span className="font-semibold">Antigüedad:</span> {maquina.antiguedad ?? "-"}
+                </p>
+                <p>
+                  <span className="font-semibold">Amortización:</span> {maquina.amortizacion ?? "-"}
+                </p>
+                <p>
+                  <span className="font-semibold">Servicio amortización:</span> {maquina.servicioAmortizacion?.nombre || "-"}
+                </p>
+                <p>
+                  <span className="font-semibold">Valor usada USD:</span> {formatMoneda(maquina.valorUsadaDolares, "USD")}
+                </p>
+                <p>
+                  <span className="font-semibold">Valor usada ARS:</span> {formatMoneda(maquina.valorUsadaPesos, "ARS")}
+                </p>
+                <p>
+                  <span className="font-semibold">Valor nueva USD:</span> {formatMoneda(maquina.valorNuevaDolares, "USD")}
+                </p>
+                <p>
+                  <span className="font-semibold">Valor nueva ARS:</span> {formatMoneda(maquina.valorNuevaPesos, "ARS")}
+                </p>
+                <p className="md:col-span-2">
+                  <span className="font-semibold">Origen info:</span> {maquina.origenInfo || "-"}
+                </p>
+                <p className="md:col-span-2">
+                  <span className="font-semibold">Comentarios:</span> {maquina.comentarios || "-"}
+                </p>
             </div>
           )}
         </div>

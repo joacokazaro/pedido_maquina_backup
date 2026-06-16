@@ -40,10 +40,20 @@ export default function AdminMaquinas() {
           fetch(`${API_BASE}/admin/maquinas/stock-resumen`)
         ]);
 
-        const maqs = await maqsRes.json();
-        const resumenData = await resumenRes.json();
+        const maqs = await maqsRes.json().catch(() => []);
+        const resumenData = await resumenRes.json().catch(() => null);
 
-        setAllMaquinas(maqs || []);
+        if (!maqsRes.ok) {
+          const msg = maqs?.error || "Error cargando máquinas";
+          throw new Error(msg);
+        }
+
+        if (!resumenRes.ok) {
+          const msg = resumenData?.error || "Error cargando resumen";
+          throw new Error(msg);
+        }
+
+        setAllMaquinas(Array.isArray(maqs) ? maqs : []);
         setResumen(resumenData);
       } catch (e) {
         console.error(e);

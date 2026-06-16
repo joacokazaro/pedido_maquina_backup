@@ -12,6 +12,24 @@ const ESTADOS = [
   "baja",
 ];
 
+function formatFecha(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("es-AR");
+}
+
+function formatMoneda(value, currency) {
+  if (value === null || value === undefined || value === "") return "-";
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "-";
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(num);
+}
+
 export default function SupervisorMaquinaDetalle() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -58,6 +76,19 @@ export default function SupervisorMaquinaDetalle() {
           modelo: maquinaData.modelo,
           serie: maquinaData.serie || "",
           estado: maquinaData.estado,
+          fechaCompra: maquinaData.fechaCompra,
+          proveedorFactura: maquinaData.proveedorFactura,
+          empresa: maquinaData.empresa,
+          anio: maquinaData.anio,
+          amortizacion: maquinaData.amortizacion,
+          antiguedad: maquinaData.antiguedad,
+          valorUsadaDolares: maquinaData.valorUsadaDolares,
+          valorUsadaPesos: maquinaData.valorUsadaPesos,
+          valorNuevaDolares: maquinaData.valorNuevaDolares,
+          valorNuevaPesos: maquinaData.valorNuevaPesos,
+          origenInfo: maquinaData.origenInfo,
+          comentarios: maquinaData.comentarios,
+          servicioAmortizacion: maquinaData.servicioAmortizacion || null,
           servicioOriginal: maquinaSupervisor.servicio || null,
           servicioActual: maquinaSupervisor.servicioActual || maquinaSupervisor.servicio || null,
           pedido: maquinaSupervisor.pedido || null,
@@ -121,23 +152,47 @@ export default function SupervisorMaquinaDetalle() {
           </div>
         )}
 
-        <input value={maquina.id} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
-        <input value={maquina.tipo} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
-        <input value={maquina.modelo} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
-        <input value={maquina.serie} disabled className="w-full p-2 rounded-xl border bg-gray-100" placeholder="Sin serie" />
-        <input
-          value={maquina.servicioOriginal?.nombre || "-"}
-          disabled
-          className="w-full p-2 rounded-xl border bg-gray-100"
-        />
+        <div className="grid gap-2 md:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Código</label>
+            <input value={maquina.id} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
+          </div>
 
-        {maquina.pedido && maquina.servicioActual?.id !== maquina.servicioOriginal?.id && (
-          <input
-            value={maquina.servicioActual?.nombre || "-"}
-            disabled
-            className="w-full p-2 rounded-xl border bg-gray-100"
-          />
-        )}
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
+            <input value={maquina.tipo} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
+            <input value={maquina.modelo} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Serie</label>
+            <input value={maquina.serie} disabled className="w-full p-2 rounded-xl border bg-gray-100" placeholder="Sin serie" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio original</label>
+            <input
+              value={maquina.servicioOriginal?.nombre || "-"}
+              disabled
+              className="w-full p-2 rounded-xl border bg-gray-100"
+            />
+          </div>
+
+          {maquina.pedido && maquina.servicioActual?.id !== maquina.servicioOriginal?.id && (
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio actual</label>
+              <input
+                value={maquina.servicioActual?.nombre || "-"}
+                disabled
+                className="w-full p-2 rounded-xl border bg-gray-100"
+              />
+            </div>
+          )}
+        </div>
 
         <select value={maquina.estado} disabled className="w-full p-2 rounded-xl border bg-gray-100 text-gray-700">
           {ESTADOS.map((estado) => (
@@ -146,6 +201,26 @@ export default function SupervisorMaquinaDetalle() {
             </option>
           ))}
         </select>
+
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">Datos de compra y valuación</h2>
+
+          <div className="grid gap-2 text-xs text-slate-700 md:grid-cols-2">
+            <p><b>Fecha de compra:</b> {formatFecha(maquina.fechaCompra)}</p>
+            <p><b>Empresa:</b> {maquina.empresa || "-"}</p>
+            <p className="md:col-span-2"><b>Proveedor / N° factura:</b> {maquina.proveedorFactura || "-"}</p>
+            <p><b>Año:</b> {maquina.anio ?? "-"}</p>
+            <p><b>Antigüedad:</b> {maquina.antiguedad ?? "-"}</p>
+            <p><b>Amortización:</b> {maquina.amortizacion ?? "-"}</p>
+            <p><b>Servicio amortización:</b> {maquina.servicioAmortizacion?.nombre || "-"}</p>
+            <p><b>Valor usada USD:</b> {formatMoneda(maquina.valorUsadaDolares, "USD")}</p>
+            <p><b>Valor usada ARS:</b> {formatMoneda(maquina.valorUsadaPesos, "ARS")}</p>
+            <p><b>Valor nueva USD:</b> {formatMoneda(maquina.valorNuevaDolares, "USD")}</p>
+            <p><b>Valor nueva ARS:</b> {formatMoneda(maquina.valorNuevaPesos, "ARS")}</p>
+            <p className="md:col-span-2"><b>Origen info:</b> {maquina.origenInfo || "-"}</p>
+            <p className="md:col-span-2"><b>Comentarios:</b> {maquina.comentarios || "-"}</p>
+          </div>
+        </div>
       </div>
     </div>
   );

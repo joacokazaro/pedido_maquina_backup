@@ -16,6 +16,12 @@ const ESTADOS_PEDIDO_INACTIVOS = ["CERRADO", "CANCELADO"];
 
 const MAQUINA_RELATIONS = {
   servicio: true,
+  servicioAmortizacion: {
+    select: {
+      id: true,
+      nombre: true,
+    },
+  },
   asignaciones: {
     where: {
       pedido: {
@@ -81,6 +87,22 @@ function mapMaquinaResponse(m) {
     estado: m.estado,
     servicioId: m.servicioId,
     servicio: m.servicio?.nombre ?? null,
+    fechaCompra: m.fechaCompra,
+    proveedorFactura: m.proveedorFactura,
+    empresa: m.empresa,
+    anio: m.anio,
+    amortizacion: m.amortizacion,
+    antiguedad: m.antiguedad,
+    valorUsadaDolares: m.valorUsadaDolares,
+    valorUsadaPesos: m.valorUsadaPesos,
+    valorNuevaDolares: m.valorNuevaDolares,
+    valorNuevaPesos: m.valorNuevaPesos,
+    origenInfo: m.origenInfo,
+    comentarios: m.comentarios,
+    servicioAmortizacionId: m.servicioAmortizacionId,
+    servicioAmortizacion: m.servicioAmortizacion
+      ? { id: m.servicioAmortizacion.id, nombre: m.servicioAmortizacion.nombre }
+      : null,
     pedidoActivo,
   };
 }

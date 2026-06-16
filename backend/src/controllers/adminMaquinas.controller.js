@@ -15,6 +15,8 @@ const ESTADOS_MAQUINA_VALIDOS = [
   "baja",
 ];
 
+const EMPRESAS_VALIDAS = ["Pulizia", "Pazar"];
+
 /* ========================================================
    NORMALIZAR ESTADO DE MÁQUINA
    (FUENTE ÚNICA DE VERDAD)
@@ -34,6 +36,72 @@ function normalizeEstado(raw) {
     return "reparacion";
 
   return "disponible";
+}
+
+function normalizeEmpresa(raw) {
+  if (raw === undefined || raw === null) return null;
+
+  const value = String(raw).trim();
+  if (!value) return null;
+
+  const match = EMPRESAS_VALIDAS.find(
+    (empresa) => empresa.toLowerCase() === value.toLowerCase()
+  );
+
+  if (!match) {
+    throw new Error(`Empresa inválida. Debe ser una de: ${EMPRESAS_VALIDAS.join(", ")}`);
+  }
+
+  return match;
+}
+
+function parseNullableInt(raw, fieldName) {
+  if (raw === undefined || raw === null || String(raw).trim() === "") return null;
+
+  const value = Number(raw);
+  if (!Number.isInteger(value)) {
+    throw new Error(`${fieldName} debe ser un entero`);
+  }
+
+  return value;
+}
+
+function parseNullableNonNegativeFloat(raw, fieldName) {
+  if (raw === undefined || raw === null || String(raw).trim() === "") return null;
+
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    throw new Error(`${fieldName} debe ser numérico`);
+  }
+
+  if (value < 0) {
+    throw new Error(`${fieldName} no puede ser negativo`);
+  }
+
+  return Math.round(value * 100) / 100;
+}
+
+function parseNullableDate(raw, fieldName) {
+  if (!raw) return null;
+
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`${fieldName} inválida`);
+  }
+
+  return date;
+}
+
+function calcularAntiguedad(anio) {
+  if (anio === null || anio === undefined) return null;
+  const actual = new Date().getFullYear();
+  return Math.max(actual - anio, 0);
+}
+
+function parseNullableString(raw) {
+  if (raw === undefined || raw === null) return null;
+  const value = String(raw).trim();
+  return value === "" ? null : value;
 }
 
 /* ========================================================
@@ -66,6 +134,9 @@ export async function adminGetMaquinas(req, res) {
       where,
       include: {
         servicio: {
+          select: { id: true, nombre: true },
+        },
+        servicioAmortizacion: {
           select: { id: true, nombre: true },
         },
       },
@@ -142,6 +213,9 @@ export async function adminGetMaquinaById(req, res) {
         servicio: {
           select: { id: true, nombre: true },
         },
+        servicioAmortizacion: {
+          select: { id: true, nombre: true },
+        },
       },
     });
 
@@ -194,6 +268,9 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
       where: { id },
       include: {
         servicio: {
+          select: { id: true, nombre: true },
+        },
+        servicioAmortizacion: {
           select: { id: true, nombre: true },
         },
       },
@@ -278,7 +355,20 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
         modelo: maquina.modelo,
         serie: maquina.serie,
         estado: maquina.estado,
+        fechaCompra: maquina.fechaCompra,
+        proveedorFactura: maquina.proveedorFactura,
+        empresa: maquina.empresa,
+        anio: maquina.anio,
+        amortizacion: maquina.amortizacion,
+        antiguedad: maquina.antiguedad,
+        valorUsadaDolares: maquina.valorUsadaDolares,
+        valorUsadaPesos: maquina.valorUsadaPesos,
+        valorNuevaDolares: maquina.valorNuevaDolares,
+        valorNuevaPesos: maquina.valorNuevaPesos,
+        origenInfo: maquina.origenInfo,
+        comentarios: maquina.comentarios,
         servicio: maquina.servicio,
+        servicioAmortizacion: maquina.servicioAmortizacion,
       },
       pedidos: asignaciones.map((asignacion) => ({
         id: asignacion.pedido.id,
@@ -302,7 +392,26 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
 ======================================================== */
 export async function adminCreateMaquina(req, res) {
   try {
-    const { id, tipo, modelo, serie, estado, servicioId } = req.body || {};
+    const {
+      id,
+      tipo,
+      modelo,
+      serie,
+      estado,
+      servicioId,
+      fechaCompra,
+      proveedorFactura,
+      empresa,
+      anio,
+      amortizacion,
+      valorUsadaDolares,
+      valorUsadaPesos,
+      valorNuevaDolares,
+      valorNuevaPesos,
+      origenInfo,
+      servicioAmortizacionId,
+      comentarios,
+    } = req.body || {};
 
     if (!id || !tipo || !modelo || !servicioId) {
       return res.status(400).json({
@@ -317,6 +426,24 @@ export async function adminCreateMaquina(req, res) {
       });
     }
 
+    const empresaNormalizada = normalizeEmpresa(empresa);
+    const anioParsed = parseNullableInt(anio, "Año");
+    const amortizacionParsed = parseNullableInt(amortizacion, "Amortización");
+    const antiguedadCalculada = calcularAntiguedad(anioParsed);
+    const servicioAmortizacionIdParsed =
+      servicioAmortizacionId !== undefined &&
+      servicioAmortizacionId !== null &&
+      String(servicioAmortizacionId).trim() !== ""
+        ? Number(servicioAmortizacionId)
+        : null;
+
+    if (
+      servicioAmortizacionIdParsed !== null &&
+      (!Number.isInteger(servicioAmortizacionIdParsed) || servicioAmortizacionIdParsed <= 0)
+    ) {
+      return res.status(400).json({ error: "servicioAmortizacionId inválido" });
+    }
+
     const nueva = await prisma.maquina.create({
       data: {
         id: String(id),
@@ -328,6 +455,19 @@ export async function adminCreateMaquina(req, res) {
             : null,
         estado: normalizeEstado(estado),
         servicioId: Number(servicioId),
+        fechaCompra: parseNullableDate(fechaCompra, "Fecha de compra"),
+        proveedorFactura: parseNullableString(proveedorFactura),
+        empresa: empresaNormalizada,
+        anio: anioParsed,
+        amortizacion: amortizacionParsed,
+        antiguedad: antiguedadCalculada,
+        valorUsadaDolares: parseNullableNonNegativeFloat(valorUsadaDolares, "Valor usada en dólares"),
+        valorUsadaPesos: parseNullableNonNegativeFloat(valorUsadaPesos, "Valor herramienta usada en pesos"),
+        valorNuevaDolares: parseNullableNonNegativeFloat(valorNuevaDolares, "Valor herramienta nueva en dólares"),
+        valorNuevaPesos: parseNullableNonNegativeFloat(valorNuevaPesos, "Valor herramienta nueva en pesos"),
+        origenInfo: parseNullableString(origenInfo),
+        servicioAmortizacionId: servicioAmortizacionIdParsed,
+        comentarios: parseNullableString(comentarios),
       },
     });
 
@@ -337,6 +477,9 @@ export async function adminCreateMaquina(req, res) {
     });
   } catch (e) {
     console.error("adminCreateMaquina:", e);
+    if (e.message?.includes("debe ser") || e.message?.includes("inválida") || e.message?.includes("negativo")) {
+      return res.status(400).json({ error: e.message });
+    }
     res.status(500).json({ error: "Error creando máquina" });
   }
 }
@@ -347,11 +490,45 @@ export async function adminCreateMaquina(req, res) {
 export async function adminUpdateMaquina(req, res) {
   try {
     const { id } = req.params;
-    const { tipo, modelo, serie, estado, servicioId } = req.body || {};
+    const {
+      tipo,
+      modelo,
+      serie,
+      estado,
+      servicioId,
+      fechaCompra,
+      proveedorFactura,
+      empresa,
+      anio,
+      amortizacion,
+      valorUsadaDolares,
+      valorUsadaPesos,
+      valorNuevaDolares,
+      valorNuevaPesos,
+      origenInfo,
+      servicioAmortizacionId,
+      comentarios,
+    } = req.body || {};
 
     const existe = await prisma.maquina.findUnique({ where: { id } });
     if (!existe) {
       return res.status(404).json({ error: "Máquina no encontrada" });
+    }
+
+    const anioParsed =
+      anio !== undefined ? parseNullableInt(anio, "Año") : existe.anio;
+    const servicioAmortizacionIdParsed =
+      servicioAmortizacionId !== undefined
+        ? servicioAmortizacionId === null || String(servicioAmortizacionId).trim() === ""
+          ? null
+          : Number(servicioAmortizacionId)
+        : existe.servicioAmortizacionId;
+
+    if (
+      servicioAmortizacionIdParsed !== null &&
+      (!Number.isInteger(servicioAmortizacionIdParsed) || servicioAmortizacionIdParsed <= 0)
+    ) {
+      return res.status(400).json({ error: "servicioAmortizacionId inválido" });
     }
 
     const actualizada = await prisma.maquina.update({
@@ -383,6 +560,62 @@ export async function adminUpdateMaquina(req, res) {
           servicioId !== undefined
             ? Number(servicioId)
             : existe.servicioId,
+
+        fechaCompra:
+          fechaCompra !== undefined
+            ? parseNullableDate(fechaCompra, "Fecha de compra")
+            : existe.fechaCompra,
+
+        proveedorFactura:
+          proveedorFactura !== undefined
+            ? parseNullableString(proveedorFactura)
+            : existe.proveedorFactura,
+
+        empresa:
+          empresa !== undefined
+            ? normalizeEmpresa(empresa)
+            : existe.empresa,
+
+        anio: anioParsed,
+
+        amortizacion:
+          amortizacion !== undefined
+            ? parseNullableInt(amortizacion, "Amortización")
+            : existe.amortizacion,
+
+        antiguedad: calcularAntiguedad(anioParsed),
+
+        valorUsadaDolares:
+          valorUsadaDolares !== undefined
+            ? parseNullableNonNegativeFloat(valorUsadaDolares, "Valor usada en dólares")
+            : existe.valorUsadaDolares,
+
+        valorUsadaPesos:
+          valorUsadaPesos !== undefined
+            ? parseNullableNonNegativeFloat(valorUsadaPesos, "Valor herramienta usada en pesos")
+            : existe.valorUsadaPesos,
+
+        valorNuevaDolares:
+          valorNuevaDolares !== undefined
+            ? parseNullableNonNegativeFloat(valorNuevaDolares, "Valor herramienta nueva en dólares")
+            : existe.valorNuevaDolares,
+
+        valorNuevaPesos:
+          valorNuevaPesos !== undefined
+            ? parseNullableNonNegativeFloat(valorNuevaPesos, "Valor herramienta nueva en pesos")
+            : existe.valorNuevaPesos,
+
+        origenInfo:
+          origenInfo !== undefined
+            ? parseNullableString(origenInfo)
+            : existe.origenInfo,
+
+        servicioAmortizacionId: servicioAmortizacionIdParsed,
+
+        comentarios:
+          comentarios !== undefined
+            ? parseNullableString(comentarios)
+            : existe.comentarios,
       },
     });
 
@@ -392,6 +625,9 @@ export async function adminUpdateMaquina(req, res) {
     });
   } catch (e) {
     console.error("adminUpdateMaquina:", e);
+    if (e.message?.includes("debe ser") || e.message?.includes("inválida") || e.message?.includes("negativo")) {
+      return res.status(400).json({ error: e.message });
+    }
     res.status(500).json({ error: "Error actualizando máquina" });
   }
 }
@@ -516,6 +752,9 @@ export async function adminExportMaquinas(req, res) {
         servicio: {
           select: { id: true, nombre: true },
         },
+        servicioAmortizacion: {
+          select: { id: true, nombre: true },
+        },
       },
       orderBy: [{ tipo: "asc" }, { id: "asc" }],
     });
@@ -567,6 +806,19 @@ export async function adminExportMaquinas(req, res) {
       "Serie",
       "Estado",
       "Servicio Original",
+      "Fecha compra",
+      "Proveedor/N factura",
+      "Empresa",
+      "Año",
+      "Amortización",
+      "Antigüedad",
+      "Valor usada USD",
+      "Valor usada ARS",
+      "Valor nueva USD",
+      "Valor nueva ARS",
+      "Origen info",
+      "Servicio amortización",
+      "Comentarios",
       "Pedido Activo",
       "Estado Pedido Activo",
       "Destino Pedido Activo",
@@ -583,6 +835,19 @@ export async function adminExportMaquinas(req, res) {
         maquina.serie,
         maquina.estado,
         maquina.servicio?.nombre ?? "",
+        maquina.fechaCompra ? maquina.fechaCompra.toISOString().slice(0, 10) : "",
+        maquina.proveedorFactura ?? "",
+        maquina.empresa ?? "",
+        maquina.anio ?? "",
+        maquina.amortizacion ?? "",
+        maquina.antiguedad ?? "",
+        maquina.valorUsadaDolares ?? "",
+        maquina.valorUsadaPesos ?? "",
+        maquina.valorNuevaDolares ?? "",
+        maquina.valorNuevaPesos ?? "",
+        maquina.origenInfo ?? "",
+        maquina.servicioAmortizacion?.nombre ?? "",
+        maquina.comentarios ?? "",
         asignacion?.id ?? "",
         asignacion?.estado ?? "",
         asignacion?.destino ?? "",
