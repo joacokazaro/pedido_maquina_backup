@@ -3,3 +3,11 @@ node_modules
 .env
 
 /src/generated/prisma
+# SQLite / Prisma local artifacts
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+backend/prisma/prisma/
+backend/prisma/db/
+backend/dev.db
