@@ -104,6 +104,19 @@ function parseNullableString(raw) {
   return value === "" ? null : value;
 }
 
+function mapRutaServicio(item) {
+  return {
+    id: item.id,
+    servicio: item.servicioId
+      ? {
+          id: item.servicioId,
+          nombre: item.servicioNombre,
+        }
+      : null,
+    fechaAsignacion: item.fechaAsignacion,
+  };
+}
+
 /* ========================================================
    GET /admin/maquinas
 ======================================================== */
@@ -226,7 +239,7 @@ export async function adminGetMaquinaById(req, res) {
     // 🔑 Pedido actual (no cerrado) más reciente
     const pedidoActual = await prisma.pedido.findFirst({
       where: {
-        estado: { not: ESTADO_PEDIDO_CERRADO },
+        estado: { notIn: [ESTADO_PEDIDO_CERRADO, "CANCELADO"] },
         asignadas: {
           some: { maquinaId: id },
         },
@@ -348,6 +361,30 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
       ],
     });
 
+    const rutaServiciosRaw = await prisma.$queryRaw`
+      SELECT
+        h.id,
+        h."fechaAsignacion",
+        s.id AS "servicioId",
+        s.nombre AS "servicioNombre"
+      FROM "MaquinaServicioHistorial" h
+      INNER JOIN "Servicio" s ON s.id = h."servicioId"
+      WHERE h."maquinaId" = ${id}
+      ORDER BY h."fechaAsignacion" ASC, h.id ASC
+    `;
+
+    const rutaServicios = rutaServiciosRaw.length
+      ? rutaServiciosRaw.map(mapRutaServicio)
+      : maquina.servicio
+        ? [
+            {
+              id: null,
+              servicio: maquina.servicio,
+              fechaAsignacion: maquina.createdAt,
+            },
+          ]
+        : [];
+
     res.json({
       maquina: {
         id: maquina.id,
@@ -380,6 +417,7 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
         supervisor: asignacion.pedido.supervisor,
       })),
       eventuales,
+      rutaServicios,
     });
   } catch (e) {
     console.error("adminGetPedidosHistoricosByMaquina:", e);
@@ -471,6 +509,11 @@ export async function adminCreateMaquina(req, res) {
       },
     });
 
+    await prisma.$executeRaw`
+      INSERT INTO "MaquinaServicioHistorial" ("maquinaId", "servicioId", "fechaAsignacion")
+      VALUES (${nueva.id}, ${nueva.servicioId}, ${nueva.createdAt})
+    `;
+
     res.status(201).json({
       message: "Máquina creada correctamente",
       maquina: nueva,
@@ -531,6 +574,11 @@ export async function adminUpdateMaquina(req, res) {
       return res.status(400).json({ error: "servicioAmortizacionId inválido" });
     }
 
+    const nuevoServicioId =
+      servicioId !== undefined
+        ? Number(servicioId)
+        : existe.servicioId;
+
     const actualizada = await prisma.maquina.update({
       where: { id },
       data: {
@@ -556,10 +604,7 @@ export async function adminUpdateMaquina(req, res) {
             ? normalizeEstado(estado)
             : existe.estado,
 
-        servicioId:
-          servicioId !== undefined
-            ? Number(servicioId)
-            : existe.servicioId,
+        servicioId: nuevoServicioId,
 
         fechaCompra:
           fechaCompra !== undefined
@@ -618,6 +663,13 @@ export async function adminUpdateMaquina(req, res) {
             : existe.comentarios,
       },
     });
+
+    if (nuevoServicioId !== existe.servicioId) {
+      await prisma.$executeRaw`
+        INSERT INTO "MaquinaServicioHistorial" ("maquinaId", "servicioId")
+        VALUES (${actualizada.id}, ${nuevoServicioId})
+      `;
+    }
 
     res.json({
       message: "Máquina actualizada correctamente",

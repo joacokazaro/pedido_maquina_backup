@@ -537,8 +537,6 @@ export async function adminAprobarCancelacion(req, res) {
         await tx.maquina.updateMany({ where: { id: { in: maquinasIds } }, data: { estado: "disponible" } });
       }
 
-      await tx.pedidoMaquina.deleteMany({ where: { pedidoId: id } });
-
       return tx.pedido.update({
         where: { id },
         data: {

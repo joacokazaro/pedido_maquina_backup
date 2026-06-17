@@ -260,7 +260,7 @@ export default function AdminMaquinaForm() {
             onClick={() => navigate(`/admin/maquinas/${encodeURIComponent(id)}/pedidos-historicos`)}
             className="w-full rounded-xl border border-slate-300 bg-slate-50 py-2.5 font-medium text-slate-700"
           >
-            Pedidos históricos
+            Pedidos y servicios históricos
           </button>
         )}
 

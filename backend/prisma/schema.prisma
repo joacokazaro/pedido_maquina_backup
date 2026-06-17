@@ -37,6 +37,7 @@ model Servicio {
   // Relaciones
   maquinas     Maquina[] @relation("ServicioPrincipalMaquina")
   maquinasAmortizacion Maquina[] @relation("ServicioAmortizacionMaquina")
+  historialMaquinas MaquinaServicioHistorial[]
   pedidos      Pedido[]
   supervisores UsuarioServicio[]
 }
@@ -87,7 +88,21 @@ model Maquina {
   servicio     Servicio        @relation("ServicioPrincipalMaquina", fields: [servicioId], references: [id])
   servicioAmortizacion Servicio? @relation("ServicioAmortizacionMaquina", fields: [servicioAmortizacionId], references: [id])
   asignaciones PedidoMaquina[]
+  historialServicios MaquinaServicioHistorial[]
   kits         KitMaquina[]
+}
+
+model MaquinaServicioHistorial {
+  id              Int      @id @default(autoincrement())
+  maquinaId       String
+  servicioId      Int
+  fechaAsignacion DateTime @default(now())
+
+  maquina  Maquina  @relation(fields: [maquinaId], references: [id])
+  servicio Servicio @relation(fields: [servicioId], references: [id])
+
+  @@index([maquinaId, fechaAsignacion])
+  @@index([servicioId])
 }
 
 model Vehiculo {
