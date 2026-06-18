@@ -2,18 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
-
-const MACHINE_TYPES = [
-  "LUSTRADORA",
-  "SOPLADORA",
-  "HIDROLAVADORA",
-  "LAVADORA",
-  "ASPIRADORA",
-  "MOTOGUADAÑA",
-  "CARGADOR",
-  "BOMBA DESINFECCION",
-  "VEHICULO",
-];
+import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/maquinas";
 
 export default function CreatePedido() {
   const { user } = useAuth();
@@ -23,7 +12,7 @@ export default function CreatePedido() {
      ESTADOS
   ========================== */
   const [cantidades, setCantidades] = useState(
-    MACHINE_TYPES.reduce((acc, tipo) => {
+    REQUEST_RESOURCE_TYPES.reduce((acc, tipo) => {
       acc[tipo] = 0;
       return acc;
     }, {})
@@ -93,9 +82,7 @@ useEffect(() => {
       const res = await fetch(`${API_BASE}/maquinas`);
       const data = await res.json();
       if (Array.isArray(data)) {
-        const tipos = Array.from(new Set(data.map((m) => String(m.tipo || "").trim()).filter(Boolean)));
-        tipos.sort();
-        setAvailableTipos(tipos);
+        setAvailableTipos(buildMachineTypeOptions(data));
       }
     } catch (e) {
       // ignore
@@ -272,7 +259,7 @@ function limpiarSupervisorDestino() {
 
       // reset
       setCantidades(
-        MACHINE_TYPES.reduce((acc, tipo) => {
+        REQUEST_RESOURCE_TYPES.reduce((acc, tipo) => {
           acc[tipo] = 0;
           return acc;
         }, {})
@@ -355,7 +342,7 @@ function limpiarSupervisorDestino() {
 
       {/* MAQUINAS */}
       <div className="space-y-4">
-        {MACHINE_TYPES.map((tipo) => (
+        {REQUEST_RESOURCE_TYPES.map((tipo) => (
           <div
             key={tipo}
             className="bg-white rounded-xl shadow flex items-center justify-between px-4 py-3"

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
+import { buildMachineTypeOptions } from "../constants/maquinas";
 
 const ESTADOS = [
   "disponible",
@@ -27,12 +28,6 @@ function toNullableNumber(value) {
   if (!normalized) return null;
   const num = Number(normalized);
   return Number.isFinite(num) ? num : null;
-}
-
-function buildTiposOptions(maquinas, tipoActual) {
-  return Array.from(
-    new Set([...(maquinas || []).map(maquina => maquina.tipo).filter(Boolean), tipoActual].filter(Boolean))
-  ).sort((a, b) => a.localeCompare(b));
 }
 
 export default function AdminMaquinaForm() {
@@ -113,9 +108,9 @@ export default function AdminMaquinaForm() {
             comentarios: data.comentarios || ""
           });
           setAsignacion(data.asignacion || null);
-          setTipos(buildTiposOptions(maqs, data.tipo));
+          setTipos(buildMachineTypeOptions(maqs, data.tipo));
         } else {
-          setTipos(buildTiposOptions(maqs, ""));
+          setTipos(buildMachineTypeOptions(maqs, ""));
         }
 
         setServicios(await servRes.json());
