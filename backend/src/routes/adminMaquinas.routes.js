@@ -9,14 +9,29 @@ import {
   adminDeleteMaquina,
   adminCambiarEstado,
   adminResumenStock,
-  adminExportMaquinas
+  adminExportMaquinas,
+  adminMoverMaquinasMasivo,
+  adminGetTiposMaquina,
+  adminCreateTipoMaquina,
+  adminUpdateTipoMaquina,
+  adminDeleteTipoMaquina
 } from "../controllers/adminMaquinas.controller.js";
 
 const router = Router();
 
 // LISTADO CON FILTROS
 router.get("/maquinas/export", adminExportMaquinas);
+
+// TIPOS DE MÁQUINA
+router.get("/maquinas/tipos", adminGetTiposMaquina);
+router.post("/maquinas/tipos", adminCreateTipoMaquina);
+router.put("/maquinas/tipos/:tipoId", adminUpdateTipoMaquina);
+router.delete("/maquinas/tipos/:tipoId", adminDeleteTipoMaquina);
+
 router.get("/maquinas", adminGetMaquinas);
+
+// MOVIMIENTOS MASIVOS
+router.post("/maquinas/movimientos-masivos", adminMoverMaquinasMasivo);
 
 // STOCK RESUMEN
 router.get("/maquinas/stock-resumen", adminResumenStock);

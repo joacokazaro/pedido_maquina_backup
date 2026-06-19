@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
-import { buildMachineTypeOptions } from "../constants/maquinas";
 
 const ESTADOS = [
   "disponible",
@@ -74,15 +73,18 @@ export default function AdminMaquinaForm() {
         setLoading(true);
         setError("");
 
-        const [maqRes, servRes, maqsRes] = await Promise.all([
+        const [maqRes, servRes, tiposRes] = await Promise.all([
           esEdicion
             ? fetch(`${API_BASE}/admin/maquinas/${encodeURIComponent(id)}`)
             : Promise.resolve(null),
           fetch(`${API_BASE}/servicios`),
-          fetch(`${API_BASE}/admin/maquinas`)
+          fetch(`${API_BASE}/admin/maquinas/tipos`)
         ]);
 
-        const maqs = await maqsRes.json();
+        const tiposData = await tiposRes.json().catch(() => []);
+        const nombresTipos = Array.isArray(tiposData)
+          ? tiposData.map((tipo) => String(tipo.nombre || "").trim()).filter(Boolean)
+          : [];
 
         if (esEdicion) {
           const data = await maqRes.json();
@@ -108,9 +110,9 @@ export default function AdminMaquinaForm() {
             comentarios: data.comentarios || ""
           });
           setAsignacion(data.asignacion || null);
-          setTipos(buildMachineTypeOptions(maqs, data.tipo));
+          setTipos(Array.from(new Set([...nombresTipos, data.tipo].filter(Boolean))).sort());
         } else {
-          setTipos(buildMachineTypeOptions(maqs, ""));
+          setTipos(nombresTipos.sort());
         }
 
         setServicios(await servRes.json());

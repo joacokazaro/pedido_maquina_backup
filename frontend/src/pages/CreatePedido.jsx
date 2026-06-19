@@ -79,6 +79,17 @@ const comboSupRef = useRef(null);
 useEffect(() => {
   async function loadTipos() {
     try {
+      const res = await fetch(`${API_BASE}/admin/maquinas/tipos`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setAvailableTipos(data.map((tipo) => tipo.nombre).filter(Boolean));
+        return;
+      }
+    } catch (e) {
+      // fallback abajo
+    }
+
+    try {
       const res = await fetch(`${API_BASE}/maquinas`);
       const data = await res.json();
       if (Array.isArray(data)) {

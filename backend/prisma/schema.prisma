@@ -92,11 +92,18 @@ model Maquina {
   kits         KitMaquina[]
 }
 
+model TipoMaquina {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  createdAt DateTime @default(now())
+}
+
 model MaquinaServicioHistorial {
   id              Int      @id @default(autoincrement())
   maquinaId       String
   servicioId      Int
   fechaAsignacion DateTime @default(now())
+  tipoMovimiento  String   @default("individual")
 
   maquina  Maquina  @relation(fields: [maquinaId], references: [id])
   servicio Servicio @relation(fields: [servicioId], references: [id])

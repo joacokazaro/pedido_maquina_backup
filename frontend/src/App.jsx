@@ -46,6 +46,7 @@ import AdminPedidos from "./pages/AdminPedidos";
 import AdminMaquinas from "./pages/AdminMaquinas";
 import AdminMaquinaForm from "./pages/AdminMaquinaForm";
 import AdminMaquinaHistorial from "./pages/AdminMaquinaHistorial";
+import AdminTiposMaquina from "./pages/AdminTiposMaquina";
 import AdminVehiculos from "./pages/AdminVehiculos";
 import AdminVehiculoForm from "./pages/AdminVehiculoForm";
 import AdminVehiculoHistorial from "./pages/AdminVehiculoHistorial";
@@ -429,6 +430,11 @@ function App() {
       <Route
         path="/admin/maquinas/nueva"
         element={renderAdminOnlyPage(<AdminMaquinaForm />)}
+      />
+
+      <Route
+        path="/admin/maquinas/tipos"
+        element={renderReadOnlyModulesPage(<AdminTiposMaquina />)}
       />
 
       <Route

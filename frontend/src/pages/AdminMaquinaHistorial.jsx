@@ -235,9 +235,20 @@ export default function AdminMaquinaHistorial() {
                     className="relative"
                   >
                     <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 shadow-sm">
-                      <p className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-                        {item.servicio?.nombre || "-"}
-                      </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+                          {item.servicio?.nombre || "-"}
+                        </p>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                            item.tipoMovimiento === "masivo"
+                              ? "bg-indigo-100 text-indigo-700"
+                              : "bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          {item.tipoMovimiento === "masivo" ? "Masivo" : "Individual"}
+                        </span>
+                      </div>
                       <p className="mt-1 text-xs text-gray-500">
                         {formatFecha(item.fechaAsignacion)}
                       </p>

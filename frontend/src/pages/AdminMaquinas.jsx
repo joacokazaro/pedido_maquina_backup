@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmModal";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -17,9 +18,11 @@ export default function AdminMaquinas() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const rolUpper = String(user?.rol || "").toUpperCase();
+  const isAdmin = rolUpper === "ADMIN";
   const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
 
   const [allMaquinas, setAllMaquinas] = useState([]);
+  const [servicios, setServicios] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,41 +32,61 @@ export default function AdminMaquinas() {
   const [estadoFiltro, setEstadoFiltro] = useState("");
   const [resumen, setResumen] = useState(null);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        setError("");
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkSearch, setBulkSearch] = useState("");
+  const [bulkTipoFiltro, setBulkTipoFiltro] = useState("");
+  const [bulkEstadoFiltro, setBulkEstadoFiltro] = useState("");
+  const [bulkServicioActualFiltro, setBulkServicioActualFiltro] = useState("");
+  const [bulkServicioDestinoId, setBulkServicioDestinoId] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
 
-        const [maqsRes, resumenRes] = await Promise.all([
-          fetch(`${API_BASE}/admin/maquinas`),
-          fetch(`${API_BASE}/admin/maquinas/stock-resumen`)
-        ]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkSummaryOpen, setBulkSummaryOpen] = useState(false);
+  const [bulkActivosOpen, setBulkActivosOpen] = useState(false);
+  const [bulkSuccessOpen, setBulkSuccessOpen] = useState(false);
+  const [bulkPreview, setBulkPreview] = useState(null);
+  const [bulkResult, setBulkResult] = useState(null);
 
-        const maqs = await maqsRes.json().catch(() => []);
-        const resumenData = await resumenRes.json().catch(() => null);
+  async function loadData() {
+    try {
+      setLoading(true);
+      setError("");
 
-        if (!maqsRes.ok) {
-          const msg = maqs?.error || "Error cargando máquinas";
-          throw new Error(msg);
-        }
+      const [maqsRes, resumenRes, serviciosRes] = await Promise.all([
+        fetch(`${API_BASE}/admin/maquinas`),
+        fetch(`${API_BASE}/admin/maquinas/stock-resumen`),
+        fetch(`${API_BASE}/servicios`),
+      ]);
 
-        if (!resumenRes.ok) {
-          const msg = resumenData?.error || "Error cargando resumen";
-          throw new Error(msg);
-        }
+      const maqs = await maqsRes.json().catch(() => []);
+      const resumenData = await resumenRes.json().catch(() => null);
+      const serviciosData = await serviciosRes.json().catch(() => []);
 
-        setAllMaquinas(Array.isArray(maqs) ? maqs : []);
-        setResumen(resumenData);
-      } catch (e) {
-        console.error(e);
-        setError("Error cargando máquinas");
-      } finally {
-        setLoading(false);
+      if (!maqsRes.ok) {
+        throw new Error(maqs?.error || "Error cargando máquinas");
       }
-    }
 
-    load();
+      if (!resumenRes.ok) {
+        throw new Error(resumenData?.error || "Error cargando resumen");
+      }
+
+      if (!serviciosRes.ok) {
+        throw new Error(serviciosData?.error || "Error cargando servicios");
+      }
+
+      setAllMaquinas(Array.isArray(maqs) ? maqs : []);
+      setResumen(resumenData);
+      setServicios(Array.isArray(serviciosData) ? serviciosData : []);
+    } catch (e) {
+      console.error(e);
+      setError("Error cargando máquinas");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -95,6 +118,155 @@ export default function AdminMaquinas() {
     new Set(allMaquinas.map(m => m.tipo).filter(Boolean))
   ).sort();
 
+  const bulkFiltered = useMemo(() => {
+    let data = [...allMaquinas];
+
+    if (bulkTipoFiltro) data = data.filter((m) => m.tipo === bulkTipoFiltro);
+    if (bulkEstadoFiltro) data = data.filter((m) => m.estado === bulkEstadoFiltro);
+    if (bulkServicioActualFiltro) {
+      data = data.filter((m) => String(m.servicio?.id || "") === String(bulkServicioActualFiltro));
+    }
+
+    if (bulkSearch.trim()) {
+      const q = bulkSearch.toLowerCase();
+      data = data.filter((m) =>
+        m.id?.toLowerCase().includes(q) ||
+        m.tipo?.toLowerCase().includes(q) ||
+        m.modelo?.toLowerCase().includes(q) ||
+        m.serie?.toLowerCase().includes(q) ||
+        m.servicio?.nombre?.toLowerCase().includes(q)
+      );
+    }
+
+    data.sort((a, b) => {
+      const t = (a.tipo || "").localeCompare(b.tipo || "");
+      return t !== 0 ? t : a.id.localeCompare(b.id, undefined, { numeric: true });
+    });
+
+    return data;
+  }, [allMaquinas, bulkTipoFiltro, bulkEstadoFiltro, bulkServicioActualFiltro, bulkSearch]);
+
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  function resetBulkState() {
+    setBulkSearch("");
+    setBulkTipoFiltro("");
+    setBulkEstadoFiltro("");
+    setBulkServicioActualFiltro("");
+    setBulkServicioDestinoId("");
+    setSelectedIds([]);
+    setBulkPreview(null);
+    setBulkResult(null);
+    setBulkSummaryOpen(false);
+    setBulkActivosOpen(false);
+    setBulkSuccessOpen(false);
+  }
+
+  function openBulkPanel() {
+    resetBulkState();
+    setBulkOpen(true);
+  }
+
+  function closeBulkPanel() {
+    setBulkOpen(false);
+    resetBulkState();
+  }
+
+  function toggleSelected(id) {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((x) => x !== id);
+      }
+      return [...prev, id];
+    });
+  }
+
+  function selectAllFiltered() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const m of bulkFiltered) next.add(m.id);
+      return [...next];
+    });
+  }
+
+  function clearAllSelected() {
+    setSelectedIds([]);
+  }
+
+  async function handlePrepareBulkConfirm() {
+    if (!selectedIds.length) {
+      setError("Seleccioná al menos una máquina para el movimiento masivo.");
+      return;
+    }
+    if (!bulkServicioDestinoId) {
+      setError("Seleccioná un servicio destino para continuar.");
+      return;
+    }
+
+    setBulkBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/admin/maquinas/movimientos-masivos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          maquinaIds: selectedIds,
+          servicioId: Number(bulkServicioDestinoId),
+          dryRun: true,
+          confirmarConActivos: false,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo validar el movimiento masivo");
+      }
+
+      setBulkPreview(data);
+      setBulkSummaryOpen(true);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error validando movimiento masivo");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  async function ejecutarMovimiento(confirmarConActivos) {
+    setBulkBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/admin/maquinas/movimientos-masivos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          maquinaIds: selectedIds,
+          servicioId: Number(bulkServicioDestinoId),
+          dryRun: false,
+          confirmarConActivos,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo ejecutar el movimiento masivo");
+      }
+
+      setBulkSummaryOpen(false);
+      setBulkActivosOpen(false);
+      setBulkResult(data);
+      setBulkSuccessOpen(true);
+      await loadData();
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error aplicando movimiento masivo");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   if (loading) return <div className="p-4">Cargando máquinas...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
@@ -116,14 +288,36 @@ export default function AdminMaquinas() {
         </div>
       </header>
 
-      <a
-        href={`${API_BASE}/admin/maquinas/export`}
-        className="inline-block mb-4 px-4 py-2 rounded-lg
-                   bg-green-600 text-white text-sm font-semibold
-                   hover:bg-green-700 transition"
-      >
-        Exportar máquinas (Excel)
-      </a>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <a
+          href={`${API_BASE}/admin/maquinas/export`}
+          className="inline-block px-4 py-2 rounded-lg
+                     bg-green-600 text-white text-sm font-semibold
+                     hover:bg-green-700 transition"
+        >
+          Exportar máquinas (Excel)
+        </a>
+
+        <div className="flex items-center gap-2">
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={openBulkPanel}
+              className="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
+            >
+              Movimientos masivos
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => navigate("/admin/maquinas/tipos")}
+            className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50"
+          >
+            Tipos de maquinas
+          </button>
+        </div>
+      </div>
 
       {resumen && (
         <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
@@ -219,6 +413,253 @@ export default function AdminMaquinas() {
           </button>
         </div>
       ) : null}
+
+      {bulkOpen ? (
+        <div className="fixed inset-0 z-40 bg-black/30">
+          <div className="absolute right-0 top-0 h-full w-full max-w-4xl bg-white shadow-2xl">
+            <div className="flex h-full flex-col">
+              <div className="flex items-center justify-between border-b px-5 py-4">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Movimientos masivos</h2>
+                  <p className="text-xs text-gray-600">
+                    Seleccioná máquinas, elegí un servicio destino y confirmá el movimiento.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeBulkPanel}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              <div className="grid flex-1 gap-4 overflow-hidden p-4 md:grid-cols-[1fr_320px]">
+                <div className="flex min-h-0 flex-col rounded-2xl border border-gray-200">
+                  <div className="space-y-2 border-b p-3">
+                    <input
+                      className="w-full rounded-xl border p-2.5 text-sm"
+                      placeholder="Buscar por código, tipo, modelo, serie o servicio..."
+                      value={bulkSearch}
+                      onChange={(e) => setBulkSearch(e.target.value)}
+                    />
+
+                    <div className="grid gap-2 md:grid-cols-3">
+                      <select
+                        className="rounded-xl border p-2 text-xs"
+                        value={bulkTipoFiltro}
+                        onChange={(e) => setBulkTipoFiltro(e.target.value)}
+                      >
+                        <option value="">Todos los tipos</option>
+                        {tiposUnicos.map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+
+                      <select
+                        className="rounded-xl border p-2 text-xs"
+                        value={bulkEstadoFiltro}
+                        onChange={(e) => setBulkEstadoFiltro(e.target.value)}
+                      >
+                        {ESTADOS.map((e) => (
+                          <option key={e.value} value={e.value}>{e.label}</option>
+                        ))}
+                      </select>
+
+                      <select
+                        className="rounded-xl border p-2 text-xs"
+                        value={bulkServicioActualFiltro}
+                        onChange={(e) => setBulkServicioActualFiltro(e.target.value)}
+                      >
+                        <option value="">Servicio actual: todos</option>
+                        {servicios.map((s) => (
+                          <option key={s.id} value={s.id}>{s.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={selectAllFiltered}
+                        className="rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700 hover:bg-indigo-100"
+                      >
+                        Seleccionar filtradas ({bulkFiltered.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearAllSelected}
+                        className="rounded-lg border border-gray-200 bg-white px-2.5 py-1 font-semibold text-gray-700 hover:bg-gray-50"
+                      >
+                        Limpiar selección
+                      </button>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">
+                        Seleccionadas: {selectedIds.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                    <div className="space-y-2">
+                      {bulkFiltered.map((m) => {
+                        const checked = selectedSet.has(m.id);
+                        const conPedidoActivo = Boolean(m.asignacion?.pedidoId);
+
+                        return (
+                          <label
+                            key={m.id}
+                            className={`flex cursor-pointer gap-3 rounded-xl border p-3 transition ${
+                              checked ? "border-indigo-300 bg-indigo-50" : "border-gray-200 bg-white"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-1 h-4 w-4"
+                              checked={checked}
+                              onChange={() => toggleSelected(m.id)}
+                            />
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-sm font-bold uppercase text-gray-900">{m.tipo}</p>
+                                <div className="flex items-center gap-2">
+                                  {conPedidoActivo ? (
+                                    <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold uppercase text-amber-700">
+                                      Pedido activo
+                                    </span>
+                                  ) : null}
+                                  <span className={estadoBadgeClass(m.estado)}>{m.estado}</span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-600">Código: <b>{m.id}</b></p>
+                              <p className="text-xs text-gray-500">
+                                Servicio actual: <b>{m.servicio?.nombre || "-"}</b>
+                              </p>
+                              {conPedidoActivo ? (
+                                <p className="text-xs text-amber-700">
+                                  Pedido: <b>{m.asignacion?.pedidoId}</b> ({m.asignacion?.estadoPedido})
+                                </p>
+                              ) : null}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <aside className="rounded-2xl border border-gray-200 bg-slate-50 p-4">
+                  <h3 className="text-sm font-bold text-slate-900">Resumen del movimiento</h3>
+                  <p className="mt-1 text-xs text-slate-600">
+                    El proceso es transaccional (todo o nada) y registra historial por cada máquina movida.
+                  </p>
+
+                  <div className="mt-4 space-y-2 text-xs">
+                    <p className="rounded-lg bg-white px-3 py-2">
+                      Seleccionadas: <b>{selectedIds.length}</b>
+                    </p>
+                    <div>
+                      <label className="mb-1 block font-semibold text-slate-700">Servicio destino</label>
+                      <select
+                        className="w-full rounded-xl border p-2"
+                        value={bulkServicioDestinoId}
+                        onChange={(e) => setBulkServicioDestinoId(e.target.value)}
+                      >
+                        <option value="">— Seleccionar servicio —</option>
+                        {servicios.map((s) => (
+                          <option key={s.id} value={s.id}>{s.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handlePrepareBulkConfirm}
+                    disabled={bulkBusy || !selectedIds.length || !bulkServicioDestinoId}
+                    className="mt-4 w-full rounded-xl bg-indigo-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                  >
+                    {bulkBusy ? "Validando..." : "Confirmar movimiento"}
+                  </button>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <ConfirmModal
+        open={bulkSummaryOpen}
+        title="Confirmar movimiento masivo"
+        message={[
+          `Seleccionadas: ${bulkPreview?.resumen?.seleccionadas || 0}`,
+          `A mover: ${bulkPreview?.resumen?.paraMover || 0}`,
+          `Sin cambios (ya en destino): ${bulkPreview?.resumen?.sinCambios || 0}`,
+          `Con pedido activo: ${bulkPreview?.resumen?.conPedidoActivo || 0}`,
+          "",
+          `Servicio destino: ${bulkPreview?.servicioDestino?.nombre || "-"}`,
+        ].join("\n")}
+        confirmLabel="Continuar"
+        cancelLabel="Cancelar"
+        onCancel={() => setBulkSummaryOpen(false)}
+        onConfirm={() => {
+          if ((bulkPreview?.conPedidoActivo || []).length > 0) {
+            setBulkSummaryOpen(false);
+            setBulkActivosOpen(true);
+            return;
+          }
+          ejecutarMovimiento(false);
+        }}
+      >
+        {(bulkPreview?.sinCambios || []).length > 0 ? (
+          <div className="max-h-36 overflow-y-auto rounded-lg border bg-gray-50 p-2 text-xs text-gray-600">
+            <p className="mb-1 font-semibold">Sin cambios:</p>
+            {(bulkPreview?.sinCambios || []).slice(0, 10).map((m) => (
+              <p key={m.id}>• {m.id}</p>
+            ))}
+            {(bulkPreview?.sinCambios || []).length > 10 ? (
+              <p>... y {(bulkPreview?.sinCambios || []).length - 10} más</p>
+            ) : null}
+          </div>
+        ) : null}
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={bulkActivosOpen}
+        title="Máquinas con pedido activo"
+        message="Estas máquinas forman parte de un pedido activo. ¿Desea moverlas igualmente?"
+        confirmLabel="Sí, mover igualmente"
+        cancelLabel="Volver"
+        tone="danger"
+        onCancel={() => setBulkActivosOpen(false)}
+        onConfirm={() => ejecutarMovimiento(true)}
+      >
+        <div className="max-h-56 overflow-y-auto rounded-lg border bg-amber-50 p-2 text-xs text-amber-900">
+          {(bulkPreview?.conPedidoActivo || []).map((m) => (
+            <p key={m.id}>
+              • {m.id} - Pedido {m.pedidoId} ({m.estadoPedido})
+            </p>
+          ))}
+        </div>
+      </ConfirmModal>
+
+      <ConfirmModal
+        open={bulkSuccessOpen}
+        title="Movimiento masivo completado"
+        hideCancel
+        confirmLabel="Volver al listado"
+        message={[
+          `Servicio destino: ${bulkResult?.servicioDestino?.nombre || "-"}`,
+          `Máquinas movidas: ${(bulkResult?.movidas || []).length}`,
+          `Sin cambios: ${(bulkResult?.sinCambios || []).length}`,
+          `Con pedido activo involucradas: ${(bulkResult?.conPedidoActivo || []).length}`,
+        ].join("\n")}
+        onConfirm={() => {
+          setBulkSuccessOpen(false);
+          closeBulkPanel();
+          navigate("/admin/maquinas");
+        }}
+      />
     </div>
   );
 }
