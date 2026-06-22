@@ -121,6 +121,8 @@ export default function AdminEventualDetalle() {
   const [error, setError] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState("");
   const rolUpper = String(user?.rol || "").toUpperCase();
   const isCoordinador = rolUpper === "COORDINADOR";
   const isConsultor = rolUpper === "CONSULTOR";
@@ -168,6 +170,20 @@ export default function AdminEventualDetalle() {
       setError(removeError.message || "Error dando de baja eventual");
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleDownloadResumenPdf() {
+    try {
+      setPdfLoading(true);
+      setPdfError("");
+      const { downloadEventualResumenPdf } = await import("../utils/eventualPdf");
+      downloadEventualResumenPdf(eventual);
+    } catch (downloadError) {
+      console.error(downloadError);
+      setPdfError(downloadError.message || "No se pudo generar el PDF");
+    } finally {
+      setPdfLoading(false);
     }
   }
 
@@ -400,6 +416,15 @@ export default function AdminEventualDetalle() {
       </section>
 
       <div className="mt-6 mb-8 flex flex-wrap justify-end gap-2">
+        <button
+          type="button"
+          onClick={handleDownloadResumenPdf}
+          disabled={pdfLoading}
+          className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {pdfLoading ? "Generando PDF..." : "Descargar PDF resumen"}
+        </button>
+
         {isCoordinador ? (
           String(eventual.estado || "").toLowerCase() === "finalizado" ? (
             <button
@@ -436,6 +461,8 @@ export default function AdminEventualDetalle() {
           </>
         )}
       </div>
+
+      {pdfError ? <p className="-mt-6 mb-6 text-sm text-red-600">{pdfError}</p> : null}
 
       <ConfirmModal
         open={deleteModalOpen}
