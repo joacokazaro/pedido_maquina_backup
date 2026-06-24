@@ -27,6 +27,7 @@ model Usuario {
   historialVehiculos VehiculoAsignacion[] @relation("VehiculoAsignadoAUsuario")
   asignacionesRealizadasVehiculo VehiculoAsignacion[] @relation("VehiculoAsignadoPorUsuario")
   historialEventuales HistorialEventual[]
+  movimientosTaller TallerMovimiento[]
 }
 
 model Servicio {
@@ -90,6 +91,7 @@ model Maquina {
   asignaciones PedidoMaquina[]
   historialServicios MaquinaServicioHistorial[]
   kits         KitMaquina[]
+  movimientosTaller TallerMovimiento[]
 }
 
 model TipoMaquina {
@@ -143,6 +145,27 @@ model Vehiculo {
   historialAsignaciones   VehiculoAsignacion[]
   kits                    KitVehiculo[]
   asignacionesPedido      PedidoVehiculo[]
+  movimientosTaller       TallerMovimiento[]
+}
+
+model TallerMovimiento {
+  id         Int      @id @default(autoincrement())
+  tipo       String
+  maquinaId  String?
+  vehiculoId String?
+  accion     String
+  observacion String?
+  usuarioId  Int
+  createdAt  DateTime @default(now())
+
+  maquina    Maquina? @relation(fields: [maquinaId], references: [id])
+  vehiculo   Vehiculo? @relation(fields: [vehiculoId], references: [id])
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@index([tipo, createdAt])
+  @@index([maquinaId, createdAt])
+  @@index([vehiculoId, createdAt])
+  @@index([usuarioId, createdAt])
 }
 
 model Kit {

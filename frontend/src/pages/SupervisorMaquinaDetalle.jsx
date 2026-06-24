@@ -8,7 +8,7 @@ const ESTADOS = [
   "asignada",
   "no_devuelta",
   "fuera_servicio",
-  "reparacion",
+  "taller",
   "baja",
 ];
 

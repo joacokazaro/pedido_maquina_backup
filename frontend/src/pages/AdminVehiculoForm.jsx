@@ -9,7 +9,7 @@ const ESTADOS = [
   "asignada",
   "no_devuelta",
   "fuera_servicio",
-  "reparacion",
+  "taller",
   "baja",
   "activo",
 ];
@@ -32,7 +32,7 @@ export default function AdminVehiculoForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const rolUpper = String(user?.rol || "").toUpperCase();
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
+  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
   const isEdit = Boolean(id);
 
   const [form, setForm] = useState({

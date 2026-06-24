@@ -3,7 +3,7 @@ import prisma from "../db/prisma.js";
 /* =====================================================
    CONSTANTES
 ===================================================== */
-const ROLES_VALIDOS = ["admin", "supervisor", "deposito", "coordinador", "consultor"];
+const ROLES_VALIDOS = ["admin", "supervisor", "deposito", "coordinador", "consultor", "taller"];
 
 /* =====================================================
    HELPERS

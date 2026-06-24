@@ -1,4 +1,7 @@
 import prisma from "../db/prisma.js";
+import { requireActor } from "../services/requestActor.service.js";
+import { canonicalEstadoVehiculo } from "../services/inventarioEstados.service.js";
+import { aplicarMovimientoTaller, TALLER_TIPO_VEHICULO } from "../services/taller.service.js";
 
 const ESTADOS_PEDIDO_INACTIVOS = ["CERRADO", "CANCELADO"];
 
@@ -44,7 +47,7 @@ function mapVehiculoResponse(v) {
   let estadoUi;
   if (v.estado === "baja") estadoUi = "baja";
   else if (pedidoActivo) estadoUi = "asignada";
-  else estadoUi = "disponible";
+  else estadoUi = canonicalEstadoVehiculo(v.estado);
 
   return {
     id: v.id,
@@ -97,5 +100,31 @@ export async function getVehiculoById(req, res) {
   } catch (e) {
     console.error("getVehiculoById:", e);
     res.status(500).json({ error: "Error obteniendo vehículo" });
+  }
+}
+
+export async function marcarVehiculoTaller(req, res) {
+  const actor = await requireActor(req, res, ["admin", "taller"]);
+  if (!actor) return;
+
+  try {
+    const resultado = await aplicarMovimientoTaller({
+      tipo: TALLER_TIPO_VEHICULO,
+      ids: [req.params.id],
+      accion: req.body?.accion,
+      observacion: req.body?.observacion,
+      actorId: actor.id,
+    });
+
+    res.json({
+      message: resultado.actualizados.length ? "Movimiento de taller aplicado" : "Sin cambios en el estado",
+      ...resultado,
+    });
+  } catch (e) {
+    if (e.message?.startsWith("Debe indicar") || e.message?.startsWith("Acción") || e.message?.startsWith("Registros inexistentes")) {
+      return res.status(400).json({ error: e.message });
+    }
+    console.error("marcarVehiculoTaller:", e);
+    res.status(500).json({ error: "Error actualizando taller del vehículo" });
   }
 }

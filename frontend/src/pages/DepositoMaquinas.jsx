@@ -9,7 +9,7 @@ const ESTADOS = [
   { value: "asignada", label: "Asignada" },
   { value: "no_devuelta", label: "No devuelta" },
   { value: "fuera_servicio", label: "Fuera de servicio" },
-  { value: "reparacion", label: "En reparación" },
+  { value: "taller", label: "En taller" },
   { value: "baja", label: "Baja" },
 ];
 
@@ -234,7 +234,7 @@ function estadoBadgeClass(estado) {
     case "asignada": return `${base} bg-blue-100 text-blue-700`;
     case "no_devuelta": return `${base} bg-red-100 text-red-700`;
     case "fuera_servicio": return `${base} bg-orange-100 text-orange-700`;
-    case "reparacion": return `${base} bg-yellow-100 text-yellow-700`;
+    case "taller": return `${base} bg-yellow-100 text-yellow-700`;
     case "baja": return `${base} bg-gray-200 text-gray-500`;
     default: return `${base} bg-gray-100 text-gray-600`;
   }

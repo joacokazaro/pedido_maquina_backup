@@ -7,6 +7,14 @@ import { waitForBackend } from "./services/waitForBackend";
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ConsultorHome from "./pages/ConsultorHome";
+import TallerHome from "./pages/TallerHome";
+import TallerModuleHome from "./pages/taller/TallerModuleHome";
+import TallerMovimientosMaquinas from "./pages/taller/TallerMovimientosMaquinas";
+import TallerMovimientosVehiculos from "./pages/taller/TallerMovimientosVehiculos";
+import TallerVerMaquinas from "./pages/taller/TallerVerMaquinas";
+import TallerVerVehiculos from "./pages/taller/TallerVerVehiculos";
+import TallerRegistrarHome from "./pages/taller/TallerRegistrarHome";
+import TallerVerHome from "./pages/taller/TallerVerHome";
 
 // =============================
 // SUPERVISOR
@@ -91,6 +99,12 @@ function App() {
 
   const renderReadOnlyModulesPage = (page) => (
     <ProtectedRoute allowedRoles={["ADMIN", "COORDINADOR", "CONSULTOR"]}>
+      <AdminLayout>{page}</AdminLayout>
+    </ProtectedRoute>
+  );
+
+  const renderInventarioTallerPage = (page) => (
+    <ProtectedRoute allowedRoles={["ADMIN", "COORDINADOR", "CONSULTOR", "TALLER"]}>
       <AdminLayout>{page}</AdminLayout>
     </ProtectedRoute>
   );
@@ -383,11 +397,13 @@ function App() {
       ============================== */}
       <Route
         path="/admin"
-        element={renderReadOnlyModulesPage(
+        element={renderInventarioTallerPage(
           String(user?.rol || "").toUpperCase() === "COORDINADOR"
             ? <CoordinadorHome />
             : String(user?.rol || "").toUpperCase() === "CONSULTOR"
               ? <ConsultorHome />
+              : String(user?.rol || "").toUpperCase() === "TALLER"
+                ? <TallerHome />
               : <AdminHome />
         )}
       />
@@ -424,7 +440,7 @@ function App() {
 
       <Route
         path="/admin/maquinas"
-        element={renderReadOnlyModulesPage(<AdminMaquinas />)}
+        element={renderInventarioTallerPage(<AdminMaquinas />)}
       />
 
       <Route
@@ -444,13 +460,53 @@ function App() {
 
       <Route
         path="/admin/maquinas/:id"
-        element={renderReadOnlyModulesPage(<AdminMaquinaForm />)}
+        element={renderInventarioTallerPage(<AdminMaquinaForm />)}
       />
 
       <Route
         path="/admin/vehiculos"
-        element={renderReadOnlyModulesPage(<AdminVehiculos />)}
+        element={renderInventarioTallerPage(<AdminVehiculos />)}
       />
+
+      <Route
+        path="/admin/taller"
+        element={renderInventarioTallerPage(<TallerModuleHome />)}
+      />
+
+      <Route
+        path="/admin/taller/registrar"
+        element={renderInventarioTallerPage(<TallerRegistrarHome />)}
+      />
+
+      <Route
+        path="/admin/taller/registrar/maquinas"
+        element={renderInventarioTallerPage(<TallerMovimientosMaquinas />)}
+      />
+
+      <Route
+        path="/admin/taller/registrar/vehiculos"
+        element={renderInventarioTallerPage(<TallerMovimientosVehiculos />)}
+      />
+
+      <Route
+        path="/admin/taller/ver"
+        element={renderInventarioTallerPage(<TallerVerHome />)}
+      />
+
+      <Route
+        path="/admin/taller/ver/maquinas"
+        element={renderInventarioTallerPage(<TallerVerMaquinas />)}
+      />
+
+      <Route
+        path="/admin/taller/ver/vehiculos"
+        element={renderInventarioTallerPage(<TallerVerVehiculos />)}
+      />
+
+      <Route path="/admin/taller/movimientos/maquinas" element={<Navigate to="/admin/taller/registrar/maquinas" replace />} />
+      <Route path="/admin/taller/movimientos/vehiculos" element={<Navigate to="/admin/taller/registrar/vehiculos" replace />} />
+      <Route path="/admin/taller/historial/maquinas" element={<Navigate to="/admin/taller/ver/maquinas" replace />} />
+      <Route path="/admin/taller/historial/vehiculos" element={<Navigate to="/admin/taller/ver/vehiculos" replace />} />
 
       <Route
         path="/admin/vehiculos/nuevo"
@@ -464,12 +520,12 @@ function App() {
 
       <Route
         path="/admin/vehiculos/:id/historial"
-        element={renderReadOnlyModulesPage(<AdminVehiculoHistorial />)}
+        element={renderInventarioTallerPage(<AdminVehiculoHistorial />)}
       />
 
       <Route
         path="/admin/vehiculos/:id"
-        element={renderReadOnlyModulesPage(<AdminVehiculoForm />)}
+        element={renderInventarioTallerPage(<AdminVehiculoForm />)}
       />
 
       <Route

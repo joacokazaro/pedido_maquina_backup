@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
+import { buildActorHeaders } from "../utils/authHeaders";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -10,7 +11,7 @@ const ESTADOS = [
   { value: "asignada", label: "Asignada" },
   { value: "no_devuelta", label: "No devuelta" },
   { value: "fuera_servicio", label: "Fuera de servicio" },
-  { value: "reparacion", label: "En reparación" },
+  { value: "taller", label: "En taller" },
   { value: "baja", label: "Baja" }
 ];
 
@@ -19,7 +20,8 @@ export default function AdminMaquinas() {
   const { user } = useAuth();
   const rolUpper = String(user?.rol || "").toUpperCase();
   const isAdmin = rolUpper === "ADMIN";
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
+  const canOperateTaller = rolUpper === "ADMIN" || rolUpper === "TALLER";
+  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
 
   const [allMaquinas, setAllMaquinas] = useState([]);
   const [servicios, setServicios] = useState([]);
@@ -53,8 +55,8 @@ export default function AdminMaquinas() {
       setError("");
 
       const [maqsRes, resumenRes, serviciosRes] = await Promise.all([
-        fetch(`${API_BASE}/admin/maquinas`),
-        fetch(`${API_BASE}/admin/maquinas/stock-resumen`),
+        fetch(`${API_BASE}/admin/maquinas`, { headers: buildActorHeaders(user) }),
+        fetch(`${API_BASE}/admin/maquinas/stock-resumen`, { headers: buildActorHeaders(user) }),
         fetch(`${API_BASE}/servicios`),
       ]);
 
@@ -87,7 +89,30 @@ export default function AdminMaquinas() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user?.username]);
+
+  async function moverTallerIndividual(id, accion) {
+    if (!canOperateTaller) return;
+    try {
+      setError("");
+      const res = await fetch(`${API_BASE}/maquinas/${encodeURIComponent(id)}/taller`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...buildActorHeaders(user),
+        },
+        body: JSON.stringify({ accion }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "No se pudo actualizar taller");
+
+      await loadData();
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error actualizando taller");
+    }
+  }
 
   useEffect(() => {
     let data = [...allMaquinas];
@@ -399,11 +424,42 @@ export default function AdminMaquinas() {
                 </p>
               </div>
             )}
+
+            {canOperateTaller ? (
+              <div className="mt-2 flex gap-2">
+                {m.estado !== "taller" ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      moverTallerIndividual(m.id, "ingreso");
+                    }}
+                    className="rounded-lg bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white"
+                  >
+                    Ingreso taller
+                  </button>
+                ) : null}
+                {m.estado === "taller" ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      moverTallerIndividual(m.id, "egreso");
+                    }}
+                    className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white"
+                  >
+                    Egreso taller
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </button>
         ))}
       </div>
 
-      {!isReadOnly ? (
+      {!isReadOnly && isAdmin ? (
         <div className="fixed bottom-4 right-4">
           <button
             onClick={() => navigate("/admin/maquinas/nueva")}
@@ -671,7 +727,7 @@ function estadoBadgeClass(estado) {
     case "asignada": return `${base} bg-blue-100 text-blue-700`;
     case "no_devuelta": return `${base} bg-red-100 text-red-700`;
     case "fuera_servicio": return `${base} bg-orange-100 text-orange-700`;
-    case "reparacion": return `${base} bg-yellow-100 text-yellow-700`;
+    case "taller": return `${base} bg-yellow-100 text-yellow-700`;
     case "baja": return `${base} bg-gray-200 text-gray-500`;
     default: return `${base} bg-gray-100 text-gray-600`;
   }

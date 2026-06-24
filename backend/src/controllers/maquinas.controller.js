@@ -1,17 +1,15 @@
 import prisma from "../db/prisma.js";
+import { requireActor } from "../services/requestActor.service.js";
+import {
+  ESTADOS_MAQUINA_VALIDOS,
+  canonicalEstadoMaquina,
+  normalizeEstadoMaquina,
+} from "../services/inventarioEstados.service.js";
+import { aplicarMovimientoTaller, TALLER_TIPO_MAQUINA } from "../services/taller.service.js";
 
 /* ========================================================
    CONSTANTES (FUENTE DE VERDAD)
 ======================================================== */
-const ESTADOS_MAQUINA_VALIDOS = [
-  "disponible",
-  "asignada",
-  "no_devuelta",
-  "fuera_servicio",
-  "reparacion",
-  "baja",
-];
-
 const ESTADOS_PEDIDO_INACTIVOS = ["CERRADO", "CANCELADO"];
 
 const MAQUINA_RELATIONS = {
@@ -51,16 +49,7 @@ const MAQUINA_RELATIONS = {
    HELPERS
 ======================================================== */
 function normalizeEstado(raw) {
-  const v = String(raw || "").trim().toLowerCase();
-
-  if (ESTADOS_MAQUINA_VALIDOS.includes(v)) return v;
-
-  if (v === "no devuelta" || v === "nodevuelta") return "no_devuelta";
-  if (v === "fuera de servicio") return "fuera_servicio";
-  if (v === "en reparacion" || v === "en reparación" || v === "reparación")
-    return "reparacion";
-
-  return null;
+  return normalizeEstadoMaquina(raw, null);
 }
 
 function mapMaquinaResponse(m) {
@@ -84,7 +73,7 @@ function mapMaquinaResponse(m) {
     tipo: m.tipo,
     modelo: m.modelo,
     serie: m.serie,
-    estado: m.estado,
+    estado: canonicalEstadoMaquina(m.estado),
     servicioId: m.servicioId,
     servicio: m.servicio?.nombre ?? null,
     fechaCompra: m.fechaCompra,
@@ -218,5 +207,31 @@ export async function actualizarEstado(req, res) {
     }
     console.error("actualizarEstado:", e);
     res.status(500).json({ error: "Error actualizando estado" });
+  }
+}
+
+export async function marcarMaquinaTaller(req, res) {
+  const actor = await requireActor(req, res, ["admin", "taller"]);
+  if (!actor) return;
+
+  try {
+    const resultado = await aplicarMovimientoTaller({
+      tipo: TALLER_TIPO_MAQUINA,
+      ids: [req.params.id],
+      accion: req.body?.accion,
+      observacion: req.body?.observacion,
+      actorId: actor.id,
+    });
+
+    res.json({
+      message: resultado.actualizados.length ? "Movimiento de taller aplicado" : "Sin cambios en el estado",
+      ...resultado,
+    });
+  } catch (e) {
+    if (e.message?.startsWith("Debe indicar") || e.message?.startsWith("Acción") || e.message?.startsWith("Registros inexistentes")) {
+      return res.status(400).json({ error: e.message });
+    }
+    console.error("marcarMaquinaTaller:", e);
+    res.status(500).json({ error: "Error actualizando taller de la máquina" });
   }
 }

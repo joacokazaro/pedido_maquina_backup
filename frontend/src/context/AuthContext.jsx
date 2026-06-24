@@ -96,6 +96,7 @@ export function AuthProvider({ children }) {
     if (rol === "ADMIN") navigate("/admin");
     if (rol === "COORDINADOR") navigate("/admin");
     if (rol === "CONSULTOR") navigate("/admin");
+    if (rol === "TALLER") navigate("/admin");
   }
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);

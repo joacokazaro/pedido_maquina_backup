@@ -58,6 +58,9 @@ export default function AdminUsuarios() {
         <option value="ADMIN">ADMIN</option>
         <option value="SUPERVISOR">SUPERVISOR</option>
         <option value="DEPOSITO">DEPOSITO</option>
+        <option value="COORDINADOR">COORDINADOR</option>
+        <option value="CONSULTOR">CONSULTOR</option>
+        <option value="TALLER">TALLER</option>
       </select>
 
       {/* LISTA */}

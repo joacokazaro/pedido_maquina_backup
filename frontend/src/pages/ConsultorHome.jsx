@@ -15,6 +15,12 @@ export default function ConsultorHome() {
       icon: "🚗",
     },
     {
+      title: "Taller",
+      description: "Visualiza ingresos y egresos de taller con su historial.",
+      to: "/admin/taller",
+      icon: "🏭",
+    },
+    {
       title: "Eventuales",
       description: "Visualiza eventuales y su detalle operativo.",
       to: "/admin/eventuales",

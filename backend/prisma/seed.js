@@ -23,7 +23,7 @@ const ESTADOS_MAQUINA_VALIDOS = new Set([
   "asignada",
   "no_devuelta",
   "fuera_servicio",
-  "reparacion",
+  "taller",
   "baja",
 ]);
 

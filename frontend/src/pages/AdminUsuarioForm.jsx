@@ -169,6 +169,7 @@ export default function AdminUsuarioForm() {
         <option value="DEPOSITO">DEPOSITO</option>
         <option value="COORDINADOR">COORDINADOR</option>
         <option value="CONSULTOR">CONSULTOR</option>
+        <option value="TALLER">TALLER</option>
       </select>
         </div>
 

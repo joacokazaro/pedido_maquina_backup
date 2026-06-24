@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
+import { buildActorHeaders } from "../utils/authHeaders";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
   { value: "activo", label: "Activo" },
   { value: "asignada", label: "Prestado (Asignado a pedido)" },
+  { value: "taller", label: "En taller" },
   { value: "conFaltantes", label: "Con faltantes" },
   { value: "baja", label: "Baja" },
 ];
@@ -15,7 +17,8 @@ export default function AdminVehiculos() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const rolUpper = String(user?.rol || "").toUpperCase();
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
+  const canOperateTaller = rolUpper === "ADMIN" || rolUpper === "TALLER";
+  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
   const [vehiculos, setVehiculos] = useState([]);
   const [seguros, setSeguros] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
@@ -35,7 +38,7 @@ export default function AdminVehiculos() {
         setError("");
 
         const [vehiculosRes, segurosRes, usuariosRes] = await Promise.all([
-          fetch(`${API_BASE}/admin/vehiculos`),
+          fetch(`${API_BASE}/admin/vehiculos`, { headers: buildActorHeaders(user) }),
           fetch(`${API_BASE}/admin/seguros`),
           fetch(`${API_BASE}/admin-users?activo=true`),
         ]);
@@ -62,7 +65,30 @@ export default function AdminVehiculos() {
     }
 
     load();
-  }, []);
+  }, [user?.username]);
+
+  async function moverTallerIndividual(id, accion) {
+    if (!canOperateTaller) return;
+    try {
+      setError("");
+      const res = await fetch(`${API_BASE}/vehiculos/${encodeURIComponent(id)}/taller`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...buildActorHeaders(user),
+        },
+        body: JSON.stringify({ accion }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "No se pudo actualizar taller");
+
+      navigate(0);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error actualizando taller");
+    }
+  }
 
   const empresas = useMemo(
     () => Array.from(new Set(vehiculos.map((item) => item.empresa).filter(Boolean))).sort(),
@@ -221,9 +247,39 @@ export default function AdminVehiculos() {
                 {vehiculo.pedidoActivo && (
                   <p className="mt-2 text-xs text-amber-700">Prestado en pedido <b>{vehiculo.pedidoActivo.id}</b> {vehiculo.pedidoActivo.titular ? `para ${vehiculo.pedidoActivo.titular}` : ''}</p>
                 )}
+                {canOperateTaller ? (
+                  <div className="mt-2 flex gap-2">
+                    {vehiculo.estado !== "taller" ? (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          moverTallerIndividual(vehiculo.id, "ingreso");
+                        }}
+                        className="rounded-lg bg-amber-600 px-2.5 py-1 text-[11px] font-semibold text-white"
+                      >
+                        Ingreso taller
+                      </button>
+                    ) : null}
+                    {vehiculo.estado === "taller" ? (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          moverTallerIndividual(vehiculo.id, "egreso");
+                        }}
+                        className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white"
+                      >
+                        Egreso taller
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
-              <span className={vehiculo.estado === "activo" ? "rounded-full bg-green-100 px-2 py-1 text-[10px] font-semibold uppercase text-green-700" : "rounded-full bg-gray-200 px-2 py-1 text-[10px] font-semibold uppercase text-gray-600"}>
+              <span className={vehiculo.estado === "activo" ? "rounded-full bg-green-100 px-2 py-1 text-[10px] font-semibold uppercase text-green-700" : vehiculo.estado === "taller" ? "rounded-full bg-yellow-100 px-2 py-1 text-[10px] font-semibold uppercase text-yellow-700" : "rounded-full bg-gray-200 px-2 py-1 text-[10px] font-semibold uppercase text-gray-600"}>
                 {vehiculo.estado}
               </span>
             </div>
@@ -235,7 +291,7 @@ export default function AdminVehiculos() {
         )}
       </div>
 
-      {!isReadOnly ? (
+      {!isReadOnly && rolUpper === "ADMIN" ? (
         <button
           onClick={() => navigate("/admin/vehiculos/nuevo")}
           className="fixed bottom-4 right-4 h-14 w-14 rounded-full bg-blue-600 text-2xl text-white shadow-lg"

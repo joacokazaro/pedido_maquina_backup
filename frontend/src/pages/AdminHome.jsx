@@ -15,6 +15,12 @@ export default function AdminHome() {
       icon: "🚗",
     },
     {
+      title: "Taller",
+      description: "Ingresos y egresos de taller con operaciones masivas e historial.",
+      to: "/admin/taller",
+      icon: "🏭",
+    },
+    {
       title: "Pedidos",
       description: "Visualizá y auditá pedidos, cambios de estado e historial operativo.",
       to: "/admin/pedidos",

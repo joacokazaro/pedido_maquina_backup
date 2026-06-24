@@ -1,5 +1,10 @@
 import prisma from "../db/prisma.js";
 import xlsx from "xlsx";
+import {
+  ESTADOS_VEHICULO_VALIDOS,
+  canonicalEstadoVehiculo,
+  normalizeEstadoVehiculo as normalizeEstadoVehiculoCanon,
+} from "../services/inventarioEstados.service.js";
 
 function computeFaltantesFinalesFromHistorial(historial) {
   if (!Array.isArray(historial) || historial.length === 0) return [];
@@ -35,16 +40,6 @@ function computeFaltantesFinalesFromHistorial(historial) {
   return Array.from(faltantes);
 }
 
-const ESTADOS_VEHICULO_VALIDOS = [
-  "disponible",
-  "asignada",
-  "no_devuelta",
-  "fuera_servicio",
-  "reparacion",
-  "baja",
-  "activo",
-];
-
 function normalizeString(value) {
   if (value === null || value === undefined) return "";
   return String(value).trim();
@@ -56,13 +51,7 @@ function normalizeNullableString(value) {
 }
 
 function normalizeEstadoVehiculo(value) {
-  const v = normalizeString(value).toLowerCase();
-  if (ESTADOS_VEHICULO_VALIDOS.includes(v)) return v;
-  if (v === "no devuelta" || v === "nodevuelta") return "no_devuelta";
-  if (v === "fuera de servicio") return "fuera_servicio";
-  if (v === "en reparacion" || v === "en reparación" || v === "reparación") return "reparacion";
-  if (v === "activo") return "activo";
-  return "disponible";
+  return normalizeEstadoVehiculoCanon(value, "disponible");
 }
 
 function normalizeBoolean(value, fallback = false) {
@@ -187,7 +176,7 @@ function mapVehiculo(vehiculo) {
   return {
     id: vehiculo.id,
     empresa: vehiculo.empresa,
-    estado: vehiculo.estado === "baja" ? "baja" : pedidoActivo ? "asignada" : vehiculo.estado,
+    estado: vehiculo.estado === "baja" ? "baja" : pedidoActivo ? "asignada" : canonicalEstadoVehiculo(vehiculo.estado),
     vehiculo: vehiculo.vehiculo,
     patente: vehiculo.patente,
     modelo: vehiculo.modelo,
@@ -417,6 +406,7 @@ export async function adminGetVehiculos(req, res) {
     const resultado = vehiculos.map((v) => {
       const mapped = mapVehiculo(v);
       const faltantesPedidos = faltanteMap[String(v.id)] || [];
+      mapped.estado = canonicalEstadoVehiculo(mapped.estado);
       mapped.esFaltante = faltantesPedidos.length > 0;
       mapped.faltantePedidos = faltantesPedidos;
       return mapped;

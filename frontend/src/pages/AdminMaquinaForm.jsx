@@ -9,7 +9,7 @@ const ESTADOS = [
   "asignada",
   "no_devuelta",
   "fuera_servicio",
-  "reparacion",
+  "taller",
   "baja"
 ];
 
@@ -35,7 +35,7 @@ export default function AdminMaquinaForm() {
   const { user } = useAuth();
   const esEdicion = Boolean(id);
   const rolUpper = String(user?.rol || "").toUpperCase();
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
+  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
 
   const [form, setForm] = useState({
     id: "",

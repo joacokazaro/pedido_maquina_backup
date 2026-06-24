@@ -32,8 +32,8 @@ const ESTADO_UI = {
     badgeClass: "border border-slate-300 bg-slate-200 text-slate-700",
     indicator: "bg-slate-500",
   },
-  reparacion: {
-    badge: "En reparacion",
+  taller: {
+    badge: "En taller",
     detalle: "No esta disponible para prestar.",
     card: "border-orange-200 bg-orange-50/80",
     badgeClass: "border border-orange-200 bg-orange-100 text-orange-700",

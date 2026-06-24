@@ -1,19 +1,15 @@
 import prisma from "../db/prisma.js";
 import xlsx from "xlsx";
+import {
+  ESTADOS_MAQUINA_VALIDOS,
+  canonicalEstadoMaquina,
+  normalizeEstadoMaquina,
+} from "../services/inventarioEstados.service.js";
 
 /* ========================================================
    CONSTANTES
 ======================================================== */
 const ESTADO_PEDIDO_CERRADO = "CERRADO";
-
-const ESTADOS_MAQUINA_VALIDOS = [
-  "disponible",
-  "asignada",
-  "no_devuelta",
-  "fuera_servicio",
-  "reparacion",
-  "baja",
-];
 
 const EMPRESAS_VALIDAS = ["Pulizia", "Pazar"];
 
@@ -22,20 +18,7 @@ const EMPRESAS_VALIDAS = ["Pulizia", "Pazar"];
    (FUENTE ÚNICA DE VERDAD)
 ======================================================== */
 function normalizeEstado(raw) {
-  const v = String(raw || "").trim().toLowerCase();
-
-  if (ESTADOS_MAQUINA_VALIDOS.includes(v)) return v;
-
-  if (v === "no devuelta" || v === "nodevuelta") return "no_devuelta";
-  if (v === "fuera de servicio") return "fuera_servicio";
-  if (
-    v === "en reparacion" ||
-    v === "en reparación" ||
-    v === "reparación"
-  )
-    return "reparacion";
-
-  return "disponible";
+  return normalizeEstadoMaquina(raw);
 }
 
 function normalizeEmpresa(raw) {
@@ -409,6 +392,7 @@ export async function adminGetMaquinas(req, res) {
 
     const result = maquinas.map((m) => ({
       ...m,
+      estado: canonicalEstadoMaquina(m.estado),
       asignacion: asignacionPorMaquina.get(m.id) || null,
     }));
 
@@ -462,6 +446,7 @@ export async function adminGetMaquinaById(req, res) {
 
     res.json({
       ...maquina,
+      estado: canonicalEstadoMaquina(maquina.estado),
       asignacion: pedidoActual
         ? {
             pedidoId: pedidoActual.id,
@@ -611,7 +596,7 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
         tipo: maquina.tipo,
         modelo: maquina.modelo,
         serie: maquina.serie,
-        estado: maquina.estado,
+        estado: canonicalEstadoMaquina(maquina.estado),
         fechaCompra: maquina.fechaCompra,
         proveedorFactura: maquina.proveedorFactura,
         empresa: maquina.empresa,
@@ -1219,7 +1204,7 @@ export async function adminResumenStock(req, res) {
           asignada: 0,
           no_devuelta: 0,
           fuera_servicio: 0,
-          reparacion: 0,
+          taller: 0,
           baja: 0,
         };
       }

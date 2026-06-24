@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { getVehiculos, getVehiculoById } from "../controllers/vehiculos.controller.js";
+import { getVehiculos, getVehiculoById, marcarVehiculoTaller } from "../controllers/vehiculos.controller.js";
 
 const router = Router();
 
 router.get("/", getVehiculos);
-router.get(":id", getVehiculoById);
+router.put("/:id/taller", marcarVehiculoTaller);
+router.get("/:id", getVehiculoById);
 
 export default router;
