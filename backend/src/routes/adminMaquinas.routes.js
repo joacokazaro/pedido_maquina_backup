@@ -1,4 +1,5 @@
 import { Router } from "express";
+import multer from "multer";
 
 import {
   adminGetMaquinas,
@@ -10,6 +11,9 @@ import {
   adminCambiarEstado,
   adminResumenStock,
   adminExportMaquinas,
+  adminDownloadMaquinasTemplate,
+  adminPreviewImportMaquinas,
+  adminConfirmImportMaquinas,
   adminMoverMaquinasMasivo,
   adminGetTiposMaquina,
   adminCreateTipoMaquina,
@@ -18,9 +22,13 @@ import {
 } from "../controllers/adminMaquinas.controller.js";
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // LISTADO CON FILTROS
 router.get("/maquinas/export", adminExportMaquinas);
+router.get("/maquinas/import/template", adminDownloadMaquinasTemplate);
+router.post("/maquinas/import/preview", upload.single("file"), adminPreviewImportMaquinas);
+router.post("/maquinas/import/confirm", upload.single("file"), adminConfirmImportMaquinas);
 
 // TIPOS DE MÁQUINA
 router.get("/maquinas/tipos", adminGetTiposMaquina);

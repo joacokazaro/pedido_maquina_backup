@@ -1,5 +1,7 @@
 import prisma from "../db/prisma.js";
 import xlsx from "xlsx";
+import ExcelJS from "exceljs";
+import { requireActor } from "../services/requestActor.service.js";
 import {
   ESTADOS_MAQUINA_VALIDOS,
   canonicalEstadoMaquina,
@@ -75,6 +77,48 @@ function parseNullableDate(raw, fieldName) {
   return date;
 }
 
+function parseExcelDate(raw) {
+  if (raw === undefined || raw === null || raw === "") return null;
+
+  if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+    return raw;
+  }
+
+  if (typeof raw === "number") {
+    const parsed = xlsx.SSF.parse_date_code(raw);
+    if (!parsed) return null;
+    return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
+  }
+
+  const value = String(raw).trim();
+  const ddmmyyyy = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (ddmmyyyy) {
+    const [, day, month, year] = ddmmyyyy;
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    if (
+      date.getFullYear() === Number(year) &&
+      date.getMonth() === Number(month) - 1 &&
+      date.getDate() === Number(day)
+    ) {
+      return date;
+    }
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function parseNullableImportDate(raw, fieldName) {
+  if (raw === undefined || raw === null || String(raw).trim() === "") return null;
+  const date = parseExcelDate(raw);
+  if (!date) {
+    throw new Error(`${fieldName} inválida`);
+  }
+  return date;
+}
+
 function calcularAntiguedad(anio) {
   if (anio === null || anio === undefined) return null;
   const actual = new Date().getFullYear();
@@ -89,6 +133,246 @@ function parseNullableString(raw) {
 
 function normalizeTipoMaquina(raw) {
   return String(raw || "").trim().toUpperCase();
+}
+
+function normalizeImportHeader(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\*]/g, "")
+    .replace(/[.]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_")
+    .trim();
+}
+
+function getImportValue(row, ...keys) {
+  for (const key of keys) {
+    const normalizedKey = normalizeImportHeader(key);
+    if (Object.prototype.hasOwnProperty.call(row, normalizedKey)) {
+      return row[normalizedKey];
+    }
+  }
+  return undefined;
+}
+
+function parseEstadoObligatorio(raw) {
+  const value = String(raw || "").trim();
+  if (!value) {
+    throw new Error("Estado obligatorio");
+  }
+
+  const estadoNorm = normalizeEstadoMaquina(value, null);
+  if (!estadoNorm || !ESTADOS_MAQUINA_VALIDOS.includes(estadoNorm)) {
+    throw new Error(
+      `Estado inválido. Debe ser uno de: ${ESTADOS_MAQUINA_VALIDOS.join(", ")}`
+    );
+  }
+
+  return estadoNorm;
+}
+
+function readWorkbookRows(buffer) {
+  const workbook = xlsx.read(buffer, { type: "buffer", cellDates: true });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) {
+    throw new Error("El archivo no contiene hojas");
+  }
+
+  const sheet = workbook.Sheets[firstSheetName];
+  const rawRows = xlsx.utils.sheet_to_json(sheet, { defval: "" });
+
+  if (!Array.isArray(rawRows) || rawRows.length === 0) {
+    throw new Error("El archivo no contiene filas para importar");
+  }
+
+  if (rawRows.length > 5000) {
+    throw new Error("El archivo supera el máximo permitido de 5000 filas");
+  }
+
+  return rawRows.map((rawRow) => {
+    const normalized = {};
+    Object.entries(rawRow).forEach(([key, value]) => {
+      normalized[normalizeImportHeader(key)] = value;
+    });
+    return normalized;
+  });
+}
+
+async function parseAndValidateMaquinasImport(fileBuffer) {
+  const rows = readWorkbookRows(fileBuffer);
+
+  const parsedRows = rows.map((row, index) => ({
+    rowNumber: index + 2,
+    id: String(getImportValue(row, "CODIGO", "COD", "ID") || "").trim(),
+    tipo: String(getImportValue(row, "TIPO") || "").trim(),
+    modelo: String(getImportValue(row, "MODELO") || "").trim(),
+    serie: getImportValue(row, "SERIE"),
+    estado: getImportValue(row, "ESTADO"),
+    servicioOriginal: String(
+      getImportValue(row, "SERVICIO_ORIGINAL", "SERVICIO") || ""
+    ).trim(),
+    fechaCompra: getImportValue(row, "FECHA_COMPRA", "FECHA_COMPRA"),
+    proveedorFactura: getImportValue(
+      row,
+      "PROVEEDOR_N_FACTURA",
+      "PROVEEDOR_FACTURA",
+      "PROVEEDOR"
+    ),
+    empresa: getImportValue(row, "EMPRESA"),
+    anio: getImportValue(row, "ANIO", "AÑO"),
+    amortizacion: getImportValue(row, "AMORTIZACION", "AMORTIZACIÓN"),
+    valorUsadaDolares: getImportValue(row, "VALOR_USADA_USD"),
+    valorUsadaPesos: getImportValue(row, "VALOR_USADA_ARS"),
+    valorNuevaDolares: getImportValue(row, "VALOR_NUEVA_USD"),
+    valorNuevaPesos: getImportValue(row, "VALOR_NUEVA_ARS"),
+    origenInfo: getImportValue(row, "ORIGEN_INFO"),
+    servicioAmortizacion: String(
+      getImportValue(row, "SERVICIO_AMORTIZACION") || ""
+    ).trim(),
+    comentarios: getImportValue(row, "COMENTARIOS"),
+  }));
+
+  const errores = [];
+  const ids = new Map();
+
+  for (const item of parsedRows) {
+    if (!item.id) {
+      errores.push(`Fila ${item.rowNumber}: Código obligatorio`);
+    }
+    if (!item.tipo) {
+      errores.push(`Fila ${item.rowNumber}: Tipo obligatorio`);
+    }
+    if (!item.modelo) {
+      errores.push(`Fila ${item.rowNumber}: Modelo obligatorio`);
+    }
+    if (!String(item.estado || "").trim()) {
+      errores.push(`Fila ${item.rowNumber}: Estado obligatorio`);
+    }
+    if (!item.servicioOriginal) {
+      errores.push(`Fila ${item.rowNumber}: Servicio Original obligatorio`);
+    }
+
+    if (item.id) {
+      if (!ids.has(item.id)) ids.set(item.id, []);
+      ids.get(item.id).push(item.rowNumber);
+    }
+  }
+
+  for (const [id, rowNumbers] of ids.entries()) {
+    if (rowNumbers.length > 1) {
+      errores.push(
+        `Código duplicado en archivo (${id}) en filas: ${rowNumbers.join(", ")}`
+      );
+    }
+  }
+
+  const [servicios, tipos, existentes] = await Promise.all([
+    prisma.servicio.findMany({ select: { id: true, nombre: true } }),
+    prisma.tipoMaquina.findMany({ select: { nombre: true } }),
+    prisma.maquina.findMany({
+      where: { id: { in: parsedRows.map((item) => item.id).filter(Boolean) } },
+      select: { id: true, servicioId: true },
+    }),
+  ]);
+
+  const servicioByName = new Map(
+    servicios.map((s) => [String(s.nombre || "").trim().toLowerCase(), s])
+  );
+  const tipoSet = new Set(
+    tipos.map((t) => String(t.nombre || "").trim().toLowerCase())
+  );
+  const existentesById = new Map(existentes.map((m) => [m.id, m]));
+
+  const normalizedRows = [];
+
+  for (const item of parsedRows) {
+    try {
+      const tipoNorm = normalizeTipoMaquina(item.tipo);
+      if (!tipoSet.has(tipoNorm.toLowerCase())) {
+        throw new Error("Tipo de máquina inválido. Crealo desde Tipos de máquinas.");
+      }
+
+      const servicio = servicioByName.get(item.servicioOriginal.toLowerCase());
+      if (!servicio) {
+        throw new Error("Servicio Original inexistente");
+      }
+
+      let servicioAmortizacionId = null;
+      if (item.servicioAmortizacion) {
+        const servicioAmort = servicioByName.get(item.servicioAmortizacion.toLowerCase());
+        if (!servicioAmort) {
+          throw new Error("Servicio amortización inexistente");
+        }
+        servicioAmortizacionId = servicioAmort.id;
+      }
+
+      const empresa = normalizeEmpresa(item.empresa);
+      const anio = parseNullableInt(item.anio, "Año");
+      const amortizacion = parseNullableInt(item.amortizacion, "Amortización");
+      const fechaCompra = parseNullableImportDate(item.fechaCompra, "Fecha de compra");
+      const estado = parseEstadoObligatorio(item.estado);
+
+      normalizedRows.push({
+        rowNumber: item.rowNumber,
+        id: item.id,
+        tipo: tipoNorm,
+        modelo: item.modelo,
+        serie: parseNullableString(item.serie),
+        estado,
+        servicioId: servicio.id,
+        fechaCompra,
+        proveedorFactura: parseNullableString(item.proveedorFactura),
+        empresa,
+        anio,
+        amortizacion,
+        antiguedad: calcularAntiguedad(anio),
+        valorUsadaDolares: parseNullableNonNegativeFloat(
+          item.valorUsadaDolares,
+          "Valor usada en dólares"
+        ),
+        valorUsadaPesos: parseNullableNonNegativeFloat(
+          item.valorUsadaPesos,
+          "Valor herramienta usada en pesos"
+        ),
+        valorNuevaDolares: parseNullableNonNegativeFloat(
+          item.valorNuevaDolares,
+          "Valor herramienta nueva en dólares"
+        ),
+        valorNuevaPesos: parseNullableNonNegativeFloat(
+          item.valorNuevaPesos,
+          "Valor herramienta nueva en pesos"
+        ),
+        origenInfo: parseNullableString(item.origenInfo),
+        servicioAmortizacionId,
+        comentarios: parseNullableString(item.comentarios),
+      });
+    } catch (e) {
+      errores.push(`Fila ${item.rowNumber}${item.id ? ` (${item.id})` : ""}: ${e.message}`);
+    }
+  }
+
+  if (errores.length > 0) {
+    const err = new Error("El archivo tiene errores de validación");
+    err.status = 409;
+    err.detalles = errores;
+    throw err;
+  }
+
+  const resumen = {
+    detectadas: normalizedRows.length,
+    creadas: normalizedRows.filter((item) => !existentesById.has(item.id)).length,
+    actualizadas: normalizedRows.filter((item) => existentesById.has(item.id)).length,
+  };
+
+  return {
+    normalizedRows,
+    existentesById,
+    resumen,
+  };
 }
 
 async function findTipoMaquinaByNombre(nombre) {
@@ -1354,5 +1638,246 @@ export async function adminExportMaquinas(req, res) {
   } catch (e) {
     console.error("adminExportMaquinas:", e);
     res.status(500).json({ error: "Error exportando máquinas" });
+  }
+}
+
+/* ========================================================
+   GET /admin/maquinas/import/template
+======================================================== */
+export async function adminDownloadMaquinasTemplate(req, res) {
+  const actor = await requireActor(req, res, ["admin"]);
+  if (!actor) return;
+
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Maquinas");
+
+    const columns = [
+      { header: "* CODIGO", required: true, width: 18 },
+      { header: "* TIPO", required: true, width: 22 },
+      { header: "* MODELO", required: true, width: 28 },
+      { header: "SERIE", required: false, width: 22 },
+      { header: "* ESTADO", required: true, width: 18 },
+      { header: "* SERVICIO_ORIGINAL", required: true, width: 26 },
+      { header: "FECHA_COMPRA", required: false, width: 16 },
+      { header: "PROVEEDOR_N_FACTURA", required: false, width: 28 },
+      { header: "EMPRESA", required: false, width: 16 },
+      { header: "ANIO", required: false, width: 12 },
+      { header: "AMORTIZACION", required: false, width: 16 },
+      { header: "VALOR_USADA_USD", required: false, width: 18 },
+      { header: "VALOR_USADA_ARS", required: false, width: 18 },
+      { header: "VALOR_NUEVA_USD", required: false, width: 18 },
+      { header: "VALOR_NUEVA_ARS", required: false, width: 18 },
+      { header: "ORIGEN_INFO", required: false, width: 22 },
+      { header: "SERVICIO_AMORTIZACION", required: false, width: 28 },
+      { header: "COMENTARIOS", required: false, width: 28 },
+    ];
+
+    worksheet.addRow(columns.map((column) => column.header));
+
+    columns.forEach((column, index) => {
+      const cell = worksheet.getRow(1).getCell(index + 1);
+      cell.font = {
+        bold: Boolean(column.required),
+        color: { argb: column.required ? "FF9F1239" : "FF111827" },
+      };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: column.required ? "FFFDE68A" : "FFF3F4F6" },
+      };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFD1D5DB" } },
+        left: { style: "thin", color: { argb: "FFD1D5DB" } },
+        bottom: { style: "thin", color: { argb: "FFD1D5DB" } },
+        right: { style: "thin", color: { argb: "FFD1D5DB" } },
+      };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      worksheet.getColumn(index + 1).width = column.width;
+    });
+
+    worksheet.views = [{ state: "frozen", ySplit: 1 }];
+
+    const instructionsSheet = workbook.addWorksheet("Instrucciones");
+    instructionsSheet.getColumn(1).width = 120;
+    instructionsSheet.addRow([
+      "Los encabezados con * son obligatorios. Estado válido: disponible, asignada, no_devuelta, fuera_servicio, taller, baja. Empresa válida: Pulizia o Pazar.",
+    ]);
+    instructionsSheet.addRow([
+      "Servicios y servicio de amortización deben coincidir exactamente con nombres existentes en el sistema.",
+    ]);
+    instructionsSheet.addRow([
+      "Año y amortización deben ser enteros. Los valores monetarios deben ser numéricos y no negativos.",
+    ]);
+    instructionsSheet.eachRow((row) => {
+      row.getCell(1).alignment = { wrapText: true, vertical: "top" };
+      row.getCell(1).font = { color: { argb: "FF374151" } };
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="plantilla_maquinas.xlsx"'
+    );
+    res.send(buffer);
+  } catch (e) {
+    console.error("adminDownloadMaquinasTemplate:", e);
+    res.status(500).json({ error: "Error generando plantilla de máquinas" });
+  }
+}
+
+/* ========================================================
+   POST /admin/maquinas/import/preview
+======================================================== */
+export async function adminPreviewImportMaquinas(req, res) {
+  const actor = await requireActor(req, res, ["admin"]);
+  if (!actor) return;
+
+  try {
+    if (!req.file?.buffer) {
+      return res.status(400).json({ error: "Debe adjuntar un archivo Excel" });
+    }
+
+    if (!req.file.mimetype.includes("sheet") && !String(req.file.originalname || "").toLowerCase().endsWith(".xlsx")) {
+      return res.status(400).json({ error: "Archivo inválido. Debe ser .xlsx" });
+    }
+
+    if (req.file.size > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: "El archivo supera el máximo permitido de 5 MB" });
+    }
+
+    const { resumen } = await parseAndValidateMaquinasImport(req.file.buffer);
+
+    res.json({
+      message: `Detectadas ${resumen.detectadas} máquinas`,
+      resumen,
+      readyToImport: true,
+    });
+  } catch (e) {
+    console.error("adminPreviewImportMaquinas:", e);
+    const status = Number(e.status) || 500;
+    if (status >= 400 && status < 500) {
+      return res.status(status).json({ error: e.message, detalles: e.detalles || [] });
+    }
+    res.status(500).json({ error: "Error validando importación de máquinas" });
+  }
+}
+
+/* ========================================================
+   POST /admin/maquinas/import/confirm
+======================================================== */
+export async function adminConfirmImportMaquinas(req, res) {
+  const actor = await requireActor(req, res, ["admin"]);
+  if (!actor) return;
+
+  try {
+    if (!req.file?.buffer) {
+      return res.status(400).json({ error: "Debe adjuntar un archivo Excel" });
+    }
+
+    if (!req.file.mimetype.includes("sheet") && !String(req.file.originalname || "").toLowerCase().endsWith(".xlsx")) {
+      return res.status(400).json({ error: "Archivo inválido. Debe ser .xlsx" });
+    }
+
+    if (req.file.size > 5 * 1024 * 1024) {
+      return res.status(400).json({ error: "El archivo supera el máximo permitido de 5 MB" });
+    }
+
+    const { normalizedRows, existentesById, resumen } = await parseAndValidateMaquinasImport(req.file.buffer);
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of normalizedRows) {
+        const exists = existentesById.has(item.id);
+
+        if (!exists) {
+          const creada = await tx.maquina.create({
+            data: {
+              id: item.id,
+              tipo: item.tipo,
+              modelo: item.modelo,
+              serie: item.serie,
+              estado: item.estado,
+              servicioId: item.servicioId,
+              fechaCompra: item.fechaCompra,
+              proveedorFactura: item.proveedorFactura,
+              empresa: item.empresa,
+              anio: item.anio,
+              amortizacion: item.amortizacion,
+              antiguedad: item.antiguedad,
+              valorUsadaDolares: item.valorUsadaDolares,
+              valorUsadaPesos: item.valorUsadaPesos,
+              valorNuevaDolares: item.valorNuevaDolares,
+              valorNuevaPesos: item.valorNuevaPesos,
+              origenInfo: item.origenInfo,
+              servicioAmortizacionId: item.servicioAmortizacionId,
+              comentarios: item.comentarios,
+            },
+          });
+
+          await insertMaquinaServicioHistorial(tx, {
+            maquinaId: creada.id,
+            servicioId: creada.servicioId,
+            fechaAsignacion: creada.createdAt,
+            tipoMovimiento: "individual",
+          });
+
+          continue;
+        }
+
+        const anterior = await tx.maquina.findUnique({
+          where: { id: item.id },
+          select: { servicioId: true },
+        });
+
+        const actualizada = await tx.maquina.update({
+          where: { id: item.id },
+          data: {
+            tipo: item.tipo,
+            modelo: item.modelo,
+            serie: item.serie,
+            estado: item.estado,
+            servicioId: item.servicioId,
+            fechaCompra: item.fechaCompra,
+            proveedorFactura: item.proveedorFactura,
+            empresa: item.empresa,
+            anio: item.anio,
+            amortizacion: item.amortizacion,
+            antiguedad: item.antiguedad,
+            valorUsadaDolares: item.valorUsadaDolares,
+            valorUsadaPesos: item.valorUsadaPesos,
+            valorNuevaDolares: item.valorNuevaDolares,
+            valorNuevaPesos: item.valorNuevaPesos,
+            origenInfo: item.origenInfo,
+            servicioAmortizacionId: item.servicioAmortizacionId,
+            comentarios: item.comentarios,
+          },
+        });
+
+        if (anterior && anterior.servicioId !== item.servicioId) {
+          await insertMaquinaServicioHistorial(tx, {
+            maquinaId: actualizada.id,
+            servicioId: item.servicioId,
+            tipoMovimiento: "individual",
+          });
+        }
+      }
+    });
+
+    res.status(201).json({
+      message: "Importación de máquinas completada",
+      resumen,
+    });
+  } catch (e) {
+    console.error("adminConfirmImportMaquinas:", e);
+    const status = Number(e.status) || 500;
+    if (status >= 400 && status < 500) {
+      return res.status(status).json({ error: e.message, detalles: e.detalles || [] });
+    }
+    res.status(500).json({ error: "Error importando máquinas" });
   }
 }

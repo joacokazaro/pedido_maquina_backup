@@ -49,6 +49,15 @@ export default function AdminMaquinas() {
   const [bulkPreview, setBulkPreview] = useState(null);
   const [bulkResult, setBulkResult] = useState(null);
 
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importPreview, setImportPreview] = useState(null);
+  const [importErrors, setImportErrors] = useState([]);
+  const [importPreviewOpen, setImportPreviewOpen] = useState(false);
+  const [importSuccessOpen, setImportSuccessOpen] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
   async function loadData() {
     try {
       setLoading(true);
@@ -233,7 +242,7 @@ export default function AdminMaquinas() {
     try {
       const res = await fetch(`${API_BASE}/admin/maquinas/movimientos-masivos`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...buildActorHeaders(user) },
         body: JSON.stringify({
           maquinaIds: selectedIds,
           servicioId: Number(bulkServicioDestinoId),
@@ -264,7 +273,7 @@ export default function AdminMaquinas() {
     try {
       const res = await fetch(`${API_BASE}/admin/maquinas/movimientos-masivos`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...buildActorHeaders(user) },
         body: JSON.stringify({
           maquinaIds: selectedIds,
           servicioId: Number(bulkServicioDestinoId),
@@ -292,8 +301,134 @@ export default function AdminMaquinas() {
     }
   }
 
+  function resetImportState() {
+    setImportFile(null);
+    setImportBusy(false);
+    setImportPreview(null);
+    setImportErrors([]);
+    setImportPreviewOpen(false);
+    setImportSuccessOpen(false);
+    setImportResult(null);
+  }
+
+  function openImportPanel() {
+    resetImportState();
+    setImportOpen(true);
+  }
+
+  function closeImportPanel() {
+    setImportOpen(false);
+    resetImportState();
+  }
+
+  async function handlePreviewImport() {
+    if (!importFile) {
+      setError("Debés seleccionar un archivo .xlsx para importar.");
+      return;
+    }
+
+    setImportBusy(true);
+    setError("");
+    setImportErrors([]);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+
+      const res = await fetch(`${API_BASE}/admin/maquinas/import/preview`, {
+        method: "POST",
+        headers: {
+          ...buildActorHeaders(user),
+        },
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImportErrors(Array.isArray(data?.detalles) ? data.detalles : []);
+        throw new Error(data?.error || "No se pudo validar la importación");
+      }
+
+      setImportPreview(data);
+      setImportPreviewOpen(true);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error validando importación de máquinas");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  async function handleConfirmImport() {
+    if (!importFile) {
+      setError("Debés seleccionar un archivo .xlsx para importar.");
+      return;
+    }
+
+    setImportBusy(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", importFile);
+
+      const res = await fetch(`${API_BASE}/admin/maquinas/import/confirm`, {
+        method: "POST",
+        headers: {
+          ...buildActorHeaders(user),
+        },
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setImportErrors(Array.isArray(data?.detalles) ? data.detalles : []);
+        throw new Error(data?.error || "No se pudo confirmar la importación");
+      }
+
+      setImportPreviewOpen(false);
+      setImportResult(data);
+      setImportSuccessOpen(true);
+      await loadData();
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error importando máquinas");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  async function handleDownloadImportTemplate() {
+    setError("");
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/maquinas/import/template`, {
+        headers: {
+          ...buildActorHeaders(user),
+        },
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "No se pudo descargar la plantilla");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "plantilla_maquinas.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error descargando plantilla de máquinas");
+    }
+  }
+
   if (loading) return <div className="p-4">Cargando máquinas...</div>;
-  if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
@@ -313,6 +448,12 @@ export default function AdminMaquinas() {
         </div>
       </header>
 
+      {error ? (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <a
           href={`${API_BASE}/admin/maquinas/export`}
@@ -324,6 +465,19 @@ export default function AdminMaquinas() {
         </a>
 
         <div className="flex items-center gap-2">
+          {isAdmin ? (
+            <>
+              <button
+                type="button"
+                onClick={openImportPanel}
+                className="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100"
+              >
+                Importar máquinas
+              </button>
+
+            </>
+          ) : null}
+
           {isAdmin ? (
             <button
               type="button"
@@ -389,10 +543,18 @@ export default function AdminMaquinas() {
 
       <div className="space-y-2">
         {filtered.map(m => (
-          <button
+          <div
             key={m.id}
+            role="button"
+            tabIndex={0}
             onClick={() => navigate(`/admin/maquinas/${encodeURIComponent(m.id)}`)}
-            className="w-full text-left bg-white rounded-2xl shadow px-4 py-3"
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate(`/admin/maquinas/${encodeURIComponent(m.id)}`);
+              }
+            }}
+            className="w-full cursor-pointer text-left bg-white rounded-2xl shadow px-4 py-3"
           >
             <div className="flex justify-between">
               <div>
@@ -455,7 +617,7 @@ export default function AdminMaquinas() {
                 ) : null}
               </div>
             ) : null}
-          </button>
+          </div>
         ))}
       </div>
 
@@ -713,6 +875,104 @@ export default function AdminMaquinas() {
         onConfirm={() => {
           setBulkSuccessOpen(false);
           closeBulkPanel();
+          navigate("/admin/maquinas");
+        }}
+      />
+
+      {importOpen ? (
+        <div className="fixed inset-0 z-40 bg-black/30">
+          <div className="absolute right-0 top-0 h-full w-full max-w-2xl bg-white shadow-2xl">
+            <div className="flex h-full flex-col">
+              <div className="flex items-center justify-between border-b px-5 py-4">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Importación masiva de máquinas</h2>
+                  <p className="text-xs text-gray-600">
+                    Subí un archivo .xlsx para previsualizar y confirmar la importación.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeImportPanel}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              <div className="p-4 space-y-4">
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-xs text-gray-600 mb-2">
+                    Reglas: solo .xlsx, máximo 5 MB y hasta 5000 filas.
+                  </p>
+                  <div className="mb-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleDownloadImportTemplate}
+                      className="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
+                    >
+                      Descargar plantilla
+                    </button>
+                  </div>
+                  <input
+                    type="file"
+                    accept=".xlsx"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    className="block w-full text-sm"
+                  />
+                </div>
+
+                {importErrors.length > 0 ? (
+                  <div className="max-h-56 overflow-y-auto rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                    <p className="font-semibold mb-1">Errores detectados:</p>
+                    {importErrors.map((err, idx) => (
+                      <p key={`${err}-${idx}`}>• {err}</p>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePreviewImport}
+                    disabled={importBusy || !importFile}
+                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                  >
+                    {importBusy ? "Validando..." : "Previsualizar importación"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <ConfirmModal
+        open={importPreviewOpen}
+        title="Confirmar importación de máquinas"
+        message={[
+          importPreview?.message || "",
+          `Nuevas: ${importPreview?.resumen?.creadas || 0}`,
+          `A actualizar: ${importPreview?.resumen?.actualizadas || 0}`,
+        ].filter(Boolean).join("\n")}
+        confirmLabel={importBusy ? "Importando..." : "Confirmar importación"}
+        cancelLabel="Cancelar"
+        onCancel={() => setImportPreviewOpen(false)}
+        onConfirm={handleConfirmImport}
+      />
+
+      <ConfirmModal
+        open={importSuccessOpen}
+        title="Importación completada"
+        hideCancel
+        confirmLabel="Volver al listado"
+        message={[
+          `Detectadas: ${importResult?.resumen?.detectadas || 0}`,
+          `Creadas: ${importResult?.resumen?.creadas || 0}`,
+          `Actualizadas: ${importResult?.resumen?.actualizadas || 0}`,
+        ].join("\n")}
+        onConfirm={() => {
+          setImportSuccessOpen(false);
+          closeImportPanel();
           navigate("/admin/maquinas");
         }}
       />
