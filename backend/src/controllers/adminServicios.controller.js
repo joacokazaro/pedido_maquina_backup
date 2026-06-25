@@ -54,7 +54,7 @@ export async function adminGetServicioById(req, res) {
       where: { id },
       include: {
         maquinas: {
-          orderBy: { id: "asc" },
+          orderBy: [{ tipo: "asc" }, { id: "asc" }],
         },
       },
     });
@@ -63,7 +63,58 @@ export async function adminGetServicioById(req, res) {
       return res.status(404).json({ error: "Servicio no encontrado" });
     }
 
-    res.json(servicio);
+    const maquinasIds = servicio.maquinas.map((m) => m.id);
+
+    const asignacionesActivas = maquinasIds.length
+      ? await prisma.pedidoMaquina.findMany({
+          where: {
+            maquinaId: { in: maquinasIds },
+            pedido: {
+              estado: {
+                notIn: ["CERRADO", "CANCELADO"],
+              },
+            },
+          },
+          include: {
+            pedido: {
+              select: {
+                id: true,
+                estado: true,
+                createdAt: true,
+                destino: true,
+                servicio: {
+                  select: { id: true, nombre: true },
+                },
+              },
+            },
+          },
+          orderBy: {
+            pedido: {
+              createdAt: "desc",
+            },
+          },
+        })
+      : [];
+
+    const asignacionPorMaquina = new Map();
+    for (const asignacion of asignacionesActivas) {
+      if (!asignacionPorMaquina.has(asignacion.maquinaId)) {
+        asignacionPorMaquina.set(asignacion.maquinaId, {
+          pedidoId: asignacion.pedido.id,
+          estadoPedido: asignacion.pedido.estado,
+          destino: asignacion.pedido.destino,
+          servicio: asignacion.pedido.servicio,
+        });
+      }
+    }
+
+    res.json({
+      ...servicio,
+      maquinas: servicio.maquinas.map((maquina) => ({
+        ...maquina,
+        asignacion: asignacionPorMaquina.get(maquina.id) || null,
+      })),
+    });
   } catch (e) {
     console.error("adminGetServicioById:", e);
     res.status(500).json({ error: "Error obteniendo servicio" });
