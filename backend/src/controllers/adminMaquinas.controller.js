@@ -271,7 +271,10 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
   }
 
   const [servicios, tipos, existentes] = await Promise.all([
-    prisma.servicio.findMany({ select: { id: true, nombre: true } }),
+    prisma.servicio.findMany({
+      where: { activo: true },
+      select: { id: true, nombre: true },
+    }),
     prisma.tipoMaquina.findMany({ select: { nombre: true } }),
     prisma.maquina.findMany({
       where: { id: { in: parsedRows.map((item) => item.id).filter(Boolean) } },
@@ -1197,10 +1200,10 @@ export async function adminMoverMaquinasMasivo(req, res) {
 
     const servicioDestino = await prisma.servicio.findUnique({
       where: { id: servicioDestinoId },
-      select: { id: true, nombre: true },
+      select: { id: true, nombre: true, activo: true },
     });
 
-    if (!servicioDestino) {
+    if (!servicioDestino || !servicioDestino.activo) {
       return res.status(404).json({ error: "Servicio destino no encontrado" });
     }
 

@@ -7,6 +7,7 @@ import prisma from "../db/prisma.js";
 export async function getServicios(req, res) {
   try {
     const servicios = await prisma.servicio.findMany({
+      where: { activo: true },
       orderBy: { nombre: "asc" },
       select: {
         id: true,
@@ -28,6 +29,7 @@ export async function getServicios(req, res) {
 export async function getServiciosCatalogo(req, res) {
   try {
     const servicios = await prisma.servicio.findMany({
+      where: { activo: true },
       include: {
         _count: {
           select: { maquinas: true },
@@ -70,7 +72,7 @@ export async function getServicioCatalogoById(req, res) {
       },
     });
 
-    if (!servicio) {
+    if (!servicio || !servicio.activo) {
       return res.status(404).json({ error: "Servicio no encontrado" });
     }
 
@@ -146,6 +148,7 @@ export async function getServiciosPorUsuario(req, res) {
 
     const servicios = await prisma.servicio.findMany({
       where: {
+        activo: true,
         supervisores: {
           some: {
             usuario: {

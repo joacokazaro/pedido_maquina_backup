@@ -196,7 +196,7 @@ export async function crearPedido(req, res) {
     const servicio = await prisma.servicio.findUnique({
       where: { id: Number(servicioId) },
     });
-    if (!servicio)
+    if (!servicio || !servicio.activo)
       return res.status(404).json({ error: "Servicio no encontrado" });
 
     if (!["DEPOSITO", "SUPERVISOR"].includes(destino)) {

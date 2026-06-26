@@ -31,6 +31,7 @@ export async function adminGetServicios(req, res) {
       servicios.map((s) => ({
         id: s.id,
         nombre: s.nombre,
+        activo: s.activo,
         maquinas: s._count.maquinas,
       }))
     );
@@ -59,7 +60,7 @@ export async function adminGetServicioById(req, res) {
       },
     });
 
-    if (!servicio) {
+    if (!servicio || !servicio.activo) {
       return res.status(404).json({ error: "Servicio no encontrado" });
     }
 
@@ -137,7 +138,19 @@ export async function adminCreateServicio(req, res) {
     });
 
     if (existe) {
-      return res.status(409).json({ error: "El servicio ya existe" });
+      if (existe.activo) {
+        return res.status(409).json({ error: "El servicio ya existe" });
+      }
+
+      const reactivado = await prisma.servicio.update({
+        where: { id: existe.id },
+        data: { activo: true },
+      });
+
+      return res.status(200).json({
+        message: "Servicio reactivado correctamente",
+        servicio: reactivado,
+      });
     }
 
     const nuevo = await prisma.servicio.create({
@@ -173,7 +186,7 @@ export async function adminUpdateServicio(req, res) {
       where: { id },
     });
 
-    if (!existe) {
+    if (!existe || !existe.activo) {
       return res.status(404).json({ error: "Servicio no encontrado" });
     }
 
@@ -201,29 +214,44 @@ export async function adminDeleteServicio(req, res) {
       return res.status(400).json({ error: "ID inválido" });
     }
 
-    // Verificar existencia + máquinas asociadas
     const servicio = await prisma.servicio.findUnique({
       where: { id },
-      include: {
-        _count: { select: { maquinas: true } },
-      },
     });
 
     if (!servicio) {
       return res.status(404).json({ error: "Servicio no encontrado" });
     }
 
-    if (servicio._count.maquinas > 0) {
+    if (!servicio.activo) {
+      return res.json({ message: "El servicio ya estaba dado de baja" });
+    }
+
+    const maquinasAsignadas = await prisma.maquina.count({
+      where: { servicioId: id },
+    });
+
+    if (maquinasAsignadas > 0) {
       return res.status(409).json({
-        error: "No se puede eliminar un servicio con máquinas asignadas",
+        error: "No se puede dar de baja un servicio con máquinas asignadas",
       });
     }
 
-    await prisma.servicio.delete({ where: { id } });
+    const servicioActualizado = await prisma.servicio.update({
+      where: { id },
+      data: { activo: false },
+    });
 
-    res.json({ message: "Servicio eliminado correctamente" });
+    res.json({
+      message: "Servicio dado de baja correctamente",
+      servicio: {
+        id: servicioActualizado.id,
+        nombre: servicioActualizado.nombre,
+        activo: servicioActualizado.activo,
+      },
+    });
   } catch (e) {
     console.error("adminDeleteServicio:", e);
-    res.status(500).json({ error: "Error eliminando servicio" });
+
+    res.status(500).json({ error: "Error dando de baja el servicio" });
   }
 }

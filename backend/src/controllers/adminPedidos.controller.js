@@ -264,10 +264,10 @@ export async function adminUpdatePedido(req, res) {
 
     const servicio = await prisma.servicio.findUnique({
       where: { id: servicioIdNum },
-      select: { id: true, nombre: true },
+      select: { id: true, nombre: true, activo: true },
     });
 
-    if (!servicio) {
+    if (!servicio || !servicio.activo) {
       return res.status(404).json({ error: "Servicio no encontrado" });
     }
 

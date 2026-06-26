@@ -33,6 +33,7 @@ model Usuario {
 model Servicio {
   id        Int       @id @default(autoincrement())
   nombre    String    @unique
+  activo    Boolean   @default(true)
   createdAt DateTime  @default(now())
 
   // Relaciones

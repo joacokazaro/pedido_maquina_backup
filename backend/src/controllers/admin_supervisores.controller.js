@@ -108,6 +108,7 @@ export async function adminGetSupervisores(req, res) {
   },
   include: {
     serviciosAsignados: {
+      where: { servicio: { activo: true } },
       include: { servicio: true },
     },
   },
@@ -142,7 +143,10 @@ export async function adminGetServiciosSupervisor(req, res) {
     }
 
     const servicios = await prisma.usuarioServicio.findMany({
-      where: { usuarioId: supervisorId },
+      where: {
+        usuarioId: supervisorId,
+        servicio: { activo: true },
+      },
       select: {
         servicio: {
           select: {
@@ -178,6 +182,31 @@ export async function adminAsignarServiciosSupervisor(req, res) {
       });
     }
 
+    const servicioIdsNormalizados = [...new Set(
+      servicioIds
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0)
+    )];
+
+    if (servicioIdsNormalizados.length !== servicioIds.length) {
+      return res.status(400).json({ error: "Hay IDs de servicio inválidos" });
+    }
+
+    if (servicioIdsNormalizados.length > 0) {
+      const activos = await prisma.servicio.count({
+        where: {
+          id: { in: servicioIdsNormalizados },
+          activo: true,
+        },
+      });
+
+      if (activos !== servicioIdsNormalizados.length) {
+        return res.status(400).json({
+          error: "Solo se pueden asignar servicios activos",
+        });
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       // borrar asignaciones actuales
       await tx.usuarioServicio.deleteMany({
@@ -185,7 +214,7 @@ export async function adminAsignarServiciosSupervisor(req, res) {
       });
 
       // crear nuevas
-      for (const servicioId of servicioIds) {
+      for (const servicioId of servicioIdsNormalizados) {
         await tx.usuarioServicio.create({
           data: {
             usuarioId: supervisorId,
@@ -214,6 +243,7 @@ export async function adminGetUsuariosOperativos(req, res) {
       },
       include: {
         serviciosAsignados: {
+          where: { servicio: { activo: true } },
           include: { servicio: true },
         },
       },
@@ -248,6 +278,7 @@ export async function getSupervisoresCatalogo(req, res) {
       },
       include: {
         serviciosAsignados: {
+          where: { servicio: { activo: true } },
           include: { servicio: true },
           orderBy: {
             servicio: {
@@ -296,6 +327,7 @@ export async function getMaquinasPorSupervisor(req, res) {
       },
       include: {
         serviciosAsignados: {
+          where: { servicio: { activo: true } },
           include: { servicio: true },
           orderBy: {
             servicio: {

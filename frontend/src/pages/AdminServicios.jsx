@@ -19,6 +19,7 @@ export default function AdminServicios() {
 
   // eliminar
   const [servicioAEliminar, setServicioAEliminar] = useState(null);
+  const [errorEliminar, setErrorEliminar] = useState("");
 
   /* =========================
      CARGAR SERVICIOS
@@ -43,17 +44,27 @@ export default function AdminServicios() {
       );
 
       if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.error || "Error eliminando servicio");
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Error dando de baja el servicio");
       }
 
+      const payload = await res.json().catch(() => ({}));
+
       setServicios(prev =>
-        prev.filter(s => s.id !== servicioAEliminar.id)
+        prev.map(s =>
+          s.id === servicioAEliminar.id
+            ? {
+                ...s,
+                activo: payload?.servicio?.activo ?? false,
+              }
+            : s
+        )
       );
 
       setServicioAEliminar(null);
     } catch (e) {
       console.error(e);
+      setErrorEliminar(e.message || "No se pudo dar de baja el servicio");
       setServicioAEliminar(null);
     }
   }
@@ -163,21 +174,28 @@ export default function AdminServicios() {
                        flex justify-between items-center"
           >
             <button
-              onClick={() => navigate(`/admin/servicios/${s.id}`)}
+              onClick={() => s.activo && navigate(`/admin/servicios/${s.id}`)}
               className="text-left flex-1"
             >
-              <div className="font-semibold">{s.nombre}</div>
+              <div className="font-semibold flex items-center gap-2">
+                <span className={s.activo ? "" : "text-gray-500"}>{s.nombre}</span>
+                {!s.activo ? (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 font-medium">
+                    Dado de baja
+                  </span>
+                ) : null}
+              </div>
               <div className="text-xs text-gray-600">
                 {s.maquinas} máquinas
               </div>
             </button>
 
-            {!isReadOnly ? (
+            {!isReadOnly && s.activo ? (
               <button
                 onClick={() => setServicioAEliminar(s)}
                 className="ml-3 text-xs text-red-600 hover:underline"
               >
-                Eliminar
+                Dar de baja
               </button>
             ) : null}
           </div>
@@ -209,11 +227,11 @@ export default function AdminServicios() {
           <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
 
             <h2 className="text-lg font-bold text-red-600 mb-3">
-              ⚠ Eliminar servicio
+              ⚠ Dar de baja servicio
             </h2>
 
             <p className="text-sm text-gray-700 mb-3">
-              Estás por eliminar el servicio:
+              Estás por dar de baja el servicio:
             </p>
 
             <p className="text-sm font-semibold mb-4">
@@ -221,11 +239,11 @@ export default function AdminServicios() {
             </p>
 
             <p className="text-sm text-red-600 font-semibold mb-4">
-              Esta acción es permanente y no se puede deshacer.
+              Esta acción lo oculta de los listados operativos.
             </p>
 
             <p className="text-xs text-gray-600 mb-6">
-              Solo es posible eliminar servicios que no tengan máquinas asociadas.
+              El historial y los pedidos existentes se conservan para trazabilidad.
             </p>
 
             <div className="flex justify-end gap-2">
@@ -240,7 +258,30 @@ export default function AdminServicios() {
                 onClick={eliminarServicio}
                 className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
               >
-                Eliminar
+                Dar de baja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {errorEliminar && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 mx-4">
+            <h2 className="text-lg font-bold text-red-600 mb-3">
+              No se pudo dar de baja el servicio
+            </h2>
+
+            <p className="text-sm text-gray-700 mb-6 whitespace-pre-line">
+              {errorEliminar}
+            </p>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setErrorEliminar("")}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Aceptar
               </button>
             </div>
           </div>
