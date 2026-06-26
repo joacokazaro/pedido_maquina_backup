@@ -800,12 +800,8 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
 
     const eventuales = await prisma.eventual.findMany({
       where: {
-        kit: {
-          maquinas: {
-            some: {
-              maquinaId: id,
-            },
-          },
+        maquinasUtilizadas: {
+          contains: `\"tipo\":\"${maquina.tipo}\"`,
         },
       },
       select: {
@@ -820,12 +816,6 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
           select: {
             id: true,
             username: true,
-            nombre: true,
-          },
-        },
-        kit: {
-          select: {
-            id: true,
             nombre: true,
           },
         },

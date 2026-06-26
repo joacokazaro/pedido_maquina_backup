@@ -82,7 +82,7 @@ export default function SupervisorDashboard() {
             Mis eventuales
           </h2>
           <p className="text-gray-500 text-sm">
-            Revisá los eventuales asignados y el detalle completo de sus kits.
+            Revisá los eventuales asignados y el detalle de componentes utilizados.
           </p>
         </Link>
 

@@ -90,7 +90,6 @@ model Maquina {
   servicioAmortizacion Servicio? @relation("ServicioAmortizacionMaquina", fields: [servicioAmortizacionId], references: [id])
   asignaciones PedidoMaquina[]
   historialServicios MaquinaServicioHistorial[]
-  kits         KitMaquina[]
   movimientosTaller TallerMovimiento[]
 }
 
@@ -143,7 +142,6 @@ model Vehiculo {
   seguro                  Seguro               @relation(fields: [seguroId], references: [id])
   conductorActual         Usuario?             @relation("ConductorActualVehiculo", fields: [conductorActualId], references: [id])
   historialAsignaciones   VehiculoAsignacion[]
-  kits                    KitVehiculo[]
   asignacionesPedido      PedidoVehiculo[]
   movimientosTaller       TallerMovimiento[]
 }
@@ -168,54 +166,16 @@ model TallerMovimiento {
   @@index([usuarioId, createdAt])
 }
 
-model Kit {
-  id            Int          @id @default(autoincrement())
-  nombre        String       @unique
-  observaciones String?
-  estado        String       @default("disponible")
-  activo        Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-
-  maquinas      KitMaquina[]
-  vehiculos     KitVehiculo[]
-  eventuales    Eventual[]
-}
-
-model KitMaquina {
-  id        Int      @id @default(autoincrement())
-  kitId     Int
-  maquinaId String
-  createdAt DateTime @default(now())
-
-  kit       Kit      @relation(fields: [kitId], references: [id])
-  maquina   Maquina  @relation(fields: [maquinaId], references: [id])
-
-  @@unique([maquinaId])
-  @@unique([kitId, maquinaId])
-}
-
-model KitVehiculo {
-  id         Int      @id @default(autoincrement())
-  kitId      Int
-  vehiculoId String
-  createdAt  DateTime @default(now())
-
-  kit         Kit      @relation(fields: [kitId], references: [id])
-  vehiculo    Vehiculo @relation(fields: [vehiculoId], references: [id])
-
-  @@unique([vehiculoId])
-  @@unique([kitId, vehiculoId])
-}
-
 model Eventual {
   id            Int                 @id @default(autoincrement())
   nombre        String              @unique
   supervisorId  Int
-  kitId         Int?
   estado        String              @default("activo")
   fechaInicio   DateTime?
   fechaFin      DateTime?
   observaciones String?
+  maquinasUtilizadas String?
+  vehiculosUtilizados String?
   componentesUtilizados String?
   trabajosRealizados    String?
   serviciosExtrasSubcontratados String?
@@ -223,7 +183,6 @@ model Eventual {
   createdAt     DateTime            @default(now())
 
   supervisor    Usuario             @relation("SupervisorEventuales", fields: [supervisorId], references: [id])
-  kit           Kit?                @relation(fields: [kitId], references: [id])
   historial     HistorialEventual[]
 }
 

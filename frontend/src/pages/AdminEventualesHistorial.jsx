@@ -51,7 +51,6 @@ export default function AdminEventualesHistorial() {
         item.nombre,
         item.supervisor?.nombre,
         item.supervisor?.username,
-        item.kit?.nombre,
         item.observaciones,
       ]
         .filter(Boolean)
@@ -84,7 +83,7 @@ export default function AdminEventualesHistorial() {
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Buscar por nombre, supervisor, kit u observaciones..."
+          placeholder="Buscar por nombre, supervisor u observaciones..."
           className="w-full rounded-xl border p-2.5 text-sm"
         />
         <div className="grid gap-2 md:grid-cols-4">
@@ -140,7 +139,9 @@ export default function AdminEventualesHistorial() {
                   <p className="mt-1 text-xs text-gray-500">
                     Supervisor: {item.supervisor?.nombre || item.supervisor?.username || "-"}
                   </p>
-                  <p className="text-xs text-gray-500">Kit: {item.kit?.nombre || "Sin kit"}</p>
+                  <p className="text-xs text-gray-500">
+                    Componentes: {item.resumenComponentes?.tiposMaquina || 0} tipo(s) de máquina · {item.resumenComponentes?.vehiculos || 0} vehículo(s)
+                  </p>
                 </div>
                 <div className="text-right text-xs text-gray-500">
                   <p>Inicio: {formatDateOnly(item.fechaInicio)}</p>

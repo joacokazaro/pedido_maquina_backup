@@ -13,7 +13,6 @@ const NAV_GROUPS_ADMIN = [
 		items: [
 			{ label: "Máquinas", to: "/admin/maquinas" },
 			{ label: "Vehículos", to: "/admin/vehiculos" },
-			{ label: "Kits", to: "/admin/kits" },
 		],
 	},
 	{
@@ -54,7 +53,6 @@ const NAV_GROUPS_COORDINADOR = [
 			{ label: "Taller", to: "/admin/taller" },
 			{ label: "Eventuales", to: "/admin/eventuales" },
 			{ label: "Historial de eventuales", to: "/admin/eventuales/historial" },
-			{ label: "Kits", to: "/admin/kits" },
 		],
 	},
 ];

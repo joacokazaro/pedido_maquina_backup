@@ -1,14 +1,9 @@
 import {
+  getComponentesCatalogo,
   deleteEventual,
-  deleteKit,
   getEventualDetail,
-  getKitCatalogo,
-  getKitDetail,
   listEventuales,
-  listKits,
   saveEventual,
-  saveKit,
-  reactivateKit,
 } from "../services/eventuales.service.js";
 
 function handleError(res, error, fallbackMessage) {
@@ -22,84 +17,14 @@ function handleError(res, error, fallbackMessage) {
   });
 }
 
-export async function adminListKits(req, res) {
+export async function adminGetComponentesCatalogo(req, res) {
   try {
-    const kits = await listKits(req.query || {});
-    res.json(kits);
-  } catch (error) {
-    handleError(res, error, "Error listando kits");
-  }
-}
-
-export async function adminGetKit(req, res) {
-  try {
-    const kit = await getKitDetail(req.params.id);
-    if (!kit) {
-      return res.status(404).json({ error: "Kit no encontrado" });
-    }
-    res.json(kit);
-  } catch (error) {
-    handleError(res, error, "Error obteniendo kit");
-  }
-}
-
-export async function adminGetKitCatalogo(req, res) {
-  try {
-    const catalogo = await getKitCatalogo();
+    const catalogo = await getComponentesCatalogo();
     res.json(catalogo);
   } catch (error) {
-    handleError(res, error, "Error obteniendo catalogo de kits");
+    handleError(res, error, "Error obteniendo catalogo de componentes");
   }
 }
-
-export async function adminCreateKit(req, res) {
-  try {
-    const kit = await saveKit({
-      payload: req.body || {},
-      actorUsername: req.body?.usuario,
-    });
-    res.status(201).json(kit);
-  } catch (error) {
-    handleError(res, error, "Error creando kit");
-  }
-}
-
-export async function adminUpdateKit(req, res) {
-  try {
-    const kit = await saveKit({
-      kitId: req.params.id,
-      payload: req.body || {},
-      actorUsername: req.body?.usuario,
-    });
-    res.json(kit);
-  } catch (error) {
-    handleError(res, error, "Error actualizando kit");
-  }
-}
-
-export async function adminDeleteKit(req, res) {
-  try {
-    const deleted = await deleteKit(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: "Kit no encontrado" });
-    }
-    res.json({ message: "Kit dado de baja" });
-  } catch (error) {
-    handleError(res, error, "Error dando de baja kit");
-  }
-}
-
-  export async function adminReactivateKit(req, res) {
-    try {
-      const reactivated = await reactivateKit(req.params.id);
-      if (!reactivated) {
-        return res.status(404).json({ error: "Kit no encontrado" });
-      }
-      res.json({ message: "Kit reactivado" });
-    } catch (error) {
-      handleError(res, error, "Error reactivando kit");
-    }
-  }
 
 export async function adminListEventuales(req, res) {
   try {

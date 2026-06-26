@@ -28,7 +28,7 @@ export default function AdminHome() {
     },
     {
       title: "Eventuales",
-      description: "Gestioná kits, historial de eventuales y el alta de nuevos registros.",
+      description: "Gestioná componentes utilizados, historial de eventuales y el alta de nuevos registros.",
       to: "/admin/eventuales",
       icon: "🧰",
     },

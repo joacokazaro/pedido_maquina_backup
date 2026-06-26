@@ -1,28 +1,16 @@
 import { Router } from "express";
 import {
+  adminGetComponentesCatalogo,
   adminCreateEventual,
-  adminCreateKit,
   adminDeleteEventual,
-  adminDeleteKit,
   adminGetEventual,
-  adminGetKit,
-  adminGetKitCatalogo,
   adminListEventuales,
-  adminListKits,
-  adminReactivateKit,
   adminUpdateEventual,
-  adminUpdateKit,
 } from "../controllers/adminEventuales.controller.js";
 
 const router = Router();
 
-router.get("/kits/catalogo", adminGetKitCatalogo);
-router.get("/kits", adminListKits);
-router.get("/kits/:id", adminGetKit);
-router.post("/kits", adminCreateKit);
-router.put("/kits/:id", adminUpdateKit);
-router.delete("/kits/:id", adminDeleteKit);
-router.post("/kits/:id/reactivar", adminReactivateKit);
+router.get("/eventuales/componentes/catalogo", adminGetComponentesCatalogo);
 
 router.get("/eventuales", adminListEventuales);
 router.get("/eventuales/:id", adminGetEventual);

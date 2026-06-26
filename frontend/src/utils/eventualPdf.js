@@ -50,33 +50,27 @@ function drawSectionTitle(doc, text, y) {
 }
 
 function buildMaquinariaRows(eventual) {
-  const maquinas = Array.isArray(eventual?.componentesUtilizados?.maquinas) && eventual.componentesUtilizados.maquinas.length > 0
-    ? eventual.componentesUtilizados.maquinas
-    : Array.isArray(eventual?.kit?.maquinas)
-      ? eventual.kit.maquinas
-      : [];
+  const maquinas = Array.isArray(eventual?.componentesActuales?.maquinasUtilizadas)
+    ? eventual.componentesActuales.maquinasUtilizadas
+    : [];
 
-  const vehiculos = Array.isArray(eventual?.componentesUtilizados?.vehiculos) && eventual.componentesUtilizados.vehiculos.length > 0
-    ? eventual.componentesUtilizados.vehiculos
-    : Array.isArray(eventual?.kit?.vehiculos)
-      ? eventual.kit.vehiculos
-      : [];
+  const vehiculos = Array.isArray(eventual?.componentesActuales?.vehiculos)
+    ? eventual.componentesActuales.vehiculos
+    : [];
 
   const rows = [];
 
   for (const maquina of maquinas) {
     rows.push([
       `MAQUINA · ${safeText(maquina?.tipo)}`,
-      safeText(maquina?.id),
-      safeText(maquina?.modelo, "Sin descripcion"),
+      `Cantidad: ${safeText(maquina?.cantidad, "0")}`,
     ]);
   }
 
   for (const vehiculo of vehiculos) {
     rows.push([
       `VEHICULO · ${safeText(vehiculo?.vehiculo)}`,
-      safeText(vehiculo?.id),
-      `${safeText(vehiculo?.modelo, "Sin modelo")} · ${safeText(vehiculo?.patente, "Sin patente")}`,
+      `ID ${safeText(vehiculo?.id)} · ${safeText(vehiculo?.modelo, "Sin modelo")} · ${safeText(vehiculo?.patente, "Sin patente")}`,
     ]);
   }
 
@@ -232,12 +226,11 @@ export function downloadEventualResumenPdf(eventual) {
       tableWidth: 186,
       styles: { font: "helvetica", fontSize: 8.7, cellPadding: 1.8 },
       headStyles: { fillColor: [240, 240, 240], textColor: [31, 41, 55] },
-      head: [["Tipo de componente", "ID", "Descripcion"]],
+      head: [["Tipo de componente", "Descripcion"]],
       body: maquinariaRows,
       columnStyles: {
-        0: { cellWidth: 72, fontStyle: "bold" },
-        1: { cellWidth: 24 },
-        2: { cellWidth: 90 },
+        0: { cellWidth: 84, fontStyle: "bold" },
+        1: { cellWidth: 102 },
       },
     });
     cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;

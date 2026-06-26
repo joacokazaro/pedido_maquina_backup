@@ -68,8 +68,6 @@ import AdminEventualesPanel from "./pages/AdminEventualesPanel";
 import AdminEventualesHistorial from "./pages/AdminEventualesHistorial";
 import AdminEventualForm from "./pages/AdminEventualForm";
 import AdminEventualDetalle from "./pages/AdminEventualDetalle";
-import AdminKits from "./pages/AdminKits";
-import AdminKitForm from "./pages/AdminKitForm";
 import CoordinadorHome from "./pages/CoordinadorHome";
 import SupervisorMisEventuales from "./pages/SupervisorMisEventuales";
 import SupervisorEventualDetalle from "./pages/SupervisorEventualDetalle";
@@ -587,20 +585,6 @@ function App() {
         }
       />
 
-      <Route
-        path="/admin/kits"
-        element={renderReadOnlyModulesPage(<AdminKits />)}
-      />
-
-      <Route
-        path="/admin/kits/nuevo"
-        element={renderAdminOnlyPage(<AdminKitForm />)}
-      />
-
-      <Route
-        path="/admin/kits/:id"
-        element={renderReadOnlyModulesPage(<AdminKitForm />)}
-      />
       </Routes>
     </>
   );

@@ -28,14 +28,8 @@ export default function AdminEventualesPanel() {
 
   const sections = [
     {
-      title: "Kits",
-      description: "Administrá la composicion de maquinas y vehiculos, con validacion de exclusividad por kit.",
-      to: "/admin/kits",
-      icon: "🧰",
-    },
-    {
       title: "Historial de eventuales",
-      description: "Filtrá, auditá cambios y revisá la composicion historica de cada kit asignado.",
+      description: "Filtrá y auditá cambios, incluyendo componentes por tipo de máquina y vehículos utilizados.",
       to: "/admin/eventuales/historial",
       icon: "🗂",
     },
@@ -43,7 +37,7 @@ export default function AdminEventualesPanel() {
       ? []
       : [{
       title: "Registrar eventual",
-      description: "Creá un eventual, asigná supervisor y kit, o dejalo activo sin kit si todavia no esta definido.",
+      description: "Creá un eventual y cargá componentes usados: tipos de máquina con cantidad y vehículos puntuales.",
       to: "/admin/eventuales/nuevo",
       icon: "➕",
     }]),
@@ -61,7 +55,7 @@ export default function AdminEventualesPanel() {
       <header className="mx-auto mb-8 max-w-4xl text-center">
         <h1 className="text-3xl font-extrabold text-gray-800">Panel de eventuales</h1>
         <p className="mt-2 text-sm text-gray-500">
-          Gestioná kits, altas de eventuales y el historial completo de sus cambios.
+          Gestioná altas de eventuales y el historial completo de sus cambios.
         </p>
       </header>
 

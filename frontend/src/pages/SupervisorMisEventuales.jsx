@@ -56,13 +56,13 @@ export default function SupervisorMisEventuales() {
 
       <header className="mb-6 text-center">
         <h1 className="text-3xl font-extrabold text-gray-800">Mis eventuales</h1>
-        <p className="mt-2 text-sm text-gray-600">Eventuales asignados a tu supervisión con detalle completo del kit.</p>
+        <p className="mt-2 text-sm text-gray-600">Eventuales asignados a tu supervisión con detalle de componentes utilizados.</p>
       </header>
 
       <div className="mx-auto mb-4 max-w-3xl rounded-2xl bg-white p-3 shadow space-y-3">
         <input
           className="w-full rounded-xl border p-2.5 text-sm"
-          placeholder="Buscar por eventual, kit u observaciones..."
+          placeholder="Buscar por eventual u observaciones..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
@@ -94,7 +94,7 @@ export default function SupervisorMisEventuales() {
                   {" · "}
                   Fin: {formatDateOnly(eventual.fechaFin)}
                 </p>
-                {/* Observaciones y resumen de kit eliminados de la lista; se muestran solo en detalle e historial */}
+                {/* Observaciones y resumen de componentes se muestran en detalle e historial */}
               </div>
               <span className={eventual.estado === "activo" ? "rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase text-emerald-700" : eventual.estado === "finalizado" ? "rounded-full bg-slate-200 px-2 py-1 text-[10px] font-semibold uppercase text-slate-700" : "rounded-full bg-rose-100 px-2 py-1 text-[10px] font-semibold uppercase text-rose-700"}>
                 {eventual.estado}
