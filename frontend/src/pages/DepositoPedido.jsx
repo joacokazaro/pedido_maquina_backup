@@ -71,6 +71,32 @@ export default function DepositoPedido() {
     volverAlListado();
   }
 
+  function tieneFaltantesPendientesEnCierre(pedidoActual) {
+    if (pedidoActual?.estado !== "CERRADO") return false;
+
+    const ultimaConfirmacion = [...(pedidoActual.historial || [])]
+      .reverse()
+      .find((h) => ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"].includes(h.accion));
+
+    const faltantes = ultimaConfirmacion?.detalle?.faltantesConfirmados || [];
+    return faltantes.length > 0;
+  }
+
+  const puedeRegistrarDevolucionDirecta =
+    pedido.destino === "DEPOSITO" &&
+    (user?.rol || "").toLowerCase() === "deposito" &&
+    (
+      ["ENTREGADO", "PENDIENTE_CONFIRMACION", "PENDIENTE_CONFIRMACION_FALTANTES"].includes(pedido.estado) ||
+      tieneFaltantesPendientesEnCierre(pedido)
+    );
+
+  const etiquetaDevolucionDirecta =
+    pedido.estado === "ENTREGADO"
+      ? "Registrar devolución directa"
+      : pedido.estado === "CERRADO"
+        ? "Registrar devolución directa (cerrado con faltantes)"
+        : "Registrar devolución directa / cierre pendiente";
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
 
@@ -137,16 +163,14 @@ export default function DepositoPedido() {
         </button>
       )}
 
-      {pedido.destino === "DEPOSITO" &&
-        (user?.rol || "").toLowerCase() === "deposito" &&
-        pedido.estado === "ENTREGADO" && (
-          <button
-            onClick={() => navigate(`/deposito/pedido/${id}/confirmar`)}
-            className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold mt-3"
-          >
-            Registrar devolución directa
-          </button>
-        )}
+      {puedeRegistrarDevolucionDirecta && (
+        <button
+          onClick={() => navigate(`/deposito/pedido/${id}/confirmar`)}
+          className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold mt-3"
+        >
+          {etiquetaDevolucionDirecta}
+        </button>
+      )}
 
       {/* Solicitar cancelación (vista depósito): mostrar cuando el pedido tenga destino DEPOSITO */}
       {pedido.destino === "DEPOSITO" && (user?.rol || "").toLowerCase() === "deposito" &&
@@ -181,16 +205,6 @@ export default function DepositoPedido() {
           </>
         )}
 
-      {["PENDIENTE_CONFIRMACION", "PENDIENTE_CONFIRMACION_FALTANTES"].includes(
-        pedido.estado
-      ) && (
-        <button
-          onClick={() => navigate(`/deposito/pedido/${id}/confirmar`)}
-          className="w-full bg-orange-600 text-white py-3 rounded-xl font-semibold"
-        >
-          Confirmar devolución
-        </button>
-      )}
     </div>
   );
 }

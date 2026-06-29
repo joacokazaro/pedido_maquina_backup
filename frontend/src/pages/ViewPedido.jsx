@@ -46,7 +46,7 @@ export default function ViewPedido() {
 
       const confirmacion = [...(data.historial || [])]
         .reverse()
-        .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
+        .find(h => ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"].includes(h.accion));
 
       const faltantesConfirmados =
         confirmacion?.detalle?.faltantesConfirmados || [];

@@ -37,6 +37,17 @@ export default function ConfirmarDevolucion() {
         declaradas = reg?.detalle?.devueltasDeclaradas || [];
       }
 
+      if (data.estado === "CERRADO") {
+        const confirmacion = [...(data.historial || [])]
+          .reverse()
+          .find((h) => ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"].includes(h.accion));
+
+        const faltantesPrevios = confirmacion?.detalle?.faltantesConfirmados || [];
+        if (faltantesPrevios.length > 0) {
+          declaradas = confirmacion?.detalle?.devueltasConfirmadas || [];
+        }
+      }
+
       if (
         data.estado === "ENTREGADO" &&
         data.destino === "DEPOSITO" &&
@@ -57,6 +68,10 @@ export default function ConfirmarDevolucion() {
   }
 
   const asignadas = pedido.itemsAsignados || [];
+  const esDepositoDirecto =
+    pedido.destino === "DEPOSITO" &&
+    (user?.rol || "").toUpperCase() === "DEPOSITO" &&
+    ["ENTREGADO", "PENDIENTE_CONFIRMACION", "PENDIENTE_CONFIRMACION_FALTANTES", "CERRADO"].includes(pedido.estado);
 
   function toggle(idMaq) {
     setSeleccion((prev) =>
@@ -108,13 +123,15 @@ export default function ConfirmarDevolucion() {
 
       <h1 className="text-2xl font-bold mb-4">Confirmar devolución</h1>
 
-      {pedido.estado === "ENTREGADO" &&
-        pedido.destino === "DEPOSITO" &&
-        (user?.rol || "").toUpperCase() === "DEPOSITO" && (
-          <p className="mb-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
-            Estás registrando una devolución directa desde depósito sin que el supervisor la haya cargado previamente.
-          </p>
-        )}
+      {esDepositoDirecto && (
+        <p className="mb-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+          {pedido.estado === "ENTREGADO"
+            ? "Estás registrando una devolución directa desde depósito sin que el supervisor la haya cargado previamente."
+            : pedido.estado === "CERRADO"
+              ? "Estás registrando una devolución pendiente sobre un pedido cerrado con faltantes."
+            : "Estás cerrando desde depósito una devolución que quedó pendiente después de un registro parcial del supervisor."}
+        </p>
+      )}
 
       <div className="bg-white rounded-xl shadow p-4 mb-4 space-y-3">
         {asignadas.map((m) => {

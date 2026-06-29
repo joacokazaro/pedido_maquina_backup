@@ -665,6 +665,36 @@ export async function adminGetMaquinas(req, res) {
         })
       : [];
 
+    const maquinasNoDevueltasIds = maquinas
+      .filter((m) => canonicalEstadoMaquina(m.estado) === "no_devuelta")
+      .map((m) => m.id);
+
+    const asignacionesHistoricasNoDevueltas = maquinasNoDevueltasIds.length
+      ? await prisma.pedidoMaquina.findMany({
+          where: {
+            maquinaId: { in: maquinasNoDevueltasIds },
+          },
+          include: {
+            pedido: {
+              select: {
+                id: true,
+                estado: true,
+                createdAt: true,
+                destino: true,
+                servicio: {
+                  select: { id: true, nombre: true },
+                },
+              },
+            },
+          },
+          orderBy: {
+            pedido: {
+              createdAt: "desc",
+            },
+          },
+        })
+      : [];
+
     const asignacionPorMaquina = new Map();
     for (const a of asignacionesActivas) {
       if (!asignacionPorMaquina.has(a.maquinaId)) {
@@ -677,10 +707,26 @@ export async function adminGetMaquinas(req, res) {
       }
     }
 
+    const asignacionHistoricaPorMaquina = new Map();
+    for (const a of asignacionesHistoricasNoDevueltas) {
+      if (!asignacionHistoricaPorMaquina.has(a.maquinaId)) {
+        asignacionHistoricaPorMaquina.set(a.maquinaId, {
+          pedidoId: a.pedido.id,
+          estadoPedido: a.pedido.estado,
+          destino: a.pedido.destino,
+          servicio: a.pedido.servicio,
+        });
+      }
+    }
+
     const result = maquinas.map((m) => ({
       ...m,
       estado: canonicalEstadoMaquina(m.estado),
-      asignacion: asignacionPorMaquina.get(m.id) || null,
+      asignacion:
+        asignacionPorMaquina.get(m.id) ||
+        (canonicalEstadoMaquina(m.estado) === "no_devuelta"
+          ? asignacionHistoricaPorMaquina.get(m.id) || null
+          : null),
     }));
 
     res.json(result);
@@ -731,14 +777,32 @@ export async function adminGetMaquinaById(req, res) {
       },
     });
 
+    const pedidoHistoricoNoDevuelto = !pedidoActual && canonicalEstadoMaquina(maquina.estado) === "no_devuelta"
+      ? await prisma.pedido.findFirst({
+          where: {
+            asignadas: {
+              some: { maquinaId: id },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            estado: true,
+            servicio: {
+              select: { nombre: true },
+            },
+          },
+        })
+      : null;
+
     res.json({
       ...maquina,
       estado: canonicalEstadoMaquina(maquina.estado),
-      asignacion: pedidoActual
+      asignacion: pedidoActual || pedidoHistoricoNoDevuelto
         ? {
-            pedidoId: pedidoActual.id,
-            servicio: pedidoActual.servicio?.nombre ?? null,
-            estadoPedido: pedidoActual.estado,
+            pedidoId: (pedidoActual || pedidoHistoricoNoDevuelto).id,
+            servicio: (pedidoActual || pedidoHistoricoNoDevuelto).servicio?.nombre ?? null,
+            estadoPedido: (pedidoActual || pedidoHistoricoNoDevuelto).estado,
           }
         : null,
     });

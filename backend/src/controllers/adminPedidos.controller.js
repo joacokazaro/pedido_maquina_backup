@@ -35,6 +35,44 @@ function safeParse(detalle) {
   }
 }
 
+function computeFaltantesFinalesFromHistorial(historial) {
+  if (!Array.isArray(historial) || historial.length === 0) return [];
+
+  const faltantes = new Set();
+  const devueltas = new Set();
+
+  for (const h of historial) {
+    if (!h || !h.detalle) continue;
+    const d = typeof h.detalle === "string" ? safeParse(h.detalle) : h.detalle;
+    if (!d) continue;
+
+    const faltantesDetalle = d?.faltantes || d?.faltantesConfirmados || [];
+    const devueltasDetalle = [].concat(
+      d?.devueltas || [],
+      d?.devueltasConfirmadas || [],
+      d?.devueltasDeclaradas || []
+    );
+
+    if (Array.isArray(faltantesDetalle)) {
+      for (const id of faltantesDetalle) {
+        if (id) faltantes.add(String(id));
+      }
+    }
+
+    if (Array.isArray(devueltasDetalle)) {
+      for (const id of devueltasDetalle) {
+        if (id) devueltas.add(String(id));
+      }
+    }
+  }
+
+  for (const id of devueltas) {
+    if (faltantes.has(id)) faltantes.delete(id);
+  }
+
+  return Array.from(faltantes);
+}
+
 /* ========================================================
    GET /admin/pedidos
 ======================================================== */
@@ -68,7 +106,11 @@ export async function adminListPedidos(req, res) {
         supervisor: { select: { username: true } },
         servicio: { select: { nombre: true } },
         historial: {
-          where: { accion: "DEVOLUCION_CONFIRMADA" },
+          where: {
+            accion: {
+              in: ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"],
+            },
+          },
           orderBy: { fecha: "desc" },
           take: 1,
         },
@@ -617,7 +659,7 @@ export async function adminExportPedidos(req, res) {
     const asignadas = p.asignadas.map(a => a.maquina.id);
 
     let devueltas = [];
-    let faltantes = [];
+    let faltantes = computeFaltantesFinalesFromHistorial(p.historial || []);
     let observaciones = [];
     let historialResumen = [];
 
@@ -638,9 +680,6 @@ export async function adminExportPedidos(req, res) {
 
         if (d?.devueltas) devueltas.push(...d.devueltas);
         if (d?.devueltasConfirmadas) devueltas.push(...d.devueltasConfirmadas);
-        if (d?.faltantes || d?.faltantesConfirmados)
-          faltantes.push(...(d.faltantes || d.faltantesConfirmados));
-
         if (d?.observacion) observaciones.push(d.observacion);
         if (d?.mensaje) observaciones.push(d.mensaje);
       }

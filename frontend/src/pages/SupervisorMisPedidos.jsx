@@ -75,7 +75,7 @@ export default function SupervisorMisPedidos() {
 
     const confirmacion = [...(pedido.historial || [])]
       .reverse()
-      .find((h) => h.accion === "DEVOLUCION_CONFIRMADA");
+      .find((h) => ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"].includes(h.accion));
 
     const faltantes =
       confirmacion?.detalle?.faltantesConfirmados || [];

@@ -819,17 +819,50 @@ export async function confirmarDevolucion(req, res) {
     if (!pedidoActual)
       return res.status(404).json({ error: "Pedido no encontrado" });
 
+    const ultimaConfirmacionCierre = await prisma.historialPedido.findFirst({
+      where: {
+        pedidoId: id,
+        accion: {
+          in: ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"],
+        },
+      },
+      orderBy: {
+        fecha: "desc",
+      },
+    });
+
+    const detalleUltimaConfirmacion = safeParse(
+      ultimaConfirmacionCierre?.detalle,
+      {}
+    );
+
+    const faltantesPreviosConfirmados = Array.isArray(
+      detalleUltimaConfirmacion?.faltantesConfirmados
+    )
+      ? detalleUltimaConfirmacion.faltantesConfirmados
+      : [];
+
     const puedeConfirmarDirectoDeposito =
       pedidoActual.destino === "DEPOSITO" &&
       u.rol === "deposito" &&
       pedidoActual.estado === ESTADOS_PEDIDO.ENTREGADO;
+
+    const puedeConfirmarCerradoConFaltantesDeposito =
+      pedidoActual.destino === "DEPOSITO" &&
+      u.rol === "deposito" &&
+      pedidoActual.estado === ESTADOS_PEDIDO.CERRADO &&
+      faltantesPreviosConfirmados.length > 0;
 
     const puedeConfirmarFlujoNormal = [
       ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION,
       ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION_FALTANTES,
     ].includes(pedidoActual.estado);
 
-    if (!puedeConfirmarFlujoNormal && !puedeConfirmarDirectoDeposito) {
+    if (
+      !puedeConfirmarFlujoNormal &&
+      !puedeConfirmarDirectoDeposito &&
+      !puedeConfirmarCerradoConFaltantesDeposito
+    ) {
       return res.status(400).json({
         error: "El pedido no está en un estado válido para confirmar devolución",
       });
@@ -872,6 +905,8 @@ export async function confirmarDevolucion(req, res) {
           create: {
             accion: puedeConfirmarDirectoDeposito
               ? "DEVOLUCION_CONFIRMADA_DIRECTA"
+              : puedeConfirmarCerradoConFaltantesDeposito
+                ? "DEVOLUCION_CONFIRMADA_DIRECTA"
               : "DEVOLUCION_CONFIRMADA",
             usuarioId: u.id,
             detalle: JSON.stringify({
@@ -879,6 +914,9 @@ export async function confirmarDevolucion(req, res) {
               faltantesConfirmados: faltantes,
               ...(puedeConfirmarDirectoDeposito
                 ? { devolucionDirectaDeposito: true }
+                : {}),
+              ...(puedeConfirmarCerradoConFaltantesDeposito
+                ? { cierreFaltantesPendientesDeposito: true }
                 : {}),
               ...(observacion ? { observacion } : {}),
             }),

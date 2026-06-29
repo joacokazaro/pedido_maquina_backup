@@ -79,7 +79,7 @@ export default function DepositoMaquinas() {
         ...maquina,
         maquinaEsPropia,
         estadoVisible,
-        asignacionVisible: maquinaEsPropia ? maquina.asignacion : null,
+        asignacionVisible: maquinaEsPropia || maquina.estado === "no_devuelta" ? maquina.asignacion : null,
       };
     });
 
@@ -194,19 +194,34 @@ export default function DepositoMaquinas() {
                   <p>
                     Servicio de préstamo: <b>{m.asignacionVisible.servicio?.nombre || "-"}</b>
                   </p>
-                  <p>
-                    Pedido activo:{" "}
-                    {m.asignacionVisible.pedidoId ? (
-                      <Link
-                        to={`/deposito/pedido/${encodeURIComponent(m.asignacionVisible.pedidoId)}`}
-                        className="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-800"
-                      >
-                        {m.asignacionVisible.pedidoId}
-                      </Link>
+                    {m.estadoVisible === "no_devuelta" ? (
+                      <p>
+                        Pedido no devuelto: {m.asignacionVisible.pedidoId ? (
+                          <Link
+                            to={`/deposito/pedido/${encodeURIComponent(m.asignacionVisible.pedidoId)}`}
+                            className="font-semibold text-red-600 underline underline-offset-2 hover:text-red-800"
+                          >
+                            {m.asignacionVisible.pedidoId}
+                          </Link>
+                        ) : (
+                          <b>-</b>
+                        )}
+                      </p>
                     ) : (
-                      <b>-</b>
+                      <p>
+                        Pedido activo:{" "}
+                        {m.asignacionVisible.pedidoId ? (
+                          <Link
+                            to={`/deposito/pedido/${encodeURIComponent(m.asignacionVisible.pedidoId)}`}
+                            className="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-800"
+                          >
+                            {m.asignacionVisible.pedidoId}
+                          </Link>
+                        ) : (
+                          <b>-</b>
+                        )}
+                      </p>
                     )}
-                  </p>
                 </>
               ) : (
                 <p>

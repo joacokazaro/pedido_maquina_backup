@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { EstadoBadge } from "../utils/estadoPedido.jsx";
@@ -7,6 +7,9 @@ export default function DepositoHome() {
   const navigate = useNavigate();
   const [pedidos, setPedidos] = useState([]);
   const [filtro, setFiltro] = useState("TODOS");
+  const [filtroSupervisor, setFiltroSupervisor] = useState("TODOS");
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroFaltantes, setFiltroFaltantes] = useState("TODOS");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -56,7 +59,7 @@ export default function DepositoHome() {
 
     const confirmacion = [...(pedido.historial || [])]
       .reverse()
-      .find(h => h.accion === "DEVOLUCION_CONFIRMADA");
+      .find(h => ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"].includes(h.accion));
 
     const faltantes =
       confirmacion?.detalle?.faltantesConfirmados || [];
@@ -64,10 +67,68 @@ export default function DepositoHome() {
     return faltantes.length > 0;
   }
 
-  const pedidosFiltrados = pedidos.filter((p) => {
-    if (filtro === "TODOS") return true;
-    return p.estado === filtro;
-  });
+  const pedidosFiltrados = useMemo(() => {
+    const termino = busqueda.trim().toLowerCase();
+
+    return pedidos.filter((p) => {
+      const esCerradoConFaltantes = p.estado === "CERRADO" && tieneFaltantes(p);
+
+      if (filtro === "CERRADO_CON_FALTANTES" && !esCerradoConFaltantes) return false;
+      if (
+        filtro !== "TODOS" &&
+        filtro !== "CERRADO_CON_FALTANTES" &&
+        p.estado !== filtro
+      ) {
+        return false;
+      }
+
+      if (filtroSupervisor !== "TODOS") {
+        const supervisorPedido = String(p.supervisorNombre || p.supervisor || "").toLowerCase();
+        if (supervisorPedido !== filtroSupervisor.toLowerCase()) return false;
+      }
+
+      if (filtroFaltantes === "CON_FALTANTES" && !tieneFaltantes(p)) return false;
+      if (filtroFaltantes === "SIN_FALTANTES" && tieneFaltantes(p)) return false;
+
+      if (!termino) return true;
+
+      const supervisor = String(p.supervisorNombre || p.supervisor || "").toLowerCase();
+      const servicio = String(p.servicio || "").toLowerCase();
+      const pedidoId = String(p.id || "").toLowerCase();
+      const itemsSolicitados = (p.itemsSolicitados || []).some((item) => {
+        const tipo = String(item.tipo || "").toLowerCase();
+        const modelo = String(item.modelo || "").toLowerCase();
+        const serie = String(item.serie || "").toLowerCase();
+        return tipo.includes(termino) || modelo.includes(termino) || serie.includes(termino);
+      });
+      const itemsAsignados = (p.itemsAsignados || []).some((item) => {
+        const id = String(item.id || "").toLowerCase();
+        const tipo = String(item.tipo || "").toLowerCase();
+        const modelo = String(item.modelo || "").toLowerCase();
+        const serie = String(item.serie || "").toLowerCase();
+        return id.includes(termino) || tipo.includes(termino) || modelo.includes(termino) || serie.includes(termino);
+      });
+
+      return (
+        pedidoId.includes(termino) ||
+        supervisor.includes(termino) ||
+        servicio.includes(termino) ||
+        itemsSolicitados ||
+        itemsAsignados
+      );
+    });
+  }, [pedidos, filtro, filtroSupervisor, busqueda, filtroFaltantes]);
+
+  const supervisores = useMemo(() => {
+    return Array.from(
+      new Map(
+        pedidos
+          .map((p) => String(p.supervisorNombre || p.supervisor || "").trim())
+          .filter(Boolean)
+          .map((nombre) => [nombre.toLowerCase(), nombre])
+      ).values()
+    ).sort((a, b) => a.localeCompare(b));
+  }, [pedidos]);
 
   const filtros = [
     { label: "Todos", value: "TODOS", color: "bg-gray-200 text-gray-700" },
@@ -76,6 +137,7 @@ export default function DepositoHome() {
     { label: "Entregados", value: "ENTREGADO", color: "bg-green-500 text-white" },
     { label: "Pend. Confirmación", value: "PENDIENTE_CONFIRMACION", color: "bg-orange-500 text-white" },
     { label: "Cerrados", value: "CERRADO", color: "bg-gray-700 text-white" },
+    { label: "Cerrado con faltantes", value: "CERRADO_CON_FALTANTES", color: "bg-red-700 text-white" },
   ];
 
   return (
@@ -91,20 +153,51 @@ export default function DepositoHome() {
         Pedidos a gestionar
       </h1>
 
-      {/* FILTROS */}
-      <div className="flex flex-wrap justify-center gap-2 mb-6">
-        {filtros.map(f => (
-          <button
-            key={f.value}
-            onClick={() => setFiltro(f.value)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition 
-              ${filtro === f.value
-                ? f.color
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+      <div className="max-w-3xl mx-auto mb-6 space-y-3 rounded-2xl bg-white p-4 shadow border border-gray-200">
+        <input
+          type="search"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          placeholder="Buscar por pedido, supervisor, servicio, máquina, modelo o serie..."
+        />
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <select
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
           >
-            {f.label}
-          </button>
-        ))}
+            {filtros.map((opcion) => (
+              <option key={opcion.value} value={opcion.value}>
+                {opcion.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={filtroFaltantes}
+            onChange={(e) => setFiltroFaltantes(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
+          >
+            <option value="TODOS">Todos los pedidos</option>
+            <option value="CON_FALTANTES">Con faltantes</option>
+            <option value="SIN_FALTANTES">Sin faltantes</option>
+          </select>
+
+          <select
+            value={filtroSupervisor}
+            onChange={(e) => setFiltroSupervisor(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
+          >
+            <option value="TODOS">Todos los supervisores</option>
+            {supervisores.map((supervisor) => (
+              <option key={supervisor} value={supervisor}>
+                {supervisor}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {pedidosFiltrados.length === 0 && (
