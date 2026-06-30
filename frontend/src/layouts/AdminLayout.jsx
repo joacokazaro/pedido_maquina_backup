@@ -105,8 +105,42 @@ const NAV_GROUPS_TALLER = [
 	},
 ];
 
+const NAV_GROUPS_DEPOSITO = [
+	{
+		label: "Inicio",
+		to: "/deposito",
+	},
+	{
+		label: "Inventario",
+		items: [
+			{ label: "Máquinas", to: "/deposito/maquinas" },
+		],
+	},
+	{
+		label: "Operaciones",
+		items: [
+			{ label: "Pedidos a gestionar", to: "/deposito/pedidos" },
+		],
+	},
+	{
+		label: "Configuración",
+		items: [
+			{ label: "Máquinas en Servicio", to: "/deposito/servicios" },
+			{ label: "Máquinas por Supervisor", to: "/deposito/supervisores" },
+		],
+	},
+];
+
 function isActivePath(pathname, to) {
 	return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+function getRoleLabel(rolUpper) {
+	if (rolUpper === "TALLER") return "Taller";
+	if (rolUpper === "CONSULTOR") return "Consultoría";
+	if (rolUpper === "COORDINADOR") return "Coordinación";
+	if (rolUpper === "DEPOSITO") return "Depósito";
+	return "Administración";
 }
 
 function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
@@ -178,7 +212,7 @@ function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
 }
 
 export default function AdminLayout({ children }) {
-	const { user, logout, confirmLogout } = useAuth();
+	const { user, confirmLogout } = useAuth();
 	const location = useLocation();
 	const navigate = useNavigate();
 	const [openGroup, setOpenGroup] = useState("");
@@ -186,17 +220,22 @@ export default function AdminLayout({ children }) {
 	const isCoordinador = rolUpper === "COORDINADOR";
 	const isConsultor = rolUpper === "CONSULTOR";
 	const isTaller = rolUpper === "TALLER";
+	const isDeposito = rolUpper === "DEPOSITO";
 	const navGroups = isTaller
 		? NAV_GROUPS_TALLER
-		: isConsultor
-			? NAV_GROUPS_CONSULTOR
-			: isCoordinador
-				? NAV_GROUPS_COORDINADOR
-				: NAV_GROUPS_ADMIN;
-	const roleHomePath = "/admin";
+		: isDeposito
+			? NAV_GROUPS_DEPOSITO
+			: isConsultor
+				? NAV_GROUPS_CONSULTOR
+				: isCoordinador
+					? NAV_GROUPS_COORDINADOR
+					: NAV_GROUPS_ADMIN;
+	const roleHomePath = isDeposito ? "/deposito" : "/admin";
+	const roleLabel = getRoleLabel(rolUpper);
 
 	useEffect(() => {
-		setOpenGroup("");
+		const id = window.setTimeout(() => setOpenGroup(""), 0);
+		return () => window.clearTimeout(id);
 	}, [location.pathname]);
 
 	return (
@@ -208,10 +247,10 @@ export default function AdminLayout({ children }) {
 							type="button"
 							onClick={() => navigate(roleHomePath)}
 							className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-900 transition hover:bg-blue-100"
-							aria-label="Ir al inicio de administración"
-							title={isTaller ? "Taller" : isConsultor ? "Consultoría" : isCoordinador ? "Coordinación" : "Administración"}
+							aria-label={`Ir al inicio de ${roleLabel.toLowerCase()}`}
+							title={roleLabel}
 						>
-							{isTaller ? "Taller" : isConsultor ? "Consultoría" : isCoordinador ? "Coordinación" : "Administración"}
+							{roleLabel}
 						</button>
 
 						<nav className="hidden items-center gap-1 lg:flex">
@@ -233,7 +272,7 @@ export default function AdminLayout({ children }) {
 
 						<div className="hidden text-right md:block">
 							<p className="text-sm font-semibold text-slate-800">{user?.username || "admin"}</p>
-							<p className="text-xs text-blue-700">{isTaller ? "Taller" : isConsultor ? "Consultoría" : isCoordinador ? "Coordinación" : "Administración"}</p>
+							<p className="text-xs text-blue-700">{roleLabel}</p>
 						</div>
 
 						<button

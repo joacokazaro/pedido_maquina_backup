@@ -112,6 +112,20 @@ function App() {
       <AdminLayout>{page}</AdminLayout>
     </ProtectedRoute>
   );
+
+  const renderDepositoPage = (page) => (
+    <ProtectedRoute allowedRoles={["DEPOSITO"]}>
+      <AdminLayout>{page}</AdminLayout>
+    </ProtectedRoute>
+  );
+
+  const renderDepositoOperativoPage = (page) => (
+    <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
+      {String(user?.rol || "").toUpperCase() === "DEPOSITO"
+        ? <AdminLayout>{page}</AdminLayout>
+        : page}
+    </ProtectedRoute>
+  );
   async function boot() {
     setReady(false);
     setError("");
@@ -130,7 +144,10 @@ function App() {
   }
 
   useEffect(() => {
-    boot();
+    const id = window.setTimeout(() => {
+      boot();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   /* =============================
@@ -167,7 +184,12 @@ function App() {
   ============================== */
   return (
     <>
-      {user && location.pathname !== "/" && user.rol !== "ADMIN" && !location.pathname.startsWith("/admin") && <Notificaciones />}
+      {user &&
+        location.pathname !== "/" &&
+        user.rol !== "ADMIN" &&
+        !location.pathname.startsWith("/admin") &&
+        !(String(user.rol || "").toUpperCase() === "DEPOSITO" && location.pathname.startsWith("/deposito")) &&
+        <Notificaciones />}
       <Routes>
       {/* LOGIN */}
       <Route path="/" element={<Login />} />
@@ -311,83 +333,47 @@ function App() {
       ============================== */}
       <Route
         path="/deposito"
-        element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
-            <DepositoDashboard />
-          </ProtectedRoute>
-        }
+        element={renderDepositoPage(<DepositoDashboard />)}
       />
 
       <Route
         path="/deposito/pedidos"
-        element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
-            <DepositoHome />
-          </ProtectedRoute>
-        }
+        element={renderDepositoPage(<DepositoHome />)}
       />
 
       <Route
         path="/deposito/maquinas"
-        element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
-            <DepositoMaquinas />
-          </ProtectedRoute>
-        }
+        element={renderDepositoPage(<DepositoMaquinas />)}
       />
 
       <Route
         path="/deposito/servicios"
-        element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
-            <DepositoServicios />
-          </ProtectedRoute>
-        }
+        element={renderDepositoPage(<DepositoServicios />)}
       />
 
       <Route
         path="/deposito/servicios/:id"
-        element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
-            <DepositoServicioDetalle />
-          </ProtectedRoute>
-        }
+        element={renderDepositoPage(<DepositoServicioDetalle />)}
       />
 
       <Route
         path="/deposito/supervisores"
-        element={
-          <ProtectedRoute allowedRoles={["DEPOSITO"]}>
-            <DepositoSupervisores />
-          </ProtectedRoute>
-        }
+        element={renderDepositoPage(<DepositoSupervisores />)}
       />
 
       <Route
         path="/deposito/pedido/:id"
-        element={
-          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
-            <DepositoPedido />
-          </ProtectedRoute>
-        }
+        element={renderDepositoOperativoPage(<DepositoPedido />)}
       />
 
       <Route
         path="/deposito/pedido/:id/asignar"
-        element={
-          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
-            <AsignarMaquinas />
-          </ProtectedRoute>
-        }
+        element={renderDepositoOperativoPage(<AsignarMaquinas />)}
       />
 
       <Route
         path="/deposito/pedido/:id/confirmar"
-        element={
-          <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
-            <ConfirmarDevolucion />
-          </ProtectedRoute>
-        }
+        element={renderDepositoOperativoPage(<ConfirmarDevolucion />)}
       />
 
       {/* =============================
