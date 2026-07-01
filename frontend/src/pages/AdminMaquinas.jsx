@@ -430,6 +430,15 @@ export default function AdminMaquinas() {
 
   if (loading) return <div className="p-4">Cargando máquinas...</div>;
 
+  const actionBtnBase =
+    "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition";
+  const actionBtnMuted =
+    `${actionBtnBase} border-slate-300 bg-white text-slate-700 hover:bg-slate-100`;
+  const actionBtnSoft =
+    `${actionBtnBase} border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200`;
+  const actionBtnExcel =
+    `${actionBtnBase} border-emerald-300 bg-emerald-100 text-emerald-800 hover:bg-emerald-200`;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
       <button
@@ -454,48 +463,61 @@ export default function AdminMaquinas() {
         </div>
       ) : null}
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <a
-          href={`${API_BASE}/admin/maquinas/export`}
-          className="inline-block px-4 py-2 rounded-lg
-                     bg-green-600 text-white text-sm font-semibold
-                     hover:bg-green-700 transition"
-        >
-          Exportar máquinas (Excel)
-        </a>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/maquinas/tipos")}
+            className={actionBtnMuted}
+          >
+            Tipos de maquinas
+          </button>
 
-        <div className="flex items-center gap-2">
-          {isAdmin ? (
-            <>
-              <button
-                type="button"
-                onClick={openImportPanel}
-                className="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100"
-              >
-                Importar máquinas
-              </button>
-
-            </>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => navigate("/admin/plazos-amortizacion")}
+            className={actionBtnMuted}
+          >
+            Plazos de amortizacion
+          </button>
 
           {isAdmin ? (
             <button
               type="button"
               onClick={openBulkPanel}
-              className="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
+              className={actionBtnSoft}
             >
               Movimientos masivos
             </button>
           ) : null}
 
-          <button
-            type="button"
-            onClick={() => navigate("/admin/maquinas/tipos")}
-            className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50"
-          >
-            Tipos de maquinas
-          </button>
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={() => navigate("/admin/maquinas/amortizaciones")}
+              className={actionBtnSoft}
+            >
+              Panel de amortizaciones
+            </button>
+          ) : null}
+
+          {isAdmin ? (
+            <button
+              type="button"
+              onClick={openImportPanel}
+              className={actionBtnExcel}
+            >
+              Importar maquinas
+            </button>
+          ) : null}
         </div>
+
+        <a
+          href={`${API_BASE}/admin/maquinas/export`}
+          className={actionBtnExcel}
+        >
+          Exportar Excel
+        </a>
       </div>
 
       {resumen && (
@@ -517,9 +539,9 @@ export default function AdminMaquinas() {
           onChange={e => setSearch(e.target.value)}
         />
 
-        <div className="flex gap-2">
+        <div className="grid gap-2 md:grid-cols-2">
           <select
-            className="flex-1 p-2 rounded-xl border text-xs"
+            className="p-2 rounded-xl border text-xs"
             value={tipoFiltro}
             onChange={e => setTipoFiltro(e.target.value)}
           >
@@ -530,7 +552,7 @@ export default function AdminMaquinas() {
           </select>
 
           <select
-            className="flex-1 p-2 rounded-xl border text-xs"
+            className="p-2 rounded-xl border text-xs"
             value={estadoFiltro}
             onChange={e => setEstadoFiltro(e.target.value)}
           >
@@ -538,6 +560,7 @@ export default function AdminMaquinas() {
               <option key={e.value} value={e.value}>{e.label}</option>
             ))}
           </select>
+
         </div>
       </div>
 

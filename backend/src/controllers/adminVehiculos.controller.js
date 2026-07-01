@@ -199,6 +199,9 @@ function mapVehiculo(vehiculo) {
     seguro: vehiculo.seguro
       ? { id: vehiculo.seguro.id, nombre: vehiculo.seguro.nombre }
       : null,
+    tipoMaquina: vehiculo.tipoMaquina
+      ? { id: vehiculo.tipoMaquina.id, nombre: vehiculo.tipoMaquina.nombre }
+      : null,
     conductorActual: vehiculo.conductorActual
       ? {
           id: vehiculo.conductorActual.id,
@@ -226,9 +229,29 @@ function mapVehiculo(vehiculo) {
   };
 }
 
+async function ensureVehiculoTipoMaquina(client = prisma) {
+  const nombre = "VEHICULO";
+  const existentes = await client.tipoMaquina.findMany({
+    where: {
+      nombre: {
+        equals: nombre,
+      },
+    },
+    take: 1,
+  });
+
+  if (existentes.length > 0) return existentes[0];
+  return client.tipoMaquina.create({ data: { nombre } });
+}
+
 async function ensureSeguroExists(seguroId) {
   const seguro = await prisma.seguro.findUnique({ where: { id: seguroId } });
   return seguro;
+}
+
+async function ensureTipoMaquinaExists(tipoMaquinaId, client = prisma) {
+  if (!Number.isInteger(tipoMaquinaId) || tipoMaquinaId <= 0) return null;
+  return client.tipoMaquina.findUnique({ where: { id: tipoMaquinaId } });
 }
 
 async function ensureUsuarioExists(usuarioId) {
@@ -248,6 +271,10 @@ function buildVehiculoData(body, currentVehiculo = null) {
   );
 
   return {
+    tipoMaquinaId:
+      body.tipoMaquinaId === undefined || body.tipoMaquinaId === null || body.tipoMaquinaId === ""
+        ? null
+        : Number(body.tipoMaquinaId),
     empresa: normalizeString(body.empresa),
     estado: normalizeEstadoVehiculo(body.estado ?? currentVehiculo?.estado),
     vehiculo: normalizeString(body.vehiculo),
@@ -294,6 +321,10 @@ function validateVehiculoData(data) {
 
   if (!Number.isInteger(data.seguroId) || data.seguroId <= 0) {
     return "seguroId es obligatorio";
+  }
+
+  if (data.tipoMaquinaId !== null && (!Number.isInteger(data.tipoMaquinaId) || data.tipoMaquinaId <= 0)) {
+    return "tipoMaquinaId inválido";
   }
 
   if (data.conductorActualId !== null && (!Number.isInteger(data.conductorActualId) || data.conductorActualId <= 0)) {
@@ -343,6 +374,9 @@ export async function adminGetVehiculos(req, res) {
       where,
       include: {
         seguro: true,
+        tipoMaquina: {
+          select: { id: true, nombre: true },
+        },
         conductorActual: {
           select: {
             id: true,
@@ -425,6 +459,9 @@ export async function adminGetVehiculoById(req, res) {
       where: { id: req.params.id },
       include: {
         seguro: true,
+        tipoMaquina: {
+          select: { id: true, nombre: true },
+        },
         conductorActual: {
           select: {
             id: true,
@@ -471,6 +508,9 @@ export async function adminGetHistorialVehiculo(req, res) {
       where: { id: req.params.id },
       include: {
         seguro: true,
+        tipoMaquina: {
+          select: { id: true, nombre: true },
+        },
         conductorActual: {
           select: {
             id: true,
@@ -526,11 +566,13 @@ export async function adminCreateVehiculo(req, res) {
       return res.status(400).json({ error: validationError });
     }
 
-    const [existeVehiculo, existePatente, seguro, conductorActual] = await Promise.all([
+    const [existeVehiculo, existePatente, seguro, conductorActual, tipoMaquinaVehiculo, tipoMaquinaSeleccionado] = await Promise.all([
       prisma.vehiculo.findUnique({ where: { id } }),
       prisma.vehiculo.findUnique({ where: { patente: data.patente } }),
       ensureSeguroExists(data.seguroId),
       data.conductorActualId ? ensureUsuarioExists(data.conductorActualId) : Promise.resolve(null),
+      ensureVehiculoTipoMaquina(),
+      data.tipoMaquinaId ? ensureTipoMaquinaExists(data.tipoMaquinaId) : Promise.resolve(null),
     ]);
 
     if (existeVehiculo) {
@@ -549,11 +591,18 @@ export async function adminCreateVehiculo(req, res) {
       return res.status(400).json({ error: "Conductor actual inválido" });
     }
 
+    if (data.tipoMaquinaId && !tipoMaquinaSeleccionado) {
+      return res.status(400).json({ error: "Tipo de máquina inválido" });
+    }
+
+    const tipoMaquinaIdFinal = tipoMaquinaSeleccionado?.id || tipoMaquinaVehiculo.id;
+
     const nuevo = await prisma.$transaction(async (tx) => {
       const creado = await tx.vehiculo.create({
         data: {
           id,
           ...data,
+          tipoMaquinaId: tipoMaquinaIdFinal,
         },
       });
 
@@ -570,6 +619,9 @@ export async function adminCreateVehiculo(req, res) {
         where: { id: creado.id },
         include: {
           seguro: true,
+          tipoMaquina: {
+            select: { id: true, nombre: true },
+          },
           conductorActual: {
             select: {
               id: true,
@@ -618,9 +670,17 @@ export async function adminUpdateVehiculo(req, res) {
       return res.status(409).json({ error: "Ya existe un vehículo con esa patente" });
     }
 
-    const seguro = await ensureSeguroExists(data.seguroId);
+    const [seguro, tipoMaquinaSeleccionado] = await Promise.all([
+      ensureSeguroExists(data.seguroId),
+      data.tipoMaquinaId ? ensureTipoMaquinaExists(data.tipoMaquinaId) : Promise.resolve(null),
+    ]);
+
     if (!seguro) {
       return res.status(400).json({ error: "Seguro inválido" });
+    }
+
+    if (data.tipoMaquinaId && !tipoMaquinaSeleccionado) {
+      return res.status(400).json({ error: "Tipo de máquina inválido" });
     }
 
     if (data.conductorActualId) {
@@ -631,6 +691,7 @@ export async function adminUpdateVehiculo(req, res) {
     }
 
     const actualizado = await prisma.$transaction(async (tx) => {
+      const tipoMaquinaVehiculo = await ensureVehiculoTipoMaquina(tx);
       const asignacionActiva = await tx.vehiculoAsignacion.findFirst({
         where: { vehiculoId: vehiculo.id, fechaHasta: null },
         orderBy: { fechaDesde: "desc" },
@@ -652,15 +713,24 @@ export async function adminUpdateVehiculo(req, res) {
         });
       }
 
+      const tipoMaquinaIdFinal =
+        tipoMaquinaSeleccionado?.id || data.tipoMaquinaId || vehiculo.tipoMaquinaId || tipoMaquinaVehiculo.id;
+
       await tx.vehiculo.update({
         where: { id: vehiculo.id },
-        data,
+        data: {
+          ...data,
+          tipoMaquinaId: tipoMaquinaIdFinal,
+        },
       });
 
       return tx.vehiculo.findUnique({
         where: { id: vehiculo.id },
         include: {
           seguro: true,
+          tipoMaquina: {
+            select: { id: true, nombre: true },
+          },
           conductorActual: {
             select: {
               id: true,
@@ -773,6 +843,9 @@ export async function adminAsignarVehiculo(req, res) {
       where: { id: vehiculoId },
       include: {
         seguro: true,
+        tipoMaquina: {
+          select: { id: true, nombre: true },
+        },
         conductorActual: {
           select: {
             id: true,
@@ -1058,7 +1131,7 @@ export async function adminImportVehiculos(req, res) {
       return res.status(400).json({ error: "El archivo tiene errores de validación", detalles: erroresArchivo });
     }
 
-    const [existentes, seguros, usuarios] = await Promise.all([
+    const [existentes, seguros, usuarios, tipoMaquinaVehiculo] = await Promise.all([
       prisma.vehiculo.findMany({
         where: {
           OR: [
@@ -1079,6 +1152,7 @@ export async function adminImportVehiculos(req, res) {
         },
         select: { id: true, username: true },
       }),
+      ensureVehiculoTipoMaquina(),
     ]);
 
     const errores = [];
@@ -1108,6 +1182,7 @@ export async function adminImportVehiculos(req, res) {
         await tx.vehiculo.create({
           data: {
             id: item.id,
+            tipoMaquinaId: tipoMaquinaVehiculo.id,
             empresa: item.empresa,
             estado: item.estado || "activo",
             vehiculo: item.vehiculo,

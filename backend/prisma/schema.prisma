@@ -67,6 +67,7 @@ model UsuarioServicio {
 model Maquina {
   id           String          @id
   tipo         String
+  tipoMaquinaId Int?
   modelo       String
   serie        String?
   estado       String          @default("disponible")
@@ -76,6 +77,7 @@ model Maquina {
   empresa      String?
   anio         Int?
   amortizacion Int?
+  estadoAmortizacion String @default("SIN_DATOS")
   antiguedad   Int?
   valorUsadaDolares Float?
   valorUsadaPesos Float?
@@ -89,15 +91,30 @@ model Maquina {
   // Relaciones
   servicio     Servicio        @relation("ServicioPrincipalMaquina", fields: [servicioId], references: [id])
   servicioAmortizacion Servicio? @relation("ServicioAmortizacionMaquina", fields: [servicioAmortizacionId], references: [id])
+  tipoMaquina  TipoMaquina?    @relation("MaquinaTipoMaquina", fields: [tipoMaquinaId], references: [id])
   asignaciones PedidoMaquina[]
   historialServicios MaquinaServicioHistorial[]
   movimientosTaller TallerMovimiento[]
 }
 
 model TipoMaquina {
-  id        Int      @id @default(autoincrement())
-  nombre    String   @unique
-  createdAt DateTime @default(now())
+  id                  Int                @id @default(autoincrement())
+  nombre              String             @unique
+  plazoAmortizacionId Int?
+  createdAt           DateTime           @default(now())
+
+  plazoAmortizacion   PlazoAmortizacion? @relation(fields: [plazoAmortizacionId], references: [id])
+  maquinas            Maquina[]          @relation("MaquinaTipoMaquina")
+  vehiculos           Vehiculo[]         @relation("VehiculoTipoMaquina")
+}
+
+model PlazoAmortizacion {
+  id          Int           @id @default(autoincrement())
+  nombre      String        @unique
+  meses       Int
+  createdAt   DateTime      @default(now())
+
+  tiposMaquina TipoMaquina[]
 }
 
 model MaquinaServicioHistorial {
@@ -116,6 +133,7 @@ model MaquinaServicioHistorial {
 
 model Vehiculo {
   id                      String               @id
+  tipoMaquinaId           Int?
   empresa                 String
   estado                  String               @default("activo")
   vehiculo                String
@@ -141,6 +159,7 @@ model Vehiculo {
   createdAt               DateTime             @default(now())
 
   seguro                  Seguro               @relation(fields: [seguroId], references: [id])
+  tipoMaquina             TipoMaquina?         @relation("VehiculoTipoMaquina", fields: [tipoMaquinaId], references: [id])
   conductorActual         Usuario?             @relation("ConductorActualVehiculo", fields: [conductorActualId], references: [id])
   historialAsignaciones   VehiculoAsignacion[]
   asignacionesPedido      PedidoVehiculo[]

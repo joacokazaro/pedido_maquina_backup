@@ -139,6 +139,15 @@ export default function AdminVehiculos() {
   if (loading) return <div className="p-4">Cargando vehículos...</div>;
   if (error) return <div className="p-4 text-red-600">{error}</div>;
 
+  const actionBtnBase =
+    "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition";
+  const actionBtnMuted =
+    `${actionBtnBase} border-slate-300 bg-white text-slate-700 hover:bg-slate-100`;
+  const actionBtnSoft =
+    `${actionBtnBase} border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200`;
+  const actionBtnExcel =
+    `${actionBtnBase} border-emerald-300 bg-emerald-100 text-emerald-800 hover:bg-emerald-200`;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
       <button
@@ -148,37 +157,41 @@ export default function AdminVehiculos() {
         ← Volver
       </button>
 
-      <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Vehículos</h1>
-          <p className="text-xs text-gray-600">ABM, asignación de conductores y catálogo vehicular.</p>
-        </div>
+      <header className="mb-3">
+        <h1 className="text-2xl font-bold">Vehículos</h1>
+        <p className="text-xs text-gray-600">ABM, asignación de conductores y catálogo vehicular.</p>
+      </header>
 
-        <div className="flex gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+          <button
+            onClick={() => navigate("/admin/plazos-amortizacion")}
+            className={actionBtnMuted}
+          >
+            Plazos de amortizacion
+          </button>
           {!isReadOnly ? (
             <>
+            <button
+              onClick={() => navigate("/admin/seguros")}
+              className={actionBtnMuted}
+            >
+              Seguros
+            </button>
               <button
                 onClick={() => navigate("/admin/vehiculos/importar")}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white disabled:bg-amber-300"
+                className={actionBtnExcel}
               >
                 Importar Excel
-              </button>
-              <button
-                onClick={() => navigate("/admin/seguros")}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
-              >
-                Seguros
               </button>
             </>
           ) : null}
           <a
             href={`${API_BASE}/admin/vehiculos/export`}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white"
+            className={actionBtnExcel}
           >
             Exportar Excel
           </a>
-        </div>
-      </header>
+      </div>
 
       <div className="mb-4 rounded-2xl bg-white p-3 shadow space-y-3">
         <input

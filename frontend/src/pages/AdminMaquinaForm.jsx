@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
+import { buildActorHeaders } from "../utils/authHeaders";
 
 const ESTADOS = [
   "disponible",
@@ -20,6 +21,14 @@ function toDateInputValue(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toISOString().slice(0, 10);
+}
+
+function toDateDisplayValue(value) {
+  const raw = toDateInputValue(value);
+  if (!raw) return "Sin datos";
+  const [yyyy, mm, dd] = raw.split("-");
+  if (!yyyy || !mm || !dd) return "Sin datos";
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 function toNullableNumber(value) {
@@ -48,7 +57,6 @@ export default function AdminMaquinaForm() {
     proveedorFactura: "",
     empresa: "",
     anio: "",
-    amortizacion: "",
     antiguedad: "",
     valorUsadaDolares: "",
     valorUsadaPesos: "",
@@ -56,6 +64,7 @@ export default function AdminMaquinaForm() {
     valorNuevaPesos: "",
     origenInfo: "",
     servicioAmortizacionId: "",
+    estadoAmortizacion: "Sin datos",
     comentarios: ""
   });
 
@@ -66,6 +75,8 @@ export default function AdminMaquinaForm() {
   const [saving, setSaving] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [error, setError] = useState("");
+  const [amortizacionBusy, setAmortizacionBusy] = useState(false);
+  const [amortizacionInfo, setAmortizacionInfo] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -82,8 +93,14 @@ export default function AdminMaquinaForm() {
         ]);
 
         const tiposData = await tiposRes.json().catch(() => []);
-        const nombresTipos = Array.isArray(tiposData)
-          ? tiposData.map((tipo) => String(tipo.nombre || "").trim()).filter(Boolean)
+        const listaTipos = Array.isArray(tiposData)
+          ? tiposData
+              .map((tipo) => ({
+                id: tipo.id,
+                nombre: String(tipo.nombre || "").trim(),
+                plazoAmortizacion: tipo.plazoAmortizacion || null,
+              }))
+              .filter((tipo) => tipo.nombre)
           : [];
 
         if (esEdicion) {
@@ -99,7 +116,6 @@ export default function AdminMaquinaForm() {
             proveedorFactura: data.proveedorFactura || "",
             empresa: data.empresa || "",
             anio: data.anio ?? "",
-            amortizacion: data.amortizacion ?? "",
             antiguedad: data.antiguedad ?? "",
             valorUsadaDolares: data.valorUsadaDolares ?? "",
             valorUsadaPesos: data.valorUsadaPesos ?? "",
@@ -107,12 +123,20 @@ export default function AdminMaquinaForm() {
             valorNuevaPesos: data.valorNuevaPesos ?? "",
             origenInfo: data.origenInfo || "",
             servicioAmortizacionId: data.servicioAmortizacion?.id || "",
+            estadoAmortizacion: data.estadoAmortizacionLabel || "Sin datos",
             comentarios: data.comentarios || ""
           });
           setAsignacion(data.asignacion || null);
-          setTipos(Array.from(new Set([...nombresTipos, data.tipo].filter(Boolean))).sort());
+          const existeTipoActual = listaTipos.some((tipo) => tipo.nombre === data.tipo);
+          setTipos(
+            existeTipoActual
+              ? listaTipos.sort((a, b) => a.nombre.localeCompare(b.nombre))
+              : [...listaTipos, { id: null, nombre: data.tipo, plazoAmortizacion: null }].sort((a, b) =>
+                  a.nombre.localeCompare(b.nombre)
+                )
+          );
         } else {
-          setTipos(nombresTipos.sort());
+          setTipos(listaTipos.sort((a, b) => a.nombre.localeCompare(b.nombre)));
         }
 
         setServicios(await servRes.json());
@@ -180,7 +204,6 @@ export default function AdminMaquinaForm() {
         proveedorFactura: form.proveedorFactura || null,
         empresa: form.empresa || null,
         anio: form.anio === "" ? null : Number(form.anio),
-        amortizacion: form.amortizacion === "" ? null : Number(form.amortizacion),
         valorUsadaDolares: toNullableNumber(form.valorUsadaDolares),
         valorUsadaPesos: toNullableNumber(form.valorUsadaPesos),
         valorNuevaDolares: toNullableNumber(form.valorNuevaDolares),
@@ -216,6 +239,39 @@ export default function AdminMaquinaForm() {
       setError(e.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDesplegarAmortizacion() {
+    if (!esEdicion || isReadOnly) return;
+
+    try {
+      setAmortizacionBusy(true);
+      setError("");
+
+      const res = await fetch(`${API_BASE}/admin/maquinas/${encodeURIComponent(id)}/amortizacion/recalcular`, {
+        method: "POST",
+        headers: {
+          ...buildActorHeaders(user),
+        },
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo recalcular amortización de la máquina");
+      }
+
+      const maquina = data?.maquina || null;
+      setAmortizacionInfo(maquina);
+
+      if (maquina?.estadoAmortizacionLabel) {
+        setForm((prev) => ({ ...prev, estadoAmortizacion: maquina.estadoAmortizacionLabel }));
+      }
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error recalculando amortización de la máquina");
+    } finally {
+      setAmortizacionBusy(false);
     }
   }
 
@@ -261,59 +317,128 @@ export default function AdminMaquinaForm() {
           </button>
         )}
 
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-semibold text-gray-600">Código (id)</label>
-          <input
-            name="id"
-            value={form.id}
-            onChange={handleChange}
-            disabled={esEdicion || isReadOnly}
-            className={`w-full p-2 rounded-xl border ${esEdicion ? "bg-gray-100" : "bg-white"}`}
-          />
-        </div>
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">Datos generales</h2>
 
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
-          <select
-            name="tipo"
-            value={form.tipo}
-            onChange={handleChange}
-            disabled={isReadOnly}
-            className="w-full p-2 rounded-xl border"
-          >
-            <option value="">— Seleccionar tipo —</option>
-            {tipos.map(tipo => (
-              <option key={tipo} value={tipo}>{tipo}</option>
-            ))}
-          </select>
-        </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Código (id)</label>
+              <input
+                name="id"
+                value={form.id}
+                onChange={handleChange}
+                disabled={esEdicion || isReadOnly}
+                className={`w-full p-2 rounded-xl border ${esEdicion ? "bg-gray-100" : "bg-white"}`}
+              />
+            </div>
 
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
-          <input name="modelo" value={form.modelo} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
-        </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
+              <select
+                name="tipo"
+                value={form.tipo}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              >
+                <option value="">— Seleccionar tipo —</option>
+                {tipos.map((tipo) => (
+                  <option key={tipo.id ?? tipo.nombre} value={tipo.nombre}>{tipo.nombre}</option>
+                ))}
+              </select>
+            </div>
 
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-semibold text-gray-600">Serie</label>
-          <input name="serie" value={form.serie} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
-        </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
+              <input name="modelo" value={form.modelo} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
+            </div>
 
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio</label>
-          <select name="servicioId" value={form.servicioId} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
-            <option value="">— Seleccionar servicio —</option>
-            {servicios.map(s => (
-              <option key={s.id} value={s.id}>{s.nombre}</option>
-            ))}
-          </select>
-        </div>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Serie</label>
+              <input name="serie" value={form.serie} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
+            </div>
+          </div>
+        </section>
 
-        <div className="mb-3">
-          <label className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
-          <select name="estado" value={form.estado} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
-            {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
-          </select>
-        </div>
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">Operación y servicio</h2>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio</label>
+              <select name="servicioId" value={form.servicioId} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
+                <option value="">— Seleccionar servicio —</option>
+                {servicios.map(s => (
+                  <option key={s.id} value={s.id}>{s.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
+              <select name="estado" value={form.estado} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
+                {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio para amortización</label>
+              <select
+                name="servicioAmortizacionId"
+                value={form.servicioAmortizacionId}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              >
+                <option value="">— Sin servicio específico —</option>
+                {servicios.map((s) => (
+                  <option key={s.id} value={s.id}>{s.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {esEdicion ? (
+          <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-slate-800">Amortización</h2>
+              {!isReadOnly ? (
+                <button
+                  type="button"
+                  onClick={handleDesplegarAmortizacion}
+                  disabled={amortizacionBusy}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {amortizacionBusy ? "Calculando..." : "Desplegar info"}
+                </button>
+              ) : null}
+            </div>
+
+            {amortizacionInfo ? (
+              <div className="grid gap-3 md:grid-cols-3">
+                <div>
+                  <p className="text-xs font-semibold text-gray-600">Estado amortización</p>
+                  <p className="text-sm text-gray-900">{amortizacionInfo.estadoAmortizacionLabel || "Sin datos"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600">Plazo amortización</p>
+                  <p className="text-sm text-gray-900">
+                    {amortizacionInfo.amortizacion != null ? `${amortizacionInfo.amortizacion} meses` : "Sin definir"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-600">Fecha de compra</p>
+                  <p className="text-sm text-gray-900">{toDateDisplayValue(amortizacionInfo.fechaCompra)}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-600">
+                Presioná "Desplegar info" para recalcular y ver el estado de amortización actualizado de esta máquina.
+              </p>
+            )}
+          </section>
+        ) : null}
 
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
           <h2 className="mb-3 text-sm font-semibold text-slate-800">Datos de compra y valuación</h2>
@@ -378,34 +503,6 @@ export default function AdminMaquinaForm() {
                 disabled
                 className="w-full p-2 rounded-xl border bg-gray-100"
               />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Amortización (int)</label>
-              <input
-                type="number"
-                name="amortizacion"
-                value={form.amortizacion}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                className="w-full p-2 rounded-xl border"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio para amortización</label>
-              <select
-                name="servicioAmortizacionId"
-                value={form.servicioAmortizacionId}
-                onChange={handleChange}
-                disabled={isReadOnly}
-                className="w-full p-2 rounded-xl border"
-              >
-                <option value="">— Sin servicio específico —</option>
-                {servicios.map((s) => (
-                  <option key={s.id} value={s.id}>{s.nombre}</option>
-                ))}
-              </select>
             </div>
 
             <div>

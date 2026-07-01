@@ -15,6 +15,14 @@ const ESTADO_PEDIDO_CERRADO = "CERRADO";
 
 const EMPRESAS_VALIDAS = ["Pulizia", "Pazar"];
 
+const ESTADO_AMORTIZACION = {
+  AMORTIZADA: "AMORTIZADA",
+  NO_AMORTIZADA: "NO_AMORTIZADA",
+  SIN_DATOS: "SIN_DATOS",
+};
+
+const ESTADOS_AMORTIZACION_VALIDOS = new Set(Object.values(ESTADO_AMORTIZACION));
+
 /* ========================================================
    NORMALIZAR ESTADO DE MÁQUINA
    (FUENTE ÚNICA DE VERDAD)
@@ -175,6 +183,82 @@ function parseEstadoObligatorio(raw) {
   return estadoNorm;
 }
 
+function toEstadoAmortizacionLabel(value) {
+  const normalized = String(value || "").trim().toUpperCase();
+  if (normalized === ESTADO_AMORTIZACION.AMORTIZADA) return "Amortizada";
+  if (normalized === ESTADO_AMORTIZACION.NO_AMORTIZADA) return "No amortizada";
+  return "Sin datos";
+}
+
+function normalizeEstadoAmortizacionFilter(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "_")
+    .toUpperCase();
+
+  if (normalized === "AMORTIZADA") return ESTADO_AMORTIZACION.AMORTIZADA;
+  if (normalized === "NO_AMORTIZADA") return ESTADO_AMORTIZACION.NO_AMORTIZADA;
+  if (normalized === "SIN_DATOS") return ESTADO_AMORTIZACION.SIN_DATOS;
+  return "";
+}
+
+function getYearMonthFromDateOnly(rawDate) {
+  if (!rawDate) return null;
+
+  if (typeof rawDate === "string") {
+    const match = rawDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return {
+        year: Number(match[1]),
+        month: Number(match[2]),
+      };
+    }
+  }
+
+  const date = rawDate instanceof Date ? rawDate : new Date(rawDate);
+  if (Number.isNaN(date.getTime())) return null;
+
+  // Fecha de compra es semánticamente "fecha sin hora".
+  // Usar UTC evita corrimientos de día/mes por zona horaria.
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+  };
+}
+
+function getCurrentYearMonthInArgentina(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(now);
+
+  const year = Number(parts.find((p) => p.type === "year")?.value);
+  const month = Number(parts.find((p) => p.type === "month")?.value);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month)) return null;
+  return { year, month };
+}
+
+function calculateEstadoAmortizacion(fechaCompra, amortizacionMeses, now = new Date()) {
+  if (!fechaCompra || !Number.isInteger(amortizacionMeses) || amortizacionMeses <= 0) {
+    return ESTADO_AMORTIZACION.SIN_DATOS;
+  }
+
+  const compra = getYearMonthFromDateOnly(fechaCompra);
+  const actual = getCurrentYearMonthInArgentina(now);
+  if (!compra || !actual) return ESTADO_AMORTIZACION.SIN_DATOS;
+
+  const mesesTranscurridos = (actual.year - compra.year) * 12 + (actual.month - compra.month);
+  return mesesTranscurridos >= amortizacionMeses
+    ? ESTADO_AMORTIZACION.AMORTIZADA
+    : ESTADO_AMORTIZACION.NO_AMORTIZADA;
+}
+
 function readWorkbookRows(buffer) {
   const workbook = xlsx.read(buffer, { type: "buffer", cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
@@ -275,7 +359,13 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
       where: { activo: true },
       select: { id: true, nombre: true },
     }),
-    prisma.tipoMaquina.findMany({ select: { nombre: true } }),
+    prisma.tipoMaquina.findMany({
+      include: {
+        plazoAmortizacion: {
+          select: { id: true, nombre: true, meses: true },
+        },
+      },
+    }),
     prisma.maquina.findMany({
       where: { id: { in: parsedRows.map((item) => item.id).filter(Boolean) } },
       select: { id: true, servicioId: true },
@@ -285,8 +375,8 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
   const servicioByName = new Map(
     servicios.map((s) => [String(s.nombre || "").trim().toLowerCase(), s])
   );
-  const tipoSet = new Set(
-    tipos.map((t) => String(t.nombre || "").trim().toLowerCase())
+  const tipoByNombre = new Map(
+    tipos.map((t) => [String(t.nombre || "").trim().toLowerCase(), t])
   );
   const existentesById = new Map(existentes.map((m) => [m.id, m]));
 
@@ -295,7 +385,8 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
   for (const item of parsedRows) {
     try {
       const tipoNorm = normalizeTipoMaquina(item.tipo);
-      if (!tipoSet.has(tipoNorm.toLowerCase())) {
+      const tipo = tipoByNombre.get(tipoNorm.toLowerCase());
+      if (!tipo) {
         throw new Error("Tipo de máquina inválido. Crealo desde Tipos de máquinas.");
       }
 
@@ -323,6 +414,7 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
         rowNumber: item.rowNumber,
         id: item.id,
         tipo: tipoNorm,
+        tipoMaquinaId: tipo.id,
         modelo: item.modelo,
         serie: parseNullableString(item.serie),
         estado,
@@ -331,7 +423,7 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
         proveedorFactura: parseNullableString(item.proveedorFactura),
         empresa,
         anio,
-        amortizacion,
+        amortizacion: tipo.plazoAmortizacion?.meses ?? amortizacion,
         antiguedad: calcularAntiguedad(anio),
         valorUsadaDolares: parseNullableNonNegativeFloat(
           item.valorUsadaDolares,
@@ -378,23 +470,85 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
   };
 }
 
-async function findTipoMaquinaByNombre(nombre) {
-  const tipos = await prisma.tipoMaquina.findMany();
+async function findTipoMaquinaByNombre(nombre, client = prisma) {
+  const tipos = await client.tipoMaquina.findMany({
+    include: {
+      plazoAmortizacion: {
+        select: { id: true, nombre: true, meses: true },
+      },
+    },
+  });
   return tipos.find((tipo) => tipo.nombre.toLowerCase() === nombre.toLowerCase()) || null;
 }
 
-async function assertTipoMaquinaExists(nombre) {
+async function getSinTipoMaquina(client = prisma) {
+  const nombre = "SIN TIPO";
+  const existente = await findTipoMaquinaByNombre(nombre, client);
+  if (existente) return existente;
+  return client.tipoMaquina.create({ data: { nombre } });
+}
+
+async function assertTipoMaquinaExists(nombre, client = prisma) {
   const normalized = normalizeTipoMaquina(nombre);
   if (!normalized) {
     throw new Error("Tipo de máquina obligatorio");
   }
 
-  const tipo = await findTipoMaquinaByNombre(normalized);
+  const tipo = await findTipoMaquinaByNombre(normalized, client);
   if (!tipo) {
     throw new Error("Tipo de máquina inválido. Crealo desde Tipos de máquinas.");
   }
 
-  return tipo.nombre;
+  return tipo;
+}
+
+function resolveAmortizacionByTipo(tipoMaquina) {
+  return tipoMaquina?.plazoAmortizacion?.meses ?? null;
+}
+
+async function resolveTipoMaquinaForExisting(maquina, client = prisma) {
+  if (maquina?.tipoMaquinaId) {
+    const byId = await client.tipoMaquina.findUnique({
+      where: { id: maquina.tipoMaquinaId },
+      include: {
+        plazoAmortizacion: {
+          select: { id: true, nombre: true, meses: true },
+        },
+      },
+    });
+    if (byId) return byId;
+  }
+
+  const byNombre = await findTipoMaquinaByNombre(maquina?.tipo || "", client);
+  if (byNombre) return byNombre;
+
+  return getSinTipoMaquina(client);
+}
+
+async function syncMaquinaAmortizacionByTipos(tipoIds, client = prisma) {
+  const uniqueIds = Array.from(
+    new Set((Array.isArray(tipoIds) ? tipoIds : []).filter((id) => Number.isInteger(id) && id > 0))
+  );
+  if (!uniqueIds.length) return;
+
+  const tipos = await client.tipoMaquina.findMany({
+    where: { id: { in: uniqueIds } },
+    include: {
+      plazoAmortizacion: {
+        select: { meses: true },
+      },
+    },
+  });
+
+  for (const tipo of tipos) {
+    await client.maquina.updateMany({
+      where: { tipoMaquinaId: tipo.id },
+      data: {
+        tipo: tipo.nombre,
+        amortizacion: resolveAmortizacionByTipo(tipo),
+      },
+    });
+  }
 }
 
 function mapRutaServicio(item) {
@@ -471,23 +625,38 @@ export async function adminGetTiposMaquina(req, res) {
   try {
     const [tipos, usados] = await Promise.all([
       prisma.tipoMaquina.findMany({
+        include: {
+          plazoAmortizacion: {
+            select: { id: true, nombre: true, meses: true },
+          },
+        },
         orderBy: { nombre: "asc" },
       }),
       prisma.maquina.groupBy({
-        by: ["tipo"],
-        _count: { tipo: true },
+        by: ["tipoMaquinaId"],
+        _count: { _all: true },
       }),
     ]);
 
-    const countByTipo = new Map(
-      usados.map((item) => [item.tipo, item._count.tipo])
+    const countByTipoId = new Map(
+      usados
+        .filter((item) => item.tipoMaquinaId !== null)
+        .map((item) => [item.tipoMaquinaId, item._count._all])
     );
 
     res.json(
       tipos.map((tipo) => ({
         id: tipo.id,
         nombre: tipo.nombre,
-        maquinasCount: countByTipo.get(tipo.nombre) || 0,
+        plazoAmortizacionId: tipo.plazoAmortizacionId,
+        plazoAmortizacion: tipo.plazoAmortizacion
+          ? {
+              id: tipo.plazoAmortizacion.id,
+              nombre: tipo.plazoAmortizacion.nombre,
+              meses: tipo.plazoAmortizacion.meses,
+            }
+          : null,
+        maquinasCount: countByTipoId.get(tipo.id) || 0,
       }))
     );
   } catch (e) {
@@ -499,8 +668,25 @@ export async function adminGetTiposMaquina(req, res) {
 export async function adminCreateTipoMaquina(req, res) {
   try {
     const nombre = normalizeTipoMaquina(req.body?.nombre);
+    const plazoAmortizacionId = req.body?.plazoAmortizacionId;
     if (!nombre) {
       return res.status(400).json({ error: "Nombre obligatorio" });
+    }
+
+    const plazoIdParsed =
+      plazoAmortizacionId === undefined || plazoAmortizacionId === null || String(plazoAmortizacionId).trim() === ""
+        ? null
+        : Number(plazoAmortizacionId);
+
+    if (plazoIdParsed !== null && (!Number.isInteger(plazoIdParsed) || plazoIdParsed <= 0)) {
+      return res.status(400).json({ error: "plazoAmortizacionId inválido" });
+    }
+
+    if (plazoIdParsed !== null) {
+      const plazo = await prisma.plazoAmortizacion.findUnique({ where: { id: plazoIdParsed } });
+      if (!plazo) {
+        return res.status(404).json({ error: "Plazo de amortización no encontrado" });
+      }
     }
 
     const existente = await findTipoMaquinaByNombre(nombre);
@@ -508,7 +694,19 @@ export async function adminCreateTipoMaquina(req, res) {
       return res.status(409).json({ error: "Ya existe un tipo con ese nombre" });
     }
 
-    const tipo = await prisma.tipoMaquina.create({ data: { nombre } });
+    const tipo = await prisma.tipoMaquina.create({
+      data: {
+        nombre,
+        plazoAmortizacionId: plazoIdParsed,
+      },
+      include: {
+        plazoAmortizacion: {
+          select: { id: true, nombre: true, meses: true },
+        },
+      },
+    });
+
+    await syncMaquinaAmortizacionByTipos([tipo.id]);
     res.status(201).json(tipo);
   } catch (e) {
     console.error("adminCreateTipoMaquina:", e);
@@ -520,6 +718,7 @@ export async function adminUpdateTipoMaquina(req, res) {
   try {
     const id = Number(req.params.tipoId);
     const nombre = normalizeTipoMaquina(req.body?.nombre);
+    const plazoAmortizacionId = req.body?.plazoAmortizacionId;
 
     if (!Number.isInteger(id) || id <= 0) {
       return res.status(400).json({ error: "ID inválido" });
@@ -527,6 +726,28 @@ export async function adminUpdateTipoMaquina(req, res) {
 
     if (!nombre) {
       return res.status(400).json({ error: "Nombre obligatorio" });
+    }
+
+    const plazoIdParsed =
+      plazoAmortizacionId === undefined
+        ? undefined
+        : plazoAmortizacionId === null || String(plazoAmortizacionId).trim() === ""
+          ? null
+          : Number(plazoAmortizacionId);
+
+    if (
+      plazoIdParsed !== undefined &&
+      plazoIdParsed !== null &&
+      (!Number.isInteger(plazoIdParsed) || plazoIdParsed <= 0)
+    ) {
+      return res.status(400).json({ error: "plazoAmortizacionId inválido" });
+    }
+
+    if (plazoIdParsed !== undefined && plazoIdParsed !== null) {
+      const plazo = await prisma.plazoAmortizacion.findUnique({ where: { id: plazoIdParsed } });
+      if (!plazo) {
+        return res.status(404).json({ error: "Plazo de amortización no encontrado" });
+      }
     }
 
     const tipo = await prisma.tipoMaquina.findUnique({ where: { id } });
@@ -542,15 +763,25 @@ export async function adminUpdateTipoMaquina(req, res) {
     const actualizado = await prisma.$transaction(async (tx) => {
       const result = await tx.tipoMaquina.update({
         where: { id },
-        data: { nombre },
+        data: {
+          nombre,
+          ...(plazoIdParsed !== undefined ? { plazoAmortizacionId: plazoIdParsed } : {}),
+        },
+        include: {
+          plazoAmortizacion: {
+            select: { id: true, nombre: true, meses: true },
+          },
+        },
       });
 
       if (tipo.nombre !== nombre) {
         await tx.maquina.updateMany({
-          where: { tipo: tipo.nombre },
+          where: { OR: [{ tipo: tipo.nombre }, { tipoMaquinaId: id }] },
           data: { tipo: nombre },
         });
       }
+
+      await syncMaquinaAmortizacionByTipos([id], tx);
 
       return result;
     });
@@ -575,9 +806,7 @@ export async function adminDeleteTipoMaquina(req, res) {
       return res.status(404).json({ error: "Tipo de máquina no encontrado" });
     }
 
-    const maquinasCount = await prisma.maquina.count({
-      where: { tipo: tipo.nombre },
-    });
+    const maquinasCount = await prisma.maquina.count({ where: { tipoMaquinaId: id } });
 
     if (maquinasCount > 0) {
       return res.status(409).json({
@@ -593,12 +822,376 @@ export async function adminDeleteTipoMaquina(req, res) {
   }
 }
 
+function normalizePlazoNombre(raw) {
+  return String(raw || "").trim();
+}
+
+function parsePlazoMeses(raw) {
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error("La cantidad de meses debe ser un entero mayor a 0");
+  }
+  return value;
+}
+
+function parseTipoIds(raw) {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) {
+    throw new Error("tipoIds debe ser un arreglo");
+  }
+
+  const ids = raw
+    .map((id) => Number(id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  return Array.from(new Set(ids));
+}
+
+export async function adminGetPlazosAmortizacion(req, res) {
+  try {
+    const [plazos, tipos] = await Promise.all([
+      prisma.plazoAmortizacion.findMany({
+        include: {
+          tiposMaquina: {
+            select: { id: true, nombre: true },
+            orderBy: { nombre: "asc" },
+          },
+        },
+        orderBy: [{ meses: "asc" }, { nombre: "asc" }],
+      }),
+      prisma.tipoMaquina.findMany({
+        select: {
+          id: true,
+          nombre: true,
+          plazoAmortizacionId: true,
+        },
+        orderBy: { nombre: "asc" },
+      }),
+    ]);
+
+    res.json({
+      plazos: plazos.map((plazo) => ({
+        id: plazo.id,
+        nombre: plazo.nombre,
+        meses: plazo.meses,
+        tiposMaquina: plazo.tiposMaquina,
+      })),
+      tipos,
+    });
+  } catch (e) {
+    console.error("adminGetPlazosAmortizacion:", e);
+    res.status(500).json({ error: "Error listando plazos de amortización" });
+  }
+}
+
+export async function adminCreatePlazoAmortizacion(req, res) {
+  try {
+    const nombre = normalizePlazoNombre(req.body?.nombre);
+    const meses = parsePlazoMeses(req.body?.meses);
+    const tipoIds = parseTipoIds(req.body?.tipoIds);
+
+    if (!nombre) {
+      return res.status(400).json({ error: "Nombre obligatorio" });
+    }
+
+    const existente = await prisma.plazoAmortizacion.findFirst({
+      where: { nombre: { equals: nombre } },
+    });
+    if (existente) {
+      return res.status(409).json({ error: "Ya existe un plazo con ese nombre" });
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      const plazo = await tx.plazoAmortizacion.create({
+        data: { nombre, meses },
+      });
+
+      if (tipoIds.length) {
+        const found = await tx.tipoMaquina.findMany({ where: { id: { in: tipoIds } }, select: { id: true } });
+        if (found.length !== tipoIds.length) {
+          throw new Error("Hay tipos de máquina inexistentes en la selección");
+        }
+
+        await tx.tipoMaquina.updateMany({
+          where: { id: { in: tipoIds } },
+          data: { plazoAmortizacionId: plazo.id },
+        });
+
+        await syncMaquinaAmortizacionByTipos(tipoIds, tx);
+      }
+
+      return tx.plazoAmortizacion.findUnique({
+        where: { id: plazo.id },
+        include: {
+          tiposMaquina: {
+            select: { id: true, nombre: true },
+            orderBy: { nombre: "asc" },
+          },
+        },
+      });
+    });
+
+    res.status(201).json(created);
+  } catch (e) {
+    console.error("adminCreatePlazoAmortizacion:", e);
+    if (e.message?.includes("meses") || e.message?.includes("tipoIds") || e.message?.includes("Nombre") || e.message?.includes("tipos")) {
+      return res.status(400).json({ error: e.message });
+    }
+    res.status(500).json({ error: "Error creando plazo de amortización" });
+  }
+}
+
+export async function adminUpdatePlazoAmortizacion(req, res) {
+  try {
+    const id = Number(req.params.plazoId);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    const nombre = normalizePlazoNombre(req.body?.nombre);
+    const meses = parsePlazoMeses(req.body?.meses);
+    const tipoIds = parseTipoIds(req.body?.tipoIds);
+
+    if (!nombre) {
+      return res.status(400).json({ error: "Nombre obligatorio" });
+    }
+
+    const existing = await prisma.plazoAmortizacion.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Plazo de amortización no encontrado" });
+    }
+
+    const duplicate = await prisma.plazoAmortizacion.findFirst({
+      where: {
+        nombre: { equals: nombre },
+        NOT: { id },
+      },
+    });
+
+    if (duplicate) {
+      return res.status(409).json({ error: "Ya existe un plazo con ese nombre" });
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.plazoAmortizacion.update({
+        where: { id },
+        data: { nombre, meses },
+      });
+
+      const tiposAntes = await tx.tipoMaquina.findMany({
+        where: { plazoAmortizacionId: id },
+        select: { id: true },
+      });
+
+      await tx.tipoMaquina.updateMany({
+        where: { plazoAmortizacionId: id, id: { notIn: tipoIds } },
+        data: { plazoAmortizacionId: null },
+      });
+
+      if (tipoIds.length) {
+        const found = await tx.tipoMaquina.findMany({ where: { id: { in: tipoIds } }, select: { id: true } });
+        if (found.length !== tipoIds.length) {
+          throw new Error("Hay tipos de máquina inexistentes en la selección");
+        }
+
+        await tx.tipoMaquina.updateMany({
+          where: { id: { in: tipoIds } },
+          data: { plazoAmortizacionId: id },
+        });
+      }
+
+      const tiposAfectados = Array.from(
+        new Set([...tiposAntes.map((t) => t.id), ...tipoIds])
+      );
+      await syncMaquinaAmortizacionByTipos(tiposAfectados, tx);
+
+      return tx.plazoAmortizacion.findUnique({
+        where: { id },
+        include: {
+          tiposMaquina: {
+            select: { id: true, nombre: true },
+            orderBy: { nombre: "asc" },
+          },
+        },
+      });
+    });
+
+    res.json(updated);
+  } catch (e) {
+    console.error("adminUpdatePlazoAmortizacion:", e);
+    if (e.message?.includes("meses") || e.message?.includes("tipoIds") || e.message?.includes("Nombre") || e.message?.includes("tipos")) {
+      return res.status(400).json({ error: e.message });
+    }
+    res.status(500).json({ error: "Error actualizando plazo de amortización" });
+  }
+}
+
+export async function adminDeletePlazoAmortizacion(req, res) {
+  try {
+    const id = Number(req.params.plazoId);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    const plazo = await prisma.plazoAmortizacion.findUnique({ where: { id } });
+    if (!plazo) {
+      return res.status(404).json({ error: "Plazo de amortización no encontrado" });
+    }
+
+    const tiposCount = await prisma.tipoMaquina.count({ where: { plazoAmortizacionId: id } });
+    if (tiposCount > 0) {
+      return res.status(409).json({
+        error: "No se puede eliminar el plazo porque tiene tipos de máquina asociados",
+      });
+    }
+
+    await prisma.plazoAmortizacion.delete({ where: { id } });
+    res.json({ message: "Plazo de amortización eliminado" });
+  } catch (e) {
+    console.error("adminDeletePlazoAmortizacion:", e);
+    res.status(500).json({ error: "Error eliminando plazo de amortización" });
+  }
+}
+
+/* ========================================================
+   POST /admin/maquinas/amortizacion/recalcular
+======================================================== */
+export async function adminRecalcularEstadoAmortizacion(req, res) {
+  const actor = await requireActor(req, res, ["admin"]);
+  if (!actor) return;
+
+  try {
+    const maquinas = await prisma.maquina.findMany({
+      include: {
+        tipoMaquina: {
+          select: {
+            id: true,
+            plazoAmortizacion: {
+              select: { meses: true },
+            },
+          },
+        },
+      },
+    });
+
+    const resumen = {
+      total: maquinas.length,
+      amortizada: 0,
+      noAmortizada: 0,
+      sinDatos: 0,
+    };
+
+    for (const maquina of maquinas) {
+      const estadoAmortizacion = calculateEstadoAmortizacion(
+        maquina.fechaCompra,
+        resolveAmortizacionByTipo(maquina.tipoMaquina)
+      );
+
+      if (estadoAmortizacion === ESTADO_AMORTIZACION.AMORTIZADA) resumen.amortizada += 1;
+      else if (estadoAmortizacion === ESTADO_AMORTIZACION.NO_AMORTIZADA) resumen.noAmortizada += 1;
+      else resumen.sinDatos += 1;
+
+      await prisma.maquina.update({
+        where: { id: maquina.id },
+        data: { estadoAmortizacion },
+      });
+    }
+
+    return res.json({
+      message: "Estado de amortización recalculado correctamente",
+      resumen,
+    });
+  } catch (e) {
+    console.error("adminRecalcularEstadoAmortizacion:", e);
+    return res.status(500).json({ error: "Error recalculando estado de amortización" });
+  }
+}
+
+/* ========================================================
+   POST /admin/maquinas/:id/amortizacion/recalcular
+======================================================== */
+export async function adminRecalcularEstadoAmortizacionByMaquina(req, res) {
+  const actor = await requireActor(req, res, ["admin"]);
+  if (!actor) return;
+
+  try {
+    const { id } = req.params;
+
+    const maquina = await prisma.maquina.findUnique({
+      where: { id },
+      include: {
+        servicio: {
+          select: { id: true, nombre: true },
+        },
+        servicioAmortizacion: {
+          select: { id: true, nombre: true },
+        },
+        tipoMaquina: {
+          select: {
+            id: true,
+            nombre: true,
+            plazoAmortizacion: {
+              select: { id: true, nombre: true, meses: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!maquina) {
+      return res.status(404).json({ error: "Máquina no encontrada" });
+    }
+
+    const amortizacionMeses = resolveAmortizacionByTipo(maquina.tipoMaquina);
+    const estadoAmortizacion = calculateEstadoAmortizacion(maquina.fechaCompra, amortizacionMeses);
+
+    const updated = await prisma.maquina.update({
+      where: { id: maquina.id },
+      data: { estadoAmortizacion },
+      include: {
+        servicio: {
+          select: { id: true, nombre: true },
+        },
+        servicioAmortizacion: {
+          select: { id: true, nombre: true },
+        },
+        tipoMaquina: {
+          select: {
+            id: true,
+            nombre: true,
+            plazoAmortizacion: {
+              select: { id: true, nombre: true, meses: true },
+            },
+          },
+        },
+      },
+    });
+
+    return res.json({
+      message: "Estado de amortización recalculado correctamente",
+      maquina: {
+        id: updated.id,
+        tipo: updated.tipoMaquina?.nombre || updated.tipo,
+        fechaCompra: updated.fechaCompra,
+        amortizacion: resolveAmortizacionByTipo(updated.tipoMaquina),
+        estadoAmortizacion: ESTADOS_AMORTIZACION_VALIDOS.has(updated.estadoAmortizacion)
+          ? updated.estadoAmortizacion
+          : ESTADO_AMORTIZACION.SIN_DATOS,
+        estadoAmortizacionLabel: toEstadoAmortizacionLabel(updated.estadoAmortizacion),
+      },
+    });
+  } catch (e) {
+    console.error("adminRecalcularEstadoAmortizacionByMaquina:", e);
+    return res.status(500).json({ error: "Error recalculando estado de amortización de la máquina" });
+  }
+}
+
 /* ========================================================
    GET /admin/maquinas
 ======================================================== */
 export async function adminGetMaquinas(req, res) {
   try {
-    const { tipo, estado, search } = req.query;
+    const { tipo, estado, search, estadoAmortizacion } = req.query;
     const where = {};
 
     if (tipo && String(tipo).trim() !== "") {
@@ -607,6 +1200,13 @@ export async function adminGetMaquinas(req, res) {
 
     if (estado) {
       where.estado = normalizeEstado(estado);
+    }
+
+    if (estadoAmortizacion && String(estadoAmortizacion).trim() !== "") {
+      const normalizedEstadoAmortizacion = normalizeEstadoAmortizacionFilter(estadoAmortizacion);
+      if (normalizedEstadoAmortizacion) {
+        where.estadoAmortizacion = normalizedEstadoAmortizacion;
+      }
     }
 
     if (search && String(search).trim() !== "") {
@@ -627,6 +1227,15 @@ export async function adminGetMaquinas(req, res) {
         },
         servicioAmortizacion: {
           select: { id: true, nombre: true },
+        },
+        tipoMaquina: {
+          select: {
+            id: true,
+            nombre: true,
+            plazoAmortizacion: {
+              select: { id: true, nombre: true, meses: true },
+            },
+          },
         },
       },
       orderBy: [{ tipo: "asc" }, { id: "asc" }],
@@ -721,6 +1330,12 @@ export async function adminGetMaquinas(req, res) {
 
     const result = maquinas.map((m) => ({
       ...m,
+      tipo: m.tipoMaquina?.nombre || m.tipo,
+      amortizacion: resolveAmortizacionByTipo(m.tipoMaquina),
+      estadoAmortizacion: ESTADOS_AMORTIZACION_VALIDOS.has(m.estadoAmortizacion)
+        ? m.estadoAmortizacion
+        : ESTADO_AMORTIZACION.SIN_DATOS,
+      estadoAmortizacionLabel: toEstadoAmortizacionLabel(m.estadoAmortizacion),
       estado: canonicalEstadoMaquina(m.estado),
       asignacion:
         asignacionPorMaquina.get(m.id) ||
@@ -752,12 +1367,23 @@ export async function adminGetMaquinaById(req, res) {
         servicioAmortizacion: {
           select: { id: true, nombre: true },
         },
+        tipoMaquina: {
+          select: {
+            id: true,
+            nombre: true,
+            plazoAmortizacion: {
+              select: { id: true, nombre: true, meses: true },
+            },
+          },
+        },
       },
     });
 
     if (!maquina) {
       return res.status(404).json({ error: "Máquina no encontrada" });
     }
+
+    const tipoMaquinaNombre = maquina.tipoMaquina?.nombre || maquina.tipo;
 
     // 🔑 Pedido actual (no cerrado) más reciente
     const pedidoActual = await prisma.pedido.findFirst({
@@ -797,6 +1423,12 @@ export async function adminGetMaquinaById(req, res) {
 
     res.json({
       ...maquina,
+      tipo: maquina.tipoMaquina?.nombre || maquina.tipo,
+      amortizacion: resolveAmortizacionByTipo(maquina.tipoMaquina),
+      estadoAmortizacion: ESTADOS_AMORTIZACION_VALIDOS.has(maquina.estadoAmortizacion)
+        ? maquina.estadoAmortizacion
+        : ESTADO_AMORTIZACION.SIN_DATOS,
+      estadoAmortizacionLabel: toEstadoAmortizacionLabel(maquina.estadoAmortizacion),
       estado: canonicalEstadoMaquina(maquina.estado),
       asignacion: pedidoActual || pedidoHistoricoNoDevuelto
         ? {
@@ -827,6 +1459,15 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
         },
         servicioAmortizacion: {
           select: { id: true, nombre: true },
+        },
+        tipoMaquina: {
+          select: {
+            id: true,
+            nombre: true,
+            plazoAmortizacion: {
+              select: { id: true, nombre: true, meses: true },
+            },
+          },
         },
       },
     });
@@ -868,7 +1509,7 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
     const eventuales = await prisma.eventual.findMany({
       where: {
         maquinasUtilizadas: {
-          contains: `\"tipo\":\"${maquina.tipo}\"`,
+          contains: `\"tipo\":\"${tipoMaquinaNombre}\"`,
         },
       },
       select: {
@@ -934,7 +1575,7 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
     res.json({
       maquina: {
         id: maquina.id,
-        tipo: maquina.tipo,
+        tipo: tipoMaquinaNombre,
         modelo: maquina.modelo,
         serie: maquina.serie,
         estado: canonicalEstadoMaquina(maquina.estado),
@@ -942,7 +1583,11 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
         proveedorFactura: maquina.proveedorFactura,
         empresa: maquina.empresa,
         anio: maquina.anio,
-        amortizacion: maquina.amortizacion,
+        amortizacion: resolveAmortizacionByTipo(maquina.tipoMaquina),
+        estadoAmortizacion: ESTADOS_AMORTIZACION_VALIDOS.has(maquina.estadoAmortizacion)
+          ? maquina.estadoAmortizacion
+          : ESTADO_AMORTIZACION.SIN_DATOS,
+        estadoAmortizacionLabel: toEstadoAmortizacionLabel(maquina.estadoAmortizacion),
         antiguedad: maquina.antiguedad,
         valorUsadaDolares: maquina.valorUsadaDolares,
         valorUsadaPesos: maquina.valorUsadaPesos,
@@ -987,7 +1632,6 @@ export async function adminCreateMaquina(req, res) {
       proveedorFactura,
       empresa,
       anio,
-      amortizacion,
       valorUsadaDolares,
       valorUsadaPesos,
       valorNuevaDolares,
@@ -1012,7 +1656,6 @@ export async function adminCreateMaquina(req, res) {
 
     const empresaNormalizada = normalizeEmpresa(empresa);
     const anioParsed = parseNullableInt(anio, "Año");
-    const amortizacionParsed = parseNullableInt(amortizacion, "Amortización");
     const antiguedadCalculada = calcularAntiguedad(anioParsed);
     const servicioAmortizacionIdParsed =
       servicioAmortizacionId !== undefined &&
@@ -1028,12 +1671,13 @@ export async function adminCreateMaquina(req, res) {
       return res.status(400).json({ error: "servicioAmortizacionId inválido" });
     }
 
-    const tipoNormalizado = await assertTipoMaquinaExists(tipo);
+    const tipoSeleccionado = await assertTipoMaquinaExists(tipo);
 
     const nueva = await prisma.maquina.create({
       data: {
         id: String(id),
-        tipo: tipoNormalizado,
+        tipo: tipoSeleccionado.nombre,
+        tipoMaquinaId: tipoSeleccionado.id,
         modelo: String(modelo),
         serie:
           serie !== undefined && String(serie).trim() !== ""
@@ -1045,7 +1689,7 @@ export async function adminCreateMaquina(req, res) {
         proveedorFactura: parseNullableString(proveedorFactura),
         empresa: empresaNormalizada,
         anio: anioParsed,
-        amortizacion: amortizacionParsed,
+        amortizacion: resolveAmortizacionByTipo(tipoSeleccionado),
         antiguedad: antiguedadCalculada,
         valorUsadaDolares: parseNullableNonNegativeFloat(valorUsadaDolares, "Valor usada en dólares"),
         valorUsadaPesos: parseNullableNonNegativeFloat(valorUsadaPesos, "Valor herramienta usada en pesos"),
@@ -1093,7 +1737,6 @@ export async function adminUpdateMaquina(req, res) {
       proveedorFactura,
       empresa,
       anio,
-      amortizacion,
       valorUsadaDolares,
       valorUsadaPesos,
       valorNuevaDolares,
@@ -1129,15 +1772,16 @@ export async function adminUpdateMaquina(req, res) {
         ? Number(servicioId)
         : existe.servicioId;
 
-    const tipoNormalizado =
+    const tipoSeleccionado =
       tipo !== undefined && String(tipo).trim() !== ""
         ? await assertTipoMaquinaExists(tipo)
-        : existe.tipo;
+        : await resolveTipoMaquinaForExisting(existe);
 
     const actualizada = await prisma.maquina.update({
       where: { id },
       data: {
-        tipo: tipoNormalizado,
+        tipo: tipoSeleccionado.nombre,
+        tipoMaquinaId: tipoSeleccionado.id,
 
         modelo:
           modelo !== undefined && String(modelo).trim() !== ""
@@ -1175,10 +1819,7 @@ export async function adminUpdateMaquina(req, res) {
 
         anio: anioParsed,
 
-        amortizacion:
-          amortizacion !== undefined
-            ? parseNullableInt(amortizacion, "Amortización")
-            : existe.amortizacion,
+        amortizacion: resolveAmortizacionByTipo(tipoSeleccionado),
 
         antiguedad: calcularAntiguedad(anioParsed),
 
@@ -1576,6 +2217,12 @@ export async function adminExportMaquinas(req, res) {
         servicioAmortizacion: {
           select: { id: true, nombre: true },
         },
+        tipoMaquina: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
       },
       orderBy: [{ tipo: "asc" }, { id: "asc" }],
     });
@@ -1632,6 +2279,7 @@ export async function adminExportMaquinas(req, res) {
       "Empresa",
       "Año",
       "Amortización",
+      "Estado amortización",
       "Antigüedad",
       "Valor usada USD",
       "Valor usada ARS",
@@ -1661,6 +2309,7 @@ export async function adminExportMaquinas(req, res) {
         maquina.empresa ?? "",
         maquina.anio ?? "",
         maquina.amortizacion ?? "",
+        toEstadoAmortizacionLabel(maquina.estadoAmortizacion),
         maquina.antiguedad ?? "",
         maquina.valorUsadaDolares ?? "",
         maquina.valorUsadaPesos ?? "",
@@ -1764,7 +2413,7 @@ export async function adminDownloadMaquinasTemplate(req, res) {
       "Servicios y servicio de amortización deben coincidir exactamente con nombres existentes en el sistema.",
     ]);
     instructionsSheet.addRow([
-      "Año y amortización deben ser enteros. Los valores monetarios deben ser numéricos y no negativos.",
+      "Año debe ser entero. La amortización se hereda del tipo de máquina configurado en Plazos de amortización. Los valores monetarios deben ser numéricos y no negativos.",
     ]);
     instructionsSheet.eachRow((row) => {
       row.getCell(1).alignment = { wrapText: true, vertical: "top" };
@@ -1856,6 +2505,7 @@ export async function adminConfirmImportMaquinas(req, res) {
             data: {
               id: item.id,
               tipo: item.tipo,
+              tipoMaquinaId: item.tipoMaquinaId,
               modelo: item.modelo,
               serie: item.serie,
               estado: item.estado,
@@ -1895,6 +2545,7 @@ export async function adminConfirmImportMaquinas(req, res) {
           where: { id: item.id },
           data: {
             tipo: item.tipo,
+            tipoMaquinaId: item.tipoMaquinaId,
             modelo: item.modelo,
             serie: item.serie,
             estado: item.estado,

@@ -18,7 +18,13 @@ import {
   adminGetTiposMaquina,
   adminCreateTipoMaquina,
   adminUpdateTipoMaquina,
-  adminDeleteTipoMaquina
+  adminDeleteTipoMaquina,
+  adminGetPlazosAmortizacion,
+  adminCreatePlazoAmortizacion,
+  adminUpdatePlazoAmortizacion,
+  adminDeletePlazoAmortizacion,
+  adminRecalcularEstadoAmortizacion,
+  adminRecalcularEstadoAmortizacionByMaquina,
 } from "../controllers/adminMaquinas.controller.js";
 
 const router = Router();
@@ -35,6 +41,16 @@ router.get("/maquinas/tipos", adminGetTiposMaquina);
 router.post("/maquinas/tipos", adminCreateTipoMaquina);
 router.put("/maquinas/tipos/:tipoId", adminUpdateTipoMaquina);
 router.delete("/maquinas/tipos/:tipoId", adminDeleteTipoMaquina);
+
+// PLAZOS DE AMORTIZACIÓN
+router.get("/maquinas/plazos-amortizacion", adminGetPlazosAmortizacion);
+router.post("/maquinas/plazos-amortizacion", adminCreatePlazoAmortizacion);
+router.put("/maquinas/plazos-amortizacion/:plazoId", adminUpdatePlazoAmortizacion);
+router.delete("/maquinas/plazos-amortizacion/:plazoId", adminDeletePlazoAmortizacion);
+
+// AMORTIZACIÓN
+router.post("/maquinas/amortizacion/recalcular", adminRecalcularEstadoAmortizacion);
+router.post("/maquinas/:id/amortizacion/recalcular", adminRecalcularEstadoAmortizacionByMaquina);
 
 router.get("/maquinas", adminGetMaquinas);
 

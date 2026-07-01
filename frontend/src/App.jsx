@@ -52,9 +52,11 @@ import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminUsuarioForm from "./pages/AdminUsuarioForm";
 import AdminPedidos from "./pages/AdminPedidos";
 import AdminMaquinas from "./pages/AdminMaquinas";
+import AdminAmortizacionesPanel from "./pages/AdminAmortizacionesPanel";
 import AdminMaquinaForm from "./pages/AdminMaquinaForm";
 import AdminMaquinaHistorial from "./pages/AdminMaquinaHistorial";
 import AdminTiposMaquina from "./pages/AdminTiposMaquina";
+import AdminPlazosAmortizacion from "./pages/AdminPlazosAmortizacion";
 import AdminVehiculos from "./pages/AdminVehiculos";
 import AdminVehiculoForm from "./pages/AdminVehiculoForm";
 import AdminVehiculoHistorial from "./pages/AdminVehiculoHistorial";
@@ -428,6 +430,11 @@ function App() {
       />
 
       <Route
+        path="/admin/maquinas/amortizaciones"
+        element={renderReadOnlyModulesPage(<AdminAmortizacionesPanel />)}
+      />
+
+      <Route
         path="/admin/maquinas/nueva"
         element={renderAdminOnlyPage(<AdminMaquinaForm />)}
       />
@@ -435,6 +442,11 @@ function App() {
       <Route
         path="/admin/maquinas/tipos"
         element={renderReadOnlyModulesPage(<AdminTiposMaquina />)}
+      />
+
+      <Route
+        path="/admin/plazos-amortizacion"
+        element={renderReadOnlyModulesPage(<AdminPlazosAmortizacion />)}
       />
 
       <Route

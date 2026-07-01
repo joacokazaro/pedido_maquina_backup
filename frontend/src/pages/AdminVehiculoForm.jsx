@@ -37,6 +37,7 @@ export default function AdminVehiculoForm() {
 
   const [form, setForm] = useState({
     id: "",
+    tipoMaquinaId: "",
     empresa: "",
     estado: "activo",
     vehiculo: "",
@@ -60,6 +61,7 @@ export default function AdminVehiculoForm() {
     pruebaHidraulicaGncAplica: true,
   });
   const [seguros, setSeguros] = useState([]);
+  const [tiposMaquina, setTiposMaquina] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [vehiculo, setVehiculo] = useState(null);
   const [usuarioAsignadoId, setUsuarioAsignadoId] = useState("");
@@ -78,6 +80,7 @@ export default function AdminVehiculoForm() {
         const requests = [
           fetch(`${API_BASE}/admin/seguros`),
           fetch(`${API_BASE}/admin-users?activo=true`),
+          fetch(`${API_BASE}/admin/maquinas/tipos`),
         ];
 
         if (isEdit) {
@@ -94,14 +97,17 @@ export default function AdminVehiculoForm() {
         const vehiculoData = isEdit ? payloads[0] : null;
         const segurosData = isEdit ? payloads[1] : payloads[0];
         const usuariosData = isEdit ? payloads[2] : payloads[1];
+        const tiposData = isEdit ? payloads[3] : payloads[2];
 
         setSeguros(Array.isArray(segurosData) ? segurosData : []);
         setUsuarios(Array.isArray(usuariosData) ? usuariosData : []);
+        setTiposMaquina(Array.isArray(tiposData) ? tiposData : []);
 
         if (vehiculoData) {
           setVehiculo(vehiculoData);
           setForm({
             id: vehiculoData.id,
+            tipoMaquinaId: vehiculoData.tipoMaquina?.id ? String(vehiculoData.tipoMaquina.id) : "",
             empresa: vehiculoData.empresa || "",
             estado: vehiculoData.estado || "activo",
             vehiculo: vehiculoData.vehiculo || "",
@@ -137,6 +143,10 @@ export default function AdminVehiculoForm() {
   }, [id, isEdit]);
 
   const usuarioActual = useMemo(() => vehiculo?.conductorActual || null, [vehiculo]);
+  const tipoSeleccionado = useMemo(
+    () => tiposMaquina.find((tipo) => String(tipo.id) === String(form.tipoMaquinaId)) || null,
+    [tiposMaquina, form.tipoMaquinaId]
+  );
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -156,6 +166,7 @@ export default function AdminVehiculoForm() {
       const payload = {
         ...form,
         seguroId: Number(form.seguroId),
+        tipoMaquinaId: form.tipoMaquinaId ? Number(form.tipoMaquinaId) : null,
       };
 
       const res = await fetch(
@@ -288,45 +299,124 @@ export default function AdminVehiculoForm() {
       {isReadOnly ? <div className="mb-3 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">Modo solo lectura.</div> : null}
 
       <div className="rounded-2xl bg-white p-4 shadow space-y-3">
-        <input name="id" disabled={isEdit || isReadOnly} value={form.id} onChange={handleChange} className={`w-full rounded-xl border p-3 ${isEdit ? "bg-gray-100" : "bg-white"}`} placeholder="ID" />
-        <input name="empresa" value={form.empresa} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Empresa" />
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">Datos generales</h2>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <input name="vehiculo" value={form.vehiculo} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3" placeholder="Vehículo" />
-          <input name="patente" value={form.patente} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3 uppercase" placeholder="Patente" />
-          <input name="modelo" value={form.modelo} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3" placeholder="Modelo" />
-          <input name="numeroPoliza" value={form.numeroPoliza} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3" placeholder="Número de póliza" />
-          <input name="motor" value={form.motor} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3" placeholder="Motor" />
-          <input name="chasis" value={form.chasis} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3" placeholder="Chasis" />
-          <input name="tipoCobertura" value={form.tipoCobertura} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3" placeholder="Tipo de cobertura" />
+          <div className="space-y-3">
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-gray-600">ID</label>
+          <input name="id" disabled={isEdit || isReadOnly} value={form.id} onChange={handleChange} className={`w-full rounded-xl border p-3 ${isEdit ? "bg-gray-100" : "bg-white"}`} placeholder="ID" />
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
-          <select name="seguroId" value={form.seguroId} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3 bg-white">
-            <option value="">Seleccionar seguro</option>
-            {seguros.map((seguro) => (
-              <option key={seguro.id} value={String(seguro.id)}>{seguro.nombre}</option>
-            ))}
-          </select>
-
-          <select name="estado" value={form.estado} disabled={isReadOnly} onChange={handleChange} className="rounded-xl border p-3 bg-white">
-            {ESTADOS.map((estado) => (
-              <option key={estado} value={estado}>{estado}</option>
-            ))}
-          </select>
-
-          <select
-            value={form.tarjetaVerde ? "si" : "no"}
-            disabled={isReadOnly}
-            onChange={(e) => handleBooleanChange("tarjetaVerde", e.target.value === "si")}
-            className="rounded-xl border p-3 bg-white"
-          >
-            <option value="si">Tarjeta verde: Tiene</option>
-            <option value="no">Tarjeta verde: No tiene</option>
-          </select>
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-gray-600">Empresa</label>
+          <input name="empresa" value={form.empresa} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Empresa" />
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Vehiculo</label>
+            <input name="vehiculo" value={form.vehiculo} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Vehículo" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Patente</label>
+            <input name="patente" value={form.patente} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 uppercase" placeholder="Patente" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
+            <input name="modelo" value={form.modelo} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Modelo" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Numero de poliza</label>
+            <input name="numeroPoliza" value={form.numeroPoliza} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Número de póliza" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Motor</label>
+            <input name="motor" value={form.motor} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Motor" />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Chasis</label>
+            <input name="chasis" value={form.chasis} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Chasis" />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo de cobertura</label>
+            <input name="tipoCobertura" value={form.tipoCobertura} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Tipo de cobertura" />
+          </div>
+        </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">Seguro y tipo</h2>
+
+          <div className="grid gap-3 md:grid-cols-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Seguro</label>
+            <select name="seguroId" value={form.seguroId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+              <option value="">Seleccionar seguro</option>
+              {seguros.map((seguro) => (
+                <option key={seguro.id} value={String(seguro.id)}>{seguro.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo de maquina</label>
+            <select name="tipoMaquinaId" value={form.tipoMaquinaId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+              <option value="">Tipo de maquina (default VEHICULO)</option>
+              {tiposMaquina.map((tipo) => (
+                <option key={tipo.id} value={String(tipo.id)}>{tipo.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
+            <select name="estado" value={form.estado} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+              {ESTADOS.map((estado) => (
+                <option key={estado} value={estado}>{estado}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Tarjeta verde</label>
+            <select
+              value={form.tarjetaVerde ? "si" : "no"}
+              disabled={isReadOnly}
+              onChange={(e) => handleBooleanChange("tarjetaVerde", e.target.value === "si")}
+              className="w-full rounded-xl border p-3 bg-white"
+            >
+              <option value="si">Tiene</option>
+              <option value="no">No tiene</option>
+            </select>
+          </div>
+          </div>
+
+          <div className="mt-3">
+            <label className="mb-1 block text-xs font-semibold text-gray-600">Plazo de amortizacion</label>
+            <input
+              value={
+                tipoSeleccionado?.plazoAmortizacion?.meses != null
+                  ? `${tipoSeleccionado.plazoAmortizacion.meses} meses`
+                  : "Sin definir"
+              }
+              disabled
+              className="w-full rounded-xl border bg-gray-100 p-3"
+            />
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">Vencimientos</h2>
+
+          <div className="grid gap-3 md:grid-cols-2">
           {DATE_FIELDS.map((field) => (
             <div key={field.key} className="rounded-xl border p-3">
               <label className="mb-2 block text-sm font-semibold text-gray-700">{field.label}</label>
@@ -356,7 +446,8 @@ export default function AdminVehiculoForm() {
               />
             </div>
           ))}
-        </div>
+          </div>
+        </section>
 
         {!isReadOnly ? (
           <button onClick={save} disabled={saving} className="w-full rounded-xl bg-blue-600 p-3 font-semibold text-white shadow">
