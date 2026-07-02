@@ -87,12 +87,13 @@ jobs:
 
             cd /var/www/pedido-maquina-backup
 
-            echo "📥 Pulling latest code"
-            git pull origin main
+            echo "📥 Syncing repo with origin/main"
+            git fetch origin main
+            git reset --hard origin/main
 
             echo "📦 Installing backend deps"
             cd backend
-            npm install --omit=dev
+            npm ci --omit=dev
 
             echo "🧬 Generating Prisma client"
             npx prisma generate
