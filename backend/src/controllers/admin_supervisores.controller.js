@@ -17,6 +17,8 @@ const ESTADOS_PEDIDO_ACTIVOS = [
   "PENDIENTE_CANCELACION",
 ];
 
+const ESTADOS_PEDIDO_TEMPORALES = [...ESTADOS_PEDIDO_ACTIVOS, "CERRADO"];
+
 function computeFaltantesFinalesFromHistorial(historial) {
   if (!Array.isArray(historial) || historial.length === 0) return [];
 
@@ -363,7 +365,7 @@ export async function getMaquinasPorSupervisor(req, res) {
 
     const pedidosTemporales = await prisma.pedido.findMany({
       where: {
-        estado: { in: ESTADOS_PEDIDO_ACTIVOS },
+        estado: { in: ESTADOS_PEDIDO_TEMPORALES },
         OR: [
           {
             supervisorId: supervisor.id,
@@ -401,18 +403,44 @@ export async function getMaquinasPorSupervisor(req, res) {
             },
           },
         },
+        historial: {
+          where: {
+            accion: {
+              in: [
+                "DEVOLUCION_REGISTRADA",
+                "FALTANTES_DECLARADOS",
+                "DEVOLUCION_CONFIRMADA",
+                "DEVOLUCION_CONFIRMADA_DIRECTA",
+              ],
+            },
+          },
+          orderBy: { fecha: "asc" },
+        },
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
 
-    const maquinasTemporales = pedidosTemporales.flatMap((pedido) =>
-      pedido.asignadas.map((asignacion) => {
+    const maquinasTemporales = pedidosTemporales.flatMap((pedido) => {
+      const faltantesFinales =
+        pedido.estado === "CERRADO"
+          ? new Set(computeFaltantesFinalesFromHistorial(pedido.historial || []))
+          : null;
+
+      return pedido.asignadas.flatMap((asignacion) => {
+        const faltanteConfirmado = Boolean(faltantesFinales?.has(String(asignacion.maquinaId)));
+
+        // En pedidos cerrados solo quedan como temporales los faltantes finales.
+        if (pedido.estado === "CERRADO" && !faltanteConfirmado) {
+          return [];
+        }
+
         const esPrestamoRecibido =
           pedido.destino === "SUPERVISOR" &&
           pedido.supervisorDestinoUsername === supervisor.username;
 
         return {
           ...mapMaquinaSupervisor(asignacion.maquina),
+          faltanteConfirmado,
           servicioActual: pedido.servicio
             ? {
                 id: pedido.servicio.id,
@@ -422,13 +450,14 @@ export async function getMaquinasPorSupervisor(req, res) {
           pedido: {
             id: pedido.id,
             estado: pedido.estado,
+            conFaltantes: pedido.estado === "CERRADO" && faltanteConfirmado,
             tipo: esPrestamoRecibido ? "PRESTAMO" : "PEDIDO",
             supervisorSolicitante:
               pedido.supervisor?.nombre || pedido.supervisor?.username || null,
           },
         };
-      })
-    );
+      });
+    });
 
     res.json({
       supervisor: {

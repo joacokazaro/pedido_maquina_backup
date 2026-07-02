@@ -24,8 +24,14 @@ function estadoBadgeClass(estado) {
 }
 
 function MaquinaCard({ maquina, temporal = false }) {
+  const esFaltanteCerrado = temporal && Boolean(maquina?.faltanteConfirmado || maquina?.pedido?.conFaltantes);
+
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div
+      className={`rounded-2xl border p-4 shadow-sm ${
+        esFaltanteCerrado ? "border-red-300 bg-red-50" : "border-gray-200 bg-white"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-bold uppercase text-gray-800">{maquina.tipo}</p>
@@ -36,6 +42,12 @@ function MaquinaCard({ maquina, temporal = false }) {
 
         <span className={estadoBadgeClass(maquina.estado)}>{maquina.estado}</span>
       </div>
+
+      {esFaltanteCerrado && (
+        <p className="mt-2 rounded-lg bg-red-100 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-red-700">
+          Faltante confirmado
+        </p>
+      )}
 
       <div className="mt-3 space-y-1 text-xs text-gray-600">
         <p>
@@ -274,7 +286,7 @@ export default function DepositoSupervisores() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Máquinas temporales</h2>
                 <p className="text-xs text-gray-600">
-                  Máquinas asignadas momentáneamente al supervisor por pedidos activos.
+                  Máquinas asignadas momentáneamente por pedidos activos y faltantes confirmados en pedidos cerrados.
                 </p>
               </div>
 
