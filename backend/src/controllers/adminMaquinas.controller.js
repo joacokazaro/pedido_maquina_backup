@@ -1476,6 +1476,8 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
       return res.status(404).json({ error: "Máquina no encontrada" });
     }
 
+    const tipoMaquinaNombre = maquina.tipoMaquina?.nombre || maquina.tipo;
+
     const asignaciones = await prisma.pedidoMaquina.findMany({
       where: { maquinaId: id },
       include: {
