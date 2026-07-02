@@ -7,6 +7,12 @@ import {
   canonicalEstadoMaquina,
   normalizeEstadoMaquina,
 } from "../services/inventarioEstados.service.js";
+import {
+  buildReferenciaKey,
+  deleteReferenciaFromS3,
+  getReferenciaSignedUrl,
+  uploadReferenciaToS3,
+} from "../services/s3Referencias.service.js";
 
 /* ========================================================
    CONSTANTES
@@ -141,6 +147,46 @@ function parseNullableString(raw) {
 
 function normalizeTipoMaquina(raw) {
   return String(raw || "").trim().toUpperCase();
+}
+
+function normalizeDescripcionReferencia(raw) {
+  return String(raw || "").trim();
+}
+
+function isReferenciaMimeValido(mimeType) {
+  return ["image/jpeg", "image/png", "image/webp"].includes(String(mimeType || "").toLowerCase());
+}
+
+function parseTipoMaquinaIdParam(raw) {
+  const id = Number(raw);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
+async function serializeReferenciaTipoMaquina(referencia) {
+  return {
+    id: referencia.id,
+    tipoMaquinaId: referencia.tipoMaquinaId,
+    descripcion: referencia.descripcion,
+    originalName: referencia.originalName,
+    mimeType: referencia.mimeType,
+    s3Key: referencia.s3Key,
+    createdAt: referencia.createdAt,
+    updatedAt: referencia.updatedAt,
+    imageUrl: await getReferenciaSignedUrl(referencia.s3Key),
+  };
+}
+
+async function loadTipoMaquinaOr404(tipoId) {
+  const tipo = await prisma.tipoMaquina.findUnique({
+    where: { id: tipoId },
+    select: { id: true, nombre: true },
+  });
+
+  if (!tipo) {
+    return null;
+  }
+
+  return tipo;
 }
 
 function normalizeImportHeader(value) {
@@ -623,26 +669,20 @@ async function insertMaquinaServicioHistorial(
 ======================================================== */
 export async function adminGetTiposMaquina(req, res) {
   try {
-    const [tipos, usados] = await Promise.all([
-      prisma.tipoMaquina.findMany({
-        include: {
-          plazoAmortizacion: {
-            select: { id: true, nombre: true, meses: true },
+    const tipos = await prisma.tipoMaquina.findMany({
+      include: {
+        plazoAmortizacion: {
+          select: { id: true, nombre: true, meses: true },
+        },
+        _count: {
+          select: {
+            maquinas: true,
+            referencias: true,
           },
         },
-        orderBy: { nombre: "asc" },
-      }),
-      prisma.maquina.groupBy({
-        by: ["tipoMaquinaId"],
-        _count: { _all: true },
-      }),
-    ]);
-
-    const countByTipoId = new Map(
-      usados
-        .filter((item) => item.tipoMaquinaId !== null)
-        .map((item) => [item.tipoMaquinaId, item._count._all])
-    );
+      },
+      orderBy: { nombre: "asc" },
+    });
 
     res.json(
       tipos.map((tipo) => ({
@@ -656,12 +696,218 @@ export async function adminGetTiposMaquina(req, res) {
               meses: tipo.plazoAmortizacion.meses,
             }
           : null,
-        maquinasCount: countByTipoId.get(tipo.id) || 0,
+          maquinasCount: tipo._count?.maquinas || 0,
+          referenciasCount: tipo._count?.referencias || 0,
       }))
     );
   } catch (e) {
     console.error("adminGetTiposMaquina:", e);
     res.status(500).json({ error: "Error listando tipos de máquinas" });
+  }
+}
+
+export async function adminGetTipoMaquinaReferencias(req, res) {
+  try {
+    const tipoId = parseTipoMaquinaIdParam(req.params.tipoId);
+    if (!tipoId) {
+      return res.status(400).json({ error: "ID de tipo de máquina inválido" });
+    }
+
+    const tipo = await loadTipoMaquinaOr404(tipoId);
+
+    if (!tipo) {
+      return res.status(404).json({ error: "Tipo de máquina no encontrado" });
+    }
+
+    const referencias = await prisma.tipoMaquinaReferencia.findMany({
+      where: { tipoMaquinaId: tipoId },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+
+    const data = await Promise.all(referencias.map((referencia) => serializeReferenciaTipoMaquina(referencia)));
+    res.json({ tipo, referencias: data });
+  } catch (e) {
+    console.error("adminGetTipoMaquinaReferencias:", e);
+    res.status(500).json({ error: "Error listando referencias del tipo" });
+  }
+}
+
+export async function adminCreateTipoMaquinaReferencia(req, res) {
+  let uploadedKey = null;
+
+  try {
+    const tipoId = parseTipoMaquinaIdParam(req.params.tipoId);
+    if (!tipoId) {
+      return res.status(400).json({ error: "ID de tipo de máquina inválido" });
+    }
+
+    const tipo = await loadTipoMaquinaOr404(tipoId);
+
+    if (!tipo) {
+      return res.status(404).json({ error: "Tipo de máquina no encontrado" });
+    }
+
+    const descripcion = normalizeDescripcionReferencia(req.body?.descripcion);
+    if (!descripcion) {
+      return res.status(400).json({ error: "Descripción obligatoria" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "Imagen obligatoria" });
+    }
+
+    if (!isReferenciaMimeValido(req.file.mimetype)) {
+      return res.status(400).json({ error: "Formato inválido. Usá JPG, PNG o WEBP" });
+    }
+
+    uploadedKey = buildReferenciaKey({ tipoMaquinaId: tipoId, file: req.file });
+
+    await uploadReferenciaToS3({
+      key: uploadedKey,
+      body: req.file.buffer,
+      contentType: req.file.mimetype,
+    });
+
+    const referencia = await prisma.tipoMaquinaReferencia.create({
+      data: {
+        tipoMaquinaId: tipoId,
+        s3Key: uploadedKey,
+        originalName: req.file.originalname || null,
+        mimeType: req.file.mimetype || null,
+        descripcion,
+      },
+    });
+
+    res.status(201).json(await serializeReferenciaTipoMaquina(referencia));
+  } catch (e) {
+    if (uploadedKey) {
+      try {
+        await deleteReferenciaFromS3(uploadedKey);
+      } catch (s3Error) {
+        console.warn("No se pudo limpiar la imagen subida:", s3Error);
+      }
+    }
+
+    console.error("adminCreateTipoMaquinaReferencia:", e);
+    res.status(500).json({ error: e.message || "Error creando referencia" });
+  }
+}
+
+export async function adminUpdateTipoMaquinaReferencia(req, res) {
+  let newKey = null;
+
+  try {
+    const tipoId = parseTipoMaquinaIdParam(req.params.tipoId);
+    const referenciaId = parseTipoMaquinaIdParam(req.params.referenciaId);
+    if (!tipoId || !referenciaId) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    const tipo = await loadTipoMaquinaOr404(tipoId);
+
+    if (!tipo) {
+      return res.status(404).json({ error: "Tipo de máquina no encontrado" });
+    }
+
+    const referencia = await prisma.tipoMaquinaReferencia.findFirst({
+      where: { id: referenciaId, tipoMaquinaId: tipoId },
+    });
+
+    if (!referencia) {
+      return res.status(404).json({ error: "Referencia no encontrada" });
+    }
+
+    const descripcion = normalizeDescripcionReferencia(req.body?.descripcion);
+    if (!descripcion) {
+      return res.status(400).json({ error: "Descripción obligatoria" });
+    }
+
+    let data = {
+      descripcion,
+    };
+
+    if (req.file) {
+      if (!isReferenciaMimeValido(req.file.mimetype)) {
+        return res.status(400).json({ error: "Formato inválido. Usá JPG, PNG o WEBP" });
+      }
+
+      newKey = buildReferenciaKey({ tipoMaquinaId: tipoId, file: req.file });
+      await uploadReferenciaToS3({
+        key: newKey,
+        body: req.file.buffer,
+        contentType: req.file.mimetype,
+      });
+
+      data = {
+        ...data,
+        s3Key: newKey,
+        originalName: req.file.originalname || null,
+        mimeType: req.file.mimetype || null,
+      };
+    }
+
+    const updated = await prisma.tipoMaquinaReferencia.update({
+      where: { id: referencia.id },
+      data,
+    });
+
+    if (newKey && referencia.s3Key !== newKey) {
+      try {
+        await deleteReferenciaFromS3(referencia.s3Key);
+      } catch (s3Error) {
+        console.warn("No se pudo eliminar la imagen anterior:", s3Error);
+      }
+    }
+
+    res.json(await serializeReferenciaTipoMaquina(updated));
+  } catch (e) {
+    if (newKey) {
+      try {
+        await deleteReferenciaFromS3(newKey);
+      } catch (s3Error) {
+        console.warn("No se pudo limpiar la imagen nueva:", s3Error);
+      }
+    }
+
+    console.error("adminUpdateTipoMaquinaReferencia:", e);
+    res.status(500).json({ error: e.message || "Error actualizando referencia" });
+  }
+}
+
+export async function adminDeleteTipoMaquinaReferencia(req, res) {
+  try {
+    const tipoId = parseTipoMaquinaIdParam(req.params.tipoId);
+    const referenciaId = parseTipoMaquinaIdParam(req.params.referenciaId);
+    if (!tipoId || !referenciaId) {
+      return res.status(400).json({ error: "ID inválido" });
+    }
+
+    const tipo = await loadTipoMaquinaOr404(tipoId);
+
+    if (!tipo) {
+      return res.status(404).json({ error: "Tipo de máquina no encontrado" });
+    }
+
+    const referencia = await prisma.tipoMaquinaReferencia.findFirst({
+      where: { id: referenciaId, tipoMaquinaId: tipoId },
+    });
+
+    if (!referencia) {
+      return res.status(404).json({ error: "Referencia no encontrada" });
+    }
+
+    await prisma.tipoMaquinaReferencia.delete({ where: { id: referencia.id } });
+
+    try {
+      await deleteReferenciaFromS3(referencia.s3Key);
+    } catch (s3Error) {
+      console.warn("No se pudo eliminar la imagen de S3:", s3Error);
+    }
+
+    res.json({ message: "Referencia eliminada" });
+  } catch (e) {
+    console.error("adminDeleteTipoMaquinaReferencia:", e);
+    res.status(500).json({ error: "Error eliminando referencia" });
   }
 }
 

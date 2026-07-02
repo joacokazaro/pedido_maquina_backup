@@ -19,6 +19,10 @@ import {
   adminCreateTipoMaquina,
   adminUpdateTipoMaquina,
   adminDeleteTipoMaquina,
+  adminGetTipoMaquinaReferencias,
+  adminCreateTipoMaquinaReferencia,
+  adminUpdateTipoMaquinaReferencia,
+  adminDeleteTipoMaquinaReferencia,
   adminGetPlazosAmortizacion,
   adminCreatePlazoAmortizacion,
   adminUpdatePlazoAmortizacion,
@@ -29,6 +33,12 @@ import {
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+const referenciasUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 8 * 1024 * 1024,
+  },
+});
 
 // LISTADO CON FILTROS
 router.get("/maquinas/export", adminExportMaquinas);
@@ -41,6 +51,18 @@ router.get("/maquinas/tipos", adminGetTiposMaquina);
 router.post("/maquinas/tipos", adminCreateTipoMaquina);
 router.put("/maquinas/tipos/:tipoId", adminUpdateTipoMaquina);
 router.delete("/maquinas/tipos/:tipoId", adminDeleteTipoMaquina);
+router.get("/maquinas/tipos/:tipoId/referencias", adminGetTipoMaquinaReferencias);
+router.post(
+  "/maquinas/tipos/:tipoId/referencias",
+  referenciasUpload.single("file"),
+  adminCreateTipoMaquinaReferencia
+);
+router.put(
+  "/maquinas/tipos/:tipoId/referencias/:referenciaId",
+  referenciasUpload.single("file"),
+  adminUpdateTipoMaquinaReferencia
+);
+router.delete("/maquinas/tipos/:tipoId/referencias/:referenciaId", adminDeleteTipoMaquinaReferencia);
 
 // PLAZOS DE AMORTIZACIÓN
 router.get("/maquinas/plazos-amortizacion", adminGetPlazosAmortizacion);

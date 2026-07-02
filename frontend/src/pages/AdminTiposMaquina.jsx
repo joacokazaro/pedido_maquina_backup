@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../components/ConfirmModal";
+import TipoMaquinaReferenciasModal from "../components/TipoMaquinaReferenciasModal";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 
@@ -14,6 +15,12 @@ export default function AdminTiposMaquina() {
   const [nombre, setNombre] = useState("");
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [referenciasModal, setReferenciasModal] = useState({
+    open: false,
+    mode: "view",
+    tipoId: "",
+    tipoNombre: "",
+  });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,6 +61,24 @@ export default function AdminTiposMaquina() {
   function resetForm() {
     setNombre("");
     setEditing(null);
+  }
+
+  function openReferenciasModal(tipo, mode = "view") {
+    setReferenciasModal({
+      open: true,
+      mode,
+      tipoId: String(tipo?.id || ""),
+      tipoNombre: tipo?.nombre || "",
+    });
+  }
+
+  function closeReferenciasModal() {
+    setReferenciasModal({
+      open: false,
+      mode: "view",
+      tipoId: "",
+      tipoNombre: "",
+    });
   }
 
   async function save(e) {
@@ -112,6 +137,13 @@ export default function AdminTiposMaquina() {
 
   if (loading) return <div className="p-4">Cargando tipos de maquinas...</div>;
 
+  const actionBtnBase =
+    "inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-medium transition";
+  const actionBtnMuted =
+    `${actionBtnBase} border-slate-300 bg-white text-slate-700 hover:bg-slate-100`;
+  const actionBtnSoft =
+    `${actionBtnBase} border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200`;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
       <button
@@ -123,9 +155,31 @@ export default function AdminTiposMaquina() {
       </button>
 
       <header className="mb-4">
-        <h1 className="text-2xl font-bold">Tipos de maquinas</h1>
-        <p className="text-xs text-gray-600">ABM de tipos disponibles para el parque de maquinas</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Tipos de maquinas</h1>
+            <p className="text-xs text-gray-600">ABM de tipos disponibles para el parque de maquinas</p>
+          </div>
+        </div>
       </header>
+
+      {!isReadOnly ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setReferenciasModal({ open: true, mode: "upload", tipoId: "", tipoNombre: "" })}
+              className={actionBtnSoft}
+            >
+              Cargar referencias
+            </button>
+          </div>
+
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+            Subidas asociadas por tipo
+          </span>
+        </div>
+      ) : null}
 
       {error && (
         <div className="mb-3 rounded-lg bg-red-100 p-3 text-sm text-red-700">
@@ -181,36 +235,49 @@ export default function AdminTiposMaquina() {
         {tiposFiltrados.map((tipo) => (
           <div
             key={tipo.id}
-            className="flex items-center justify-between rounded-2xl bg-white p-4 shadow"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow"
           >
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="font-semibold">{tipo.nombre}</p>
               <p className="text-xs text-gray-500">
                 Maquinas asociadas: {tipo.maquinasCount}
               </p>
+              <p className="text-xs text-gray-500">
+                Referencias cargadas: {tipo.referenciasCount || 0}
+              </p>
             </div>
 
-            {!isReadOnly ? (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditing(tipo);
-                    setNombre(tipo.nombre);
-                  }}
-                  className="rounded-lg border px-3 py-2 text-sm"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeleteTarget(tipo)}
-                  className="rounded-lg bg-red-600 px-3 py-2 text-sm text-white"
-                >
-                  Eliminar
-                </button>
-              </div>
-            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => openReferenciasModal(tipo, "view")}
+                className={actionBtnMuted}
+              >
+                Ver referencias
+              </button>
+
+              {!isReadOnly ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(tipo);
+                      setNombre(tipo.nombre);
+                    }}
+                    className="rounded-lg border px-3 py-2 text-sm"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(tipo)}
+                    className="rounded-lg bg-red-600 px-3 py-2 text-sm text-white"
+                  >
+                    Eliminar
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
         ))}
 
@@ -230,6 +297,19 @@ export default function AdminTiposMaquina() {
         tone="danger"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={remove}
+      />
+
+      <TipoMaquinaReferenciasModal
+        open={referenciasModal.open}
+        mode={referenciasModal.mode}
+        tipos={tipos}
+        tipoInicialId={referenciasModal.tipoId}
+        tipoInicialNombre={referenciasModal.tipoNombre}
+        canEdit={!isReadOnly}
+        onClose={closeReferenciasModal}
+        onSaved={async () => {
+          await load();
+        }}
       />
     </div>
   );

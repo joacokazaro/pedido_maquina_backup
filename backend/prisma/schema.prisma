@@ -106,6 +106,22 @@ model TipoMaquina {
   plazoAmortizacion   PlazoAmortizacion? @relation(fields: [plazoAmortizacionId], references: [id])
   maquinas            Maquina[]          @relation("MaquinaTipoMaquina")
   vehiculos           Vehiculo[]         @relation("VehiculoTipoMaquina")
+  referencias         TipoMaquinaReferencia[]
+}
+
+model TipoMaquinaReferencia {
+  id            Int          @id @default(autoincrement())
+  tipoMaquinaId Int
+  s3Key         String       @unique
+  originalName   String?
+  mimeType      String?
+  descripcion   String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  tipoMaquina   TipoMaquina  @relation(fields: [tipoMaquinaId], references: [id], onDelete: Cascade)
+
+  @@index([tipoMaquinaId, createdAt])
 }
 
 model PlazoAmortizacion {
