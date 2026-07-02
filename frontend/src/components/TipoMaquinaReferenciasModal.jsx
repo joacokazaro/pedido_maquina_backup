@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ConfirmModal from "./ConfirmModal";
 import { API_BASE } from "../services/apiBase";
 
 function createEmptyRow() {
@@ -36,6 +37,7 @@ export default function TipoMaquinaReferenciasModal({
   const [editFile, setEditFile] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const tipoSeleccionado = useMemo(
     () => tipos.find((tipo) => String(tipo.id) === selectedTipoId) || null,
@@ -64,6 +66,7 @@ export default function TipoMaquinaReferenciasModal({
     setEditFile(null);
     setEditSaving(false);
     setDeleteId(null);
+    setConfirmDialog(null);
   }, [open, tipoInicialId, tipos]);
 
   useEffect(() => {
@@ -136,34 +139,11 @@ export default function TipoMaquinaReferenciasModal({
     setRows((prev) => prev.map((row) => (row.id === rowId ? { ...row, ...patch } : row)));
   }
 
-  async function submitUpload(e) {
-    e.preventDefault();
+  function closeConfirmDialog() {
+    setConfirmDialog(null);
+  }
 
-    const tipoId = Number(selectedTipoId);
-    if (!Number.isInteger(tipoId) || tipoId <= 0) {
-      setError("Seleccioná un tipo de máquina");
-      return;
-    }
-
-    const items = rows.filter((row) => row.file || String(row.descripcion || "").trim());
-    if (!items.length) {
-      setError("Agregá al menos una imagen con descripción");
-      return;
-    }
-
-    for (const row of items) {
-      if (!row.file) {
-        setError("Hay una fila sin imagen");
-        return;
-      }
-
-      const descripcion = String(row.descripcion || "").trim();
-      if (!descripcion) {
-        setError("Cada imagen necesita una descripción breve");
-        return;
-      }
-    }
-
+  async function executeUpload(items, tipoId) {
     try {
       setSaving(true);
       setError("");
@@ -198,30 +178,65 @@ export default function TipoMaquinaReferenciasModal({
     }
   }
 
-  async function saveEdit() {
-    const current = referencias[currentIndex];
-    if (!current || !selectedTipoId) {
+  async function submitUpload(e) {
+    e.preventDefault();
+
+    const tipoId = Number(selectedTipoId);
+    if (!Number.isInteger(tipoId) || tipoId <= 0) {
+      setError("Seleccioná un tipo de máquina");
       return;
     }
 
-    const descripcion = String(editDescripcion || "").trim();
-    if (!descripcion) {
-      setError("La descripción no puede quedar vacía");
+    const items = rows.filter((row) => row.file || String(row.descripcion || "").trim());
+    if (!items.length) {
+      setError("Agregá al menos una imagen con descripción");
       return;
     }
 
+    for (const row of items) {
+      if (!row.file) {
+        setError("Hay una fila sin imagen");
+        return;
+      }
+
+      const descripcion = String(row.descripcion || "").trim();
+      if (!descripcion) {
+        setError("Cada imagen necesita una descripción breve");
+        return;
+      }
+    }
+
+    setConfirmDialog({
+      type: "upload",
+      title: "Confirmar carga",
+      message:
+        items.length === 1
+          ? `Vas a cargar 1 referencia para ${tipoSeleccionado?.nombre || "este tipo"}.` +
+            "\n\nRevisá que la imagen y la descripción estén correctas antes de confirmar."
+          : `Vas a cargar ${items.length} referencias para ${tipoSeleccionado?.nombre || "este tipo"}.` +
+            "\n\nRevisá que las imágenes y descripciones estén correctas antes de confirmar.",
+      confirmLabel: "Cargar",
+      tone: "default",
+      onConfirm: async () => {
+        closeConfirmDialog();
+        await executeUpload(items, tipoId);
+      },
+    });
+  }
+
+  async function executeSaveEdit(reference, descripcion, file) {
     try {
       setEditSaving(true);
       setError("");
 
       const formData = new FormData();
       formData.append("descripcion", descripcion);
-      if (editFile) {
-        formData.append("file", editFile);
+      if (file) {
+        formData.append("file", file);
       }
 
       const res = await fetch(
-        `${API_BASE}/admin/maquinas/tipos/${selectedTipoId}/referencias/${current.id}`,
+        `${API_BASE}/admin/maquinas/tipos/${selectedTipoId}/referencias/${reference.id}`,
         {
           method: "PUT",
           body: formData,
@@ -251,44 +266,78 @@ export default function TipoMaquinaReferenciasModal({
     }
   }
 
+  async function saveEdit() {
+    const current = referencias[currentIndex];
+    if (!current || !selectedTipoId) {
+      return;
+    }
+
+    const descripcion = String(editDescripcion || "").trim();
+    if (!descripcion) {
+      setError("La descripción no puede quedar vacía");
+      return;
+    }
+
+    setConfirmDialog({
+      type: "edit",
+      title: "Confirmar cambios",
+      message:
+        editFile
+          ? "Vas a actualizar la descripción y reemplazar la imagen de esta referencia.\n\nConfirmá solo si estás seguro de los cambios."
+          : "Vas a actualizar la descripción de esta referencia.\n\nConfirmá solo si estás seguro de los cambios.",
+      confirmLabel: "Guardar cambios",
+      tone: "default",
+      onConfirm: async () => {
+        closeConfirmDialog();
+        await executeSaveEdit(current, descripcion, editFile);
+      },
+    });
+  }
+
   async function deleteCurrent() {
     const current = referencias[currentIndex];
     if (!current || !selectedTipoId) {
       return;
     }
 
-    const confirmed = window.confirm("¿Eliminar esta referencia?");
-    if (!confirmed) {
-      return;
-    }
+    setConfirmDialog({
+      type: "delete",
+      title: "Eliminar referencia",
+      message:
+        `Vas a eliminar la referencia ${currentIndex + 1} de ${referencias.length}.\n\n` +
+        "Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      tone: "danger",
+      onConfirm: async () => {
+        try {
+          setDeleteId(current.id);
+          setError("");
 
-    try {
-      setDeleteId(current.id);
-      setError("");
+          const res = await fetch(
+            `${API_BASE}/admin/maquinas/tipos/${selectedTipoId}/referencias/${current.id}`,
+            { method: "DELETE" }
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.error || "Error eliminando referencia");
+          }
 
-      const res = await fetch(
-        `${API_BASE}/admin/maquinas/tipos/${selectedTipoId}/referencias/${current.id}`,
-        { method: "DELETE" }
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || "Error eliminando referencia");
-      }
-
-      const reload = await fetch(`${API_BASE}/admin/maquinas/tipos/${selectedTipoId}/referencias`);
-      const reloadData = await reload.json().catch(() => ({}));
-      const lista = Array.isArray(reloadData?.referencias) ? reloadData.referencias : [];
-      setReferencias(lista);
-      setCurrentIndex((prev) => Math.min(prev, Math.max(lista.length - 1, 0)));
-      setEditingId(null);
-      setEditDescripcion("");
-      setEditFile(null);
-      onSaved?.(Number(selectedTipoId));
-    } catch (e) {
-      setError(e.message || "Error eliminando referencia");
-    } finally {
-      setDeleteId(null);
-    }
+          const reload = await fetch(`${API_BASE}/admin/maquinas/tipos/${selectedTipoId}/referencias`);
+          const reloadData = await reload.json().catch(() => ({}));
+          const lista = Array.isArray(reloadData?.referencias) ? reloadData.referencias : [];
+          setReferencias(lista);
+          setCurrentIndex((prev) => Math.min(prev, Math.max(lista.length - 1, 0)));
+          setEditingId(null);
+          setEditDescripcion("");
+          setEditFile(null);
+          onSaved?.(Number(selectedTipoId));
+        } catch (e) {
+          setError(e.message || "Error eliminando referencia");
+        } finally {
+          setDeleteId(null);
+        }
+      },
+    });
   }
 
   if (!open) return null;
@@ -564,6 +613,17 @@ export default function TipoMaquinaReferenciasModal({
             )}
           </section>
         </div>
+
+        <ConfirmModal
+          open={Boolean(confirmDialog)}
+          title={confirmDialog?.title || "Confirmar acción"}
+          message={confirmDialog?.message || "Confirmá la acción para continuar."}
+          confirmLabel={confirmDialog?.confirmLabel || "Confirmar"}
+          cancelLabel="Cancelar"
+          tone={confirmDialog?.tone || "default"}
+          onCancel={closeConfirmDialog}
+          onConfirm={confirmDialog?.onConfirm}
+        />
       </div>
     </div>
   );
