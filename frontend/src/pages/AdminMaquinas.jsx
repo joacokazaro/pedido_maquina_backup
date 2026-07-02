@@ -32,6 +32,10 @@ export default function AdminMaquinas() {
   const [search, setSearch] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("");
+  const [supervisorFiltro, setSupervisorFiltro] = useState("");
+  const [supervisores, setSupervisores] = useState([]);
+  const [loadingSupervisorFiltro, setLoadingSupervisorFiltro] = useState(false);
+  const [supervisorMachineIdsCache, setSupervisorMachineIdsCache] = useState({});
   const [resumen, setResumen] = useState(null);
 
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -63,15 +67,17 @@ export default function AdminMaquinas() {
       setLoading(true);
       setError("");
 
-      const [maqsRes, resumenRes, serviciosRes] = await Promise.all([
+      const [maqsRes, resumenRes, serviciosRes, supervisoresRes] = await Promise.all([
         fetch(`${API_BASE}/admin/maquinas`, { headers: buildActorHeaders(user) }),
         fetch(`${API_BASE}/admin/maquinas/stock-resumen`, { headers: buildActorHeaders(user) }),
         fetch(`${API_BASE}/servicios`),
+        fetch(`${API_BASE}/supervisores/catalogo`, { headers: buildActorHeaders(user) }),
       ]);
 
       const maqs = await maqsRes.json().catch(() => []);
       const resumenData = await resumenRes.json().catch(() => null);
       const serviciosData = await serviciosRes.json().catch(() => []);
+      const supervisoresData = await supervisoresRes.json().catch(() => []);
 
       if (!maqsRes.ok) {
         throw new Error(maqs?.error || "Error cargando máquinas");
@@ -85,9 +91,14 @@ export default function AdminMaquinas() {
         throw new Error(serviciosData?.error || "Error cargando servicios");
       }
 
+      if (!supervisoresRes?.ok) {
+        throw new Error(supervisoresData?.error || "Error cargando supervisores");
+      }
+
       setAllMaquinas(Array.isArray(maqs) ? maqs : []);
       setResumen(resumenData);
       setServicios(Array.isArray(serviciosData) ? serviciosData : []);
+      setSupervisores(Array.isArray(supervisoresData) ? supervisoresData : []);
     } catch (e) {
       console.error(e);
       setError("Error cargando máquinas");
@@ -99,6 +110,62 @@ export default function AdminMaquinas() {
   useEffect(() => {
     loadData();
   }, [user?.username]);
+
+  useEffect(() => {
+    if (!supervisorFiltro) {
+      setLoadingSupervisorFiltro(false);
+      return;
+    }
+    if (supervisorMachineIdsCache[supervisorFiltro]) {
+      setLoadingSupervisorFiltro(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadSupervisorScope() {
+      try {
+        setLoadingSupervisorFiltro(true);
+        setError("");
+
+        const res = await fetch(`${API_BASE}/supervisores/${supervisorFiltro}/maquinas`, {
+          signal: controller.signal,
+          headers: buildActorHeaders(user),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data?.error || "No se pudo obtener el alcance de máquinas del supervisor");
+        }
+
+        const maquinasFijas = Array.isArray(data?.maquinasFijas) ? data.maquinasFijas : [];
+        const maquinasTemporales = Array.isArray(data?.maquinasTemporales) ? data.maquinasTemporales : [];
+        const ids = Array.from(
+          new Set([
+            ...maquinasFijas.map((m) => m.id),
+            ...maquinasTemporales.map((m) => m.id),
+          ].filter(Boolean))
+        );
+
+        setSupervisorMachineIdsCache((prev) => ({
+          ...prev,
+          [supervisorFiltro]: ids,
+        }));
+      } catch (e) {
+        if (e.name === "AbortError") return;
+        console.error(e);
+        setError(e.message || "Error cargando máquinas del supervisor");
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoadingSupervisorFiltro(false);
+        }
+      }
+    }
+
+    loadSupervisorScope();
+
+    return () => controller.abort();
+  }, [supervisorFiltro, supervisorMachineIdsCache, user]);
 
   async function moverTallerIndividual(id, accion) {
     if (!canOperateTaller) return;
@@ -128,6 +195,10 @@ export default function AdminMaquinas() {
 
     if (tipoFiltro) data = data.filter(m => m.tipo === tipoFiltro);
     if (estadoFiltro) data = data.filter(m => m.estado === estadoFiltro);
+    if (supervisorFiltro) {
+      const scopedIds = new Set(supervisorMachineIdsCache[supervisorFiltro] || []);
+      data = data.filter((m) => scopedIds.has(m.id));
+    }
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -146,7 +217,7 @@ export default function AdminMaquinas() {
     });
 
     setFiltered(data);
-  }, [allMaquinas, search, tipoFiltro, estadoFiltro]);
+  }, [allMaquinas, search, tipoFiltro, estadoFiltro, supervisorFiltro, supervisorMachineIdsCache]);
 
   const tiposUnicos = Array.from(
     new Set(allMaquinas.map(m => m.tipo).filter(Boolean))
@@ -521,13 +592,16 @@ export default function AdminMaquinas() {
       </div>
 
       {resumen && (
-        <div className="mb-4 grid grid-cols-2 gap-2 text-xs">
-          {Object.entries(resumen.porEstado || {}).map(([estado, cant]) => (
-            <div key={estado} className="bg-white rounded-xl shadow px-3 py-2 flex justify-between">
-              <span className="capitalize">{estado.replace("_", " ")}</span>
-              <b>{cant}</b>
-            </div>
-          ))}
+        <div className="mb-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600">Estados</p>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {Object.entries(resumen.porEstado || {}).map(([estado, cant]) => (
+              <div key={estado} className="bg-white rounded-xl shadow px-3 py-2 flex justify-between">
+                <span className="capitalize">{estado.replace("_", " ")}</span>
+                <b>{cant}</b>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -539,29 +613,61 @@ export default function AdminMaquinas() {
           onChange={e => setSearch(e.target.value)}
         />
 
-        <div className="grid gap-2 md:grid-cols-2">
-          <select
-            className="p-2 rounded-xl border text-xs"
-            value={tipoFiltro}
-            onChange={e => setTipoFiltro(e.target.value)}
-          >
-            <option value="">Todos los tipos</option>
-            {tiposUnicos.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+        <div className="grid gap-2 md:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+              Tipo de máquina
+            </label>
+            <select
+              className="w-full p-2 rounded-xl border text-xs"
+              value={tipoFiltro}
+              onChange={e => setTipoFiltro(e.target.value)}
+            >
+              <option value="">Todos los tipos</option>
+              {tiposUnicos.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
 
-          <select
-            className="p-2 rounded-xl border text-xs"
-            value={estadoFiltro}
-            onChange={e => setEstadoFiltro(e.target.value)}
-          >
-            {ESTADOS.map(e => (
-              <option key={e.value} value={e.value}>{e.label}</option>
-            ))}
-          </select>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+              Estados
+            </label>
+            <select
+              className="w-full p-2 rounded-xl border text-xs"
+              value={estadoFiltro}
+              onChange={e => setEstadoFiltro(e.target.value)}
+            >
+              {ESTADOS.map(e => (
+                <option key={e.value} value={e.value}>{e.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+              Supervisor
+            </label>
+            <select
+              className="w-full p-2 rounded-xl border text-xs"
+              value={supervisorFiltro}
+              onChange={(e) => setSupervisorFiltro(e.target.value)}
+            >
+              <option value="">Todos los supervisores</option>
+              {supervisores.map((s) => (
+                <option key={s.id} value={String(s.id)}>
+                  {s.nombre || s.username}
+                </option>
+              ))}
+            </select>
+          </div>
 
         </div>
+
+        {supervisorFiltro && loadingSupervisorFiltro ? (
+          <p className="text-xs text-gray-500">Cargando máquinas fijas y temporales del supervisor seleccionado...</p>
+        ) : null}
       </div>
 
       <div className="space-y-2">
