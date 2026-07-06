@@ -1,4 +1,5 @@
 import prisma from "../db/prisma.js";
+import { buildUserRoleResponse } from "../services/roles.service.js";
 
 /* ========================================================
    HELPERS
@@ -29,6 +30,7 @@ export async function login(req, res) {
         username: true,
         password: true,
         rol: true,
+        roles: { select: { rol: true } },
         activo: true,
       },
     });
@@ -54,7 +56,7 @@ export async function login(req, res) {
       user: {
         id: user.id,
         username: user.username,
-        rol: user.rol.toUpperCase(), // 👈 contrato con el front
+        ...buildUserRoleResponse(user),
       },
     });
   } catch (e) {

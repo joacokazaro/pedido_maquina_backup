@@ -1,16 +1,20 @@
 import prisma from "../db/prisma.js";
+import {
+  buildUserRoleResponse,
+  derivePrimaryRole,
+  isAllowedRoleCombination,
+  normalizeRole,
+  normalizeRoles,
+  ROLES_VALIDOS,
+  whereHasRole,
+} from "../services/roles.service.js";
 
 /* =====================================================
    CONSTANTES
 ===================================================== */
-const ROLES_VALIDOS = ["admin", "supervisor", "deposito", "coordinador", "consultor", "taller"];
-
 /* =====================================================
-   HELPERS
+  HELPERS
 ===================================================== */
-function normalizeRol(rol) {
-  return typeof rol === "string" ? rol.toLowerCase().trim() : null;
-}
 
 function normalizeString(v) {
   return typeof v === "string" ? v.trim() : null;
@@ -21,11 +25,19 @@ function mapUsuarioResponse(u) {
     id: u.id,
     username: u.username,
     nombre: u.nombre,
-    rol: u.rol.toUpperCase(), // el front lo espera así
+    ...buildUserRoleResponse(u),
     activo: u.activo,
     vtoCarnetConductor: u.vtoCarnetConductor,
     createdAt: u.createdAt,
   };
+}
+
+function parseRolesFromPayload(payload, fallbackRole = null) {
+  const rolesArray = normalizeRoles(payload?.roles);
+  if (rolesArray.length > 0) return rolesArray;
+
+  const single = normalizeRole(payload?.rol ?? fallbackRole);
+  return single ? [single] : [];
 }
 
 function parseNullableDate(value) {
@@ -45,16 +57,17 @@ export async function adminGetUsuarios(req, res) {
   try {
     const { rol, activo, search } = req.query;
     const where = {};
+    const andClauses = [];
 
     // ---- filtro rol ----
     if (rol !== undefined) {
-      const rolNorm = normalizeRol(rol);
+      const rolNorm = normalizeRole(rol);
       if (!ROLES_VALIDOS.includes(rolNorm)) {
         return res.status(400).json({
           error: `Rol inválido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}`,
         });
       }
-      where.rol = rolNorm;
+      andClauses.push(whereHasRole(rolNorm));
     }
 
     // ---- filtro activo ----
@@ -65,14 +78,25 @@ export async function adminGetUsuarios(req, res) {
     // ---- búsqueda ----
     if (search && normalizeString(search)) {
       const q = normalizeString(search);
-      where.OR = [
+      andClauses.push({
+        OR: [
         { username: { contains: q } },
         { nombre: { contains: q } },
-      ];
+        ],
+      });
+    }
+
+    if (andClauses.length > 0) {
+      where.AND = andClauses;
     }
 
     const usuarios = await prisma.usuario.findMany({
       where,
+      include: {
+        roles: {
+          select: { rol: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -96,6 +120,11 @@ export async function adminGetUsuarioByUsername(req, res) {
 
     const usuario = await prisma.usuario.findUnique({
       where: { username },
+      include: {
+        roles: {
+          select: { rol: true },
+        },
+      },
     });
 
     if (!usuario) {
@@ -114,28 +143,28 @@ export async function adminGetUsuarioByUsername(req, res) {
 ===================================================== */
 export async function adminCreateUsuario(req, res) {
   try {
-    const { username, nombre, rol, password, vtoCarnetConductor } = req.body || {};
+    const { username, nombre, rol, roles, password, vtoCarnetConductor } = req.body || {};
 
     const usernameNorm = normalizeString(username);
     const nombreNorm = normalizeString(nombre);
-    const rolNorm = normalizeRol(rol);
+    const rolesNorm = parseRolesFromPayload({ rol, roles });
     const passwordNorm = normalizeString(password);
     const vtoCarnetConductorDate = parseNullableDate(vtoCarnetConductor);
 
-    if (!usernameNorm || !rolNorm || !passwordNorm) {
+    if (!usernameNorm || rolesNorm.length === 0 || !passwordNorm) {
       return res.status(400).json({
-        error: "username, rol y password son obligatorios",
+        error: "username, roles y password son obligatorios",
+      });
+    }
+
+    if (!isAllowedRoleCombination(rolesNorm)) {
+      return res.status(400).json({
+        error: "Combinación de roles no permitida. Solo se admite un rol, o la combinación DEPOSITO + TALLER.",
       });
     }
 
     if (vtoCarnetConductor !== undefined && vtoCarnetConductorDate === undefined) {
       return res.status(400).json({ error: "vtoCarnetConductor inválido" });
-    }
-
-    if (!ROLES_VALIDOS.includes(rolNorm)) {
-      return res.status(400).json({
-        error: `Rol inválido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}`,
-      });
     }
 
     const existe = await prisma.usuario.findUnique({
@@ -148,14 +177,24 @@ export async function adminCreateUsuario(req, res) {
       });
     }
 
+    const rolPrincipal = derivePrimaryRole(rolesNorm);
+
     const nuevo = await prisma.usuario.create({
       data: {
         username: usernameNorm,
         nombre: nombreNorm || usernameNorm,
         password: passwordNorm, // plano (decisión del proyecto)
-        rol: rolNorm,
+        rol: rolPrincipal,
         activo: true,
         vtoCarnetConductor: vtoCarnetConductorDate ?? null,
+        roles: {
+          create: rolesNorm.map((r) => ({ rol: r })),
+        },
+      },
+      include: {
+        roles: {
+          select: { rol: true },
+        },
       },
     });
 
@@ -175,7 +214,7 @@ export async function adminCreateUsuario(req, res) {
 export async function adminUpdateUsuario(req, res) {
   try {
     const username = normalizeString(req.params.username);
-    const { nombre, rol, password, activo, vtoCarnetConductor } = req.body || {};
+    const { nombre, rol, roles, password, activo, vtoCarnetConductor } = req.body || {};
 
     if (!username) {
       return res.status(400).json({ error: "Username requerido" });
@@ -188,6 +227,11 @@ export async function adminUpdateUsuario(req, res) {
 
     const usuario = await prisma.usuario.findUnique({
       where: { username },
+      include: {
+        roles: {
+          select: { rol: true },
+        },
+      },
     });
 
     if (!usuario) {
@@ -195,16 +239,27 @@ export async function adminUpdateUsuario(req, res) {
     }
 
     // ---- rol ----
-    let rolFinal = usuario.rol;
-    if (rol !== undefined) {
-      const rolNorm = normalizeRol(rol);
-      if (!ROLES_VALIDOS.includes(rolNorm)) {
-        return res.status(400).json({
-          error: `Rol inválido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}`,
-        });
-      }
-      rolFinal = rolNorm;
+    const rolesActuales = normalizeRoles((usuario.roles || []).map((r) => r.rol));
+    const rolesFinales =
+      roles !== undefined || rol !== undefined
+        ? parseRolesFromPayload({ roles, rol }, usuario.rol)
+        : rolesActuales.length > 0
+          ? rolesActuales
+          : [normalizeRole(usuario.rol)].filter(Boolean);
+
+    if (rolesFinales.length === 0) {
+      return res.status(400).json({
+        error: `Rol inválido. Debe ser uno de: ${ROLES_VALIDOS.join(", ")}`,
+      });
     }
+
+    if (!isAllowedRoleCombination(rolesFinales)) {
+      return res.status(400).json({
+        error: "Combinación de roles no permitida. Solo se admite un rol, o la combinación DEPOSITO + TALLER.",
+      });
+    }
+
+    const rolFinal = derivePrimaryRole(rolesFinales, usuario.rol);
 
     // ---- data final ----
     const data = {
@@ -229,9 +284,24 @@ export async function adminUpdateUsuario(req, res) {
       data.vtoCarnetConductor = vtoCarnetConductorDate;
     }
 
-    const actualizado = await prisma.usuario.update({
-      where: { username },
-      data,
+    const actualizado = await prisma.$transaction(async (tx) => {
+      await tx.usuarioRol.deleteMany({ where: { usuarioId: usuario.id } });
+
+      for (const role of rolesFinales) {
+        await tx.usuarioRol.create({
+          data: { usuarioId: usuario.id, rol: role },
+        });
+      }
+
+      return tx.usuario.update({
+        where: { username },
+        data,
+        include: {
+          roles: {
+            select: { rol: true },
+          },
+        },
+      });
     });
 
     res.json({
@@ -260,6 +330,9 @@ export async function adminDeleteUsuario(req, res) {
     const usuario = await prisma.usuario.findUnique({
       where: { username },
       include: {
+        roles: {
+          select: { rol: true },
+        },
         _count: {
           select: {
             historialAcciones: true,
@@ -276,9 +349,10 @@ export async function adminDeleteUsuario(req, res) {
     }
 
     // ⚠️ Protección mínima: no borrar último admin
-    if (usuario.rol === "admin") {
+    const rolesUsuario = normalizeRoles((usuario.roles || []).map((r) => r.rol));
+    if (rolesUsuario.includes("admin")) {
       const admins = await prisma.usuario.count({
-        where: { rol: "admin" },
+        where: whereHasRole("admin"),
       });
 
       if (admins <= 1) {

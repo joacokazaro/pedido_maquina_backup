@@ -22,12 +22,25 @@ model Usuario {
   pedidosSupervisor Pedido[]          @relation("SupervisorPedidos")
   eventualesResponsable Eventual[]    @relation("SupervisorEventuales")
   serviciosAsignados UsuarioServicio[]
+  roles             UsuarioRol[]
   notificaciones    Notificacion[]
   vehiculosAsignados Vehiculo[]       @relation("ConductorActualVehiculo")
   historialVehiculos VehiculoAsignacion[] @relation("VehiculoAsignadoAUsuario")
   asignacionesRealizadasVehiculo VehiculoAsignacion[] @relation("VehiculoAsignadoPorUsuario")
   historialEventuales HistorialEventual[]
   movimientosTaller TallerMovimiento[]
+}
+
+model UsuarioRol {
+  id         Int      @id @default(autoincrement())
+  usuarioId   Int
+  rol        String
+  createdAt  DateTime @default(now())
+
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, rol])
+  @@index([rol])
 }
 
 model Servicio {

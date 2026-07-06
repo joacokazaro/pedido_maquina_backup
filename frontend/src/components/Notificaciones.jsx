@@ -8,6 +8,12 @@ export default function Notificaciones({ embedded = false }) {
   const navigate = useNavigate();
   const panelRef = useRef(null);
 
+  function hasRole(role) {
+    const target = String(role || "").toUpperCase();
+    const roles = Array.isArray(user?.roles) ? user.roles.map((r) => String(r || "").toUpperCase()) : [];
+    return roles.includes(target) || String(user?.rol || "").toUpperCase() === target;
+  }
+
   const [abierto, setAbierto] = useState(false);
   const [notificaciones, setNotificaciones] = useState([]);
   const [error, setError] = useState("");
@@ -17,7 +23,7 @@ export default function Notificaciones({ embedded = false }) {
 
     return items.filter((item) => {
       if (item?.tipo !== "PRESTAMO_PROLONGADO") return true;
-      return user?.rol === "DEPOSITO";
+      return hasRole("DEPOSITO");
     });
   }
 
@@ -103,8 +109,8 @@ export default function Notificaciones({ embedded = false }) {
   function resolverRutaPedido(n) {
     if (!n?.pedidoId) return null;
 
-    if (user?.rol === "ADMIN") return `/admin/pedido/${n.pedidoId}`;
-    if (user?.rol === "DEPOSITO") return `/deposito/pedido/${n.pedidoId}`;
+    if (hasRole("ADMIN")) return `/admin/pedido/${n.pedidoId}`;
+    if (hasRole("DEPOSITO")) return `/deposito/pedido/${n.pedidoId}`;
 
     // SUPERVISOR
     const msg = String(n?.mensaje || "").toLowerCase();

@@ -1,4 +1,5 @@
 import prisma from "../db/prisma.js";
+import { whereHasAnyRole, whereHasRole } from "../services/roles.service.js";
 
 /* ========================================================
    HELPERS
@@ -106,7 +107,7 @@ export async function adminGetSupervisores(req, res) {
   try {
    const supervisores = await prisma.usuario.findMany({
   where: {
-    rol: { in: ["supervisor", "deposito"] },
+    ...whereHasAnyRole(["supervisor", "deposito"]),
   },
   include: {
     serviciosAsignados: {
@@ -241,7 +242,7 @@ export async function adminGetUsuariosOperativos(req, res) {
   try {
     const usuarios = await prisma.usuario.findMany({
       where: {
-        rol: { in: ["supervisor", "deposito"] },
+        ...whereHasAnyRole(["supervisor", "deposito"]),
       },
       include: {
         serviciosAsignados: {
@@ -275,7 +276,7 @@ export async function getSupervisoresCatalogo(req, res) {
   try {
     const supervisores = await prisma.usuario.findMany({
       where: {
-        rol: "supervisor",
+        ...whereHasRole("supervisor"),
         activo: true,
       },
       include: {
@@ -324,7 +325,7 @@ export async function getMaquinasPorSupervisor(req, res) {
     const supervisor = await prisma.usuario.findFirst({
       where: {
         id: supervisorId,
-        rol: "supervisor",
+        ...whereHasRole("supervisor"),
         activo: true,
       },
       include: {
@@ -492,7 +493,7 @@ export async function getVehiculosPorSupervisor(req, res) {
     const usuario = await prisma.usuario.findFirst({
       where: {
         id: supervisorId,
-        rol: "supervisor",
+        ...whereHasRole("supervisor"),
         activo: true,
       },
       select: {

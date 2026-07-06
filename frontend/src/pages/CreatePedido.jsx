@@ -56,10 +56,15 @@ const comboSupRef = useRef(null);
   useEffect(() => {
   if (!user?.username) return;
 
+    const rolesUpper = Array.isArray(user?.roles)
+      ? user.roles.map((r) => String(r || "").toUpperCase())
+      : [];
+    const esSupervisor = rolesUpper.includes("SUPERVISOR") || String(user?.rol || "").toUpperCase() === "SUPERVISOR";
+
   // ✅ si es supervisor: solo sus servicios
   // ✅ si fuera admin (si alguna vez lo usás acá): todos los servicios
   const url =
-    user?.rol === "SUPERVISOR"
+      esSupervisor
       ? `${API_BASE}/pedidos/usuarios/${encodeURIComponent(user.username)}/servicios`
       : `${API_BASE}/servicios`;
 
@@ -71,7 +76,7 @@ const comboSupRef = useRef(null);
       else setServicios([]);
     })
     .catch(() => setServicios([]));
-}, [user?.username, user?.rol]);
+}, [user?.username, user?.rol, user?.roles]);
 
 /* =========================
    CARGAR TIPOS (OTRO)

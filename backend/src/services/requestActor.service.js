@@ -1,4 +1,5 @@
 import prisma from "../db/prisma.js";
+import { userHasAnyRole } from "./roles.service.js";
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -22,7 +23,14 @@ export async function requireActor(req, res, allowedRoles) {
 
   const actor = await prisma.usuario.findUnique({
     where: { username },
-    select: { id: true, username: true, nombre: true, rol: true, activo: true },
+    select: {
+      id: true,
+      username: true,
+      nombre: true,
+      rol: true,
+      roles: { select: { rol: true } },
+      activo: true,
+    },
   });
 
   if (!actor || !actor.activo) {
@@ -30,7 +38,7 @@ export async function requireActor(req, res, allowedRoles) {
     return null;
   }
 
-  if (Array.isArray(allowedRoles) && allowedRoles.length > 0 && !allowedRoles.includes(actor.rol)) {
+  if (Array.isArray(allowedRoles) && allowedRoles.length > 0 && !userHasAnyRole(actor, allowedRoles)) {
     res.status(403).json({ error: "No autorizado" });
     return null;
   }

@@ -13,6 +13,14 @@ export default function ConfirmarDevolucion() {
   const [observacion, setObservacion] = useState("");
   const [seleccion, setSeleccion] = useState([]);
 
+  function hasRole(role) {
+    const target = String(role || "").toUpperCase();
+    const roles = Array.isArray(user?.roles)
+      ? user.roles.map((r) => String(r || "").toUpperCase())
+      : [];
+    return roles.includes(target) || String(user?.rol || "").toUpperCase() === target;
+  }
+
   useEffect(() => {
     async function load() {
       const res = await fetch(`${API_BASE}/pedidos/${id}`);
@@ -51,7 +59,7 @@ export default function ConfirmarDevolucion() {
       if (
         data.estado === "ENTREGADO" &&
         data.destino === "DEPOSITO" &&
-        (user?.rol || "").toUpperCase() === "DEPOSITO"
+        hasRole("DEPOSITO")
       ) {
         declaradas = (data.itemsAsignados || []).map((m) => m.id);
       }
@@ -61,7 +69,7 @@ export default function ConfirmarDevolucion() {
     }
 
     load();
-  }, [id, user?.rol]);
+  }, [id, user?.rol, user?.roles]);
 
   if (loading || !pedido) {
     return <div className="p-6">Cargando información...</div>;
@@ -70,7 +78,7 @@ export default function ConfirmarDevolucion() {
   const asignadas = pedido.itemsAsignados || [];
   const esDepositoDirecto =
     pedido.destino === "DEPOSITO" &&
-    (user?.rol || "").toUpperCase() === "DEPOSITO" &&
+    hasRole("DEPOSITO") &&
     ["ENTREGADO", "PENDIENTE_CONFIRMACION", "PENDIENTE_CONFIRMACION_FALTANTES", "CERRADO"].includes(pedido.estado);
 
   function toggle(idMaq) {
@@ -82,7 +90,7 @@ export default function ConfirmarDevolucion() {
   }
 
   function volverAlListado() {
-    if (user.rol === "DEPOSITO") {
+    if (hasRole("DEPOSITO")) {
       navigate("/deposito/pedidos");
     } else {
       navigate("/supervisor/prestamos");

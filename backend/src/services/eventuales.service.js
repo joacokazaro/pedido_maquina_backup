@@ -1,4 +1,5 @@
 import prisma from "../db/prisma.js";
+import { userHasRole, whereHasRole } from "./roles.service.js";
 
 export const ESTADOS_EVENTUAL_VALIDOS = ["activo", "finalizado", "cancelado"];
 
@@ -164,7 +165,14 @@ async function getActorByUsername(username) {
 
   return prisma.usuario.findUnique({
     where: { username: normalized },
-    select: { id: true, username: true, nombre: true, rol: true, activo: true },
+    select: {
+      id: true,
+      username: true,
+      nombre: true,
+      rol: true,
+      roles: { select: { rol: true } },
+      activo: true,
+    },
   });
 }
 
@@ -174,7 +182,7 @@ async function getSupervisorById(supervisorId) {
   return prisma.usuario.findFirst({
     where: {
       id: Number(supervisorId),
-      rol: "supervisor",
+      ...whereHasRole("supervisor"),
       activo: true,
     },
     select: { id: true, username: true, nombre: true },
@@ -596,7 +604,7 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
     });
 
     if (existing && data.observacionesPosteriores) {
-      const accionObservacion = String(actor.rol || "").toLowerCase() === "coordinador"
+      const accionObservacion = userHasRole(actor, "coordinador")
         ? "COORDINADOR_OBSERVACION_POSTERIOR"
         : "ADMIN_OBSERVACION_POSTERIOR";
 
@@ -605,7 +613,7 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
         tipo: "posterior",
       };
 
-      if (String(actor.rol || "").toLowerCase() === "coordinador") {
+      if (userHasRole(actor, "coordinador")) {
         if (trabajosNormalizados.length > 0) {
           detalleObservacion.trabajosRealizados = trabajosNormalizados;
         }
@@ -671,7 +679,7 @@ export async function deleteEventual(eventualId, actorUsername) {
 
 export async function addSupervisorObservation(eventualId, actorUsername, observacion) {
   const actor = await getActorByUsername(actorUsername);
-  if (!actor || actor.rol !== "supervisor") {
+  if (!actor || !userHasRole(actor, "supervisor")) {
     throw buildError("Supervisor invalido", 403);
   }
 
@@ -711,7 +719,7 @@ export async function addSupervisorObservation(eventualId, actorUsername, observ
 
 export async function finalizeSupervisorEventual(eventualId, actorUsername) {
   const actor = await getActorByUsername(actorUsername);
-  if (!actor || actor.rol !== "supervisor") {
+  if (!actor || !userHasRole(actor, "supervisor")) {
     throw buildError("Supervisor invalido", 403);
   }
 

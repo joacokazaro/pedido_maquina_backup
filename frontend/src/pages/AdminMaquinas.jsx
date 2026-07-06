@@ -17,11 +17,10 @@ const ESTADOS = [
 
 export default function AdminMaquinas() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const rolUpper = String(user?.rol || "").toUpperCase();
-  const isAdmin = rolUpper === "ADMIN";
-  const canOperateTaller = rolUpper === "ADMIN" || rolUpper === "TALLER";
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("ADMIN");
+  const canOperateTaller = hasRole("ADMIN") || hasRole("TALLER");
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
 
   const [allMaquinas, setAllMaquinas] = useState([]);
   const [servicios, setServicios] = useState([]);
@@ -536,21 +535,25 @@ export default function AdminMaquinas() {
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/maquinas/tipos")}
-            className={actionBtnMuted}
-          >
-            Tipos de maquinas
-          </button>
+          {isAdmin ? (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate("/admin/maquinas/tipos")}
+                className={actionBtnMuted}
+              >
+                Tipos de maquinas
+              </button>
 
-          <button
-            type="button"
-            onClick={() => navigate("/admin/plazos-amortizacion")}
-            className={actionBtnMuted}
-          >
-            Plazos de amortizacion
-          </button>
+              <button
+                type="button"
+                onClick={() => navigate("/admin/plazos-amortizacion")}
+                className={actionBtnMuted}
+              >
+                Plazos de amortizacion
+              </button>
+            </>
+          ) : null}
 
           {isAdmin ? (
             <button
@@ -583,12 +586,14 @@ export default function AdminMaquinas() {
           ) : null}
         </div>
 
-        <a
-          href={`${API_BASE}/admin/maquinas/export`}
-          className={actionBtnExcel}
-        >
-          Exportar Excel
-        </a>
+        {isAdmin ? (
+          <a
+            href={`${API_BASE}/admin/maquinas/export`}
+            className={actionBtnExcel}
+          >
+            Exportar Excel
+          </a>
+        ) : null}
       </div>
 
       {resumen && (

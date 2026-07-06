@@ -18,6 +18,14 @@ export default function SupervisorPrestamo() {
   const { user } = useAuth();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  function hasRole(role) {
+    const target = String(role || "").toUpperCase();
+    const roles = Array.isArray(user?.roles)
+      ? user.roles.map((r) => String(r || "").toUpperCase())
+      : [];
+    return roles.includes(target) || String(user?.rol || "").toUpperCase() === target;
+  }
+
 
   useEffect(() => {
     async function load() {
@@ -132,7 +140,7 @@ export default function SupervisorPrestamo() {
 )}
 
      {/* Solicitar cancelación (receptor) */}
-    {((pedido.destino === "DEPOSITO" && (user?.rol || "").toLowerCase() === "deposito") || (pedido.destino === "SUPERVISOR" && pedido.titular === user.username)) &&
+    {((pedido.destino === "DEPOSITO" && hasRole("DEPOSITO")) || (pedido.destino === "SUPERVISOR" && pedido.titular === user.username)) &&
        !["CANCELADO", "CERRADO", "PENDIENTE_CANCELACION"].includes(pedido.estado) && (
          <>
            <button

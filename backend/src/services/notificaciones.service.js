@@ -1,5 +1,6 @@
 import prisma from "../db/prisma.js";
 import { ESTADOS_PEDIDO } from "../constants/estadosPedidos.js";
+import { whereHasRole } from "./roles.service.js";
 
 const TIPO_NOTIFICACION_PRESTAMO_PROLONGADO = "PRESTAMO_PROLONGADO";
 
@@ -191,7 +192,7 @@ export async function crearNotificacionesParaUsuarios({
 
 export async function getUsuariosDepositoIds() {
   const depositos = await prisma.usuario.findMany({
-    where: { rol: "deposito", activo: true },
+    where: { ...whereHasRole("deposito"), activo: true },
     select: { id: true },
   });
   return depositos.map((u) => u.id);
@@ -199,7 +200,7 @@ export async function getUsuariosDepositoIds() {
 
 export async function getUsuariosAdminIds() {
   const admins = await prisma.usuario.findMany({
-    where: { rol: "admin", activo: true },
+    where: { ...whereHasRole("admin"), activo: true },
     select: { id: true },
   });
   return admins.map((u) => u.id);

@@ -10,13 +10,21 @@ import {
   getUsuariosDepositoIds,
   getUsuariosAdminIds,
 } from "../services/notificaciones.service.js";
+import { userHasRole } from "../services/roles.service.js";
 
 /* ========================================================
    HELPERS
 ======================================================== */
 async function getUsuarioByUsername(username) {
   if (!username) return null;
-  return prisma.usuario.findUnique({ where: { username } });
+  return prisma.usuario.findUnique({
+    where: { username },
+    include: {
+      roles: {
+        select: { rol: true },
+      },
+    },
+  });
 }
 
 function safeParse(value, fallback) {
@@ -331,7 +339,7 @@ export async function solicitarCancelacion(req, res) {
     // - Si destino === 'SUPERVISOR' => solo el supervisor destino (supervisorDestinoUsername).
     let autorizado = false;
     if (pedido.destino === "DEPOSITO") {
-      if (u.rol === "deposito") autorizado = true;
+      if (userHasRole(u, "deposito")) autorizado = true;
     } else if (pedido.destino === "SUPERVISOR") {
       if (pedido.supervisorDestinoUsername && pedido.supervisorDestinoUsername === u.username) autorizado = true;
     }
@@ -844,12 +852,12 @@ export async function confirmarDevolucion(req, res) {
 
     const puedeConfirmarDirectoDeposito =
       pedidoActual.destino === "DEPOSITO" &&
-      u.rol === "deposito" &&
+      userHasRole(u, "deposito") &&
       pedidoActual.estado === ESTADOS_PEDIDO.ENTREGADO;
 
     const puedeConfirmarCerradoConFaltantesDeposito =
       pedidoActual.destino === "DEPOSITO" &&
-      u.rol === "deposito" &&
+      userHasRole(u, "deposito") &&
       pedidoActual.estado === ESTADOS_PEDIDO.CERRADO &&
       faltantesPreviosConfirmados.length > 0;
 

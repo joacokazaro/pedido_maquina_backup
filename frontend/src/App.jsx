@@ -83,6 +83,18 @@ function App() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
 
+  const userRolesUpper = Array.isArray(user?.roles)
+    ? user.roles.map((r) => String(r || "").toUpperCase())
+    : [];
+  const hasRole = (role) => {
+    const target = String(role || "").toUpperCase();
+    return userRolesUpper.includes(target) || String(user?.rol || "").toUpperCase() === target;
+  };
+  const isDeposito = hasRole("DEPOSITO");
+  const isCoordinador = hasRole("COORDINADOR");
+  const isConsultor = hasRole("CONSULTOR");
+  const isTaller = hasRole("TALLER");
+
   // 👉 Roles que participan del ciclo OPERATIVO de préstamo
   const ROLES_OPERATIVOS = ["SUPERVISOR", "DEPOSITO"];
   const renderAdminOnlyPage = (page) => (
@@ -123,7 +135,7 @@ function App() {
 
   const renderDepositoOperativoPage = (page) => (
     <ProtectedRoute allowedRoles={ROLES_OPERATIVOS}>
-      {String(user?.rol || "").toUpperCase() === "DEPOSITO"
+      {isDeposito
         ? <AdminLayout>{page}</AdminLayout>
         : page}
     </ProtectedRoute>
@@ -188,9 +200,9 @@ function App() {
     <>
       {user &&
         location.pathname !== "/" &&
-        user.rol !== "ADMIN" &&
+        !hasRole("ADMIN") &&
         !location.pathname.startsWith("/admin") &&
-        !(String(user.rol || "").toUpperCase() === "DEPOSITO" && location.pathname.startsWith("/deposito")) &&
+        !(isDeposito && location.pathname.startsWith("/deposito")) &&
         <Notificaciones />}
       <Routes>
       {/* LOGIN */}
@@ -384,11 +396,11 @@ function App() {
       <Route
         path="/admin"
         element={renderInventarioTallerPage(
-          String(user?.rol || "").toUpperCase() === "COORDINADOR"
+          isCoordinador
             ? <CoordinadorHome />
-            : String(user?.rol || "").toUpperCase() === "CONSULTOR"
+            : isConsultor
               ? <ConsultorHome />
-              : String(user?.rol || "").toUpperCase() === "TALLER"
+              : isTaller
                 ? <TallerHome />
               : <AdminHome />
         )}

@@ -5,7 +5,50 @@ import { io as ioClient } from "socket.io-client";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
 
+function normalizeAuthUser(raw) {
+  if (!raw) return null;
+
+  const username = String(raw.username || "").trim();
+  if (!username) return null;
+
+  const roles = Array.isArray(raw.roles)
+    ? Array.from(
+        new Set(
+          raw.roles
+            .map((r) => String(r || "").toUpperCase().trim())
+            .filter(Boolean)
+        )
+      )
+    : [];
+
+  const rol = String(raw.rol || roles[0] || "").toUpperCase().trim();
+  const normalizedRoles = roles.length > 0 ? roles : rol ? [rol] : [];
+
+  return {
+    ...raw,
+    username,
+    rol,
+    roles: normalizedRoles,
+  };
+}
+
+function hasRole(user, role) {
+  const target = String(role || "").toUpperCase().trim();
+  if (!target) return false;
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  if (roles.includes(target)) return true;
+  return String(user?.rol || "").toUpperCase() === target;
+}
+
+function hasAnyRole(user, allowedRoles = []) {
+  return (Array.isArray(allowedRoles) ? allowedRoles : []).some((role) =>
+    hasRole(user, role)
+  );
+}
+
 const AuthContext = createContext();
+const AUTH_SESSION_VERSION = "2";
+const AUTH_SESSION_VERSION_KEY = "authSessionVersion";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -36,7 +79,7 @@ export function AuthProvider({ children }) {
 
       s.on("connect", () => {
         console.log("socket connected:", s.id);
-        if (u?.rol === "DEPOSITO") s.emit("join", { room: "DEPOSITO" });
+        if (hasRole(u, "DEPOSITO")) s.emit("join", { room: "DEPOSITO" });
         if (u?.username) s.emit("join", { room: `USER:${u.username}` });
       });
 
@@ -59,11 +102,19 @@ export function AuthProvider({ children }) {
   // 🔁 Restaurar sesión
   useEffect(() => {
     const savedUser = localStorage.getItem("authUser");
+    const savedVersion = localStorage.getItem(AUTH_SESSION_VERSION_KEY);
 
     if (savedUser) {
       try {
+        if (savedVersion !== AUTH_SESSION_VERSION) {
+          localStorage.removeItem("authUser");
+          localStorage.removeItem(AUTH_SESSION_VERSION_KEY);
+          throw new Error("auth version mismatch");
+        }
+
         const uraw = JSON.parse(savedUser);
-        const u = { ...uraw, rol: String(uraw.rol || "").toUpperCase() };
+        const u = normalizeAuthUser(uraw);
+        if (!u) throw new Error("invalid auth user");
         setUser(u);
         initSocket(u);
       } catch {
@@ -83,20 +134,32 @@ export function AuthProvider({ children }) {
   async function login(username, password) {
     const data = await loginRequest(username, password);
 
-    const normalized = { ...data.user, rol: String(data.user.rol || "").toUpperCase() };
+    const normalized = normalizeAuthUser(data.user);
+    if (!normalized) throw new Error("Respuesta de login inválida");
     setUser(normalized);
     localStorage.setItem("authUser", JSON.stringify(normalized));
+    localStorage.setItem(AUTH_SESSION_VERSION_KEY, AUTH_SESSION_VERSION);
 
     initSocket(normalized);
 
     // Redirección por rol
-    const rol = String(normalized.rol || "").toUpperCase();
-    if (rol === "SUPERVISOR") navigate("/supervisor");
-    if (rol === "DEPOSITO") navigate("/deposito");
-    if (rol === "ADMIN") navigate("/admin");
-    if (rol === "COORDINADOR") navigate("/admin");
-    if (rol === "CONSULTOR") navigate("/admin");
-    if (rol === "TALLER") navigate("/admin");
+    if (hasRole(normalized, "ADMIN") || hasRole(normalized, "COORDINADOR") || hasRole(normalized, "CONSULTOR")) {
+      navigate("/admin");
+      return;
+    }
+    if (hasRole(normalized, "DEPOSITO")) {
+      navigate("/deposito");
+      return;
+    }
+    if (hasRole(normalized, "TALLER")) {
+      navigate("/admin");
+      return;
+    }
+    if (hasRole(normalized, "SUPERVISOR")) {
+      navigate("/supervisor");
+      return;
+    }
+    navigate("/");
   }
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -104,6 +167,7 @@ export function AuthProvider({ children }) {
   function doLogout() {
     setUser(null);
     localStorage.removeItem("authUser");
+    localStorage.removeItem(AUTH_SESSION_VERSION_KEY);
     try {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -138,8 +202,10 @@ export function AuthProvider({ children }) {
         loading, // 👈 CLAVE
         socket,
         login,
-          logout,
-          confirmLogout,
+        logout,
+        confirmLogout,
+        hasRole: (role) => hasRole(user, role),
+        hasAnyRole: (roles) => hasAnyRole(user, roles),
       }}
     >
         {children}

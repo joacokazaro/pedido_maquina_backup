@@ -1,5 +1,6 @@
 import prisma from "../db/prisma.js";
 import { crearNotificacionesParaUsuarios } from "../services/notificaciones.service.js";
+import { userHasRole } from "../services/roles.service.js";
 
 /* ========================================================
    CONSTANTES Y HELPERS
@@ -266,10 +267,10 @@ export async function adminUpdatePedido(req, res) {
 
     const admin = await prisma.usuario.findUnique({
       where: { username: usuario },
-      select: { id: true, rol: true, username: true },
+      select: { id: true, rol: true, roles: { select: { rol: true } }, username: true },
     });
 
-    if (!admin || admin.rol !== "admin") {
+    if (!admin || !userHasRole(admin, "admin")) {
       return res.status(403).json({ error: "No autorizado" });
     }
 
@@ -555,8 +556,11 @@ export async function adminAprobarCancelacion(req, res) {
     const { usuario } = req.body || {};
 
     // validar admin
-    const admin = await prisma.usuario.findUnique({ where: { username: usuario } });
-    if (!admin || admin.rol !== "admin") return res.status(403).json({ error: "No autorizado" });
+    const admin = await prisma.usuario.findUnique({
+      where: { username: usuario },
+      include: { roles: { select: { rol: true } } },
+    });
+    if (!admin || !userHasRole(admin, "admin")) return res.status(403).json({ error: "No autorizado" });
 
     const pedido = await prisma.pedido.findUnique({
       where: { id },

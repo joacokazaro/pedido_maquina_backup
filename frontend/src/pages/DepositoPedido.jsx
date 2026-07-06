@@ -17,6 +17,14 @@ export default function DepositoPedido() {
   const [observacion, setObservacion] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  function hasRole(role) {
+    const target = String(role || "").toUpperCase();
+    const roles = Array.isArray(user?.roles)
+      ? user.roles.map((r) => String(r || "").toUpperCase())
+      : [];
+    return roles.includes(target) || String(user?.rol || "").toUpperCase() === target;
+  }
+
   useEffect(() => {
     async function load() {
       try {
@@ -38,7 +46,7 @@ export default function DepositoPedido() {
   if (!pedido) return null;
 
   function volverAlListado() {
-    if (user.rol === "SUPERVISOR") {
+    if (hasRole("SUPERVISOR") && !hasRole("DEPOSITO")) {
       navigate("/supervisor/prestamos");
     } else {
       navigate("/deposito/pedidos");
@@ -84,7 +92,7 @@ export default function DepositoPedido() {
 
   const puedeRegistrarDevolucionDirecta =
     pedido.destino === "DEPOSITO" &&
-    (user?.rol || "").toLowerCase() === "deposito" &&
+    hasRole("DEPOSITO") &&
     (
       ["ENTREGADO", "PENDIENTE_CONFIRMACION", "PENDIENTE_CONFIRMACION_FALTANTES"].includes(pedido.estado) ||
       tieneFaltantesPendientesEnCierre(pedido)
@@ -173,7 +181,7 @@ export default function DepositoPedido() {
       )}
 
       {/* Solicitar cancelación (vista depósito): mostrar cuando el pedido tenga destino DEPOSITO */}
-      {pedido.destino === "DEPOSITO" && (user?.rol || "").toLowerCase() === "deposito" &&
+      {pedido.destino === "DEPOSITO" && hasRole("DEPOSITO") &&
         !["CANCELADO", "CERRADO", "PENDIENTE_CANCELACION"].includes(pedido.estado) && (
           <>
             <button

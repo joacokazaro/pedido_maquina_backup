@@ -131,6 +131,38 @@ const NAV_GROUPS_DEPOSITO = [
 	},
 ];
 
+const NAV_GROUPS_DEPOSITO_TALLER = [
+	{
+		label: "Inicio",
+		items: [
+			{ label: "Panel Depósito", to: "/deposito" },
+			{ label: "Panel Taller", to: "/admin" },
+		],
+	},
+	{
+		label: "Inventario",
+		items: [
+			{ label: "Máquinas (Depósito)", to: "/deposito/maquinas" },
+			{ label: "Máquinas (Taller)", to: "/admin/maquinas" },
+			{ label: "Vehículos (Taller)", to: "/admin/vehiculos" },
+		],
+	},
+	{
+		label: "Operaciones",
+		items: [
+			{ label: "Pedidos a gestionar", to: "/deposito/pedidos" },
+			{ label: "Taller", to: "/admin/taller" },
+		],
+	},
+	{
+		label: "Configuración",
+		items: [
+			{ label: "Máquinas en Servicio", to: "/deposito/servicios" },
+			{ label: "Máquinas por Supervisor", to: "/deposito/supervisores" },
+		],
+	},
+];
+
 function isActivePath(pathname, to) {
 	return pathname === to || pathname.startsWith(`${to}/`);
 }
@@ -141,6 +173,14 @@ function getRoleLabel(rolUpper) {
 	if (rolUpper === "COORDINADOR") return "Coordinación";
 	if (rolUpper === "DEPOSITO") return "Depósito";
 	return "Administración";
+}
+
+function hasRole(user, role) {
+	const target = String(role || "").toUpperCase();
+	const roles = Array.isArray(user?.roles)
+		? user.roles.map((r) => String(r || "").toUpperCase())
+		: [];
+	return roles.includes(target) || String(user?.rol || "").toUpperCase() === target;
 }
 
 function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
@@ -217,11 +257,17 @@ export default function AdminLayout({ children }) {
 	const navigate = useNavigate();
 	const [openGroup, setOpenGroup] = useState("");
 	const rolUpper = String(user?.rol || "").toUpperCase();
-	const isCoordinador = rolUpper === "COORDINADOR";
-	const isConsultor = rolUpper === "CONSULTOR";
-	const isTaller = rolUpper === "TALLER";
-	const isDeposito = rolUpper === "DEPOSITO";
-	const navGroups = isTaller
+	const isCoordinador = hasRole(user, "COORDINADOR");
+	const isConsultor = hasRole(user, "CONSULTOR");
+	const isTaller = hasRole(user, "TALLER");
+	const isDeposito = hasRole(user, "DEPOSITO");
+	const isDepositoTaller = isDeposito && isTaller;
+	const inDepositoPath = location.pathname.startsWith("/deposito");
+	const navGroups = isDepositoTaller
+		? NAV_GROUPS_DEPOSITO_TALLER
+		: inDepositoPath && isDeposito
+		? NAV_GROUPS_DEPOSITO
+		: isTaller
 		? NAV_GROUPS_TALLER
 		: isDeposito
 			? NAV_GROUPS_DEPOSITO
@@ -230,8 +276,24 @@ export default function AdminLayout({ children }) {
 				: isCoordinador
 					? NAV_GROUPS_COORDINADOR
 					: NAV_GROUPS_ADMIN;
-	const roleHomePath = isDeposito ? "/deposito" : "/admin";
-	const roleLabel = getRoleLabel(rolUpper);
+	const roleHomePath = isDepositoTaller
+		? inDepositoPath
+			? "/deposito"
+			: "/admin"
+		: isDeposito
+			? "/deposito"
+			: "/admin";
+	const roleLabel = isDepositoTaller
+		? "Depósito + Taller"
+		: isDeposito
+		? getRoleLabel("DEPOSITO")
+		: isTaller
+			? getRoleLabel("TALLER")
+			: isConsultor
+				? getRoleLabel("CONSULTOR")
+				: isCoordinador
+					? getRoleLabel("COORDINADOR")
+					: getRoleLabel(rolUpper);
 
 	useEffect(() => {
 		const id = window.setTimeout(() => setOpenGroup(""), 0);

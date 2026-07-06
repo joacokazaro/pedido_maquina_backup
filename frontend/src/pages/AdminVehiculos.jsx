@@ -15,10 +15,10 @@ const ESTADOS = [
 
 export default function AdminVehiculos() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const rolUpper = String(user?.rol || "").toUpperCase();
-  const canOperateTaller = rolUpper === "ADMIN" || rolUpper === "TALLER";
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("ADMIN");
+  const canOperateTaller = hasRole("ADMIN") || hasRole("TALLER");
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
   const [vehiculos, setVehiculos] = useState([]);
   const [seguros, setSeguros] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
@@ -163,13 +163,15 @@ export default function AdminVehiculos() {
       </header>
 
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
-          <button
-            onClick={() => navigate("/admin/plazos-amortizacion")}
-            className={actionBtnMuted}
-          >
-            Plazos de amortizacion
-          </button>
-          {!isReadOnly ? (
+          {isAdmin ? (
+            <button
+              onClick={() => navigate("/admin/plazos-amortizacion")}
+              className={actionBtnMuted}
+            >
+              Plazos de amortizacion
+            </button>
+          ) : null}
+          {isAdmin && !isReadOnly ? (
             <>
             <button
               onClick={() => navigate("/admin/seguros")}
@@ -185,12 +187,14 @@ export default function AdminVehiculos() {
               </button>
             </>
           ) : null}
-          <a
-            href={`${API_BASE}/admin/vehiculos/export`}
-            className={actionBtnExcel}
-          >
-            Exportar Excel
-          </a>
+          {isAdmin ? (
+            <a
+              href={`${API_BASE}/admin/vehiculos/export`}
+              className={actionBtnExcel}
+            >
+              Exportar Excel
+            </a>
+          ) : null}
       </div>
 
       <div className="mb-4 rounded-2xl bg-white p-3 shadow space-y-3">
@@ -241,9 +245,17 @@ export default function AdminVehiculos() {
 
       <div className="space-y-2">
         {filtered.map((vehiculo) => (
-          <button
+          <div
+            role="button"
+            tabIndex={0}
             key={vehiculo.id}
             onClick={() => navigate(`/admin/vehiculos/${encodeURIComponent(vehiculo.id)}`)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate(`/admin/vehiculos/${encodeURIComponent(vehiculo.id)}`);
+              }
+            }}
             className="w-full rounded-2xl bg-white px-4 py-3 text-left shadow"
           >
             <div className="flex items-start justify-between gap-3">
@@ -296,7 +308,7 @@ export default function AdminVehiculos() {
                 {vehiculo.estado}
               </span>
             </div>
-          </button>
+          </div>
         ))}
 
         {filtered.length === 0 && (

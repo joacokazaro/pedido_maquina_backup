@@ -75,7 +75,7 @@ export default function AdminUsuarios() {
             <p className="text-sm text-gray-600">@{u.username}</p>
 
             <span className="inline-block mt-2 text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
-              {u.rol}
+              {Array.isArray(u.roles) && u.roles.length > 0 ? u.roles.join(" · ") : u.rol}
             </span>
 
             {!u.activo && (

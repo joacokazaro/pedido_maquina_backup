@@ -20,6 +20,13 @@ export default function ViewPedido() {
   const authUser = JSON.parse(localStorage.getItem("authUser") || "{}");
   const usuario = authUser.username;
   const rol = (authUser.rol || "").toLowerCase();
+  const roles = Array.isArray(authUser.roles)
+    ? authUser.roles.map((r) => String(r || "").toLowerCase())
+    : [];
+  const hasRole = (roleName) => {
+    const target = String(roleName || "").toLowerCase();
+    return roles.includes(target) || rol === target;
+  };
 
   /* =========================
      GUARDIA DE SESIÓN
@@ -177,7 +184,7 @@ export default function ViewPedido() {
       )}
 
       {/* Solicitar cancelación (si el usuario es el receptor) */}
-      {((pedido.destino === "DEPOSITO" && rol === "deposito") || (pedido.destino === "SUPERVISOR" && pedido.titular === usuario)) &&
+      {((pedido.destino === "DEPOSITO" && hasRole("deposito")) || (pedido.destino === "SUPERVISOR" && pedido.titular === usuario)) &&
         !["CANCELADO", "CERRADO", "PENDIENTE_CANCELACION"].includes(pedido.estado) && (
           <>
             <button
