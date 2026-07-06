@@ -30,9 +30,8 @@ function toDateInput(value) {
 export default function AdminVehiculoForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const rolUpper = String(user?.rol || "").toUpperCase();
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
+  const { user, hasRole } = useAuth();
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
   const isEdit = Boolean(id);
 
   const [form, setForm] = useState({

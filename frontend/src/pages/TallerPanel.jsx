@@ -8,9 +8,8 @@ const ESTADOS = ["", "disponible", "asignada", "no_devuelta", "fuera_servicio", 
 
 export default function TallerPanel() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const rolUpper = String(user?.rol || "").toUpperCase();
-  const canEdit = rolUpper === "ADMIN" || rolUpper === "TALLER";
+  const { user, hasRole } = useAuth();
+  const canEdit = hasRole("ADMIN") || hasRole("TALLER");
   const actorHeaders = useMemo(() => buildActorHeaders(user), [user]);
 
   const [maquinas, setMaquinas] = useState([]);

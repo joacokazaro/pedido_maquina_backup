@@ -316,7 +316,7 @@ export default function AdminVehiculos() {
         )}
       </div>
 
-      {!isReadOnly && rolUpper === "ADMIN" ? (
+      {!isReadOnly && isAdmin ? (
         <button
           onClick={() => navigate("/admin/vehiculos/nuevo")}
           className="fixed bottom-4 right-4 h-14 w-14 rounded-full bg-blue-600 text-2xl text-white shadow-lg"

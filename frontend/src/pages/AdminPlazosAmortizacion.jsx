@@ -15,9 +15,8 @@ function sortByNombre(items) {
 
 export default function AdminPlazosAmortizacion() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const rolUpper = String(user?.rol || "").toUpperCase();
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
+  const { user, hasRole } = useAuth();
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
 
   const [plazos, setPlazos] = useState([]);
   const [tipos, setTipos] = useState([]);

@@ -8,9 +8,8 @@ import ConfirmModal from "../../components/ConfirmModal";
 const ESTADOS = ["", "disponible", "asignada", "no_devuelta", "fuera_servicio", "taller", "baja"];
 
 export default function TallerMovimientosMaquinas() {
-  const { user } = useAuth();
-  const rolUpper = String(user?.rol || "").toUpperCase();
-  const canEdit = rolUpper === "ADMIN" || rolUpper === "TALLER";
+  const { user, hasRole } = useAuth();
+  const canEdit = hasRole("ADMIN") || hasRole("TALLER");
   const actorHeaders = useMemo(() => buildActorHeaders(user), [user]);
 
   const [maquinas, setMaquinas] = useState([]);

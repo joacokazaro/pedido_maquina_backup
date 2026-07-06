@@ -41,10 +41,9 @@ function toNullableNumber(value) {
 export default function AdminMaquinaForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const esEdicion = Boolean(id);
-  const rolUpper = String(user?.rol || "").toUpperCase();
-  const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR" || rolUpper === "TALLER";
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
 
   const [form, setForm] = useState({
     id: "",
