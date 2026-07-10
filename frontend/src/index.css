@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ===== Fondo animado del login (marca Kazaró) ===== */
+@keyframes kz-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(70px, -50px) scale(1.15); }
+}
+
+@keyframes kz-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-80px, 60px) scale(0.9); }
+}
+
+@keyframes kz-drift-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(50px, 70px) scale(1.12); }
+}
+
+@keyframes kz-beam-sweep {
+  0% { transform: translateX(-40vw); opacity: 0; }
+  12% { opacity: var(--kz-beam-opacity, 0.9); }
+  70% { opacity: var(--kz-beam-opacity, 0.9); }
+  100% { transform: translateX(150vw); opacity: 0; }
+}
+
+@keyframes kz-spark-pulse {
+  0%, 100% { opacity: 0.1; transform: scale(0.8); }
+  50% { opacity: 0.9; transform: scale(1.25); }
+}
+
+.kz-blob-a { animation: kz-drift-a 20s ease-in-out infinite; }
+.kz-blob-b { animation: kz-drift-b 26s ease-in-out infinite; }
+.kz-blob-c { animation: kz-drift-c 23s ease-in-out infinite; }
+
+.kz-beam {
+  position: absolute;
+  border-radius: 9999px;
+  opacity: 0;
+  animation: kz-beam-sweep linear infinite;
+  will-change: transform, opacity;
+}
+
+.kz-spark {
+  position: absolute;
+  border-radius: 9999px;
+  animation: kz-spark-pulse ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kz-blob-a,
+  .kz-blob-b,
+  .kz-blob-c,
+  .kz-beam,
+  .kz-spark {
+    animation: none;
+  }
+
+  .kz-spark {
+    opacity: 0.3;
+  }
+}

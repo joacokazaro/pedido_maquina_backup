@@ -205,7 +205,9 @@ function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
 				to={group.to}
 				className={({ isActive }) =>
 					`rounded-xl px-4 py-3 text-sm font-semibold transition ${
-						isActive ? "bg-blue-600 text-white shadow-sm" : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
+						isActive
+							? "bg-gradient-to-r from-kazaro-blue to-kazaro-cyan text-white shadow-sm"
+							: "text-slate-200 hover:bg-white/10 hover:text-white"
 					}`
 				}
 			>
@@ -224,14 +226,16 @@ function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
 				aria-expanded={isOpen}
 				aria-haspopup="menu"
 				className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
-					active ? "bg-blue-600 text-white shadow-sm" : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
+					active
+						? "bg-gradient-to-r from-kazaro-blue to-kazaro-cyan text-white shadow-sm"
+						: "text-slate-200 hover:bg-white/10 hover:text-white"
 				}`}
 			>
 				<span>{group.label}</span>
 				<span className={`ml-2 inline-block text-xs transition ${isOpen ? "rotate-180" : "rotate-0"}`}>▾</span>
 			</button>
 
-			<div className={`${isOpen ? "block" : "hidden"} absolute left-0 top-full z-50 mt-2 min-w-64 rounded-2xl border border-blue-100 bg-white p-2 shadow-xl`}>
+			<div className={`${isOpen ? "block" : "hidden"} absolute left-0 top-full z-50 mt-2 min-w-64 rounded-2xl border border-kazaro-ice bg-white p-2 shadow-2xl shadow-kazaro-navy/20`}>
 				{group.items.map((item) => (
 					<Link
 						key={item.to}
@@ -239,8 +243,8 @@ function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
 						onClick={onClose}
 						className={`block rounded-xl px-4 py-3 text-sm font-medium transition ${
 							isActivePath(pathname, item.to)
-								? "bg-blue-50 text-blue-800"
-								: "text-slate-700 hover:bg-slate-50 hover:text-blue-800"
+								? "bg-kazaro-ice text-kazaro-deep"
+								: "text-slate-700 hover:bg-kazaro-mist hover:text-kazaro-deep"
 						}`}
 					>
 						{item.label}
@@ -301,18 +305,25 @@ export default function AdminLayout({ children }) {
 	}, [location.pathname]);
 
 	return (
-		<div className="min-h-screen bg-gray-100">
-			<header className="sticky top-0 z-40 border-b border-blue-100 bg-white/95 shadow-sm backdrop-blur">
+		<div className="min-h-screen bg-kazaro-mist font-sans">
+			<header className="sticky top-0 z-40 border-b border-white/10 bg-kazaro-navy/95 shadow-lg shadow-kazaro-navy/25 backdrop-blur">
 				<div className="mx-auto flex min-h-20 max-w-[1600px] items-center justify-between gap-5 px-5">
 					<div className="flex items-center gap-4">
 						<button
 							type="button"
 							onClick={() => navigate(roleHomePath)}
-							className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-semibold text-blue-900 transition hover:bg-blue-100"
+							className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-white/10"
 							aria-label={`Ir al inicio de ${roleLabel.toLowerCase()}`}
 							title={roleLabel}
 						>
-							{roleLabel}
+							<img
+								src="/LogoHorizFull.png"
+								alt="Kazaró"
+								className="h-9 w-auto brightness-0 invert"
+							/>
+							<span className="hidden rounded-full border border-kazaro-aqua/40 bg-kazaro-aqua/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-kazaro-aqua xl:inline-block">
+								{roleLabel}
+							</span>
 						</button>
 
 						<nav className="hidden items-center gap-1 lg:flex">
@@ -333,21 +344,21 @@ export default function AdminLayout({ children }) {
 						<Notificaciones embedded />
 
 						<div className="hidden text-right md:block">
-							<p className="text-sm font-semibold text-slate-800">{user?.username || "admin"}</p>
-							<p className="text-xs text-blue-700">{roleLabel}</p>
+							<p className="text-sm font-semibold text-white">{user?.username || "admin"}</p>
+							<p className="text-xs font-medium text-kazaro-aqua">{roleLabel}</p>
 						</div>
 
 						<button
 							type="button"
 							onClick={confirmLogout}
-							className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+							className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/15"
 						>
 							Salir
 						</button>
 					</div>
 				</div>
 
-				<div className="border-t border-slate-100 px-3 py-2 lg:hidden">
+				<div className="border-t border-white/10 px-3 py-2 lg:hidden">
 					<div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-1">
 						{navGroups.flatMap((group) => (group.to ? [{ label: group.label, to: group.to }] : group.items)).map((item) => (
 							<Link
@@ -355,8 +366,8 @@ export default function AdminLayout({ children }) {
 								to={item.to}
 								className={`rounded-xl px-3 py-2 text-xs font-semibold ${
 									isActivePath(location.pathname, item.to)
-										? "bg-blue-600 text-white"
-										: "bg-slate-100 text-slate-700"
+										? "bg-gradient-to-r from-kazaro-blue to-kazaro-cyan text-white"
+										: "bg-white/10 text-slate-200"
 								}`}
 							>
 								{item.label}

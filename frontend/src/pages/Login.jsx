@@ -1,6 +1,31 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
+const BEAM_COLORS = {
+  aqua: { core: "rgba(40, 225, 227, 0.95)", glow: "rgba(40, 225, 227, 0.55)" },
+  sky: { core: "rgba(74, 164, 224, 0.95)", glow: "rgba(74, 164, 224, 0.55)" },
+  green: { core: "rgba(101, 188, 123, 0.9)", glow: "rgba(101, 188, 123, 0.5)" },
+};
+
+const BEAMS = [
+  { top: "8%", width: 340, thickness: 2, duration: 7.5, delay: 0, color: "aqua", opacity: 0.9 },
+  { top: "20%", width: 220, thickness: 2, duration: 9.5, delay: 3.2, color: "sky", opacity: 0.7 },
+  { top: "34%", width: 420, thickness: 3, duration: 8, delay: 5.8, color: "aqua", opacity: 0.85 },
+  { top: "52%", width: 260, thickness: 2, duration: 10.5, delay: 1.6, color: "green", opacity: 0.65 },
+  { top: "66%", width: 380, thickness: 2, duration: 8.5, delay: 7.4, color: "sky", opacity: 0.8 },
+  { top: "80%", width: 300, thickness: 3, duration: 9, delay: 4.4, color: "aqua", opacity: 0.75 },
+  { top: "92%", width: 200, thickness: 2, duration: 11, delay: 9.6, color: "green", opacity: 0.6 },
+];
+
+const SPARKS = [
+  { left: "12%", top: "18%", size: 5, duration: 4, delay: 0 },
+  { left: "8%", top: "68%", size: 4, duration: 5.5, delay: 1.8 },
+  { left: "28%", top: "88%", size: 6, duration: 4.8, delay: 3 },
+  { left: "70%", top: "12%", size: 4, duration: 5, delay: 2.2 },
+  { left: "88%", top: "42%", size: 6, duration: 4.4, delay: 0.9 },
+  { left: "93%", top: "78%", size: 5, duration: 5.8, delay: 3.6 },
+];
+
 export default function Login() {
   const { login } = useAuth();
   const [username, setUsername] = useState("");
@@ -20,9 +45,55 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f8fc] px-4 py-6 text-[#0b1736]">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[1000px] items-center justify-center">
-        <div className="grid w-full overflow-hidden rounded-xl border border-[#d9e5ef] bg-white shadow-xl shadow-[#0a2446]/15 md:min-h-[590px] md:grid-cols-[1.05fr_0.95fr]">
+    <div className="relative min-h-screen overflow-hidden bg-[#050f28] px-4 py-6 text-[#0b1736]">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#07173b] via-[#093055] to-[#0a5a68]" aria-hidden="true" />
+
+      <div className="kz-blob-a pointer-events-none absolute -left-44 -top-44 h-[560px] w-[560px] rounded-full bg-[#1172c1]/40 blur-3xl" aria-hidden="true" />
+      <div className="kz-blob-b pointer-events-none absolute -right-52 top-1/4 h-[620px] w-[620px] rounded-full bg-[#2bafc6]/30 blur-3xl" aria-hidden="true" />
+      <div className="kz-blob-c pointer-events-none absolute -bottom-60 left-1/4 h-[580px] w-[580px] rounded-full bg-[#65bc7b]/25 blur-3xl" aria-hidden="true" />
+
+      <div className="pointer-events-none absolute inset-[-25%] -rotate-[24deg]" aria-hidden="true">
+        {BEAMS.map((beam, i) => {
+          const color = BEAM_COLORS[beam.color];
+          return (
+            <span
+              key={i}
+              className="kz-beam"
+              style={{
+                top: beam.top,
+                left: 0,
+                width: `${beam.width}px`,
+                height: `${beam.thickness}px`,
+                background: `linear-gradient(90deg, transparent, ${color.core}, transparent)`,
+                boxShadow: `0 0 14px 1px ${color.glow}`,
+                animationDuration: `${beam.duration}s`,
+                animationDelay: `${beam.delay}s`,
+                "--kz-beam-opacity": beam.opacity,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {SPARKS.map((spark, i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className="kz-spark pointer-events-none bg-[#28e1e3]"
+          style={{
+            left: spark.left,
+            top: spark.top,
+            width: `${spark.size}px`,
+            height: `${spark.size}px`,
+            boxShadow: "0 0 10px 2px rgba(40, 225, 227, 0.45)",
+            animationDuration: `${spark.duration}s`,
+            animationDelay: `${spark.delay}s`,
+          }}
+        />
+      ))}
+
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[1000px] items-center justify-center">
+        <div className="grid w-full overflow-hidden rounded-xl border border-white/10 bg-white shadow-2xl shadow-black/50 ring-1 ring-white/15 md:min-h-[590px] md:grid-cols-[1.05fr_0.95fr]">
           <section className="relative hidden overflow-hidden bg-[#07173b] px-12 py-10 text-white md:flex md:flex-col">
             <div className="absolute -right-36 top-24 h-[390px] w-[390px] rounded-full bg-[#0b6da6]/20" />
             <div className="absolute -right-28 top-60 h-[300px] w-[300px] rounded-full bg-[#064d8b]/25" />

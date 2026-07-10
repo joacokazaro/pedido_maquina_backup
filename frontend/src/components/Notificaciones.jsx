@@ -142,12 +142,12 @@ export default function Notificaciones({ embedded = false }) {
   return (
     <div className={embedded ? "relative z-50" : "fixed top-4 right-4 z-50"} ref={panelRef}>
       <button
-        className={embedded ? "relative flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 text-blue-900 transition hover:bg-blue-100" : "relative bg-white border border-gray-200 shadow w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50"}
+        className={embedded ? "relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white transition hover:bg-white/20" : "relative bg-white border border-gray-200 shadow w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50"}
         onClick={() => setAbierto((v) => !v)}
         title="Notificaciones"
         aria-label="Notificaciones"
       >
-        <svg viewBox="0 0 24 24" className={embedded ? "h-5 w-5 text-blue-900" : "w-4 h-4 text-gray-600"} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" className={embedded ? "h-5 w-5 text-white" : "w-4 h-4 text-gray-600"} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 8a6 6 0 10-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
           <path d="M13.73 21a2 2 0 01-3.46 0" />
         </svg>
