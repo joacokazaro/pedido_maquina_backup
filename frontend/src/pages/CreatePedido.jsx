@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/maquinas";
+import FondoKazaro from "../components/FondoKazaro";
 
 export default function CreatePedido() {
   const { user } = useAuth();
@@ -300,7 +301,8 @@ function limpiarSupervisorDestino() {
      RENDER
   ========================== */
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
+    <div className="min-h-screen px-4 py-6">
+      <FondoKazaro />
       {/* VOLVER */}
       <button
         onClick={() => navigate(-1)}

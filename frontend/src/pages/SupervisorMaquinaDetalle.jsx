@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
+import FondoKazaro from "../components/FondoKazaro";
 
 const ESTADOS = [
   "disponible",
@@ -117,7 +118,8 @@ export default function SupervisorMaquinaDetalle() {
   if (!maquina) return <div className="p-4 text-gray-500">Máquina no encontrada.</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24">
+    <div className="min-h-screen p-4 pb-24">
+      <FondoKazaro />
       <header className="mb-4 flex justify-between">
         <button onClick={() => navigate(-1)} className="text-xs text-blue-600 underline">
           Volver

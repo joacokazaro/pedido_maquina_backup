@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import { formatDateOnly } from "../utils/date";
+import FondoKazaro from "../components/FondoKazaro";
 
 const FILTROS = ["TODOS", "activo", "finalizado", "cancelado"];
 
@@ -46,7 +47,8 @@ export default function SupervisorMisEventuales() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-10">
+    <div className="min-h-screen px-4 py-10">
+      <FondoKazaro />
       <button
         onClick={() => navigate("/supervisor")}
         className="mb-4 self-start text-sm font-medium text-gray-600 hover:text-gray-900"

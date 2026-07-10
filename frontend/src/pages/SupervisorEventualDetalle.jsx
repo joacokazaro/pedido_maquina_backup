@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import { formatDateOnly, formatDateTime } from "../utils/date";
+import FondoKazaro from "../components/FondoKazaro";
 
 export default function SupervisorEventualDetalle() {
   const { id } = useParams();
@@ -76,7 +77,8 @@ export default function SupervisorEventualDetalle() {
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24 space-y-4">
+    <div className="min-h-screen p-4 pb-24 space-y-4">
+      <FondoKazaro />
       <button onClick={() => navigate(-1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm">
         ← Volver
       </button>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import FondoKazaro from "../components/FondoKazaro";
 
 export default function RegistrarDevolucion() {
   const { id } = useParams();
@@ -104,7 +105,8 @@ export default function RegistrarDevolucion() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24">
+    <div className="min-h-screen p-4 pb-24">
+      <FondoKazaro />
       <h1 className="text-2xl font-bold mb-4">Registrar devolución</h1>
 
       <p className="text-sm text-gray-600 mb-4">

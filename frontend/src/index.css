@@ -7,6 +7,10 @@
    todos los <select> de la app sin tocar cada vista.
    ===================================================== */
 @layer base {
+  body {
+    background-color: #eef5fa;
+  }
+
   select:not([multiple]):not([size]) {
     appearance: none;
     -webkit-appearance: none;

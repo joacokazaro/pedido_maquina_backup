@@ -4,6 +4,7 @@ import { API_BASE } from "../services/apiBase";
 import HistorialPedido from "../components/HistorialPedido";
 import PedidoResumen from "../components/PedidoResumen";
 import ConfirmModal from "../components/ConfirmModal";
+import FondoKazaro from "../components/FondoKazaro";
 
 export default function ViewPedido() {
   const { id } = useParams();
@@ -119,7 +120,8 @@ export default function ViewPedido() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24">
+    <div className="min-h-screen p-4 pb-24">
+      <FondoKazaro />
 
       <button
         onClick={() => navigate(-1)}

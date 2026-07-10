@@ -5,6 +5,7 @@ import HistorialPedido from "../components/HistorialPedido";
 import PedidoResumen from "../components/PedidoResumen";
 import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
+import FondoKazaro from "../components/FondoKazaro";
 
 
 
@@ -49,7 +50,8 @@ export default function SupervisorPrestamo() {
   if (!pedido) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24">
+    <div className="min-h-screen p-4 pb-24">
+      <FondoKazaro />
 
       {/* Volver */}
       <button

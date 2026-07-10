@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
+import FondoKazaro from "../components/FondoKazaro";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -80,7 +81,8 @@ export default function SupervisorVehiculos() {
   if (error) return <div className="p-4 text-red-600">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24">
+    <div className="min-h-screen p-4 pb-24">
+      <FondoKazaro />
       <button
         onClick={() => navigate(-1)}
         className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"

@@ -4,6 +4,7 @@ import { EstadoBadge } from "../utils/estadoPedido.jsx";
 import { Link } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useNavigate } from "react-router-dom";
+import FondoKazaro from "../components/FondoKazaro";
 
 
 export default function SupervisorMisPedidos() {
@@ -106,14 +107,16 @@ export default function SupervisorMisPedidos() {
 
   if (!user || !user.username) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
+      <FondoKazaro />
         <p className="text-gray-500 text-sm">Cargando usuario…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center px-4 py-10">
+    <div className="min-h-screen flex flex-col items-center px-4 py-10">
+      <FondoKazaro />
 
       <button
   onClick={() => navigate("/supervisor")}

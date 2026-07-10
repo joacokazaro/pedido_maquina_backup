@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
+import FondoKazaro from "../components/FondoKazaro";
 
 export default function ConfirmarDevolucion() {
   const { id } = useParams();
@@ -118,7 +119,8 @@ export default function ConfirmarDevolucion() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 pb-24">
+    <div className="min-h-screen p-4 pb-24">
+      <FondoKazaro />
 
       <button
         onClick={() => navigate(-1)}
