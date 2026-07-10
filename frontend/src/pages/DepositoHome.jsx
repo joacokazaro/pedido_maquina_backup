@@ -169,40 +169,55 @@ export default function DepositoHome() {
         />
 
         <div className="grid gap-3 md:grid-cols-3">
-          <select
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
-          >
-            {filtros.map((opcion) => (
-              <option key={opcion.value} value={opcion.value}>
-                {opcion.label}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Estado
+            </label>
+            <select
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
+            >
+              {filtros.map((opcion) => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <select
-            value={filtroFaltantes}
-            onChange={(e) => setFiltroFaltantes(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
-          >
-            <option value="TODOS">Todos los pedidos</option>
-            <option value="CON_FALTANTES">Con faltantes</option>
-            <option value="SIN_FALTANTES">Sin faltantes</option>
-          </select>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Faltantes
+            </label>
+            <select
+              value={filtroFaltantes}
+              onChange={(e) => setFiltroFaltantes(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
+            >
+              <option value="TODOS">Todos los pedidos</option>
+              <option value="CON_FALTANTES">Con faltantes</option>
+              <option value="SIN_FALTANTES">Sin faltantes</option>
+            </select>
+          </div>
 
-          <select
-            value={filtroSupervisor}
-            onChange={(e) => setFiltroSupervisor(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
-          >
-            <option value="TODOS">Todos los supervisores</option>
-            {supervisores.map((supervisor) => (
-              <option key={supervisor} value={supervisor}>
-                {supervisor}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Supervisor
+            </label>
+            <select
+              value={filtroSupervisor}
+              onChange={(e) => setFiltroSupervisor(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
+            >
+              <option value="TODOS">Todos los supervisores</option>
+              {supervisores.map((supervisor) => (
+                <option key={supervisor} value={supervisor}>
+                  {supervisor}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

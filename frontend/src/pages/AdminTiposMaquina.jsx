@@ -4,6 +4,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import TipoMaquinaReferenciasModal from "../components/TipoMaquinaReferenciasModal";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 export default function AdminTiposMaquina() {
   const navigate = useNavigate();
@@ -57,6 +59,8 @@ export default function AdminTiposMaquina() {
 
     return lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [tipos, search]);
+
+  const paginacion = usePaginacion(tiposFiltrados, { reinicio: [search] });
 
   function resetForm() {
     setNombre("");
@@ -151,7 +155,7 @@ export default function AdminTiposMaquina() {
         onClick={() => navigate(-1)}
         className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
       >
-        {"<-"} Volver
+        ← Volver
       </button>
 
       <header className="mb-4">
@@ -188,19 +192,43 @@ export default function AdminTiposMaquina() {
       )}
 
       {!isReadOnly ? (
-        <form onSubmit={save} className="mb-4 rounded-2xl bg-white p-4 shadow space-y-3">
-          <input
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            className="w-full rounded-xl border p-3"
-            placeholder="Nombre del tipo"
-          />
+        <form onSubmit={save} className="mb-4 rounded-2xl bg-white p-4 shadow">
+          <div className="mb-3 flex items-center gap-3 border-b border-slate-100 pb-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-kazaro-ice text-kazaro-blue">
+              {editing ? (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              )}
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-slate-800">
+                {editing ? `Editar tipo: ${editing.nombre}` : "Crear nuevo tipo"}
+              </h2>
+              <p className="text-xs text-slate-500">
+                {editing
+                  ? "Modificá el nombre y guardá los cambios."
+                  : "Agregá un tipo nuevo al parque de máquinas."}
+              </p>
+            </div>
+          </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              className="flex-1 rounded-xl border p-3"
+              placeholder="Nombre del tipo"
+            />
+
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 rounded-xl bg-blue-600 p-3 font-semibold text-white disabled:bg-blue-300"
+              className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:bg-blue-300"
             >
               {saving ? "Guardando..." : editing ? "Guardar cambios" : "Crear tipo"}
             </button>
@@ -222,17 +250,25 @@ export default function AdminTiposMaquina() {
         </p>
       )}
 
-      <div className="mb-4 rounded-2xl bg-white p-3 shadow">
+      <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white px-4 py-2.5 shadow">
+        <svg className="h-5 w-5 flex-none text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
         <input
+          type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border p-2.5 text-sm"
-          placeholder="Buscar tipo..."
+          className="min-w-0 flex-1 border-0 bg-transparent py-1.5 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+          placeholder="Buscar entre los tipos existentes..."
         />
+        <span className="flex-none rounded-full bg-kazaro-ice px-3 py-1 text-xs font-semibold text-kazaro-deep">
+          {tiposFiltrados.length} tipo{tiposFiltrados.length === 1 ? "" : "s"}
+        </span>
       </div>
 
       <div className="space-y-2">
-        {tiposFiltrados.map((tipo) => (
+        {paginacion.visibles.map((tipo) => (
           <div
             key={tipo.id}
             className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow"
@@ -287,6 +323,16 @@ export default function AdminTiposMaquina() {
           </div>
         )}
       </div>
+
+      <Paginacion
+        pagina={paginacion.pagina}
+        totalPaginas={paginacion.totalPaginas}
+        total={paginacion.total}
+        tamano={paginacion.tamano}
+        onPagina={paginacion.irAPagina}
+        onTamano={paginacion.cambiarTamano}
+        etiqueta="tipos"
+      />
 
       <ConfirmModal
         open={Boolean(deleteTarget)}

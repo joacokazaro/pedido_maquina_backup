@@ -211,10 +211,10 @@ function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
 			<NavLink
 				to={group.to}
 				className={({ isActive }) =>
-					`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+					`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
 						isActive
-							? "bg-gradient-to-r from-kazaro-blue to-kazaro-cyan text-white shadow-sm"
-							: "text-slate-200 hover:bg-white/10 hover:text-white"
+							? "bg-gradient-to-r from-kazaro-blue to-kazaro-cyan text-white shadow-md shadow-kazaro-cyan/25"
+							: "text-slate-300 hover:bg-white/10 hover:text-white"
 					}`
 				}
 			>
@@ -232,17 +232,19 @@ function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
 				onClick={onToggle}
 				aria-expanded={isOpen}
 				aria-haspopup="menu"
-				className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+				className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
 					active
-						? "bg-gradient-to-r from-kazaro-blue to-kazaro-cyan text-white shadow-sm"
-						: "text-slate-200 hover:bg-white/10 hover:text-white"
+						? "bg-gradient-to-r from-kazaro-blue to-kazaro-cyan text-white shadow-md shadow-kazaro-cyan/25"
+						: "text-slate-300 hover:bg-white/10 hover:text-white"
 				}`}
 			>
 				<span>{group.label}</span>
-				<span className={`ml-2 inline-block text-xs transition ${isOpen ? "rotate-180" : "rotate-0"}`}>▾</span>
+				<span className={`ml-2 inline-block text-xs opacity-70 transition ${isOpen ? "rotate-180" : "rotate-0"}`}>▾</span>
 			</button>
 
-			<div className={`${isOpen ? "block" : "hidden"} absolute left-0 top-full z-50 mt-2 min-w-64 rounded-2xl border border-kazaro-ice bg-white p-2 shadow-2xl shadow-kazaro-navy/20`}>
+			<div className={`${isOpen ? "block kz-pop" : "hidden"} absolute left-0 top-full z-50 mt-3 min-w-64 overflow-hidden rounded-2xl border border-kazaro-ice bg-white shadow-2xl shadow-kazaro-navy/25`}>
+				<div className="h-1 bg-gradient-to-r from-kazaro-blue via-kazaro-cyan to-kazaro-green" />
+				<div className="p-2">
 				{group.items.map((item) => (
 					<Link
 						key={item.to}
@@ -257,6 +259,7 @@ function NavGroup({ group, pathname, isOpen, onToggle, onClose }) {
 						{item.label}
 					</Link>
 				))}
+				</div>
 			</div>
 		</div>
 	);
@@ -341,27 +344,24 @@ export default function AdminLayout({ children }) {
 				</div>
 			</div>
 
-			<header className="sticky top-0 z-40 border-b border-white/10 bg-kazaro-navy/95 shadow-lg shadow-kazaro-navy/25 backdrop-blur">
+			<header className="sticky top-0 z-40 bg-gradient-to-r from-[#0a2150] via-kazaro-navy to-[#081733] shadow-lg shadow-kazaro-navy/30">
 				<div className="mx-auto flex min-h-20 max-w-[1600px] items-center justify-between gap-5 px-5">
 					<div className="flex items-center gap-4">
 						<button
 							type="button"
 							onClick={() => navigate(roleHomePath)}
-							className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-white/10"
+							className="rounded-xl px-2.5 py-2 transition hover:bg-white/10"
 							aria-label={`Ir al inicio de ${roleLabel.toLowerCase()}`}
-							title={roleLabel}
+							title="Ir al inicio"
 						>
 							<img
 								src="/LogoHorizFull.png"
 								alt="Kazaró"
-								className="h-9 w-auto brightness-0 invert"
+								className="h-10 w-auto brightness-0 invert"
 							/>
-							<span className="hidden rounded-full border border-kazaro-aqua/40 bg-kazaro-aqua/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-kazaro-aqua xl:inline-block">
-								{roleLabel}
-							</span>
 						</button>
 
-						<nav className="hidden items-center gap-1 lg:flex">
+						<nav className="hidden items-center gap-1 rounded-2xl border border-white/10 bg-white/5 p-1.5 lg:flex">
 							{navGroups.map((group) => (
 								<NavGroup
 									key={group.label}
@@ -378,22 +378,32 @@ export default function AdminLayout({ children }) {
 					<div className="flex items-center gap-3">
 						<Notificaciones embedded />
 
-						<div className="hidden text-right md:block">
-							<p className="text-sm font-semibold text-white">{user?.username || "admin"}</p>
-							<p className="text-xs font-medium text-kazaro-aqua">{roleLabel}</p>
+						<div className="hidden items-center gap-3 border-l border-white/10 pl-4 md:flex">
+							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-kazaro-blue to-kazaro-cyan text-sm font-bold uppercase text-white shadow-md shadow-kazaro-cyan/20">
+								{String(user?.username || "A").charAt(0)}
+							</div>
+							<div className="text-left">
+								<p className="text-sm font-semibold leading-tight text-white">{user?.username || "admin"}</p>
+								<p className="text-xs font-medium leading-tight text-kazaro-aqua">{roleLabel}</p>
+							</div>
 						</div>
 
 						<button
 							type="button"
 							onClick={confirmLogout}
-							className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/15"
+							className="group flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-red-400/40 hover:bg-red-500/15 hover:text-white"
 						>
+							<svg className="h-4 w-4 transition group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+								<path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3M16 17l5-5-5-5M21 12H9" />
+							</svg>
 							Salir
 						</button>
 					</div>
 				</div>
 
-				<div className="border-t border-white/10 px-3 py-2 lg:hidden">
+				<div className="h-0.5 bg-gradient-to-r from-kazaro-blue via-kazaro-cyan to-kazaro-green opacity-80" />
+
+				<div className="px-3 py-2 lg:hidden">
 					<div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-1">
 						{navGroups.flatMap((group) => (group.to ? [{ label: group.label, to: group.to }] : group.items)).map((item) => (
 							<Link

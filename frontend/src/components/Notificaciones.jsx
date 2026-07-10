@@ -142,7 +142,7 @@ export default function Notificaciones({ embedded = false }) {
   return (
     <div className={embedded ? "relative z-50" : "fixed top-4 right-4 z-50"} ref={panelRef}>
       <button
-        className={embedded ? "relative flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-white transition hover:bg-white/20" : "relative bg-white border border-gray-200 shadow w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50"}
+        className={embedded ? "relative flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition hover:bg-white/15" : "relative bg-white border border-gray-200 shadow w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50"}
         onClick={() => setAbierto((v) => !v)}
         title="Notificaciones"
         aria-label="Notificaciones"

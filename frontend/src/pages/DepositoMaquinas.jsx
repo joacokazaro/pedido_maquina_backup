@@ -146,26 +146,36 @@ export default function DepositoMaquinas() {
         />
 
         <div className="flex gap-2">
-          <select
-            className="flex-1 p-2 rounded-xl border text-xs"
-            value={tipoFiltro}
-            onChange={(e) => setTipoFiltro(e.target.value)}
-          >
-            <option value="">Todos los tipos</option>
-            {tiposUnicos.map((tipo) => (
-              <option key={tipo} value={tipo}>{tipo}</option>
-            ))}
-          </select>
+          <div className="flex-1">
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Tipo
+            </label>
+            <select
+              className="w-full p-2 rounded-xl border text-xs"
+              value={tipoFiltro}
+              onChange={(e) => setTipoFiltro(e.target.value)}
+            >
+              <option value="">Todos los tipos</option>
+              {tiposUnicos.map((tipo) => (
+                <option key={tipo} value={tipo}>{tipo}</option>
+              ))}
+            </select>
+          </div>
 
-          <select
-            className="flex-1 p-2 rounded-xl border text-xs"
-            value={estadoFiltro}
-            onChange={(e) => setEstadoFiltro(e.target.value)}
-          >
-            {ESTADOS.map((estado) => (
-              <option key={estado.value} value={estado.value}>{estado.label}</option>
-            ))}
-          </select>
+          <div className="flex-1">
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Estado
+            </label>
+            <select
+              className="w-full p-2 rounded-xl border text-xs"
+              value={estadoFiltro}
+              onChange={(e) => setEstadoFiltro(e.target.value)}
+            >
+              {ESTADOS.map((estado) => (
+                <option key={estado.value} value={estado.value}>{estado.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

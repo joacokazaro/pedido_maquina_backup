@@ -2,6 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =====================================================
+   Selectores estandarizados (marca Kazaró) — aplica a
+   todos los <select> de la app sin tocar cada vista.
+   ===================================================== */
+@layer base {
+  select:not([multiple]):not([size]) {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2307447c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1em;
+    padding-right: 2.3rem !important;
+    border-radius: 0.75rem;
+    border-color: #c9d6e6;
+    color: #16264b;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  select:not([multiple]):not([size]):hover {
+    border-color: #4aa4e0;
+  }
+
+  select:not([multiple]):not([size]):focus {
+    outline: none;
+    border-color: #1e88bd;
+    box-shadow: 0 0 0 4px rgba(74, 164, 224, 0.18);
+  }
+
+  select:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background-color: #f3f6fa;
+  }
+
+  select option {
+    color: #16264b;
+    background-color: #fff;
+  }
+}
+
+/* Desplegable de opciones estilizado (Chrome/Edge modernos).
+   En navegadores sin soporte, el menú queda nativo pero el
+   control del select ya toma el estilo de arriba. */
+@supports (appearance: base-select) {
+  select:not([multiple]):not([size]) {
+    appearance: base-select;
+  }
+
+  select:not([multiple]):not([size])::picker-icon {
+    display: none;
+  }
+
+  select:not([multiple]):not([size])::picker(select) {
+    appearance: base-select;
+    margin-top: 0.35rem;
+    padding: 0.35rem;
+    border: 1px solid #d9e5ef;
+    border-radius: 0.75rem;
+    background: #fff;
+    box-shadow: 0 18px 40px -12px rgba(7, 23, 59, 0.28);
+  }
+
+  select:not([multiple]):not([size]) option {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #16264b;
+  }
+
+  select:not([multiple]):not([size]) option:hover,
+  select:not([multiple]):not([size]) option:focus {
+    background-color: #f3f8fc;
+  }
+
+  select:not([multiple]):not([size]) option:checked {
+    background-color: #e2f4ff;
+    color: #07447c;
+    font-weight: 600;
+  }
+
+  select:not([multiple]):not([size]) option::checkmark {
+    color: #1172c1;
+  }
+}
+
+/* ===== Dropdowns del header ===== */
+@keyframes kz-pop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kz-pop {
+  animation: kz-pop 0.16s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kz-pop {
+    animation: none;
+  }
+}
+
 /* ===== Fondo animado del login (marca Kazaró) ===== */
 @keyframes kz-drift-a {
   0%, 100% { transform: translate(0, 0) scale(1); }

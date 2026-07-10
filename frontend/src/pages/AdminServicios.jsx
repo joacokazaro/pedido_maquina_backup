@@ -148,26 +148,36 @@ export default function AdminServicios() {
         />
 
         <div className="flex gap-2">
-          <select
-            value={filtroMaquinas}
-            onChange={e => setFiltroMaquinas(e.target.value)}
-            className="flex-1 border rounded-lg p-2 text-sm"
-          >
-            <option value="TODOS">Todos</option>
-            <option value="CON">Con máquinas</option>
-            <option value="SIN">Sin máquinas</option>
-          </select>
+          <div className="flex-1">
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Máquinas
+            </label>
+            <select
+              value={filtroMaquinas}
+              onChange={e => setFiltroMaquinas(e.target.value)}
+              className="w-full border rounded-lg p-2 text-sm"
+            >
+              <option value="TODOS">Todos</option>
+              <option value="CON">Con máquinas</option>
+              <option value="SIN">Sin máquinas</option>
+            </select>
+          </div>
 
-          <select
-            value={orden}
-            onChange={e => setOrden(e.target.value)}
-            className="flex-1 border rounded-lg p-2 text-sm"
-          >
-            <option value="NOMBRE_ASC">Nombre A–Z</option>
-            <option value="NOMBRE_DESC">Nombre Z–A</option>
-            <option value="MAQUINAS_ASC">Máquinas ↑</option>
-            <option value="MAQUINAS_DESC">Máquinas ↓</option>
-          </select>
+          <div className="flex-1">
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Orden
+            </label>
+            <select
+              value={orden}
+              onChange={e => setOrden(e.target.value)}
+              className="w-full border rounded-lg p-2 text-sm"
+            >
+              <option value="NOMBRE_ASC">Nombre A–Z</option>
+              <option value="NOMBRE_DESC">Nombre Z–A</option>
+              <option value="MAQUINAS_ASC">Máquinas ↑</option>
+              <option value="MAQUINAS_DESC">Máquinas ↓</option>
+            </select>
+          </div>
         </div>
       </div>
 

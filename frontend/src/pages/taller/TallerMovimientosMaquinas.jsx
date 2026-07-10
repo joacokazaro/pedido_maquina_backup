@@ -150,17 +150,27 @@ export default function TallerMovimientosMaquinas() {
         {!canEdit ? <div className="mb-3 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">Modo solo lectura.</div> : null}
 
         <div className="mb-3 grid gap-2 md:grid-cols-2">
-          <input
-            className="rounded-xl border border-gray-200 bg-white p-2 text-sm"
-            placeholder="Buscar maquinas..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <select className="rounded-xl border border-gray-200 bg-white p-2 text-sm" value={estado} onChange={(event) => setEstado(event.target.value)}>
-            {ESTADOS.map((item) => (
-              <option key={item || "all"} value={item}>{item || "todos"}</option>
-            ))}
-          </select>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Buscar
+            </label>
+            <input
+              className="w-full rounded-xl border border-gray-200 bg-white p-2 text-sm"
+              placeholder="Buscar maquinas..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Estado
+            </label>
+            <select className="w-full rounded-xl border border-gray-200 bg-white p-2 text-sm" value={estado} onChange={(event) => setEstado(event.target.value)}>
+              {ESTADOS.map((item) => (
+                <option key={item || "all"} value={item}>{item || "todos"}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {canEdit ? (

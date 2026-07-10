@@ -306,17 +306,22 @@ function pedidoTieneMaquina(pedido, texto) {
           onChange={e => setSearch(e.target.value)}
         />
 
-        <select
-          className="w-full p-3 rounded-xl border border-gray-300 bg-white"
-          value={estadoFiltro}
-          onChange={e => setEstadoFiltro(e.target.value)}
-        >
-          {estados.map(e => (
-            <option key={e} value={e}>
-              {formatEstado(e)}
-            </option>
-          ))}
-        </select>
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            Estado
+          </label>
+          <select
+            className="w-full p-3 rounded-xl border border-gray-300 bg-white"
+            value={estadoFiltro}
+            onChange={e => setEstadoFiltro(e.target.value)}
+          >
+            {estados.map(e => (
+              <option key={e} value={e}>
+                {formatEstado(e)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* LISTA */}

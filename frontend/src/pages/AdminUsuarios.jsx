@@ -52,19 +52,24 @@ export default function AdminUsuarios() {
       />
 
       {/* FILTRO ROL */}
-      <select
-        className="w-full p-3 mb-4 border rounded-xl bg-white"
-        value={rol}
-        onChange={(e) => setRol(e.target.value)}
-      >
-        <option value="">Todos</option>
-        <option value="ADMIN">ADMIN</option>
-        <option value="SUPERVISOR">SUPERVISOR</option>
-        <option value="DEPOSITO">DEPOSITO</option>
-        <option value="COORDINADOR">COORDINADOR</option>
-        <option value="CONSULTOR">CONSULTOR</option>
-        <option value="TALLER">TALLER</option>
-      </select>
+      <div className="mb-4">
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          Rol
+        </label>
+        <select
+          className="w-full p-3 border rounded-xl bg-white"
+          value={rol}
+          onChange={(e) => setRol(e.target.value)}
+        >
+          <option value="">Todos</option>
+          <option value="ADMIN">ADMIN</option>
+          <option value="SUPERVISOR">SUPERVISOR</option>
+          <option value="DEPOSITO">DEPOSITO</option>
+          <option value="COORDINADOR">COORDINADOR</option>
+          <option value="CONSULTOR">CONSULTOR</option>
+          <option value="TALLER">TALLER</option>
+        </select>
+      </div>
 
       {/* LISTA */}
       <div className="space-y-3">

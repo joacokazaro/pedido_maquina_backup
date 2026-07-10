@@ -93,24 +93,39 @@ export default function AdminEventualesHistorial() {
           className="w-full rounded-xl border p-2.5 text-sm"
         />
         <div className="grid gap-2 md:grid-cols-4">
-          <select className="rounded-xl border p-2 text-sm" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
-            <option value="">Todos los estados</option>
-            <option value="activo">Activo</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="cancelado">Cancelado</option>
-          </select>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Estado
+            </label>
+            <select className="w-full rounded-xl border p-2 text-sm" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
+              <option value="">Todos los estados</option>
+              <option value="activo">Activo</option>
+              <option value="finalizado">Finalizado</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
 
-          <select className="rounded-xl border p-2 text-sm" value={supervisorFiltro} onChange={(event) => setSupervisorFiltro(event.target.value)}>
-            <option value="">Todos los supervisores</option>
-            {supervisores.map((supervisor) => (
-              <option key={supervisor.id} value={String(supervisor.id)}>
-                {supervisor.nombre || supervisor.username}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Supervisor
+            </label>
+            <select className="w-full rounded-xl border p-2 text-sm" value={supervisorFiltro} onChange={(event) => setSupervisorFiltro(event.target.value)}>
+              <option value="">Todos los supervisores</option>
+              {supervisores.map((supervisor) => (
+                <option key={supervisor.id} value={String(supervisor.id)}>
+                  {supervisor.nombre || supervisor.username}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
-            {filtered.length} eventual{filtered.length === 1 ? "" : "es"}
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Resultados
+            </label>
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+              {filtered.length} eventual{filtered.length === 1 ? "" : "es"}
+            </div>
           </div>
         </div>
       </div>
