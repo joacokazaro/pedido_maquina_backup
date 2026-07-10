@@ -4,6 +4,8 @@ import { API_BASE } from "../../services/apiBase";
 import { useAuth } from "../../context/AuthContext";
 import { buildActorHeaders } from "../../utils/authHeaders";
 import ConfirmModal from "../../components/ConfirmModal";
+import Paginacion from "../../components/Paginacion";
+import { usePaginacion } from "../../hooks/usePaginacion";
 
 const ESTADOS = ["", "disponible", "asignada", "no_devuelta", "fuera_servicio", "taller", "baja"];
 
@@ -58,6 +60,8 @@ export default function TallerMovimientosMaquinas() {
     }
     return data;
   }, [maquinas, search, estado]);
+
+  const paginacion = usePaginacion(filtradas, { reinicio: [search, estado] });
 
   function toggleSeleccion(id) {
     setSelected((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
@@ -189,7 +193,7 @@ export default function TallerMovimientosMaquinas() {
         ) : null}
 
         <div className="space-y-2">
-        {filtradas.map((item) => (
+        {paginacion.visibles.map((item) => (
           <label key={item.id} className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white p-3 text-sm shadow-sm">
             {canEdit ? (
               <input
@@ -207,6 +211,16 @@ export default function TallerMovimientosMaquinas() {
         ))}
           {!filtradas.length ? <div className="rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-500">No hay maquinas para el filtro aplicado.</div> : null}
         </div>
+
+        <Paginacion
+          pagina={paginacion.pagina}
+          totalPaginas={paginacion.totalPaginas}
+          total={paginacion.total}
+          tamano={paginacion.tamano}
+          onPagina={paginacion.irAPagina}
+          onTamano={paginacion.cambiarTamano}
+          etiqueta="máquinas"
+        />
       </div>
 
       <ConfirmModal

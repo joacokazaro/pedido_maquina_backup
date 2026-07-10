@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -136,6 +138,10 @@ export default function AdminVehiculos() {
     });
   }, [vehiculos, estadoFiltro, empresaFiltro, seguroFiltro, conductorFiltro, search]);
 
+  const paginacion = usePaginacion(filtered, {
+    reinicio: [search, estadoFiltro, faltanteFiltro, empresaFiltro, seguroFiltro, conductorFiltro],
+  });
+
   if (loading) return <div className="p-4">Cargando vehículos...</div>;
   if (error) return <div className="p-4 text-red-600">{error}</div>;
 
@@ -244,7 +250,7 @@ export default function AdminVehiculos() {
       </div>
 
       <div className="space-y-2">
-        {filtered.map((vehiculo) => (
+        {paginacion.visibles.map((vehiculo) => (
           <div
             role="button"
             tabIndex={0}
@@ -315,6 +321,16 @@ export default function AdminVehiculos() {
           <div className="mt-8 text-center text-sm text-gray-500">No hay vehículos que coincidan con los filtros.</div>
         )}
       </div>
+
+      <Paginacion
+        pagina={paginacion.pagina}
+        totalPaginas={paginacion.totalPaginas}
+        total={paginacion.total}
+        tamano={paginacion.tamano}
+        onPagina={paginacion.irAPagina}
+        onTamano={paginacion.cambiarTamano}
+        etiqueta="vehículos"
+      />
 
       {!isReadOnly && isAdmin ? (
         <button

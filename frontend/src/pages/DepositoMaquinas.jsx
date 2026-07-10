@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -110,6 +112,10 @@ export default function DepositoMaquinas() {
     [maquinas]
   );
 
+  const paginacion = usePaginacion(maquinas, {
+    reinicio: [search, tipoFiltro, estadoFiltro],
+  });
+
   if (loading) return <div className="p-4">Cargando máquinas...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
@@ -164,7 +170,7 @@ export default function DepositoMaquinas() {
       </div>
 
       <div className="space-y-2">
-        {maquinas.map((m) => (
+        {paginacion.visibles.map((m) => (
           <div
             key={m.id}
             className="bg-white rounded-2xl shadow px-4 py-3"
@@ -238,6 +244,16 @@ export default function DepositoMaquinas() {
           </div>
         )}
       </div>
+
+      <Paginacion
+        pagina={paginacion.pagina}
+        totalPaginas={paginacion.totalPaginas}
+        total={paginacion.total}
+        tamano={paginacion.tamano}
+        onPagina={paginacion.irAPagina}
+        onTamano={paginacion.cambiarTamano}
+        etiqueta="máquinas"
+      />
     </div>
   );
 }

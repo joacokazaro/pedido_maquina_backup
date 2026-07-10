@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 export default function AdminServicios() {
   const navigate = useNavigate();
@@ -109,6 +111,10 @@ export default function AdminServicios() {
     return lista;
   }, [servicios, search, filtroMaquinas, orden]);
 
+  const paginacion = usePaginacion(serviciosFiltrados, {
+    reinicio: [search, filtroMaquinas, orden],
+  });
+
   if (loading) {
     return <div className="p-4">Cargando servicios...</div>;
   }
@@ -167,7 +173,7 @@ export default function AdminServicios() {
 
       {/* LISTA */}
       <div className="space-y-2">
-        {serviciosFiltrados.map(s => (
+        {paginacion.visibles.map(s => (
           <div
             key={s.id}
             className="bg-white rounded-xl shadow px-4 py-3
@@ -207,6 +213,16 @@ export default function AdminServicios() {
           </div>
         )}
       </div>
+
+      <Paginacion
+        pagina={paginacion.pagina}
+        totalPaginas={paginacion.totalPaginas}
+        total={paginacion.total}
+        tamano={paginacion.tamano}
+        onPagina={paginacion.irAPagina}
+        onTamano={paginacion.cambiarTamano}
+        etiqueta="servicios"
+      />
 
       {/* FAB */}
       {!isReadOnly ? (

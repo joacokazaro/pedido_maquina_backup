@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { EstadoBadge } from "../utils/estadoPedido.jsx";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 export default function DepositoHome() {
   const navigate = useNavigate();
@@ -130,6 +132,10 @@ export default function DepositoHome() {
     ).sort((a, b) => a.localeCompare(b));
   }, [pedidos]);
 
+  const paginacion = usePaginacion(pedidosFiltrados, {
+    reinicio: [busqueda, filtro, filtroSupervisor, filtroFaltantes],
+  });
+
   const filtros = [
     { label: "Todos", value: "TODOS", color: "bg-gray-200 text-gray-700" },
     { label: "Pendientes", value: "PENDIENTE_PREPARACION", color: "bg-yellow-500 text-white" },
@@ -208,7 +214,7 @@ export default function DepositoHome() {
 
       {/* LISTA */}
       <div className="space-y-4 max-w-xl mx-auto">
-        {pedidosFiltrados.map((p) => (
+        {paginacion.visibles.map((p) => (
           <Link
             to={`/deposito/pedido/${p.id}`}
             key={p.id}
@@ -249,6 +255,16 @@ export default function DepositoHome() {
             </div>
           </Link>
         ))}
+
+        <Paginacion
+          pagina={paginacion.pagina}
+          totalPaginas={paginacion.totalPaginas}
+          total={paginacion.total}
+          tamano={paginacion.tamano}
+          onPagina={paginacion.irAPagina}
+          onTamano={paginacion.cambiarTamano}
+          etiqueta="pedidos"
+        />
       </div>
     </div>
   );

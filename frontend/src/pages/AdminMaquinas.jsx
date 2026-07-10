@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 import { buildActorHeaders } from "../utils/authHeaders";
 
 const ESTADOS = [
@@ -217,6 +219,10 @@ export default function AdminMaquinas() {
 
     setFiltered(data);
   }, [allMaquinas, search, tipoFiltro, estadoFiltro, supervisorFiltro, supervisorMachineIdsCache]);
+
+  const paginacion = usePaginacion(filtered, {
+    reinicio: [search, tipoFiltro, estadoFiltro, supervisorFiltro],
+  });
 
   const tiposUnicos = Array.from(
     new Set(allMaquinas.map(m => m.tipo).filter(Boolean))
@@ -676,7 +682,7 @@ export default function AdminMaquinas() {
       </div>
 
       <div className="space-y-2">
-        {filtered.map(m => (
+        {paginacion.visibles.map(m => (
           <div
             key={m.id}
             role="button"
@@ -754,6 +760,16 @@ export default function AdminMaquinas() {
           </div>
         ))}
       </div>
+
+      <Paginacion
+        pagina={paginacion.pagina}
+        totalPaginas={paginacion.totalPaginas}
+        total={paginacion.total}
+        tamano={paginacion.tamano}
+        onPagina={paginacion.irAPagina}
+        onTamano={paginacion.cambiarTamano}
+        etiqueta="máquinas"
+      />
 
       {!isReadOnly && isAdmin ? (
         <div className="fixed bottom-4 right-4">

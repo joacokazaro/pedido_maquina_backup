@@ -1,6 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 import { EstadoBadge, formatEstado } from "../utils/estadoPedido.jsx";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
@@ -260,6 +262,10 @@ function pedidoTieneMaquina(pedido, texto) {
     "CERRADO_CON_FALTANTES",
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const pedidosFiltrados = useMemo(() => filtrarPedidos(), [pedidos, search, estadoFiltro]);
+  const paginacion = usePaginacion(pedidosFiltrados, { reinicio: [search, estadoFiltro] });
+
   if (loading) {
     return <div className="p-6">Cargando pedidos...</div>;
   }
@@ -315,7 +321,7 @@ function pedidoTieneMaquina(pedido, texto) {
 
       {/* LISTA */}
       <div className="space-y-3">
-        {filtrarPedidos().map(p => (
+        {paginacion.visibles.map(p => (
           <div
             key={p.id}
             className="bg-white shadow p-4 rounded-xl hover:shadow-md transition relative"
@@ -387,6 +393,16 @@ function pedidoTieneMaquina(pedido, texto) {
           </div>
         ))}
       </div>
+
+      <Paginacion
+        pagina={paginacion.pagina}
+        totalPaginas={paginacion.totalPaginas}
+        total={paginacion.total}
+        tamano={paginacion.tamano}
+        onPagina={paginacion.irAPagina}
+        onTamano={paginacion.cambiarTamano}
+        etiqueta="pedidos"
+      />
 
       {pedidoAEliminar && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

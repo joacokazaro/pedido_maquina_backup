@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 export default function AdminUsuarios() {
   const navigate = useNavigate();
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
   const [rol, setRol] = useState("");
+  const paginacion = usePaginacion(usuarios, { reinicio: [search, rol] });
 
   async function load() {
     const params = new URLSearchParams();
@@ -65,7 +68,7 @@ export default function AdminUsuarios() {
 
       {/* LISTA */}
       <div className="space-y-3">
-        {usuarios.map((u) => (
+        {paginacion.visibles.map((u) => (
           <div
             key={u.username}
             onClick={() => navigate(`/admin/usuarios/${u.username}`)}
@@ -86,6 +89,16 @@ export default function AdminUsuarios() {
           </div>
         ))}
       </div>
+
+      <Paginacion
+        pagina={paginacion.pagina}
+        totalPaginas={paginacion.totalPaginas}
+        total={paginacion.total}
+        tamano={paginacion.tamano}
+        onPagina={paginacion.irAPagina}
+        onTamano={paginacion.cambiarTamano}
+        etiqueta="usuarios"
+      />
 
       {/* NUEVO */}
       <button

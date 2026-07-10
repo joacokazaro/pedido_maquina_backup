@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 export default function DepositoServicios() {
   const navigate = useNavigate();
@@ -80,6 +82,10 @@ export default function DepositoServicios() {
     return lista;
   }, [servicios, search, filtroMaquinas, orden]);
 
+  const paginacion = usePaginacion(serviciosFiltrados, {
+    reinicio: [search, filtroMaquinas, orden],
+  });
+
   if (loading) return <div className="p-4">Cargando servicios...</div>;
 
   return (
@@ -139,7 +145,7 @@ export default function DepositoServicios() {
       )}
 
       <div className="space-y-2">
-        {serviciosFiltrados.map((servicio) => (
+        {paginacion.visibles.map((servicio) => (
           <button
             key={servicio.id}
             onClick={() => navigate(`/deposito/servicios/${servicio.id}`)}
@@ -164,6 +170,16 @@ export default function DepositoServicios() {
           </div>
         )}
       </div>
+
+      <Paginacion
+        pagina={paginacion.pagina}
+        totalPaginas={paginacion.totalPaginas}
+        total={paginacion.total}
+        tamano={paginacion.tamano}
+        onPagina={paginacion.irAPagina}
+        onTamano={paginacion.cambiarTamano}
+        etiqueta="servicios"
+      />
     </div>
   );
 }

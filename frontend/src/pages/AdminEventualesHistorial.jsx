@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { formatDateOnly } from "../utils/date";
 import { useAuth } from "../context/AuthContext";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 export default function AdminEventualesHistorial() {
   const navigate = useNavigate();
@@ -57,6 +59,10 @@ export default function AdminEventualesHistorial() {
         .some((value) => String(value).toLowerCase().includes(query));
     });
   }, [eventuales, search, estadoFiltro, supervisorFiltro]);
+
+  const paginacion = usePaginacion(filtered, {
+    reinicio: [search, estadoFiltro, supervisorFiltro],
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
@@ -117,7 +123,7 @@ export default function AdminEventualesHistorial() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((item) => (
+          {paginacion.visibles.map((item) => (
             <Link
               key={item.id}
               to={`/admin/eventuales/${item.id}`}
@@ -151,6 +157,16 @@ export default function AdminEventualesHistorial() {
               </div>
             </Link>
           ))}
+
+          <Paginacion
+            pagina={paginacion.pagina}
+            totalPaginas={paginacion.totalPaginas}
+            total={paginacion.total}
+            tamano={paginacion.tamano}
+            onPagina={paginacion.irAPagina}
+            onTamano={paginacion.cambiarTamano}
+            etiqueta="eventuales"
+          />
         </div>
       )}
     </div>
