@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
+import Paginacion from "../components/Paginacion";
+import { usePaginacion } from "../hooks/usePaginacion";
 
 const ESTADOS = [
   { value: "", label: "Estado maquina: todos" },
@@ -201,6 +203,11 @@ export default function AdminAmortizacionesPanel() {
         .length,
     };
   }, [items]);
+
+  const paginacion = usePaginacion(filtered, {
+    tamanoInicial: 25,
+    reinicio: [search, tipoFiltro, servicioFiltro, estadoFiltro, estadoAmortizacionFiltro, soloProximos, ventanaMeses],
+  });
 
   async function fetchMaquinaDetalles(ids) {
     const chunks = chunkArray(ids, 20);
@@ -429,7 +436,7 @@ export default function AdminAmortizacionesPanel() {
 
       {!loading ? (
         <div className="space-y-2">
-          {filtered.map((m) => (
+          {paginacion.visibles.map((m) => (
             <div
               key={m.id}
               role="button"
@@ -487,6 +494,16 @@ export default function AdminAmortizacionesPanel() {
               No hay maquinas para los filtros seleccionados.
             </div>
           ) : null}
+
+          <Paginacion
+            pagina={paginacion.pagina}
+            totalPaginas={paginacion.totalPaginas}
+            total={paginacion.total}
+            tamano={paginacion.tamano}
+            onPagina={paginacion.irAPagina}
+            onTamano={paginacion.cambiarTamano}
+            etiqueta="maquinas"
+          />
         </div>
       ) : null}
     </div>

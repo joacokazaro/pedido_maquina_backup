@@ -25,6 +25,7 @@ export default function Paginacion({
   onPagina,
   onTamano,
   etiqueta = "resultados",
+  noScroll = false,
 }) {
   if (total === 0) return null;
 
@@ -34,7 +35,7 @@ export default function Paginacion({
   function cambiarPagina(nueva) {
     if (nueva < 1 || nueva > totalPaginas || nueva === pagina) return;
     onPagina(nueva);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (!noScroll) window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const btnBase =
