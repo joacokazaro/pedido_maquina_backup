@@ -172,7 +172,7 @@ model Vehiculo {
   motor                   String
   chasis                  String
   tipoCobertura           String
-  seguroId                Int
+  seguroId                Int?
   conductorActualId       Int?
   vtoSeguro               DateTime?
   vtoSeguroAplica         Boolean              @default(true)
@@ -187,7 +187,7 @@ model Vehiculo {
   tarjetaVerde            Boolean              @default(false)
   createdAt               DateTime             @default(now())
 
-  seguro                  Seguro               @relation(fields: [seguroId], references: [id])
+  seguro                  Seguro?              @relation(fields: [seguroId], references: [id])
   tipoMaquina             TipoMaquina?         @relation("VehiculoTipoMaquina", fields: [tipoMaquinaId], references: [id])
   conductorActual         Usuario?             @relation("ConductorActualVehiculo", fields: [conductorActualId], references: [id])
   historialAsignaciones   VehiculoAsignacion[]

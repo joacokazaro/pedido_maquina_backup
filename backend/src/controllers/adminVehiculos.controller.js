@@ -245,6 +245,7 @@ async function ensureVehiculoTipoMaquina(client = prisma) {
 }
 
 async function ensureSeguroExists(seguroId) {
+  if (!Number.isInteger(seguroId) || seguroId <= 0) return null;
   const seguro = await prisma.seguro.findUnique({ where: { id: seguroId } });
   return seguro;
 }
@@ -284,7 +285,10 @@ function buildVehiculoData(body, currentVehiculo = null) {
     motor: normalizeString(body.motor),
     chasis: normalizeString(body.chasis),
     tipoCobertura: normalizeString(body.tipoCobertura),
-    seguroId: Number(body.seguroId),
+    seguroId:
+      body.seguroId === undefined || body.seguroId === null || body.seguroId === ""
+        ? null
+        : Number(body.seguroId),
     conductorActualId:
       body.conductorActualId === undefined || body.conductorActualId === null || body.conductorActualId === ""
         ? null
@@ -306,21 +310,15 @@ function buildVehiculoData(body, currentVehiculo = null) {
 function validateVehiculoData(data) {
   const requiredFields = [
     ["empresa", data.empresa],
+    ["estado", data.estado],
     ["vehiculo", data.vehiculo],
     ["patente", data.patente],
     ["modelo", data.modelo],
-    ["motor", data.motor],
-    ["chasis", data.chasis],
-    ["tipoCobertura", data.tipoCobertura],
   ];
 
   const missing = requiredFields.filter(([, value]) => !value).map(([key]) => key);
   if (missing.length > 0) {
     return `Campos obligatorios faltantes: ${missing.join(", ")}`;
-  }
-
-  if (!Number.isInteger(data.seguroId) || data.seguroId <= 0) {
-    return "seguroId es obligatorio";
   }
 
   if (data.tipoMaquinaId !== null && (!Number.isInteger(data.tipoMaquinaId) || data.tipoMaquinaId <= 0)) {
@@ -556,8 +554,12 @@ export async function adminGetHistorialVehiculo(req, res) {
 export async function adminCreateVehiculo(req, res) {
   try {
     const id = normalizeString(req.body?.id);
+    const estadoRaw = normalizeString(req.body?.estado);
     if (!id) {
       return res.status(400).json({ error: "El ID es obligatorio" });
+    }
+    if (!estadoRaw) {
+      return res.status(400).json({ error: "El estado es obligatorio" });
     }
 
     const data = buildVehiculoData(req.body || {});
@@ -569,7 +571,7 @@ export async function adminCreateVehiculo(req, res) {
     const [existeVehiculo, existePatente, seguro, conductorActual, tipoMaquinaVehiculo, tipoMaquinaSeleccionado] = await Promise.all([
       prisma.vehiculo.findUnique({ where: { id } }),
       prisma.vehiculo.findUnique({ where: { patente: data.patente } }),
-      ensureSeguroExists(data.seguroId),
+      data.seguroId ? ensureSeguroExists(data.seguroId) : Promise.resolve(null),
       data.conductorActualId ? ensureUsuarioExists(data.conductorActualId) : Promise.resolve(null),
       ensureVehiculoTipoMaquina(),
       data.tipoMaquinaId ? ensureTipoMaquinaExists(data.tipoMaquinaId) : Promise.resolve(null),
@@ -583,7 +585,7 @@ export async function adminCreateVehiculo(req, res) {
       return res.status(409).json({ error: "Ya existe un vehículo con esa patente" });
     }
 
-    if (!seguro) {
+    if (data.seguroId && !seguro) {
       return res.status(400).json({ error: "Seguro inválido" });
     }
 
@@ -602,6 +604,10 @@ export async function adminCreateVehiculo(req, res) {
         data: {
           id,
           ...data,
+          motor: data.motor || "N/D",
+          chasis: data.chasis || "N/D",
+          tipoCobertura: data.tipoCobertura || "N/D",
+          seguroId: seguro?.id ?? null,
           tipoMaquinaId: tipoMaquinaIdFinal,
         },
       });
@@ -671,11 +677,11 @@ export async function adminUpdateVehiculo(req, res) {
     }
 
     const [seguro, tipoMaquinaSeleccionado] = await Promise.all([
-      ensureSeguroExists(data.seguroId),
+      data.seguroId ? ensureSeguroExists(data.seguroId) : Promise.resolve(null),
       data.tipoMaquinaId ? ensureTipoMaquinaExists(data.tipoMaquinaId) : Promise.resolve(null),
     ]);
 
-    if (!seguro) {
+    if (data.seguroId && !seguro) {
       return res.status(400).json({ error: "Seguro inválido" });
     }
 
@@ -1075,6 +1081,7 @@ export async function adminImportVehiculos(req, res) {
       const id = normalizeString(getImportValue(row, "ID", "COD"));
       const patente = normalizeString(getImportValue(row, "PATENTE")).toUpperCase();
       const seguroNombre = normalizeString(getImportValue(row, "SEGURO"));
+      const estadoRaw = normalizeString(getImportValue(row, "ESTADO"));
       const conductorUsername = normalizeString(getImportValue(row, "CONDUCTOR_DESIGNADO", "CONDUCTOR", "CONDUCTOR_USERNAME"));
 
       return {
@@ -1082,7 +1089,8 @@ export async function adminImportVehiculos(req, res) {
         id,
         patente,
         empresa: normalizeString(getImportValue(row, "EMPRESA")),
-        estado: normalizeEstadoVehiculo(getImportValue(row, "ESTADO")),
+        estadoRaw,
+        estado: normalizeEstadoVehiculo(estadoRaw),
         vehiculo: normalizeString(getImportValue(row, "VEHICULO")),
         modelo: normalizeString(getImportValue(row, "MODELO")),
         numeroPoliza: normalizeString(getImportValue(row, "NUMERO_POLIZA", "NRO_POLIZA", "POLIZA")),
@@ -1112,8 +1120,11 @@ export async function adminImportVehiculos(req, res) {
 
     for (const item of preparedRows) {
       if (!item.id) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: ID obligatorio`);
+      if (!item.empresa) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: EMPRESA obligatoria`);
+      if (!item.estadoRaw) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: ESTADO obligatorio`);
+      if (!item.vehiculo) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: VEHICULO obligatorio`);
       if (!item.patente) patentesDuplicadasArchivo.add(`Fila ${item.rowNumber}: PATENTE obligatoria`);
-      if (!item.seguroNombre) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: SEGURO obligatorio`);
+      if (!item.modelo) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: MODELO obligatorio`);
 
       if (item.id) {
         if (idsSeen.has(item.id)) idsDuplicadosArchivo.add(`ID duplicado en archivo: ${item.id}`);
@@ -1164,7 +1175,7 @@ export async function adminImportVehiculos(req, res) {
     for (const item of preparedRows) {
       if (idsExistentes.has(item.id)) errores.push(`Ya existe un vehículo con ID ${item.id}`);
       if (patentesExistentes.has(item.patente)) errores.push(`Ya existe un vehículo con patente ${item.patente}`);
-      if (!segurosMap.has(item.seguroNombre.toUpperCase())) errores.push(`Seguro inexistente para ${item.id}: ${item.seguroNombre}`);
+      if (item.seguroNombre && !segurosMap.has(item.seguroNombre.toUpperCase())) errores.push(`Seguro inexistente para ${item.id}: ${item.seguroNombre}`);
       if (item.conductorUsername && !usuariosMap.has(item.conductorUsername.toUpperCase())) {
         errores.push(`Usuario conductor inexistente para ${item.id}: ${item.conductorUsername}`);
       }
@@ -1176,7 +1187,7 @@ export async function adminImportVehiculos(req, res) {
 
     await prisma.$transaction(async (tx) => {
       for (const item of preparedRows) {
-        const seguro = segurosMap.get(item.seguroNombre.toUpperCase());
+        const seguro = item.seguroNombre ? segurosMap.get(item.seguroNombre.toUpperCase()) : null;
         const conductor = item.conductorUsername ? usuariosMap.get(item.conductorUsername.toUpperCase()) : null;
 
         await tx.vehiculo.create({
@@ -1189,10 +1200,10 @@ export async function adminImportVehiculos(req, res) {
             patente: item.patente,
             modelo: item.modelo,
             numeroPoliza: item.numeroPoliza || null,
-            motor: item.motor,
-            chasis: item.chasis,
-            tipoCobertura: item.tipoCobertura,
-            seguroId: seguro.id,
+            motor: item.motor || "N/D",
+            chasis: item.chasis || "N/D",
+            tipoCobertura: item.tipoCobertura || "N/D",
+            seguroId: seguro?.id ?? null,
             conductorActualId: conductor?.id || null,
             tarjetaVerde: item.tarjetaVerde,
             vtoSeguro: item.vtoSeguroAplica ? item.vtoSeguro : null,

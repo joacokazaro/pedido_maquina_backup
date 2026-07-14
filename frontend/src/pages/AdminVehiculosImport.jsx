@@ -9,15 +9,15 @@ const REQUIRED_COLUMNS = [
   "VEHICULO",
   "PATENTE",
   "MODELO",
+];
+
+const OPTIONAL_COLUMNS = [
   "NUMERO_POLIZA",
   "MOTOR",
   "CHASIS",
   "TIPO_COBERTURA",
   "SEGURO",
   "TARJETA_VERDE",
-];
-
-const OPTIONAL_COLUMNS = [
   "VTO_SEGURO",
   "VTO_SEGURO_APLICA",
   "VTO_MATAFUEGO",
@@ -94,7 +94,7 @@ export default function AdminVehiculosImport() {
           <h1 className="text-2xl font-bold text-gray-900">Importar vehículos desde Excel</h1>
           <p className="mt-2 text-sm text-gray-600">
             Usá una planilla con encabezados en la primera fila. La importación se rechaza si faltan datos obligatorios,
-            si el seguro no existe o si el ID o la patente están duplicados.
+            o si el ID o la patente están duplicados.
           </p>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -175,7 +175,7 @@ export default function AdminVehiculosImport() {
             <p><b>Campos *_APLICA:</b> usar <b>SI</b> o <b>NO</b>.</p>
             <p><b>Fechas:</b> conviene cargarlas como fecha real de Excel o en formato <b>DD/MM/AAAA</b>.</p>
             <p><b>NÚMERO_POLIZA:</b> podés usar también los encabezados <b>NRO_POLIZA</b> o <b>POLIZA</b>.</p>
-            <p><b>SEGURO:</b> el nombre debe existir previamente en el catálogo de seguros.</p>
+            <p><b>SEGURO:</b> es opcional. Si no se informa, se guarda vacío.</p>
             <p><b>CONDUCTOR_USERNAME:</b> si se informa, debe existir ese usuario.</p>
           </div>
         </section>
