@@ -68,7 +68,7 @@ export async function adminUpdateEventual(req, res) {
     });
     res.json(eventual);
   } catch (error) {
-    handleError(res, error, "Error corrigiendo eventual");
+    handleError(res, error, "Error completando datos del eventual");
   }
 }
 

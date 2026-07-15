@@ -82,6 +82,17 @@ export default function AdminEventualDetalle() {
   const trabajosRealizados = Array.isArray(eventual.trabajosRealizados) ? eventual.trabajosRealizados : [];
   const serviciosExtras = Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : [];
   const isFinalizado = String(eventual.estado || "").toLowerCase() === "finalizado";
+  const maquinasDePedidos = Array.isArray(eventual.maquinasDePedidos) ? eventual.maquinasDePedidos : [];
+  const pedidosComplementarios = Array.isArray(eventual.pedidosComplementarios) ? eventual.pedidosComplementarios : [];
+  const pedidosAbiertos = pedidosComplementarios.filter(
+    (pedido) => !["CERRADO", "CANCELADO"].includes(pedido.estado)
+  );
+  const puedeImprimir = isFinalizado && pedidosAbiertos.length === 0;
+  const motivoNoImprimir = !isFinalizado
+    ? "Solo podés descargar PDF cuando el eventual está finalizado."
+    : pedidosAbiertos.length > 0
+      ? `Hay ${pedidosAbiertos.length} pedido${pedidosAbiertos.length === 1 ? "" : "s"} complementario${pedidosAbiertos.length === 1 ? "" : "s"} sin cerrar (${pedidosAbiertos.map((p) => p.id).join(", ")}).`
+      : "";
   const historial = Array.isArray(eventual.historial) ? eventual.historial : [];
   const observacionesPrevias = historial
     .flatMap((entry) => {
@@ -133,24 +144,81 @@ export default function AdminEventualDetalle() {
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold text-gray-900">{eventual.nombre}</h1>
         </div>
-        <p className="text-sm text-gray-600">Supervisor: <b>{eventual.supervisor?.nombre || eventual.supervisor?.username || "-"}</b></p>
+        <p className="text-sm text-gray-600">Supervisor: <b>{eventual.supervisor?.nombre || eventual.supervisor?.username || "Sin asignar"}</b></p>
         <p className="text-sm text-gray-600">Inicio: <b>{formatDateOnly(eventual.fechaInicio)}</b> · Fin: <b>{formatDateOnly(eventual.fechaFin)}</b></p>
       </div>
 
       <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/60 to-white p-5 shadow space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Componentes utilizados</h2>
 
+        {pedidosComplementarios.length > 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">Pedidos complementarios del eventual</p>
+            <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+              {pedidosComplementarios.map((pedido) => (
+                <div key={pedido.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm">
+                  <span className="font-semibold text-slate-800">{pedido.id}</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                      pedido.estado === "CERRADO"
+                        ? "bg-slate-200 text-slate-700"
+                        : pedido.estado === "CANCELADO"
+                          ? "bg-rose-100 text-rose-700"
+                          : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {String(pedido.estado).replaceAll("_", " ")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="rounded-xl border p-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Maquinas por tipo</p>
-            {maquinas.length === 0 ? (
+            {maquinasDePedidos.length > 0 ? (
+              <div className="mb-3 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-700">Vía pedidos complementarios</p>
+                <div className="mt-2 space-y-2">
+                  {maquinasDePedidos.map((grupo) => (
+                    <div key={`ped-${grupo.tipo}`} className="rounded-lg border border-emerald-200 bg-white p-3 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-gray-900">{grupo.tipo}</p>
+                        <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-xs font-bold text-white">{grupo.cantidad}</span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {grupo.maquinaIds.map((maquinaId) => (
+                          <span key={maquinaId} className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
+                            {maquinaId}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {maquinas.length === 0 && maquinasDePedidos.length === 0 ? (
               <p className="text-sm text-gray-500">Sin maquinas cargadas.</p>
-            ) : (
+            ) : maquinas.length === 0 ? null : (
               <div className="space-y-2">
                 {maquinas.map((item, idx) => (
                   <div key={`${item.tipo}-${idx}`} className="rounded-lg border p-3 text-sm">
-                    <p className="font-semibold text-gray-900">{item.tipo}</p>
-                    <p className="text-xs text-gray-500">Cantidad: {item.cantidad}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-gray-900">{item.tipo}</p>
+                      <span className="rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-bold text-white">{item.cantidad}</span>
+                    </div>
+                    {Array.isArray(item.maquinaIds) && item.maquinaIds.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {item.maquinaIds.map((maquinaId) => (
+                          <span key={maquinaId} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                            {maquinaId}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -289,21 +357,21 @@ export default function AdminEventualDetalle() {
           <button
             type="button"
             onClick={handleDownloadResumenPdf}
-            disabled={pdfLoading || !isFinalizado}
-            title={!isFinalizado ? "Disponible solo cuando el eventual está finalizado" : ""}
+            disabled={pdfLoading || !puedeImprimir}
+            title={motivoNoImprimir}
             className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {pdfLoading ? "Generando PDF..." : "Descargar PDF resumen"}
           </button>
-          {!isFinalizado ? (
+          {!puedeImprimir ? (
             <div className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 hidden w-64 rounded-lg bg-slate-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block">
-              Solo podés descargar PDF cuando el eventual está finalizado.
+              {motivoNoImprimir}
             </div>
           ) : null}
         </div>
         {!isConsultor ? (
-          <button onClick={() => navigate(`/admin/eventuales/${eventual.id}/corregir`)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
-            Corregir eventual
+          <button onClick={() => navigate(`/admin/eventuales/${eventual.id}/completar`)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
+            Completar datos de eventual
           </button>
         ) : null}
         {!isConsultor && eventual.activo ? (

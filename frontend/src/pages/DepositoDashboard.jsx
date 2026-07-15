@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import PanelHome from "../components/PanelHome";
 
 export default function DepositoDashboard() {
   const { user } = useAuth();
@@ -12,65 +12,42 @@ export default function DepositoDashboard() {
     );
   }
 
+  const sections = [
+    {
+      title: "Máquinas",
+      description: "Revisá todas las máquinas y los préstamos activos de las que pertenecen a tus servicios.",
+      to: "/deposito/maquinas",
+      icon: "maquinas",
+      accent: "blue",
+    },
+    {
+      title: "Pedidos a gestionar",
+      description: "Accedé al listado operativo para preparar, entregar y confirmar devoluciones.",
+      to: "/deposito/pedidos",
+      icon: "pedidos",
+      accent: "navy",
+    },
+    {
+      title: "Máquinas en Servicio",
+      description: "Consultá los servicios cargados y las máquinas asociadas, sin permisos de edición.",
+      to: "/deposito/servicios",
+      icon: "servicios",
+      accent: "green",
+    },
+    {
+      title: "Máquinas por Supervisor",
+      description: "Seleccioná un supervisor y visualizá sus máquinas fijas por servicio y las temporales por pedido.",
+      to: "/deposito/supervisores",
+      icon: "usuarios",
+      accent: "cyan",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center px-4 py-12">
-      <h1 className="text-3xl font-extrabold text-gray-800 mb-10 text-center">
-        Panel de Depósito
-      </h1>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-3xl">
-        <Link
-          to="/deposito/maquinas"
-          className="bg-white rounded-2xl shadow p-8 hover:shadow-lg transition border border-gray-200 flex flex-col items-center text-center"
-        >
-          <span className="text-5xl mb-4">🛠</span>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Máquinas
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Revisá todas las máquinas y los préstamos activos de las que pertenecen a tus servicios.
-          </p>
-        </Link>
-
-        <Link
-          to="/deposito/pedidos"
-          className="bg-white rounded-2xl shadow p-8 hover:shadow-lg transition border border-gray-200 flex flex-col items-center text-center"
-        >
-          <span className="text-5xl mb-4">🧾</span>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Pedidos a gestionar
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Accedé al listado operativo para preparar, entregar y confirmar devoluciones.
-          </p>
-        </Link>
-
-        <Link
-          to="/deposito/servicios"
-          className="bg-white rounded-2xl shadow p-8 hover:shadow-lg transition border border-gray-200 flex flex-col items-center text-center"
-        >
-          <span className="text-5xl mb-4">🏷</span>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Máquinas en Servicio
-          </h2>
-          <p className="text-gray-500 text-sm max-w-lg">
-            Consultá los servicios cargados y las máquinas asociadas, sin permisos de edición.
-          </p>
-        </Link>
-
-        <Link
-          to="/deposito/supervisores"
-          className="bg-white rounded-2xl shadow p-8 hover:shadow-lg transition border border-gray-200 flex flex-col items-center text-center"
-        >
-          <span className="text-5xl mb-4">👤</span>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Máquinas por Supervisor
-          </h2>
-          <p className="text-gray-500 text-sm max-w-lg">
-            Seleccioná un supervisor y visualizá sus máquinas fijas por servicio y las temporales por pedido.
-          </p>
-        </Link>
-      </div>
-    </div>
+    <PanelHome
+      title="Panel de depósito"
+      subtitle="Gestioná pedidos, entregas y devoluciones, y consultá las máquinas de tus servicios."
+      sections={sections}
+    />
   );
 }

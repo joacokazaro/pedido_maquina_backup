@@ -39,6 +39,9 @@ function mapPedidoParaFront(p) {
   return {
     ...p,
 
+    // Pedido originado desde un eventual (pedido complementario)
+    esEventual: Boolean(p.eventualId),
+
     // =========================
     // DESTINO / TITULAR
     // =========================
@@ -183,6 +186,11 @@ export async function crearPedido(req, res) {
       // NUEVO
       destino = "DEPOSITO",
       supervisorDestinoUsername,
+
+      // Pedido complementario disparado desde un eventual (por un coordinador/admin
+      // a nombre del supervisor del eventual). El servicio del pedido es el eventual.
+      eventualId,
+      actorUsername,
     } = req.body || {};
 
 
@@ -192,7 +200,7 @@ export async function crearPedido(req, res) {
     if (!Array.isArray(itemsSolicitados) || itemsSolicitados.length === 0)
       return res.status(400).json({ error: "Faltan itemsSolicitados" });
 
-    if (!servicioId)
+    if (!servicioId && !eventualId)
       return res.status(400).json({ error: "Falta servicioId" });
 
     const supervisor = await prisma.usuario.findUnique({
@@ -201,9 +209,58 @@ export async function crearPedido(req, res) {
     if (!supervisor)
       return res.status(404).json({ error: "Supervisor no encontrado" });
 
-    const servicio = await prisma.servicio.findUnique({
-      where: { id: Number(servicioId) },
-    });
+    const actor = actorUsername
+      ? await prisma.usuario.findUnique({ where: { username: actorUsername } })
+      : null;
+
+    let eventual = null;
+    let servicio = null;
+
+    if (eventualId) {
+      eventual = await prisma.eventual.findUnique({
+        where: { id: Number(eventualId) },
+      });
+      if (!eventual || !eventual.activo)
+        return res.status(404).json({ error: "Eventual no encontrado" });
+
+      // Con pedidos ya disparados, el supervisor del eventual queda fijado
+      const pedidosPrevios = await prisma.pedido.count({
+        where: { eventualId: eventual.id },
+      });
+      if (pedidosPrevios > 0 && eventual.supervisorId && eventual.supervisorId !== supervisor.id) {
+        return res.status(400).json({
+          error: "El supervisor del eventual quedó fijado por los pedidos complementarios ya disparados",
+        });
+      }
+
+      // El servicio del pedido es el eventual: se usa (o crea) un servicio homónimo
+      servicio = await prisma.servicio.upsert({
+        where: { nombre: eventual.nombre },
+        update: { activo: true },
+        create: { nombre: eventual.nombre, activo: true },
+      });
+
+      // Aseguramos que el supervisor tenga asignado ese servicio para que el pedido
+      // siga la lógica normal (permisos, máquinas por servicio, etc.)
+      await prisma.usuarioServicio.upsert({
+        where: {
+          usuarioId_servicioId: {
+            usuarioId: supervisor.id,
+            servicioId: servicio.id,
+          },
+        },
+        update: {},
+        create: {
+          usuarioId: supervisor.id,
+          servicioId: servicio.id,
+        },
+      });
+    } else {
+      servicio = await prisma.servicio.findUnique({
+        where: { id: Number(servicioId) },
+      });
+    }
+
     if (!servicio || !servicio.activo)
       return res.status(404).json({ error: "Servicio no encontrado" });
 
@@ -235,6 +292,14 @@ if (!asignacion) {
 }
 
 
+    const detalleCreacion = {};
+    if (observacion) detalleCreacion.observacion = observacion;
+    if (eventual) {
+      detalleCreacion.eventual = { id: eventual.id, nombre: eventual.nombre };
+      detalleCreacion.creadoPor = actor ? actor.username : supervisor.username;
+      detalleCreacion.aNombreDe = supervisor.username;
+    }
+
     const pedido = await createPedidoWithRetry(prisma, {
       estado: ESTADOS_PEDIDO.PENDIENTE_PREPARACION,
       observacion: observacion || null,
@@ -249,11 +314,13 @@ if (!asignacion) {
       supervisorDestinoUsername:
         destino === "SUPERVISOR" ? supervisorDestinoUsername : null,
 
+      eventualId: eventual ? eventual.id : null,
+
       historial: {
         create: {
           accion: "CREADO",
-          usuarioId: supervisor.id,
-          detalle: observacion ? JSON.stringify({ observacion }) : null,
+          usuarioId: actor ? actor.id : supervisor.id,
+          detalle: Object.keys(detalleCreacion).length > 0 ? JSON.stringify(detalleCreacion) : null,
         },
       },
     }, {
@@ -266,17 +333,50 @@ if (!asignacion) {
       },
     });
 
+    if (eventual) {
+      // El disparo del pedido fija al supervisor como responsable del eventual
+      if (eventual.supervisorId !== supervisor.id) {
+        try {
+          await prisma.eventual.update({
+            where: { id: eventual.id },
+            data: { supervisorId: supervisor.id },
+          });
+        } catch (e) {
+          console.error("Error fijando supervisor del eventual:", e);
+        }
+      }
+
+      try {
+        await prisma.historialEventual.create({
+          data: {
+            eventualId: eventual.id,
+            accion: "PEDIDO_COMPLEMENTARIO_CREADO",
+            detalle: JSON.stringify({
+              pedidoId: pedido.id,
+              supervisor: supervisor.username,
+              creadoPor: actor ? actor.username : supervisor.username,
+            }),
+            usuarioId: actor ? actor.id : supervisor.id,
+          },
+        });
+      } catch (e) {
+        console.error("Error registrando pedido complementario en historial del eventual:", e);
+      }
+    }
+
     try {
       if (destino === "DEPOSITO") {
         const depositoIds = await getUsuariosDepositoIds();
         await notificarUsuarios({
           req,
           pedido,
-          actorId: supervisor.id,
+          actorId: actor ? actor.id : supervisor.id,
           usuarioIds: depositoIds,
           tipo: "PEDIDO_CREADO",
           estado: pedido.estado,
-          mensaje: `Nuevo pedido ${pedido.id} creado por ${supervisor.username}`,
+          mensaje: eventual
+            ? `Nuevo pedido ${pedido.id} (eventual ${eventual.nombre}) creado por ${actor ? actor.username : supervisor.username} a nombre de ${supervisor.username}`
+            : `Nuevo pedido ${pedido.id} creado por ${supervisor.username}`,
         });
       }
 

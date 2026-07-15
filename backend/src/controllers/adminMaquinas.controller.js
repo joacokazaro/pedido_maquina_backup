@@ -1733,6 +1733,7 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
             estado: true,
             destino: true,
             supervisorDestinoUsername: true,
+            eventualId: true,
             createdAt: true,
             servicio: {
               select: { id: true, nombre: true },
@@ -1851,6 +1852,7 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
         estado: asignacion.pedido.estado,
         destino: asignacion.pedido.destino,
         supervisorDestinoUsername: asignacion.pedido.supervisorDestinoUsername,
+        esEventual: Boolean(asignacion.pedido.eventualId),
         createdAt: asignacion.pedido.createdAt,
         servicio: asignacion.pedido.servicio,
         supervisor: asignacion.pedido.supervisor,

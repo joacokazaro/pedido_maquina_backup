@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import EventualBadge from "../components/EventualBadge";
 
 function formatEstado(estado) {
   return String(estado || "").replaceAll("_", " ");
@@ -179,8 +180,9 @@ export default function AdminMaquinaHistorial() {
                   >
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="space-y-1 text-sm text-gray-700">
-                        <p className="text-base font-semibold text-gray-900">
+                        <p className="inline-flex items-center gap-1.5 text-base font-semibold text-gray-900">
                           Pedido {pedido.id}
+                          {pedido.esEventual ? <EventualBadge /> : null}
                         </p>
                         <p>
                           <span className="font-medium">Estado:</span> {formatEstado(pedido.estado)}

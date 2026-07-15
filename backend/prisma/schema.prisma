@@ -218,7 +218,7 @@ model TallerMovimiento {
 model Eventual {
   id            Int                 @id @default(autoincrement())
   nombre        String              @unique
-  supervisorId  Int
+  supervisorId  Int?
   estado        String              @default("activo")
   fechaInicio   DateTime?
   fechaFin      DateTime?
@@ -231,8 +231,9 @@ model Eventual {
   activo        Boolean             @default(true)
   createdAt     DateTime            @default(now())
 
-  supervisor    Usuario             @relation("SupervisorEventuales", fields: [supervisorId], references: [id])
+  supervisor    Usuario?            @relation("SupervisorEventuales", fields: [supervisorId], references: [id])
   historial     HistorialEventual[]
+  pedidos       Pedido[]
 }
 
 model HistorialEventual {
@@ -277,7 +278,10 @@ model Pedido {
 
   // 🔽 NUEVOS CAMPOS
   destino          String            @default("DEPOSITO")
-  supervisorDestinoUsername String?  
+  supervisorDestinoUsername String?
+
+  // Pedido complementario disparado desde un eventual
+  eventualId       Int?
 
   createdAt        DateTime          @default(now())
 
@@ -287,6 +291,7 @@ model Pedido {
   vehiculosAsignadas PedidoVehiculo[]
   servicio   Servicio @relation(fields: [servicioId], references: [id])
   supervisor Usuario  @relation("SupervisorPedidos", fields: [supervisorId], references: [id])
+  eventual   Eventual? @relation(fields: [eventualId], references: [id])
   notificaciones Notificacion[]
 }
 

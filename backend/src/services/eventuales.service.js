@@ -129,10 +129,15 @@ function normalizeMaquinasUtilizadas(items) {
   if (!Array.isArray(items)) return [];
 
   return items
-    .map((item) => ({
-      tipo: normalizeText(item?.tipo),
-      cantidad: Number(item?.cantidad),
-    }))
+    .map((item) => {
+      const maquinaIds = uniqueStrings(item?.maquinaIds);
+      return {
+        tipo: normalizeText(item?.tipo),
+        // Si vienen máquinas puntuales seleccionadas, la cantidad sale de ahí
+        cantidad: maquinaIds.length > 0 ? maquinaIds.length : Number(item?.cantidad),
+        ...(maquinaIds.length > 0 ? { maquinaIds } : {}),
+      };
+    })
     .filter((item) => item.tipo);
 }
 
@@ -363,6 +368,8 @@ export async function listEventuales(filters = {}) {
   });
 }
 
+const ESTADOS_PEDIDO_TERMINADOS = ["CERRADO", "CANCELADO"];
+
 export async function getEventualDetail(eventualId) {
   const eventual = await prisma.eventual.findUnique({
     where: { id: Number(eventualId) },
@@ -382,6 +389,42 @@ export async function getEventualDetail(eventualId) {
   const vehiculos = await getVehiculosByIds(vehiculoIds);
   const legacyComponentes = parseJson(eventual.componentesUtilizados);
 
+  // Pedidos complementarios disparados desde el eventual
+  const pedidos = await prisma.pedido.findMany({
+    where: { eventualId: eventual.id },
+    include: {
+      asignadas: { include: { maquina: { select: { id: true, tipo: true } } } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const pedidosComplementarios = pedidos.map((pedido) => ({
+    id: pedido.id,
+    estado: pedido.estado,
+    destino: pedido.destino,
+    createdAt: pedido.createdAt,
+    terminado: ESTADOS_PEDIDO_TERMINADOS.includes(pedido.estado),
+    maquinas: pedido.asignadas.map((asignacion) => ({
+      id: asignacion.maquinaId,
+      tipo: asignacion.maquina?.tipo || "Sin tipo",
+    })),
+  }));
+
+  // Máquinas asignadas en pedidos complementarios (no cancelados), agrupadas por tipo.
+  // Se suman al listado final de máquinas utilizadas sin persistirse en el JSON manual.
+  const gruposPedidos = new Map();
+  for (const pedido of pedidosComplementarios) {
+    if (pedido.estado === "CANCELADO") continue;
+    for (const maquina of pedido.maquinas) {
+      const key = maquina.tipo || "Sin tipo";
+      if (!gruposPedidos.has(key)) gruposPedidos.set(key, new Set());
+      gruposPedidos.get(key).add(maquina.id);
+    }
+  }
+  const maquinasDePedidos = Array.from(gruposPedidos.entries())
+    .map(([tipo, ids]) => ({ tipo, cantidad: ids.size, maquinaIds: Array.from(ids) }))
+    .sort((a, b) => a.tipo.localeCompare(b.tipo));
+
   return {
     ...buildEventualSummary(eventual),
     componentesActuales: {
@@ -389,6 +432,8 @@ export async function getEventualDetail(eventualId) {
       vehiculoIds: Array.isArray(vehiculoIds) ? uniqueStrings(vehiculoIds) : [],
       vehiculos,
     },
+    pedidosComplementarios,
+    maquinasDePedidos,
     legacyComponentes: legacyComponentes && typeof legacyComponentes === "object" ? legacyComponentes : null,
     trabajosRealizados: parseJson(eventual.trabajosRealizados) || [],
     serviciosExtrasSubcontratados: parseJson(eventual.serviciosExtrasSubcontratados) || [],
@@ -406,7 +451,7 @@ function buildEventualPayload(payload) {
 
   return {
     nombre: normalizeText(payload.nombre),
-    supervisorId: Number(payload.supervisorId),
+    supervisorId: payload.supervisorId ? Number(payload.supervisorId) : null,
     estado: normalizeEstadoEventual(payload.estado),
     fechaInicio: toDateOrNull(payload.fechaInicio),
     fechaFin: toDateOrNull(payload.fechaFin),
@@ -431,8 +476,14 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
     throw buildError("El nombre del eventual es obligatorio", 400);
   }
 
-  if (!Number.isInteger(data.supervisorId) || data.supervisorId <= 0) {
+  if (data.supervisorId !== null && (!Number.isInteger(data.supervisorId) || data.supervisorId <= 0)) {
     throw buildError("Supervisor invalido", 400);
+  }
+
+  // El eventual puede crearse sin supervisor, pero para completar maquinaria
+  // utilizada o trabajos realizados es obligatorio tener uno asignado.
+  if (!data.supervisorId && (data.maquinasUtilizadas.length > 0 || data.trabajosRealizados.length > 0)) {
+    throw buildError("Debe asignar un supervisor para completar maquinaria utilizada o trabajos realizados", 400);
   }
 
   if (data.fechaInicio && data.fechaFin && data.fechaFin < data.fechaInicio) {
@@ -461,6 +512,10 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
 
   if (data.estado === "finalizado" && data.trabajosRealizados.length === 0) {
     throw buildError("Debe cargar al menos un trabajo realizado para finalizar el eventual", 400);
+  }
+
+  if (data.estado === "finalizado" && !data.fechaFin) {
+    throw buildError("Debe indicar la fecha de finalización para finalizar el eventual", 400);
   }
 
   const duplicate = await prisma.eventual.findFirst({
@@ -492,9 +547,22 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
     throw buildError("Eventual no encontrado", 404);
   }
 
-  const supervisor = await getSupervisorById(data.supervisorId);
-  if (!supervisor) {
-    throw buildError("Supervisor no encontrado", 400);
+  // Con pedidos complementarios disparados, el supervisor queda fijado
+  if (existing) {
+    const pedidosVinculados = await prisma.pedido.count({
+      where: { eventualId: Number(eventualId) },
+    });
+    if (pedidosVinculados > 0 && (data.supervisorId ?? null) !== (existing.supervisorId ?? null)) {
+      throw buildError(
+        "No se puede modificar el supervisor: el eventual ya tiene pedidos complementarios disparados",
+        400
+      );
+    }
+  }
+
+  const supervisor = data.supervisorId ? await getSupervisorById(data.supervisorId) : null;
+  if (data.supervisorId && !supervisor) {
+    throw buildError("El usuario asignado debe ser un supervisor activo", 400);
   }
 
   const trabajosNormalizados = data.trabajosRealizados.map(normalizeTrabajoItem);

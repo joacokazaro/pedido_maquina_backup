@@ -582,6 +582,12 @@ function App() {
       />
 
       <Route
+        path="/admin/eventuales/:id/completar"
+        element={renderBackofficePage(<AdminEventualForm />)}
+      />
+
+      {/* Alias legado: la funcionalidad pasó a llamarse "Completar datos de eventual" */}
+      <Route
         path="/admin/eventuales/:id/corregir"
         element={renderBackofficePage(<AdminEventualForm />)}
       />

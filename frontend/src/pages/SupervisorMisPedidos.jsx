@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useNavigate } from "react-router-dom";
 import FondoKazaro from "../components/FondoKazaro";
+import EventualBadge from "../components/EventualBadge";
 
 
 export default function SupervisorMisPedidos() {
@@ -179,8 +180,9 @@ export default function SupervisorMisPedidos() {
               className="block bg-white p-5 rounded-xl shadow hover:shadow-lg transition border border-gray-200"
             >
               <div className="flex justify-between items-center mb-1 gap-2">
-                <span className="text-gray-700 font-semibold text-lg">
+                <span className="inline-flex items-center gap-1.5 text-gray-700 font-semibold text-lg">
                   Pedido #{p.id}
+                  {p.esEventual ? <EventualBadge /> : null}
                 </span>
 
                 <div className="flex items-center gap-2">

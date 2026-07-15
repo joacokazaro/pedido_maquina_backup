@@ -821,7 +821,7 @@ En **Eventuales**, el Administrador puede:
 1. Ver eventuales recientes.
 2. Abrir el historial completo.
 3. Registrar un nuevo eventual.
-4. Corregir datos de un eventual.
+4. Completar datos de un eventual.
 5. Consultar detalle e historial.
 6. Registrar componentes utilizados.
 7. Registrar vehículos utilizados.
@@ -834,13 +834,13 @@ En **Eventuales**, el Administrador puede:
 Al crear un eventual se cargan los datos base:
 
 - Nombre.
-- Supervisor.
+- Supervisor (opcional al crear; es obligatorio asignarlo para completar maquinaria utilizada y trabajos realizados).
 - Estado.
 - Fecha de inicio.
 - Fecha de fin.
 - Observaciones previas.
 
-Al corregir o finalizar se pueden completar:
+Al completar datos o finalizar se pueden cargar:
 
 - Máquinas utilizadas por tipo y cantidad.
 - Vehículos utilizados.

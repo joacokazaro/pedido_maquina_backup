@@ -158,7 +158,7 @@ export default function AdminEventualesHistorial() {
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    Supervisor: {item.supervisor?.nombre || item.supervisor?.username || "-"}
+                    Supervisor: {item.supervisor?.nombre || item.supervisor?.username || "Sin asignar"}
                   </p>
                   <p className="text-xs text-gray-500">
                     Componentes: {item.resumenComponentes?.tiposMaquina || 0} tipo(s) de máquina · {item.resumenComponentes?.vehiculos || 0} vehículo(s)

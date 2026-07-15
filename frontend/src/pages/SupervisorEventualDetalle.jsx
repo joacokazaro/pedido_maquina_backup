@@ -104,8 +104,19 @@ export default function SupervisorEventualDetalle() {
               <div className="space-y-2">
                 {maquinas.map((item, idx) => (
                   <div key={`${item.tipo}-${idx}`} className="rounded-lg border p-3 text-sm">
-                    <p className="font-semibold text-gray-900">{item.tipo}</p>
-                    <p className="text-xs text-gray-500">Cantidad: {item.cantidad}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-gray-900">{item.tipo}</p>
+                      <span className="rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-bold text-white">{item.cantidad}</span>
+                    </div>
+                    {Array.isArray(item.maquinaIds) && item.maquinaIds.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {item.maquinaIds.map((maquinaId) => (
+                          <span key={maquinaId} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                            {maquinaId}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

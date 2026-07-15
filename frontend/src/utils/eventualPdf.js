@@ -61,9 +61,19 @@ function buildMaquinariaRows(eventual) {
   const rows = [];
 
   for (const maquina of maquinas) {
+    const ids = Array.isArray(maquina?.maquinaIds) ? maquina.maquinaIds : [];
     rows.push([
       `MAQUINA · ${safeText(maquina?.tipo)}`,
-      `Cantidad: ${safeText(maquina?.cantidad, "0")}`,
+      `Cantidad: ${safeText(maquina?.cantidad, "0")}${ids.length > 0 ? ` (${ids.join(", ")})` : ""}`,
+    ]);
+  }
+
+  const maquinasDePedidos = Array.isArray(eventual?.maquinasDePedidos) ? eventual.maquinasDePedidos : [];
+  for (const maquina of maquinasDePedidos) {
+    const ids = Array.isArray(maquina?.maquinaIds) ? maquina.maquinaIds : [];
+    rows.push([
+      `MAQUINA (PEDIDO COMPL.) · ${safeText(maquina?.tipo)}`,
+      `Cantidad: ${safeText(maquina?.cantidad, "0")}${ids.length > 0 ? ` (${ids.join(", ")})` : ""}`,
     ]);
   }
 
@@ -114,12 +124,13 @@ function buildServiciosExtrasRows(eventual) {
 function formatActionLabel(action) {
   const labels = {
     EVENTUAL_CREADO: "Eventual creado",
-    EVENTUAL_CORREGIDO: "Eventual corregido",
+    EVENTUAL_CORREGIDO: "Datos del eventual completados",
     EVENTUAL_BAJA_LOGICA: "Eventual eliminado",
     SUPERVISOR_OBSERVACION: "Observacion del supervisor",
     SUPERVISOR_FINALIZO_EVENTUAL: "Supervisor finalizo eventual",
     ADMIN_OBSERVACION_POSTERIOR: "Observacion posterior del admin",
     COORDINADOR_OBSERVACION_POSTERIOR: "Observacion posterior del coordinador",
+    PEDIDO_COMPLEMENTARIO_CREADO: "Pedido complementario creado",
   };
   const normalized = String(action || "").trim();
   return labels[normalized] || normalized.replaceAll("_", " ");
@@ -199,7 +210,7 @@ export function downloadEventualResumenPdf(eventual) {
     body: [
       ["Nombre del eventual", safeText(eventual?.nombre)],
       ["Periodo", `${formatDate(eventual?.fechaInicio)} al ${formatDate(eventual?.fechaFin)}`],
-      ["Supervisor responsable", safeText(eventual?.supervisor?.nombre || eventual?.supervisor?.username)],
+      ["Supervisor responsable", safeText(eventual?.supervisor?.nombre || eventual?.supervisor?.username, "Sin asignar")],
       ["Observaciones generales", safeText(eventual?.observaciones)],
     ],
     columnStyles: {

@@ -139,6 +139,7 @@ export async function adminListPedidos(req, res) {
         supervisorName: p.supervisor?.username ?? "—",
         servicioName: p.servicio?.nombre ?? null,
         conFaltantes,
+        esEventual: Boolean(p.eventualId),
       };
     });
 

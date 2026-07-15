@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { EstadoBadge } from "../utils/estadoPedido.jsx";
+import EventualBadge from "../components/EventualBadge";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 
@@ -238,7 +239,10 @@ export default function DepositoHome() {
             {/* HEADER CARD */}
             <div className="flex justify-between items-center gap-2">
               <div>
-                <h2 className="font-bold text-lg">{p.id}</h2>
+                <h2 className="inline-flex items-center gap-1.5 font-bold text-lg">
+                  {p.id}
+                  {p.esEventual ? <EventualBadge /> : null}
+                </h2>
                 {/** Mostrar nombre completo del solicitante si existe */}
                 { (p.supervisorNombre || p.supervisor) && (
                   <p className="text-sm text-gray-600">Solicitado por: {p.supervisorNombre || p.supervisor}</p>

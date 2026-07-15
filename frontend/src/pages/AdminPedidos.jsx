@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import ConfirmModal from "../components/ConfirmModal";
+import EventualBadge from "../components/EventualBadge";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import { EstadoBadge, formatEstado } from "../utils/estadoPedido.jsx";
@@ -333,7 +334,10 @@ function pedidoTieneMaquina(pedido, texto) {
             onClick={() => setMenuOpenId(null)}
           >
             <div className="flex justify-between items-center gap-2">
-              <span className="font-bold">{p.id}</span>
+              <span className="inline-flex items-center gap-1.5 font-bold">
+                {p.id}
+                {p.esEventual ? <EventualBadge /> : null}
+              </span>
 
               <div className="flex items-center gap-2">
                 {tieneFaltantes(p) && (

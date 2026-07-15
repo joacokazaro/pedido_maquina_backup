@@ -100,7 +100,7 @@ export default function AdminEventualesPanel() {
                   <div>
                     <p className="font-semibold text-gray-900">{eventual.nombre}</p>
                     <p className="text-xs text-gray-500">
-                      Supervisor: {eventual.supervisor?.nombre || eventual.supervisor?.username || "-"}
+                      Supervisor: {eventual.supervisor?.nombre || eventual.supervisor?.username || "Sin asignar"}
                     </p>
                   </div>
                   <div className="flex gap-2">
