@@ -58,6 +58,7 @@ import AdminMaquinaHistorial from "./pages/AdminMaquinaHistorial";
 import AdminTiposMaquina from "./pages/AdminTiposMaquina";
 import AdminPlazosAmortizacion from "./pages/AdminPlazosAmortizacion";
 import AdminVehiculos from "./pages/AdminVehiculos";
+import AdminVehiculosAsignaciones from "./pages/AdminVehiculosAsignaciones";
 import AdminVehiculoForm from "./pages/AdminVehiculoForm";
 import AdminVehiculoHistorial from "./pages/AdminVehiculoHistorial";
 import AdminVehiculosImport from "./pages/AdminVehiculosImport";
@@ -524,6 +525,11 @@ function App() {
       <Route
         path="/admin/vehiculos/importar"
         element={renderAdminOnlyPage(<AdminVehiculosImport />)}
+      />
+
+      <Route
+        path="/admin/vehiculos/asignaciones"
+        element={renderAdminOnlyPage(<AdminVehiculosAsignaciones />)}
       />
 
       <Route

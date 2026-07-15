@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import {
   adminAsignarVehiculo,
+  adminAsignarVehiculosMasivo,
   adminCreateVehiculo,
   adminDeleteVehiculo,
   adminDesasignarVehiculo,
@@ -28,5 +29,6 @@ router.put("/vehiculos/:id", adminUpdateVehiculo);
 router.delete("/vehiculos/:id", adminDeleteVehiculo);
 router.post("/vehiculos/:id/asignaciones", adminAsignarVehiculo);
 router.delete("/vehiculos/:id/asignaciones/actual", adminDesasignarVehiculo);
+router.post("/vehiculos/asignaciones-masivas", adminAsignarVehiculosMasivo);
 
 export default router;

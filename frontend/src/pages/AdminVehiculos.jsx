@@ -186,6 +186,12 @@ export default function AdminVehiculos() {
               Seguros
             </button>
               <button
+                onClick={() => navigate("/admin/vehiculos/asignaciones")}
+                className={actionBtnSoft}
+              >
+                Asignaciones
+              </button>
+              <button
                 onClick={() => navigate("/admin/vehiculos/importar")}
                 className={actionBtnExcel}
               >

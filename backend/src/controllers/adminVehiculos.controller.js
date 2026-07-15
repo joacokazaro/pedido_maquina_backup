@@ -915,6 +915,203 @@ export async function adminDesasignarVehiculo(req, res) {
   }
 }
 
+/* ========================================================
+   POST /admin/vehiculos/asignaciones-masivas
+======================================================== */
+export async function adminAsignarVehiculosMasivo(req, res) {
+  try {
+    const {
+      vehiculoIds,
+      usuarioId,
+      observacion,
+      asignadoPorId,
+      dryRun = false,
+      confirmarReasignacion = false,
+    } = req.body || {};
+
+    const ids = Array.isArray(vehiculoIds)
+      ? [...new Set(vehiculoIds.map((v) => String(v || "").trim()).filter(Boolean))]
+      : [];
+
+    if (!ids.length) {
+      return res.status(400).json({ error: "Debe seleccionar al menos un vehículo" });
+    }
+
+    const desasignar = usuarioId === null || usuarioId === undefined || usuarioId === "";
+
+    let usuarioDestinoId = null;
+    let usuarioDestino = null;
+
+    if (!desasignar) {
+      usuarioDestinoId = Number(usuarioId);
+      if (!Number.isInteger(usuarioDestinoId) || usuarioDestinoId <= 0) {
+        return res.status(400).json({ error: "usuarioId inválido" });
+      }
+
+      usuarioDestino = await ensureUsuarioExists(usuarioDestinoId);
+      if (!usuarioDestino) {
+        return res.status(400).json({ error: "Usuario destino inválido" });
+      }
+    }
+
+    let asignadoPorIdParsed = null;
+    if (asignadoPorId) {
+      asignadoPorIdParsed = Number(asignadoPorId);
+      const asignadoPor = await ensureUsuarioExists(asignadoPorIdParsed);
+      if (!asignadoPor) {
+        return res.status(400).json({ error: "asignadoPorId inválido" });
+      }
+    }
+
+    const observacionNormalizada = normalizeNullableString(observacion);
+
+    const vehiculos = await prisma.vehiculo.findMany({
+      where: { id: { in: ids } },
+      include: {
+        conductorActual: { select: { id: true, username: true, nombre: true } },
+      },
+    });
+
+    const vehiculosById = new Map(vehiculos.map((v) => [v.id, v]));
+    const inexistentes = ids.filter((id) => !vehiculosById.has(id));
+
+    if (inexistentes.length) {
+      return res.status(400).json({
+        error: "Hay vehículos inexistentes en la selección",
+        inexistentes,
+      });
+    }
+
+    const bajas = [];
+    const sinCambios = [];
+    const reasignaciones = [];
+    const nuevas = [];
+
+    for (const id of ids) {
+      const vehiculo = vehiculosById.get(id);
+      const conductorActualNombre = vehiculo.conductorActual?.nombre || vehiculo.conductorActual?.username || null;
+
+      if (!desasignar && vehiculo.estado === "baja") {
+        bajas.push({ id, vehiculo: vehiculo.vehiculo, patente: vehiculo.patente });
+        continue;
+      }
+
+      const destinoId = desasignar ? null : usuarioDestinoId;
+      const item = { id, vehiculo: vehiculo.vehiculo, patente: vehiculo.patente, conductorActual: conductorActualNombre };
+
+      if (vehiculo.conductorActualId === destinoId) {
+        sinCambios.push(item);
+      } else if (vehiculo.conductorActualId) {
+        reasignaciones.push(item);
+      } else {
+        nuevas.push(item);
+      }
+    }
+
+    const paraAplicar = [...reasignaciones, ...nuevas].map((item) => item.id);
+
+    const resumen = {
+      seleccionados: ids.length,
+      sinCambios: sinCambios.length,
+      reasignaciones: reasignaciones.length,
+      nuevas: nuevas.length,
+      bajasExcluidas: bajas.length,
+      aAplicar: paraAplicar.length,
+    };
+
+    const usuarioDestinoRes = usuarioDestino
+      ? { id: usuarioDestino.id, nombre: usuarioDestino.nombre, username: usuarioDestino.username }
+      : null;
+
+    if (dryRun) {
+      return res.json({
+        dryRun: true,
+        requiereConfirmacion: reasignaciones.length > 0,
+        usuarioDestino: usuarioDestinoRes,
+        resumen,
+        sinCambios,
+        reasignaciones,
+        nuevas,
+        bajas,
+      });
+    }
+
+    if (reasignaciones.length > 0 && !confirmarReasignacion) {
+      return res.status(409).json({
+        error: "Algunos vehículos ya tienen otro conductor asignado. Confirmá para reasignarlos.",
+        code: "REQUIERE_CONFIRMACION_REASIGNACION",
+        requiereConfirmacion: true,
+        usuarioDestino: usuarioDestinoRes,
+        resumen,
+        sinCambios,
+        reasignaciones,
+        nuevas,
+        bajas,
+      });
+    }
+
+    if (!paraAplicar.length) {
+      return res.json({
+        message: "No hay cambios para aplicar",
+        esMasivo: true,
+        usuarioDestino: usuarioDestinoRes,
+        resumen,
+        sinCambios,
+        reasignaciones: [],
+        nuevas: [],
+        bajas,
+      });
+    }
+
+    const ahora = new Date();
+
+    await prisma.$transaction(async (tx) => {
+      for (const vehiculoId of paraAplicar) {
+        const activa = await tx.vehiculoAsignacion.findFirst({
+          where: { vehiculoId, fechaHasta: null },
+        });
+
+        if (activa) {
+          await tx.vehiculoAsignacion.update({
+            where: { id: activa.id },
+            data: { fechaHasta: ahora },
+          });
+        }
+
+        if (!desasignar) {
+          await tx.vehiculoAsignacion.create({
+            data: {
+              vehiculoId,
+              usuarioId: usuarioDestinoId,
+              asignadoPorId: asignadoPorIdParsed,
+              observacion: observacionNormalizada,
+              fechaDesde: ahora,
+            },
+          });
+        }
+
+        await tx.vehiculo.update({
+          where: { id: vehiculoId },
+          data: { conductorActualId: desasignar ? null : usuarioDestinoId },
+        });
+      }
+    });
+
+    return res.json({
+      message: "Asignaciones aplicadas correctamente",
+      esMasivo: true,
+      usuarioDestino: usuarioDestinoRes,
+      resumen,
+      aplicadas: paraAplicar,
+      sinCambios,
+      bajas,
+    });
+  } catch (e) {
+    console.error("adminAsignarVehiculosMasivo:", e);
+    res.status(500).json({ error: "Error aplicando asignaciones masivas" });
+  }
+}
+
 export async function adminExportVehiculos(req, res) {
   try {
     const vehiculos = await prisma.vehiculo.findMany({
