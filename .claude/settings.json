@@ -79,7 +79,27 @@
       "Read(//c//**)",
       "Bash(curl -s -o /tmp/asig_module.js -w \"HTTP %{http_code}\\\\n\" \"http://localhost:5173/src/pages/AdminVehiculosAsignaciones.jsx\")",
       "Read(//tmp/**)",
-      "Bash(curl -s \"http://localhost:5173/src/App.jsx\")"
+      "Bash(curl -s \"http://localhost:5173/src/App.jsx\")",
+      "Bash(git check-ignore *)",
+      "Bash(grep -i \"\\\\.log$\")",
+      "Bash(grep -rl \"fetch\\(\\\\`\\\\${API_BASE}\" pages)",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Id 25848)",
+      "PowerShell(Stop-Process -Id 25848 -Force -Confirm:$false)",
+      "Bash(npm ls *)",
+      "Bash(npm install *)",
+      "Bash(node -c src/server.js)",
+      "Bash(timeout 6 node src/server.js)",
+      "Bash(echo \"---exit $?---\")",
+      "PowerShell(Get-Process -Id 30032 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 30032 -Force -Confirm:$false -ErrorAction SilentlyContinue)",
+      "Bash(curl -s -i http://localhost:3000/api/health)",
+      "Bash(curl -s -i -H \"Origin: http://localhost:5173\" http://localhost:3000/api/health)",
+      "Bash(curl -s -i -H \"Origin: http://evil.com\" http://localhost:3000/api/health)",
+      "Bash(curl -s -D - -o /dev/null http://localhost:3000/api/health)",
+      "Bash(curl -s -i -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"test\",\"password\":\"x\"}')"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
@@ -29,9 +30,39 @@ import { iniciarMonitorPrestamosProlongados } from "./services/notificaciones.se
 const app = express();
 
 /* =======================
+   CORS
+   El frontend siempre habla con la API en el mismo origen
+   (proxy de Vite en dev, mismo dominio detrás de nginx en prod),
+   así que un navegador nunca necesita CORS para el flujo normal.
+   Esta whitelist es solo para accesos cross-origin explícitos
+   (herramientas de prueba, otro front, etc).
+======================= */
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origen no permitido por CORS: ${origin}`));
+  },
+};
+
+/* =======================
    MIDDLEWARES
 ======================= */
-app.use(cors());
+app.use(
+  helmet({
+    // El SPA carga fuentes de Google Fonts e imágenes presignadas de S3;
+    // armar un CSP correcto para eso es una tarea aparte, no un quick-fix.
+    // El resto de las protecciones de helmet (noSniff, frameguard, HSTS, etc.) quedan activas.
+    contentSecurityPolicy: false,
+  })
+);
+app.use(cors(corsOptions));
 app.use(express.json());
 
 /* =======================
@@ -98,6 +129,23 @@ app.get("*", (req, res) => {
    res.sendFile(path.join(FRONT_DIST, "index.html"));
 });
 
+/* =======================
+   MANEJADOR DE ERRORES GLOBAL (siempre al final)
+======================= */
+const isProd = process.env.NODE_ENV === "production";
+
+app.use((err, req, res, _next) => {
+   if (err?.message?.startsWith("Origen no permitido por CORS")) {
+      return res.status(403).json({ error: "Origen no permitido" });
+   }
+
+   console.error("Error no manejado:", err);
+
+   res.status(err.status || 500).json({
+      error: isProd ? "Error interno del servidor" : err.message || "Error interno del servidor",
+   });
+});
+
 /* ======================= */
 const PORT = process.env.PORT || 3000;
 
@@ -106,7 +154,12 @@ const httpServer = createServer(app);
 
 const io = new IOServer(httpServer, {
    cors: {
-      origin: true,
+      origin(origin, callback) {
+         if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+            return callback(null, true);
+         }
+         return callback(new Error(`Origen no permitido por CORS: ${origin}`));
+      },
       methods: ["GET", "POST"],
    },
 });

@@ -78,7 +78,6 @@ export function AuthProvider({ children }) {
       setSocket(s);
 
       s.on("connect", () => {
-        console.log("socket connected:", s.id);
         if (hasRole(u, "DEPOSITO")) s.emit("join", { room: "DEPOSITO" });
         if (u?.username) s.emit("join", { room: `USER:${u.username}` });
       });

@@ -16,10 +16,26 @@ export default function ConfirmModal({
   children = null,
 }) {
   const [comment, setComment] = React.useState(initialComment || "");
+  const dialogRef = React.useRef(null);
 
   React.useEffect(() => {
     setComment(initialComment || "");
   }, [initialComment, open]);
+
+  React.useEffect(() => {
+    if (!open) return;
+
+    dialogRef.current?.focus();
+
+    function handleKeyDown(e) {
+      if (e.key === 'Escape' && !hideCancel) {
+        onCancel && onCancel();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, hideCancel, onCancel]);
 
   if (!open) return null;
 
@@ -43,9 +59,17 @@ export default function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6">
-        {title && <h3 className="text-lg font-semibold mb-2 text-gray-800">{title}</h3>}
-        <p className="text-sm text-gray-700 mb-4 whitespace-pre-line">{message}</p>
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? 'confirm-modal-title' : undefined}
+        aria-describedby={message ? 'confirm-modal-message' : undefined}
+        tabIndex={-1}
+        className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 outline-none"
+      >
+        {title && <h3 id="confirm-modal-title" className="text-lg font-semibold mb-2 text-gray-800">{title}</h3>}
+        <p id="confirm-modal-message" className="text-sm text-gray-700 mb-4 whitespace-pre-line">{message}</p>
         {children ? <div className="mb-4">{children}</div> : null}
 
         {requireComment && (
