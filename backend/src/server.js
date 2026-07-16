@@ -29,6 +29,13 @@ import { iniciarMonitorPrestamosProlongados } from "./services/notificaciones.se
 
 const app = express();
 
+// Detrás de nginx en prod: sin esto, express-rate-limit no puede resolver
+// el IP real del cliente (X-Forwarded-For) y rompe /api/auth/login para todos.
+// "loopback" confía solo en conexiones desde 127.0.0.1/::1 (nginx en el mismo
+// servidor que Node). Si nginx corre en OTRA máquina/contenedor separado,
+// hay que cambiar esto por la IP/subred real de nginx.
+app.set("trust proxy", "loopback");
+
 /* =======================
    CORS
    El frontend siempre habla con la API en el mismo origen
