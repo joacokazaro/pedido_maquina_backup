@@ -122,6 +122,12 @@ api.get("/health", (req, res) => {
   res.status(200).json({ ok: true, ts: new Date().toISOString() });
 });
 
+// 404 JSON para cualquier /api/* que no matcheó ningún router de arriba
+// (sin esto, cae en el fallback SPA de más abajo y responde HTML con 200).
+api.use((req, res) => {
+  res.status(404).json({ error: "Ruta no encontrada" });
+});
+
 /* =======================
    FRONTEND (VITE BUILD)
 ======================= */

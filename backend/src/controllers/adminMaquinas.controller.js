@@ -1,5 +1,4 @@
 import prisma from "../db/prisma.js";
-import xlsx from "xlsx";
 import ExcelJS from "exceljs";
 import { requireActor } from "../services/requestActor.service.js";
 import {
@@ -91,6 +90,26 @@ function parseNullableDate(raw, fieldName) {
   return date;
 }
 
+function excelSerialToDateParts(serial) {
+  const utcDays = Math.floor(serial - 25569);
+  const date = new Date(utcDays * 86400 * 1000);
+  return { y: date.getUTCFullYear(), m: date.getUTCMonth() + 1, d: date.getUTCDate() };
+}
+
+function excelCellRawValue(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value;
+  if (typeof value === "object") {
+    if (Array.isArray(value.richText)) {
+      return value.richText.map((t) => t.text).join("");
+    }
+    if (value.result !== undefined) return excelCellRawValue(value.result);
+    if (value.text !== undefined) return value.text;
+    if (value.error !== undefined) return "";
+  }
+  return value;
+}
+
 function parseExcelDate(raw) {
   if (raw === undefined || raw === null || raw === "") return null;
 
@@ -99,8 +118,7 @@ function parseExcelDate(raw) {
   }
 
   if (typeof raw === "number") {
-    const parsed = xlsx.SSF.parse_date_code(raw);
-    if (!parsed) return null;
+    const parsed = excelSerialToDateParts(raw);
     return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
   }
 
@@ -305,17 +323,38 @@ function calculateEstadoAmortizacion(fechaCompra, amortizacionMeses, now = new D
     : ESTADO_AMORTIZACION.NO_AMORTIZADA;
 }
 
-function readWorkbookRows(buffer) {
-  const workbook = xlsx.read(buffer, { type: "buffer", cellDates: true });
-  const firstSheetName = workbook.SheetNames[0];
-  if (!firstSheetName) {
+async function readWorkbookRows(buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) {
     throw new Error("El archivo no contiene hojas");
   }
 
-  const sheet = workbook.Sheets[firstSheetName];
-  const rawRows = xlsx.utils.sheet_to_json(sheet, { defval: "" });
+  const headers = [];
+  worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    headers[colNumber] = normalizeImportHeader(excelCellRawValue(cell.value));
+  });
 
-  if (!Array.isArray(rawRows) || rawRows.length === 0) {
+  const rawRows = [];
+  for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
+    const row = worksheet.getRow(rowNumber);
+    if (row.cellCount === 0) continue;
+
+    const normalized = {};
+    let hasValue = false;
+    row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      const header = headers[colNumber];
+      if (!header) return;
+      const value = excelCellRawValue(cell.value);
+      if (value !== "" && value !== null && value !== undefined) hasValue = true;
+      normalized[header] = value;
+    });
+
+    if (hasValue) rawRows.push(normalized);
+  }
+
+  if (rawRows.length === 0) {
     throw new Error("El archivo no contiene filas para importar");
   }
 
@@ -323,17 +362,11 @@ function readWorkbookRows(buffer) {
     throw new Error("El archivo supera el máximo permitido de 5000 filas");
   }
 
-  return rawRows.map((rawRow) => {
-    const normalized = {};
-    Object.entries(rawRow).forEach(([key, value]) => {
-      normalized[normalizeImportHeader(key)] = value;
-    });
-    return normalized;
-  });
+  return rawRows;
 }
 
 async function parseAndValidateMaquinasImport(fileBuffer) {
-  const rows = readWorkbookRows(fileBuffer);
+  const rows = await readWorkbookRows(fileBuffer);
 
   const parsedRows = rows.map((row, index) => ({
     rowNumber: index + 2,
@@ -1327,7 +1360,7 @@ export async function adminRecalcularEstadoAmortizacion(req, res) {
       sinDatos: 0,
     };
 
-    for (const maquina of maquinas) {
+    const updates = maquinas.map((maquina) => {
       const estadoAmortizacion = calculateEstadoAmortizacion(
         maquina.fechaCompra,
         resolveAmortizacionByTipo(maquina.tipoMaquina)
@@ -1337,11 +1370,13 @@ export async function adminRecalcularEstadoAmortizacion(req, res) {
       else if (estadoAmortizacion === ESTADO_AMORTIZACION.NO_AMORTIZADA) resumen.noAmortizada += 1;
       else resumen.sinDatos += 1;
 
-      await prisma.maquina.update({
+      return prisma.maquina.update({
         where: { id: maquina.id },
         data: { estadoAmortizacion },
       });
-    }
+    });
+
+    await prisma.$transaction(updates);
 
     return res.json({
       message: "Estado de amortización recalculado correctamente",
@@ -2575,11 +2610,11 @@ export async function adminExportMaquinas(req, res) {
       ]);
     }
 
-    const workbook = xlsx.utils.book_new();
-    const worksheet = xlsx.utils.aoa_to_sheet(rows);
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Maquinas");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Maquinas");
+    rows.forEach((row) => worksheet.addRow(row));
 
-    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader(
       "Content-Type",

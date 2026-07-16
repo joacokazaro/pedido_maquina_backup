@@ -1,5 +1,5 @@
 import prisma from "../db/prisma.js";
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import {
   ESTADOS_VEHICULO_VALIDOS,
   canonicalEstadoVehiculo,
@@ -133,6 +133,26 @@ function getImportValue(row, ...keys) {
   return undefined;
 }
 
+function excelSerialToDateParts(serial) {
+  const utcDays = Math.floor(serial - 25569);
+  const date = new Date(utcDays * 86400 * 1000);
+  return { y: date.getUTCFullYear(), m: date.getUTCMonth() + 1, d: date.getUTCDate() };
+}
+
+function excelCellRawValue(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value;
+  if (typeof value === "object") {
+    if (Array.isArray(value.richText)) {
+      return value.richText.map((t) => t.text).join("");
+    }
+    if (value.result !== undefined) return excelCellRawValue(value.result);
+    if (value.text !== undefined) return value.text;
+    if (value.error !== undefined) return "";
+  }
+  return value;
+}
+
 function parseExcelDate(value) {
   if (value === undefined || value === null || value === "") return null;
 
@@ -141,8 +161,7 @@ function parseExcelDate(value) {
   }
 
   if (typeof value === "number") {
-    const parsed = xlsx.SSF.parse_date_code(value);
-    if (!parsed) return null;
+    const parsed = excelSerialToDateParts(value);
     return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
   }
 
@@ -1178,11 +1197,12 @@ export async function adminExportVehiculos(req, res) {
       item.conductorActual?.nombre || "",
     ]);
 
-    const workbook = xlsx.utils.book_new();
-    const worksheet = xlsx.utils.aoa_to_sheet([headers, ...rows]);
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Vehiculos");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Vehiculos");
+    worksheet.addRow(headers);
+    rows.forEach((row) => worksheet.addRow(row));
 
-    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader(
       "Content-Type",
@@ -1201,8 +1221,8 @@ export async function adminExportVehiculos(req, res) {
 
 export async function adminDownloadVehiculosTemplate(req, res) {
   try {
-    const workbook = xlsx.utils.book_new();
-    const headers = [[
+    const workbook = new ExcelJS.Workbook();
+    const headers = [
       "ID",
       "EMPRESA",
       "ESTADO",
@@ -1226,12 +1246,12 @@ export async function adminDownloadVehiculosTemplate(req, res) {
       "PRUEBA_HIDRAULICA_GNC_APLICA",
       "TARJETA_VERDE",
       "CONDUCTOR_USERNAME",
-    ]];
+    ];
 
-    const worksheet = xlsx.utils.aoa_to_sheet(headers);
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Vehiculos");
+    const worksheet = workbook.addWorksheet("Vehiculos");
+    worksheet.addRow(headers);
 
-    const buffer = xlsx.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = await workbook.xlsx.writeBuffer();
 
     res.setHeader(
       "Content-Type",
@@ -1254,25 +1274,39 @@ export async function adminImportVehiculos(req, res) {
       return res.status(400).json({ error: "Debe adjuntar un archivo Excel" });
     }
 
-    const workbook = xlsx.read(req.file.buffer, { type: "buffer", cellDates: true });
-    const firstSheetName = workbook.SheetNames[0];
-    if (!firstSheetName) {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
       return res.status(400).json({ error: "El archivo no contiene hojas" });
     }
 
-    const sheet = workbook.Sheets[firstSheetName];
-    const rawRows = xlsx.utils.sheet_to_json(sheet, { defval: "" });
-    if (!Array.isArray(rawRows) || rawRows.length === 0) {
-      return res.status(400).json({ error: "El archivo no contiene filas para importar" });
+    const headers = [];
+    worksheet.getRow(1).eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      headers[colNumber] = normalizeImportHeader(excelCellRawValue(cell.value));
+    });
+
+    const rows = [];
+    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber += 1) {
+      const row = worksheet.getRow(rowNumber);
+      if (row.cellCount === 0) continue;
+
+      const normalized = {};
+      let hasValue = false;
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        const header = headers[colNumber];
+        if (!header) return;
+        const value = excelCellRawValue(cell.value);
+        if (value !== "" && value !== null && value !== undefined) hasValue = true;
+        normalized[header] = value;
+      });
+
+      if (hasValue) rows.push(normalized);
     }
 
-    const rows = rawRows.map((rawRow) => {
-      const normalized = {};
-      Object.entries(rawRow).forEach(([key, value]) => {
-        normalized[normalizeImportHeader(key)] = value;
-      });
-      return normalized;
-    });
+    if (rows.length === 0) {
+      return res.status(400).json({ error: "El archivo no contiene filas para importar" });
+    }
 
     const preparedRows = rows.map((row, index) => {
       const id = normalizeString(getImportValue(row, "ID", "COD"));

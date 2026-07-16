@@ -2,6 +2,7 @@ import prisma from "../db/prisma.js";
 import { requireActor } from "../services/requestActor.service.js";
 import { canonicalEstadoVehiculo } from "../services/inventarioEstados.service.js";
 import { aplicarMovimientoTaller, TALLER_TIPO_VEHICULO } from "../services/taller.service.js";
+import { respondWithError } from "../services/httpError.service.js";
 
 const ESTADOS_PEDIDO_INACTIVOS = ["CERRADO", "CANCELADO"];
 
@@ -121,10 +122,6 @@ export async function marcarVehiculoTaller(req, res) {
       ...resultado,
     });
   } catch (e) {
-    if (e.message?.startsWith("Debe indicar") || e.message?.startsWith("Acción") || e.message?.startsWith("Registros inexistentes")) {
-      return res.status(400).json({ error: e.message });
-    }
-    console.error("marcarVehiculoTaller:", e);
-    res.status(500).json({ error: "Error actualizando taller del vehículo" });
+    respondWithError(res, e, "Error actualizando taller del vehículo");
   }
 }

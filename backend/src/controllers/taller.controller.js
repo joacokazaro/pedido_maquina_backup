@@ -5,6 +5,7 @@ import {
   TALLER_TIPO_MAQUINA,
   TALLER_TIPO_VEHICULO,
 } from "../services/taller.service.js";
+import { respondWithError } from "../services/httpError.service.js";
 
 const ROLES_TALLER_LECTURA = ["admin", "coordinador", "consultor", "taller"];
 const ROLES_TALLER_EDICION = ["admin", "taller"];
@@ -28,11 +29,7 @@ async function handleMovimiento(req, res, tipo) {
       ...resultado,
     });
   } catch (error) {
-    if (error.message?.startsWith("Debe indicar") || error.message?.startsWith("Acción") || error.message?.startsWith("Registros inexistentes")) {
-      return res.status(400).json({ error: error.message });
-    }
-    console.error("handleMovimientoTaller:", error);
-    res.status(500).json({ error: "Error procesando movimiento de taller" });
+    respondWithError(res, error, "Error procesando movimiento de taller");
   }
 }
 

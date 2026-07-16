@@ -6,6 +6,7 @@ import {
   normalizeEstadoMaquina,
 } from "../services/inventarioEstados.service.js";
 import { aplicarMovimientoTaller, TALLER_TIPO_MAQUINA } from "../services/taller.service.js";
+import { respondWithError } from "../services/httpError.service.js";
 
 /* ========================================================
    CONSTANTES (FUENTE DE VERDAD)
@@ -228,10 +229,6 @@ export async function marcarMaquinaTaller(req, res) {
       ...resultado,
     });
   } catch (e) {
-    if (e.message?.startsWith("Debe indicar") || e.message?.startsWith("Acción") || e.message?.startsWith("Registros inexistentes")) {
-      return res.status(400).json({ error: e.message });
-    }
-    console.error("marcarMaquinaTaller:", e);
-    res.status(500).json({ error: "Error actualizando taller de la máquina" });
+    respondWithError(res, e, "Error actualizando taller de la máquina");
   }
 }

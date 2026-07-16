@@ -4,6 +4,7 @@ import {
   canonicalEstadoMaquina,
   canonicalEstadoVehiculo,
 } from "./inventarioEstados.service.js";
+import { buildError } from "./httpError.service.js";
 
 export const TALLER_TIPO_MAQUINA = "maquina";
 export const TALLER_TIPO_VEHICULO = "vehiculo";
@@ -35,11 +36,11 @@ export async function aplicarMovimientoTaller({ tipo, ids, accion, observacion, 
   const normalizedIds = normalizeIds(ids);
 
   if (!normalizedIds.length) {
-    throw new Error("Debe indicar al menos un registro");
+    throw buildError("Debe indicar al menos un registro", 400);
   }
 
   if (!TALLER_ACCIONES_VALIDAS.includes(accion)) {
-    throw new Error("Acción de taller inválida");
+    throw buildError("Acción de taller inválida", 400);
   }
 
   const model = tipo === TALLER_TIPO_VEHICULO ? prisma.vehiculo : prisma.maquina;
@@ -55,7 +56,7 @@ export async function aplicarMovimientoTaller({ tipo, ids, accion, observacion, 
   if (existentes.length !== normalizedIds.length) {
     const encontrados = new Set(existentes.map((item) => item.id));
     const faltantes = normalizedIds.filter((id) => !encontrados.has(id));
-    throw new Error(`Registros inexistentes: ${faltantes.join(", ")}`);
+    throw buildError(`Registros inexistentes: ${faltantes.join(", ")}`, 400);
   }
 
   const actualizados = [];

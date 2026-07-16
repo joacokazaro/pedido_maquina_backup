@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditoría — Pedido Máquina</title>
+<style>
+  :root{
+    --bg:#eef0f2;
+    --surface:#ffffff;
+    --surface-2:#f4f5f7;
+    --text:#1a1d21;
+    --text-muted:#5b6169;
+    --border:#d8dce0;
+    --accent:#a05a1f;
+    --accent-soft:#f1e2cd;
+    --crit:#b3261e;
+    --crit-soft:#f8dedc;
+    --high:#c2540b;
+    --high-soft:#f7e2d2;
+    --med:#8a6d0f;
+    --med-soft:#f2e9c9;
+    --low:#3d5266;
+    --low-soft:#dde6ed;
+    --ok:#3f7248;
+    --ok-soft:#dcebde;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(20,20,20,.06), 0 8px 24px -12px rgba(20,20,20,.15);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#15181b;
+      --surface:#1c2024;
+      --surface-2:#22262b;
+      --text:#e7e9eb;
+      --text-muted:#9aa1aa;
+      --border:#31363c;
+      --accent:#e2a05c;
+      --accent-soft:#3a2c1a;
+      --crit:#ff8478;
+      --crit-soft:#3a2020;
+      --high:#f0954f;
+      --high-soft:#3a2b18;
+      --med:#e0c352;
+      --med-soft:#37311a;
+      --low:#8fabc4;
+      --low-soft:#22303e;
+      --ok:#7fbf8a;
+      --ok-soft:#1e3324;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15181b; --surface:#1c2024; --surface-2:#22262b; --text:#e7e9eb; --text-muted:#9aa1aa;
+    --border:#31363c; --accent:#e2a05c; --accent-soft:#3a2c1a; --crit:#ff8478; --crit-soft:#3a2020;
+    --high:#f0954f; --high-soft:#3a2b18; --med:#e0c352; --med-soft:#37311a; --low:#8fabc4; --low-soft:#22303e;
+    --ok:#7fbf8a; --ok-soft:#1e3324;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+  :root[data-theme="light"]{
+    --bg:#eef0f2; --surface:#ffffff; --surface-2:#f4f5f7; --text:#1a1d21; --text-muted:#5b6169;
+    --border:#d8dce0; --accent:#a05a1f; --accent-soft:#f1e2cd; --crit:#b3261e; --crit-soft:#f8dedc;
+    --high:#c2540b; --high-soft:#f7e2d2; --med:#8a6d0f; --med-soft:#f2e9c9; --low:#3d5266; --low-soft:#dde6ed;
+    --ok:#3f7248; --ok-soft:#dcebde;
+    --shadow:0 1px 2px rgba(20,20,20,.06), 0 8px 24px -12px rgba(20,20,20,.15);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{
+    font-family: "Cascadia Code", "SF Mono", "Consolas", "Roboto Mono", ui-monospace, monospace;
+  }
+  h1,h2,h3{
+    font-family: "Bahnschrift", "SF Compact Display", "Segoe UI Semibold", system-ui, sans-serif;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    text-wrap:balance;
+    margin:0;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 96px;}
+
+  /* ---------- header ---------- */
+  .hero{
+    border-bottom:1px solid var(--border);
+    background:
+      linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    padding:40px 0 28px;
+  }
+  .eyebrow{
+    font-family:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif;
+    text-transform:uppercase;
+    letter-spacing:.14em;
+    font-size:12px;
+    color:var(--accent);
+    font-weight:700;
+  }
+  .hero h1{font-size:clamp(28px,4vw,38px);margin-top:8px;}
+  .hero .sub{color:var(--text-muted);margin-top:8px;font-size:15.5px;max-width:62ch;}
+  .meta-row{
+    display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:18px;
+    font-size:13px;color:var(--text-muted);
+  }
+  .meta-row .mono{color:var(--text);}
+
+  .summary{
+    display:flex;flex-wrap:wrap;gap:10px;margin-top:24px;
+  }
+  .chip{
+    display:flex;align-items:baseline;gap:7px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    border-radius:999px;
+    padding:7px 14px 7px 12px;
+    font-size:13px;
+    box-shadow:var(--shadow);
+  }
+  .chip .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .chip b{font-family:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif;font-size:16px;}
+  .dot.crit{background:var(--crit);} .dot.high{background:var(--high);}
+  .dot.med{background:var(--med);} .dot.low{background:var(--low);}
+  .dot.ok{background:var(--ok);}
+
+  /* ---------- nav ---------- */
+  nav.jump{
+    position:sticky;top:0;z-index:5;
+    background:var(--bg);
+    border-bottom:1px solid var(--border);
+    padding:12px 0;
+    margin-bottom:8px;
+  }
+  nav.jump .inner{
+    max-width:920px;margin:0 auto;padding:0 20px;
+    display:flex;gap:4px;flex-wrap:wrap;
+  }
+  nav.jump a{
+    font-size:13px;color:var(--text-muted);text-decoration:none;
+    padding:6px 11px;border-radius:7px;
+  }
+  nav.jump a:hover, nav.jump a:focus-visible{background:var(--surface-2);color:var(--text);}
+  nav.jump a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+
+  /* ---------- sections ---------- */
+  section{margin-top:52px;scroll-margin-top:64px;}
+  .section-head{
+    display:flex;align-items:baseline;gap:12px;margin-bottom:6px;
+    border-bottom:2px solid var(--text);
+    padding-bottom:10px;
+  }
+  .section-head h2{font-size:21px;}
+  .section-head .count{
+    font-family:"Cascadia Code","SF Mono",monospace;
+    font-size:13px;color:var(--text-muted);
+  }
+  .section-intro{color:var(--text-muted);font-size:14.5px;margin:12px 0 20px;max-width:68ch;}
+
+  /* ---------- finding card ---------- */
+  .finding{
+    display:grid;grid-template-columns:5px 1fr;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .finding .stripe{background:var(--low);}
+  .finding.crit .stripe{background:var(--crit);}
+  .finding.high .stripe{background:var(--high);}
+  .finding.med .stripe{background:var(--med);}
+  .finding.low .stripe{background:var(--low);}
+  .finding.ok .stripe{background:var(--ok);}
+  .finding-body{padding:16px 18px;}
+  .finding-top{
+    display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin-bottom:8px;
+  }
+  .badge{
+    font-family:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif;
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    padding:2.5px 8px;border-radius:5px;
+  }
+  .finding.crit .badge.sev{background:var(--crit-soft);color:var(--crit);}
+  .finding.high .badge.sev{background:var(--high-soft);color:var(--high);}
+  .finding.med .badge.sev{background:var(--med-soft);color:var(--med);}
+  .finding.low .badge.sev{background:var(--low-soft);color:var(--low);}
+  .finding.ok .badge.sev{background:var(--ok-soft);color:var(--ok);}
+  .badge.st-new{background:var(--accent-soft);color:var(--accent);}
+  .badge.st-open{background:transparent;color:var(--text-muted);border:1px solid var(--border);}
+  .badge.st-ok{background:var(--ok-soft);color:var(--ok);}
+  .finding h3{font-size:15.5px;font-weight:600;font-family:inherit;letter-spacing:0;}
+  .finding p{margin:0 0 8px;font-size:14.5px;color:var(--text);}
+  .finding p:last-child{margin-bottom:0;}
+  .finding.ok p, .finding.ok h3{color:var(--text);}
+  .loc{
+    display:inline-block;
+    font-size:12.5px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:2px 7px;
+    color:var(--text-muted);
+    margin:2px 4px 2px 0;
+  }
+
+  /* ---------- action plan ---------- */
+  .plan{list-style:none;margin:0;padding:0;counter-reset:step;}
+  .plan li{
+    counter-increment:step;
+    display:grid;grid-template-columns:40px 1fr;gap:14px;
+    padding:16px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .plan li:last-child{border-bottom:none;}
+  .plan .num{
+    font-family:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif;
+    font-weight:700;font-size:19px;color:var(--accent);
+  }
+  .plan .num::before{content: counter(step);}
+  .plan h3{font-size:15px;margin-bottom:3px;}
+  .plan p{margin:0;color:var(--text-muted);font-size:14px;}
+  .plan li.done .num{color:var(--ok);}
+  .plan li.done .num::after{content:" ✓";font-size:14px;}
+  .plan li.done h3{color:var(--text-muted);}
+
+  /* ---------- table (schema) ---------- */
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--surface);}
+  th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th{background:var(--surface-2);font-family:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);}
+  tr:last-child td{border-bottom:none;}
+  td.mono{color:var(--text);}
+
+  footer{
+    margin-top:64px;padding-top:20px;border-top:1px solid var(--border);
+    color:var(--text-muted);font-size:12.5px;
+  }
+</style>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Revisión técnica interna · 2ª iteración</div>
+    <h1>Auditoría de Pedido Máquina</h1>
+    <p class="sub">Seguimiento de la auditoría del 15 de julio: cada hallazgo fue re-verificado contra el código actual. El perímetro mejoró de forma real (CORS, helmet, rate limiting, error handler, accesibilidad del modal), y esta pasada encontró 3 hallazgos nuevos — uno de ellos crítico.</p>
+    <div class="meta-row">
+      <span>16 jul 2026</span>
+      <span>·</span>
+      <span>Rama <span class="mono">main</span> @ <span class="mono">0dd7bcf</span></span>
+      <span>·</span>
+      <span>4 corregidos · 16 pendientes · 3 nuevos</span>
+    </div>
+    <div class="summary">
+      <div class="chip"><span class="dot ok"></span><b>4</b> corregidos</div>
+      <div class="chip"><span class="dot crit"></span><b>5</b> críticos</div>
+      <div class="chip"><span class="dot high"></span><b>1</b> alto</div>
+      <div class="chip"><span class="dot med"></span><b>4</b> medios</div>
+      <div class="chip"><span class="dot low"></span><b>6</b> bajos / UX</div>
+    </div>
+  </div>
+</div>
+
+<nav class="jump">
+  <div class="inner">
+    <a href="#resumen">Resumen</a>
+    <a href="#corregido">Corregido</a>
+    <a href="#seguridad">Seguridad</a>
+    <a href="#arquitectura">Arquitectura</a>
+    <a href="#datos">Datos</a>
+    <a href="#frontend">Frontend / UX</a>
+    <a href="#plan">Plan de acción</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <section id="resumen">
+    <div class="section-head"><h2>Resumen ejecutivo</h2></div>
+    <p class="section-intro" style="max-width:74ch;">
+      El commit <span class="mono loc">39aca30 — mejoras de seguridad</span> cerró correctamente la capa de perímetro: CORS con whitelist en Express y Socket.IO, helmet, rate limiting en el login, manejador de errores global y accesibilidad del modal de confirmación. Es progreso genuino y bien ejecutado.
+      Lo que sigue abierto es el <strong style="color:var(--text)">núcleo del problema</strong>: la identidad sigue siendo un header autodeclarado (<span class="mono loc">x-auth-username</span>), las contraseñas siguen en texto plano y 12 de 16 controllers siguen sin verificar rol. Además, esta pasada encontró que <span class="mono loc">backend/data/data.json</span> — commiteado en el repositorio — contiene los usuarios reales con sus contraseñas visibles, lo que convierte la debilidad teórica en credenciales servidas en bandeja a cualquiera con acceso al repo.
+    </p>
+  </section>
+
+  <section id="corregido">
+    <div class="section-head"><h2>Corregido desde la última revisión</h2><span class="count">4 hallazgos</span></div>
+    <p class="section-intro">Verificado leyendo el código actual, no solo el mensaje del commit.</p>
+
+    <div class="finding ok">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Corregido</span><span class="badge st-open">antes: Alto</span></div>
+        <h3>CORS restringido con whitelist — Express y Socket.IO</h3>
+        <p><span class="loc mono">server.js:47-59</span> valida el origen contra <span class="mono">ALLOWED_ORIGINS</span> (configurable por entorno, con default para dev) y Socket.IO aplica la misma lista (<span class="loc mono">server.js:162-172</span>). También se agregó <span class="mono">trust proxy "loopback"</span> con un comentario que documenta el porqué. Bien resuelto.</p>
+      </div>
+    </div>
+
+    <div class="finding ok">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Corregido</span><span class="badge st-open">antes: Alto</span></div>
+        <h3>Helmet y rate limiting agregados</h3>
+        <p><span class="mono">helmet</span> activo en <span class="loc mono">server.js:64-71</span> (CSP deshabilitado deliberadamente y documentado — tarea aparte razonable) y <span class="mono">express-rate-limit</span> protege el login con 20 intentos / 15 min (<span class="loc mono">auth.routes.js:7-15</span>).</p>
+        <p><strong>Residual:</strong> el límite cubre solo <span class="mono">/login</span>. La resolución de actor (<span class="mono">requireActor</span>) sigue permitiendo enumerar usernames sin fricción en cualquier endpoint protegido. Cubrir escrituras sensibles queda en el plan.</p>
+      </div>
+    </div>
+
+    <div class="finding ok">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Corregido</span><span class="badge st-open">antes: Bajo</span></div>
+        <h3>Manejador de errores global con control de entorno</h3>
+        <p><span class="loc mono">server.js:142-154</span> agrega el error-handler final: responde 403 limpio a los rechazos de CORS y oculta el mensaje interno cuando <span class="mono">NODE_ENV=production</span>. Ya no hay riesgo de filtrar stack traces en prod.</p>
+      </div>
+    </div>
+
+    <div class="finding ok">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Corregido</span><span class="badge st-open">antes: Medio</span></div>
+        <h3>ConfirmModal con soporte de accesibilidad</h3>
+        <p><span class="loc mono">ConfirmModal.jsx:62-68</span> ahora tiene <span class="mono">role="dialog"</span>, <span class="mono">aria-modal</span>, <span class="mono">aria-labelledby/describedby</span>, foco automático al abrir y cierre con Escape (respetando <span class="mono">hideCancel</span>).</p>
+        <p><strong>Residual menor:</strong> falta atrapar el foco dentro del modal (con Tab se puede salir a la página de fondo). No urgente.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="seguridad">
+    <div class="section-head"><h2>Seguridad — Backend</h2><span class="count">7 pendientes · 2 nuevos</span></div>
+    <p class="section-intro">Todo verificado leyendo código fuente directamente, no inferido.</p>
+
+    <div class="finding crit">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Crítico</span><span class="badge st-new">Nuevo</span></div>
+        <h3>Credenciales reales commiteadas en el repositorio</h3>
+        <p><span class="loc mono">backend/data/data.json</span> (trackeado en git, 78 KB) contiene la lista de usuarios con nombres reales y contraseñas en texto plano: <span class="mono">"password": "admin"</span> (línea 6), <span class="mono">"super"</span> (13), <span class="mono">"1234"</span> (19, 26)… Cualquiera con acceso al repo — o a su historial, aunque se borre el archivo — tiene credenciales de administrador funcionales. <span class="loc mono">backend/fix_usuarios.js:13</span> agrava el punto asignando <span class="mono">"changeme"</span> como contraseña por defecto a usuarios sin password.</p>
+        <p>Requiere purgar el archivo del historial de git (no solo borrarlo) y rotar todas las contraseñas expuestas.</p>
+      </div>
+    </div>
+
+    <div class="finding crit">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Crítico</span><span class="badge st-open">Pendiente</span></div>
+        <h3>La mayoría de las rutas admin no verifican identidad ni rol en absoluto</h3>
+        <p>Sin cambios: de 16 controllers, <strong>12 siguen con cero llamadas</strong> a <span class="mono">requireActor</span>. La función de asignación masiva de vehículos agregada el 15 jul sumó 2 endpoints más a la lista sin protección — <span class="loc mono">adminVehiculos.routes.js:21-32</span> expone ahora 12 rutas (crear, editar, borrar, importar, asignar en masa) sin ninguna verificación.</p>
+        <p>Impacto concreto: sin ningún encabezado ni credencial, un cliente puede crear/editar/borrar usuarios (<span class="loc mono">admin_usuarios.routes.js:12-16</span>), máquinas, vehículos, pedidos y eventuales de toda la organización.</p>
+      </div>
+    </div>
+
+    <div class="finding crit">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Crítico</span><span class="badge st-open">Pendiente</span></div>
+        <h3>Donde sí hay verificación, la identidad es autodeclarada por el cliente</h3>
+        <p>Sin cambios: <span class="loc mono">requestActor.service.js:8-15</span> toma el usuario de un header (<span class="mono">x-auth-username</span>) o del propio body/query, lo busca en la base y, si existe y está activo, actúa en su nombre — sin contraseña ni token verificado. Cualquiera que sepa un username válido (y <span class="mono">data.json</span> los publica todos) puede operar con sus permisos.</p>
+      </div>
+    </div>
+
+    <div class="finding crit">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Crítico</span><span class="badge st-open">Pendiente</span></div>
+        <h3>Contraseñas en texto plano</h3>
+        <p>Sin cambios: <span class="loc mono">auth.controller.js:46</span> compara <span class="mono">user.password !== password</span> directo, el esquema sigue declarando <span class="mono">password String?</span> sin hash y no hay <span class="mono">bcrypt</span> ni similar en <span class="loc mono">package.json</span>. Una fuga de la base expone todas las contraseñas de inmediato — y el hallazgo nuevo de <span class="mono">data.json</span> demuestra que esa fuga ya ocurrió, hacia el propio repo.</p>
+      </div>
+    </div>
+
+    <div class="finding crit">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Crítico</span><span class="badge st-open">Pendiente</span></div>
+        <h3>El "token" de login no es un token</h3>
+        <p>Sin cambios: <span class="loc mono">auth.controller.js:51</span> — <span class="mono">`${user.username}-${Date.now()}`</span>. No está firmado, no expira de forma verificable y ningún middleware lo valida en requests posteriores; la identidad real la sigue dando el header autodeclarado.</p>
+      </div>
+    </div>
+
+    <div class="finding med">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Medio</span><span class="badge st-new">Nuevo</span></div>
+        <h3>Socket.IO permite unirse a cualquier room sin autenticación</h3>
+        <p><span class="loc mono">server.js:183-187</span> — el evento <span class="mono">join</span> mete al socket en la room que pida sin verificar quién es: cualquier cliente conectado puede unirse a <span class="mono">DEPOSITO</span> o a <span class="mono">USER:&lt;otro-usuario&gt;</span> y recibir las notificaciones de otros. La whitelist de CORS no protege esto: CORS solo aplica a navegadores; un script conectándose directo no la respeta. Al agregar autenticación real, validar también el handshake del socket y los joins.</p>
+      </div>
+    </div>
+
+    <div class="finding high">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Alto</span><span class="badge st-open">Pendiente</span></div>
+        <h3>El frontend confía en localStorage como fuente de permisos</h3>
+        <p>Sin cambios: <span class="loc mono">AuthContext.jsx:139</span> guarda usuario y roles en <span class="mono">localStorage</span> y <span class="loc mono">authHeaders.js:8-9</span> los reenvía tal cual en cada request. Como UX está bien (evita pantallas ajenas); el problema sigue siendo que el backend no revalida el rol en la mayoría de las rutas, así que editar localStorage desde devtools equivale a escalar privilegios. Se resuelve solo cuando el backend aplique la autorización de verdad.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="arquitectura">
+    <div class="section-head"><h2>Arquitectura y consistencia — Backend</h2><span class="count">3 pendientes · 1 nuevo</span></div>
+
+    <div class="finding med">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Medio</span><span class="badge st-open">Pendiente</span></div>
+        <h3>Dependencia xlsx en versión con vulnerabilidades conocidas</h3>
+        <p>Sin cambios: <span class="loc mono">package.json:25</span> sigue fijando <span class="mono">xlsx@0.18.5</span>, anterior al parche de prototype pollution (CVE-2023-30533) y ReDoS, y sigue coexistiendo con <span class="mono">exceljs</span> para el mismo propósito.</p>
+      </div>
+    </div>
+
+    <div class="finding med">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Medio</span><span class="badge st-open">Pendiente</span></div>
+        <h3>Transacciones inconsistentes en operaciones multi-paso</h3>
+        <p><span class="mono">adminRecalcularEstadoAmortizacion</span> (<span class="loc mono">adminMaquinas.controller.js:1330-1344</span>) sigue actualizando máquinas una por una en un loop sin <span class="mono">$transaction</span>, dejando estado parcial posible ante un fallo a mitad de camino. <span class="loc mono">pedidos.controller.js</span> sigue usando transacciones en solo parte de sus flujos.</p>
+        <p><strong>Punto a favor:</strong> el código nuevo va en la dirección correcta — la asignación masiva de vehículos (<span class="loc mono">adminVehiculos.controller.js</span>, 7 usos de <span class="mono">$transaction</span>) envuelve sus operaciones correctamente.</p>
+      </div>
+    </div>
+
+    <div class="finding med">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Medio</span><span class="badge st-open">Empeoró</span></div>
+        <h3>Manejo de errores por prefijo de mensaje — ahora replicado en 3 controllers</h3>
+        <p>El patrón frágil que la auditoría anterior señaló en un solo archivo se copió a dos más: <span class="loc mono">taller.controller.js:31</span>, <span class="loc mono">maquinas.controller.js:231</span> y <span class="loc mono">vehiculos.controller.js:124</span> distinguen errores de negocio comparando <span class="mono">error.message?.startsWith("Debe indicar")</span> — se rompe si alguien retoca el texto, y ahora en tres lugares a la vez.</p>
+        <p><strong>Punto a favor:</strong> <span class="loc mono">eventuales.service.js:44-49</span> ya usa el patrón correcto — <span class="mono">buildError(message, status)</span> con código HTTP adjunto al error. Adoptarlo en los tres controllers de arriba y en un middleware central elimina la fragilidad.</p>
+      </div>
+    </div>
+
+    <div class="finding low">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Bajo</span><span class="badge st-new">Nuevo</span></div>
+        <h3>Rutas /api desconocidas devuelven el HTML del frontend con 200</h3>
+        <p>El fallback del SPA (<span class="loc mono">server.js:135-137</span>) atrapa también <span class="mono">/api/lo-que-sea</span> que ningún router matcheó, y responde <span class="mono">index.html</span> con status 200 en vez de un 404 JSON. Un typo en una URL del frontend produce un "éxito" con HTML que rompe el <span class="mono">res.json()</span> del consumidor de forma confusa. Fix corto: <span class="mono">api.use((req,res) =&gt; res.status(404).json({error:"Ruta no encontrada"}))</span> al final del router de la API.</p>
+      </div>
+    </div>
+
+    <div class="finding low">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Bajo</span></div>
+        <h3>Puntos positivos a mantener</h3>
+        <p>Multer sigue en <span class="mono">memoryStorage</span> en todos los casos, el import de máquinas valida MIME/extensión y limita filas y tamaño, y no hay uso inseguro de <span class="mono">$queryRawUnsafe</span>. El módulo de Taller sigue siendo el patrón de referencia de <span class="mono">requireActor</span> con roles diferenciados. El comentario que documenta la decisión de <span class="mono">trust proxy</span> en <span class="loc mono">server.js:32-36</span> es exactamente el tipo de nota que el resto del código se merece.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="datos">
+    <div class="section-head"><h2>Modelo de datos</h2><span class="count">Prisma / SQLite · pendiente</span></div>
+    <p class="section-intro">Sin cambios: estados y roles siguen como texto libre. Matiz importante que la auditoría anterior no aclaró: <strong style="color:var(--text)">Prisma no soporta enums sobre SQLite</strong>, así que la solución no es un enum de schema sino centralizar la validación en una capa de servicio (como ya hace <span class="mono">ESTADOS_EVENTUAL_VALIDOS</span> en <span class="loc mono">eventuales.service.js:4</span>) o agregar constraints <span class="mono">CHECK</span> por migración SQL manual. Si algún día migran a Postgres, ahí sí conviene el enum nativo.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Modelo</th><th>Campo</th><th>Tipo actual</th><th>Valores esperados (README)</th></tr></thead>
+        <tbody>
+          <tr><td>Usuario</td><td class="mono">rol</td><td class="mono">String</td><td class="mono">admin · supervisor · deposito · coordinador · consultor · taller</td></tr>
+          <tr><td>Maquina</td><td class="mono">estado</td><td class="mono">String</td><td class="mono">disponible · asignada · no_devuelta · fuera_servicio · taller · baja</td></tr>
+          <tr><td>Vehiculo</td><td class="mono">estado</td><td class="mono">String</td><td class="mono">activo · … (no enumerado)</td></tr>
+          <tr><td>Pedido</td><td class="mono">estado</td><td class="mono">String</td><td class="mono">sin enum en schema</td></tr>
+          <tr><td>Eventual</td><td class="mono">estado</td><td class="mono">String</td><td class="mono">activo · finalizado · cancelado (validado en servicio ✓)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="frontend">
+    <div class="section-head"><h2>Frontend — UX/UI y código</h2><span class="count">5 pendientes · 1 corregido</span></div>
+    <p class="section-intro">El frontend creció de 51 a 60 páginas desde la auditoría anterior; los porcentajes se actualizaron sobre la base nueva.</p>
+
+    <div class="finding low">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Bajo</span><span class="badge st-open">Pendiente</span></div>
+        <h3>Capa de fetch centralizada existe pero no se usa</h3>
+        <p>Sin cambios: ningún archivo importa <span class="loc mono">services/http.js</span>; las páginas — incluidas las 9 nuevas — siguen reimplementando <span class="mono">fetch</span> a mano con calidad dispareja.</p>
+      </div>
+    </div>
+
+    <div class="finding low">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Bajo</span><span class="badge st-open">Pendiente</span></div>
+        <h3>Duplicación fuerte entre pantallas equivalentes</h3>
+        <p><span class="loc mono">pages/taller/TallerVerMaquinas.jsx</span> y <span class="loc mono">TallerVerVehiculos.jsx</span> siguen siendo gemelas (113 líneas cada una, ~80% idénticas — y empezaron a divergir, que es exactamente el modo en que la duplicación se convierte en bugs: un fix aplicado en una y no en la otra). Sigue pendiente extraer el componente compartido.</p>
+      </div>
+    </div>
+
+    <div class="finding low">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Bajo</span><span class="badge st-open">Pendiente</span></div>
+        <h3>Cobertura desigual de estados vacíos y responsividad</h3>
+        <p>Sin cambios relevantes: buena parte de las páginas de gestión sigue sin mensaje de "no hay datos" ni clases responsive de Tailwind (<span class="mono">sm:/md:/lg:</span>), con probable ruptura de layout en mobile.</p>
+      </div>
+    </div>
+
+    <div class="finding low">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Bajo</span><span class="badge st-open">Pendiente</span></div>
+        <h3>La guía de marca no se aplica fuera de las pantallas hero</h3>
+        <p>La guía (<span class="loc mono">KAZARO_FRONTEND_STYLE_TRANSFER.md</span>) incluso se amplió en el refactor del 15 jul, pero la adopción sigue marginal: solo 3 de 60 páginas usan clases <span class="mono">kazaro-*</span> (<span class="mono">AdminSupervisoresServicios</span>, <span class="mono">AdminTiposMaquina</span>, <span class="mono">SupervisorDashboard</span>). El CRUD operativo diario sigue en Tailwind "de fábrica", con el salto visual notorio respecto del login y los dashboards.</p>
+      </div>
+    </div>
+
+    <div class="finding low">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Bajo</span><span class="badge st-open">Pendiente</span></div>
+        <h3>Logging de depuración en código de producción</h3>
+        <p>Prácticamente sin cambios: 66 usos de <span class="mono">console.log/console.error</span> en 37 archivos de <span class="mono">pages/</span> (se quitó uno en <span class="mono">AuthContext</span>).</p>
+      </div>
+    </div>
+
+    <div class="finding low">
+      <div class="stripe"></div>
+      <div class="finding-body">
+        <div class="finding-top"><span class="badge sev">Bajo</span></div>
+        <h3>Puntos positivos</h3>
+        <p>Las imágenes siguen con <span class="mono">alt</span>, <span class="loc mono">ProtectedRoute.jsx</span> sigue bloqueando bien la navegación por rol, y <span class="mono">ConfirmModal</span> pasó de ser el hallazgo de accesibilidad a ser el componente mejor resuelto en ese frente.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="plan">
+    <div class="section-head"><h2>Plan de acción</h2><span class="count">orden recomendado</span></div>
+    <p class="section-intro">Actualizado: lo del perímetro ya está hecho. El paso 1 es nuevo y es el más rápido de ejecutar — conviene hacerlo hoy.</p>
+    <ol class="plan">
+      <li>
+        <span class="num"></span>
+        <div>
+          <h3>Purgar las credenciales del repositorio y rotar contraseñas <span class="badge st-new" style="vertical-align:middle;">Nuevo</span></h3>
+          <p>Sacar <span class="mono">backend/data/data.json</span> del historial de git (con <span class="mono">git filter-repo</span> o BFG, no solo <span class="mono">git rm</span>), agregarlo a <span class="mono">.gitignore</span>, y cambiar todas las contraseñas que aparecen en él. Revisar también <span class="mono">fix_usuarios.js</span> ("changeme").</p>
+        </div>
+      </li>
+      <li>
+        <span class="num"></span>
+        <div>
+          <h3>Reemplazar la identidad autodeclarada por autenticación real</h3>
+          <p>JWT firmado (o sesión de servidor) + hash de contraseñas con bcrypt/argon2. Mientras <span class="mono">x-auth-username</span> siga siendo la fuente de identidad, ningún otro control importa.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num"></span>
+        <div>
+          <h3>Proteger todas las rutas admin con middleware de rol a nivel de router</h3>
+          <p>Sigue igual que en la auditoría anterior: 12 de 16 controllers sin verificación (y la asignación masiva sumó 2 endpoints más). Un middleware único en <span class="mono">server.js</span> por prefijo (<span class="mono">/api/admin*</span>, <span class="mono">/api/admin-users*</span>) es más difícil de olvidar que llamar <span class="mono">requireActor</span> función por función.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num"></span>
+        <div>
+          <h3>Autenticar Socket.IO y validar los joins de rooms <span class="badge st-new" style="vertical-align:middle;">Nuevo</span></h3>
+          <p>Verificar el token en el handshake y permitir unirse solo a <span class="mono">USER:&lt;propio&gt;</span> y a las rooms que correspondan al rol. Sale casi gratis al hacer el paso 2.</p>
+        </div>
+      </li>
+      <li class="done">
+        <span class="num"></span>
+        <div>
+          <h3>Restringir CORS y agregar helmet + rate limiting — hecho</h3>
+          <p>Completado en <span class="mono">39aca30</span>. Residuales para más adelante: CSP de helmet (hoy deshabilitado, documentado) y extender el rate limit a escrituras sensibles además del login.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num"></span>
+        <div>
+          <h3>Centralizar la validación de estados/roles y unificar transacciones</h3>
+          <p>Prisma no soporta enums en SQLite: la vía práctica es replicar el patrón de <span class="mono">ESTADOS_EVENTUAL_VALIDOS</span> + <span class="mono">buildError</span> de <span class="mono">eventuales.service.js</span> para máquinas, vehículos, pedidos y roles, y de paso envolver el recálculo de amortización en <span class="mono">$transaction</span> y reemplazar los tres <span class="mono">startsWith(...)</span> por errores con status.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num"></span>
+        <div>
+          <h3>Actualizar o retirar la dependencia xlsx vulnerable</h3>
+          <p>Consolidar en <span class="mono">exceljs</span> (ya está en el proyecto) y eliminar <span class="mono">xlsx@0.18.5</span>. Incluir también el 404 JSON para rutas <span class="mono">/api</span> desconocidas — es una línea.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num"></span>
+        <div>
+          <h3>Adoptar la capa de fetch existente y eliminar duplicación de Taller</h3>
+          <p>Migrar las páginas a <span class="mono">services/http.js</span>; extraer el componente compartido de las vistas gemelas de Taller antes de que diverjan más.</p>
+        </div>
+      </li>
+      <li>
+        <span class="num"></span>
+        <div>
+          <h3>Consistencia visual y limpieza</h3>
+          <p>Extender la paleta <span class="mono">kazaro-*</span> al CRUD interno, retirar los 66 <span class="mono">console.log</span> de <span class="mono">pages/</span>, y agregar focus-trap al <span class="mono">ConfirmModal</span> para cerrar el residual de accesibilidad.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <footer>
+    Segunda revisión (solo lectura) sobre el estado del repositorio al 16 jul 2026, commit <span class="mono">0dd7bcf</span>. Cada hallazgo de la auditoría del 15 jul fue re-verificado contra el código actual; los marcados "Corregido" se validaron leyendo la implementación, no el mensaje del commit. No se modificó ningún archivo.
+  </footer>
+</div>
+</html>
