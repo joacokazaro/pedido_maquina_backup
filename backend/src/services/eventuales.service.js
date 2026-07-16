@@ -11,10 +11,11 @@ const TIPOS_TRABAJO_VALIDOS = [
   "DESMONTE",
   "CORTE_CESPED",
   "CORTE_BARRIDO",
+  "LIMPIEZA_INTEGRAL",
   "OTRO",
 ];
 
-const UNIDADES_MEDIDA_VALIDAS = ["UNIDAD", "M2", "M3", "METROS_LINEALES", "HORAS"];
+const UNIDADES_MEDIDA_VALIDAS = ["UNIDAD", "M2", "M3", "METROS_LINEALES", "HORAS", "KG"];
 
 function normalizeText(value) {
   return String(value || "").trim();

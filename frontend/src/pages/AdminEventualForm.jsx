@@ -26,6 +26,7 @@ const TIPOS_TRABAJO = [
   { value: "DESMONTE", label: "Desmonte" },
   { value: "CORTE_CESPED", label: "Corte de cesped" },
   { value: "CORTE_BARRIDO", label: "Corte y barrido" },
+  { value: "LIMPIEZA_INTEGRAL", label: "Limpieza integral" },
   { value: "OTRO", label: "Otro" },
 ];
 
@@ -35,6 +36,7 @@ const UNIDADES = [
   { value: "M3", label: "M3" },
   { value: "METROS_LINEALES", label: "Metros lineales" },
   { value: "HORAS", label: "Horas" },
+  { value: "KG", label: "Kilogramos" },
 ];
 
 const ESTADO_STYLES = {
@@ -1063,7 +1065,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               </select>
               <input type="number" min="1" className="rounded-xl border p-2.5 text-sm" placeholder="Cantidad" value={row.cantidad} onChange={(event) => updateTrabajo(index, "cantidad", event.target.value)} />
               <select className="rounded-xl border p-2.5 text-sm" value={row.unidadMedida} onChange={(event) => updateTrabajo(index, "unidadMedida", event.target.value)}>
-                <option value="">Unidad</option>
+                <option value="">Seleccionar unidad de medida</option>
                 {UNIDADES.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
@@ -1100,7 +1102,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             <div className="grid gap-2 md:grid-cols-2">
               <input type="number" min="1" className="rounded-xl border p-2.5 text-sm" placeholder="Cantidad" value={row.cantidad} onChange={(event) => updateServicio(index, "cantidad", event.target.value)} />
               <select className="rounded-xl border p-2.5 text-sm" value={row.unidadMedida} onChange={(event) => updateServicio(index, "unidadMedida", event.target.value)}>
-                <option value="">Unidad</option>
+                <option value="">Seleccionar unidad de medida</option>
                 {UNIDADES.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}

@@ -100,7 +100,9 @@
       "Bash(curl -s -i -H \"Origin: http://evil.com\" http://localhost:3000/api/health)",
       "Bash(curl -s -D - -o /dev/null http://localhost:3000/api/health)",
       "Bash(curl -s -i -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"test\",\"password\":\"x\"}')",
-      "Bash(git status *)"
+      "Bash(git status *)",
+      "Bash(git fetch *)",
+      "Bash(gh run *)"
     ]
   }
 }
