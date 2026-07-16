@@ -134,7 +134,8 @@
       "Bash(curl -s -o /dev/null -w \"HTTP:%{http_code}\\\\n\" --max-time 3 http://localhost:3000/api/health)",
       "Bash(cmd.exe /c \"tasklist /FI \\\\\"IMAGENAME eq node.exe\\\\\"\")",
       "Bash(kill 1248)",
-      "Bash(npm ci *)"
+      "Bash(npm ci *)",
+      "Bash(node -e \"import\\('./src/controllers/pedidos.controller.js'\\).then\\(\\(\\) => console.log\\('OK: pedidos.controller.js carga sin errores'\\)\\).catch\\(e => { console.error\\('FAIL:', e.message\\); process.exit\\(1\\); }\\)\")"
     ]
   }
 }

@@ -927,7 +927,7 @@ export async function confirmarDevolucion(req, res) {
     if (!pedidoActual)
       return res.status(404).json({ error: "Pedido no encontrado" });
 
-    const ultimaConfirmacionCierre = await prisma.historialPedido.findFirst({
+    const confirmacionesPrevias = await prisma.historialPedido.findMany({
       where: {
         pedidoId: id,
         accion: {
@@ -939,6 +939,8 @@ export async function confirmarDevolucion(req, res) {
       },
     });
 
+    const ultimaConfirmacionCierre = confirmacionesPrevias[0] || null;
+
     const detalleUltimaConfirmacion = safeParse(
       ultimaConfirmacionCierre?.detalle,
       {}
@@ -949,6 +951,18 @@ export async function confirmarDevolucion(req, res) {
     )
       ? detalleUltimaConfirmacion.faltantesConfirmados
       : [];
+
+    // Unión de todo lo que ya fue confirmado como devuelto en rondas
+    // anteriores de este mismo pedido. Una vez confirmada la devolución de
+    // una máquina/vehículo, no puede volver a declararse como faltante.
+    const yaConfirmadasDevueltas = new Set();
+    for (const h of confirmacionesPrevias) {
+      const detalle = safeParse(h.detalle, {});
+      const previas = Array.isArray(detalle?.devueltasConfirmadas)
+        ? detalle.devueltasConfirmadas
+        : [];
+      previas.forEach((itemId) => yaConfirmadasDevueltas.add(itemId));
+    }
 
     const puedeConfirmarDirectoDeposito =
       pedidoActual.destino === "DEPOSITO" &&
@@ -986,8 +1000,20 @@ export async function confirmarDevolucion(req, res) {
       return res.status(400).json({ error: "Hay máquinas o vehículos que no pertenecen al pedido" });
     }
 
-    const devueltasMaquinas = devueltas.filter((id) => asignadasMaquinasIds.includes(id));
-    const devueltasVehiculos = devueltas.filter((id) => asignadasVehiculosIds.includes(id));
+    const faltantesYaDevueltas = faltantes.filter((itemId) => yaConfirmadasDevueltas.has(itemId));
+    if (faltantesYaDevueltas.length > 0) {
+      return res.status(400).json({
+        error: "Hay máquinas o vehículos ya confirmados como devueltos que no pueden marcarse como faltantes",
+        items: faltantesYaDevueltas,
+      });
+    }
+
+    // Se incluye lo confirmado en rondas anteriores para no perder el
+    // registro aunque el cliente no vuelva a enviarlo en esta ronda.
+    const devueltasCompletas = Array.from(new Set([...devueltas, ...yaConfirmadasDevueltas]));
+
+    const devueltasMaquinas = devueltasCompletas.filter((id) => asignadasMaquinasIds.includes(id));
+    const devueltasVehiculos = devueltasCompletas.filter((id) => asignadasVehiculosIds.includes(id));
 
     const faltantesMaquinas = faltantes.filter((id) => asignadasMaquinasIds.includes(id));
     const faltantesVehiculos = faltantes.filter((id) => asignadasVehiculosIds.includes(id));
@@ -1008,7 +1034,7 @@ export async function confirmarDevolucion(req, res) {
       where: { id },
       data: {
         estado: ESTADOS_PEDIDO.CERRADO,
-        itemsDevueltos: JSON.stringify(devueltas),
+        itemsDevueltos: JSON.stringify(devueltasCompletas),
         historial: {
           create: {
             accion: puedeConfirmarDirectoDeposito
@@ -1018,7 +1044,7 @@ export async function confirmarDevolucion(req, res) {
               : "DEVOLUCION_CONFIRMADA",
             usuarioId: u.id,
             detalle: JSON.stringify({
-              devueltasConfirmadas: devueltas,
+              devueltasConfirmadas: devueltasCompletas,
               faltantesConfirmados: faltantes,
               ...(puedeConfirmarDirectoDeposito
                 ? { devolucionDirectaDeposito: true }

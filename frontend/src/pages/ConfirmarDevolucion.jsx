@@ -13,6 +13,7 @@ export default function ConfirmarDevolucion() {
   const [loading, setLoading] = useState(true);
   const [observacion, setObservacion] = useState("");
   const [seleccion, setSeleccion] = useState([]);
+  const [bloqueadas, setBloqueadas] = useState([]);
 
   function hasRole(role) {
     const target = String(role || "").toUpperCase();
@@ -29,6 +30,15 @@ export default function ConfirmarDevolucion() {
       setPedido(data);
 
       let declaradas = [];
+      let locked = [];
+
+      // Última confirmación de devolución del depósito para este pedido (si
+      // existe). Todo lo que ya haya sido confirmado como devuelto ahí no
+      // puede volver a declararse como faltante en esta pantalla.
+      const ultimaConfirmacion = [...(data.historial || [])]
+        .reverse()
+        .find((h) => ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"].includes(h.accion));
+      const yaConfirmadasDevueltas = ultimaConfirmacion?.detalle?.devueltasConfirmadas || [];
 
       if (data.estado === "PENDIENTE_CONFIRMACION") {
         const reg = [...data.historial]
@@ -43,17 +53,16 @@ export default function ConfirmarDevolucion() {
           .reverse()
           .find((h) => h.accion === "FALTANTES_DECLARADOS");
 
-        declaradas = reg?.detalle?.devueltasDeclaradas || [];
+        const devueltasDeclaradas = reg?.detalle?.devueltasDeclaradas || [];
+        declaradas = [...new Set([...yaConfirmadasDevueltas, ...devueltasDeclaradas])];
+        locked = yaConfirmadasDevueltas;
       }
 
       if (data.estado === "CERRADO") {
-        const confirmacion = [...(data.historial || [])]
-          .reverse()
-          .find((h) => ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"].includes(h.accion));
-
-        const faltantesPrevios = confirmacion?.detalle?.faltantesConfirmados || [];
+        const faltantesPrevios = ultimaConfirmacion?.detalle?.faltantesConfirmados || [];
         if (faltantesPrevios.length > 0) {
-          declaradas = confirmacion?.detalle?.devueltasConfirmadas || [];
+          declaradas = yaConfirmadasDevueltas;
+          locked = yaConfirmadasDevueltas;
         }
       }
 
@@ -66,6 +75,7 @@ export default function ConfirmarDevolucion() {
       }
 
       setSeleccion(declaradas);
+      setBloqueadas(locked);
       setLoading(false);
     }
 
@@ -83,6 +93,7 @@ export default function ConfirmarDevolucion() {
     ["ENTREGADO", "PENDIENTE_CONFIRMACION", "PENDIENTE_CONFIRMACION_FALTANTES", "CERRADO"].includes(pedido.estado);
 
   function toggle(idMaq) {
+    if (bloqueadas.includes(idMaq)) return;
     setSeleccion((prev) =>
       prev.includes(idMaq)
         ? prev.filter((x) => x !== idMaq)
@@ -146,10 +157,12 @@ export default function ConfirmarDevolucion() {
       <div className="bg-white rounded-xl shadow p-4 mb-4 space-y-3">
         {asignadas.map((m) => {
           const checked = seleccion.includes(m.id);
+          const locked = bloqueadas.includes(m.id);
           return (
             <label
               key={m.id}
-              className={`flex justify-between items-center p-3 rounded-lg border cursor-pointer
+              className={`flex justify-between items-center p-3 rounded-lg border
+                ${locked ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
                 ${
                   checked
                     ? "bg-green-50 border-green-400"
@@ -161,11 +174,17 @@ export default function ConfirmarDevolucion() {
                   {m.tipo} — {m.id}
                 </p>
                 <p className="text-xs text-gray-600">{m.modelo}</p>
+                {locked && (
+                  <p className="text-xs text-green-700 font-medium">
+                    Ya confirmada como devuelta
+                  </p>
+                )}
               </div>
 
               <input
                 type="checkbox"
                 checked={checked}
+                disabled={locked}
                 onChange={() => toggle(m.id)}
                 className="w-5 h-5"
               />
