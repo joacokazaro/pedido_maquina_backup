@@ -59,12 +59,12 @@ export default function AdminEventualesPanel() {
         </p>
       </header>
 
-      <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+      <div className="mx-auto flex max-w-5xl flex-wrap justify-center gap-6">
         {sections.map((section) => (
           <Link
             key={section.title}
             to={section.to}
-            className="rounded-2xl border border-gray-200 bg-white p-6 text-center shadow transition hover:-translate-y-1 hover:shadow-lg"
+            className="w-full rounded-2xl border border-gray-200 bg-white p-6 text-center shadow transition hover:-translate-y-1 hover:shadow-lg sm:w-72"
           >
             <span className="mb-4 block text-5xl">{section.icon}</span>
             <h2 className="mb-2 text-xl font-bold text-gray-800">{section.title}</h2>
@@ -101,6 +101,14 @@ export default function AdminEventualesPanel() {
                     <p className="font-semibold text-gray-900">{eventual.nombre}</p>
                     <p className="text-xs text-gray-500">
                       Supervisor: {eventual.supervisor?.nombre || eventual.supervisor?.username || "Sin asignar"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Fecha de última modificación:{" "}
+                      <span className="font-medium text-gray-700">
+                        {eventual.ultimaModificacion
+                          ? new Date(eventual.ultimaModificacion).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
+                          : "-"}
+                      </span>
                     </p>
                   </div>
                   <div className="flex gap-2">

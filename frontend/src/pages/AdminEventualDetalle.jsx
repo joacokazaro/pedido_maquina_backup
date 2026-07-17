@@ -146,6 +146,14 @@ export default function AdminEventualDetalle() {
         </div>
         <p className="text-sm text-gray-600">Supervisor: <b>{eventual.supervisor?.nombre || eventual.supervisor?.username || "Sin asignar"}</b></p>
         <p className="text-sm text-gray-600">Inicio: <b>{formatDateOnly(eventual.fechaInicio)}</b> · Fin: <b>{formatDateOnly(eventual.fechaFin)}</b></p>
+        <p className="text-sm text-gray-600">
+          Fecha de última modificación:{" "}
+          <b>
+            {eventual.ultimaModificacion
+              ? new Date(eventual.ultimaModificacion).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
+              : "-"}
+          </b>
+        </p>
       </div>
 
       <div className="rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/60 to-white p-5 shadow space-y-4">

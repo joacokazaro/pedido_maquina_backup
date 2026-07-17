@@ -268,6 +268,15 @@ function mapHistorialEntry(entry) {
 }
 
 function buildEventualSummary(eventual) {
+  // Última vez que se guardaron cambios: fecha del último movimiento del historial
+  // (todo guardado escribe historial); si no hay, la fecha de creación.
+  const fechasHistorial = (eventual.historial || [])
+    .map((entry) => new Date(entry.fecha).getTime())
+    .filter((time) => Number.isFinite(time));
+  const ultimaModificacion = fechasHistorial.length
+    ? new Date(Math.max(...fechasHistorial))
+    : eventual.createdAt;
+
   return {
     id: eventual.id,
     nombre: eventual.nombre,
@@ -277,6 +286,7 @@ function buildEventualSummary(eventual) {
     observaciones: eventual.observaciones,
     activo: eventual.activo,
     createdAt: eventual.createdAt,
+    ultimaModificacion,
     supervisor: eventual.supervisor
       ? {
           id: eventual.supervisor.id,
