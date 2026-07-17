@@ -845,7 +845,7 @@ Al completar datos o finalizar se pueden cargar:
 - Máquinas utilizadas por tipo y cantidad.
 - Vehículos utilizados.
 - Trabajos realizados.
-- Servicios extras subcontratados.
+- Servicios extras subcontratados, con precio de la subcontratación opcional en pesos ($ARS).
 - Observaciones posteriores.
 
 Estados de eventual:
@@ -861,7 +861,7 @@ En el detalle de un eventual se visualiza:
 - Componentes utilizados.
 - Vehículos utilizados.
 - Trabajos realizados con cantidad y unidad.
-- Servicios extras subcontratados.
+- Servicios extras subcontratados, con su precio en pesos ($ARS) si fue cargado.
 - Observaciones previas.
 - Observaciones posteriores.
 - Historial de acciones.

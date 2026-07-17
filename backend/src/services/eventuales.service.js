@@ -101,6 +101,12 @@ function validateServiciosExtras(items) {
     if (!UNIDADES_MEDIDA_VALIDAS.includes(item.unidadMedida)) {
       errors.push(`${label}: unidad de medida inválida`);
     }
+    if (item.precio !== undefined && item.precio !== null && String(item.precio).trim() !== "") {
+      const precio = Number(item.precio);
+      if (!Number.isFinite(precio) || precio <= 0) {
+        errors.push(`${label}: el precio (ARS) debe ser un número mayor a 0`);
+      }
+    }
   });
 
   return errors;
@@ -118,11 +124,15 @@ function normalizeTrabajoItem(item) {
 }
 
 function normalizeServicioExtraItem(item) {
+  const precioVacio =
+    item.precio === undefined || item.precio === null || String(item.precio).trim() === "";
   return {
     descripcion: normalizeText(item.descripcion),
     cantidad: Number(item.cantidad),
     unidadMedida: normalizeText(item.unidadMedida),
     unidadLabel: normalizeText(item.unidadLabel),
+    // Precio de la subcontratación en pesos argentinos (ARS); opcional
+    precio: precioVacio ? null : Number(item.precio),
   };
 }
 

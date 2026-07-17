@@ -287,6 +287,7 @@ export default function AdminEventualDetalle() {
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Servicio</th>
                       <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Cantidad</th>
                       <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Unidad</th>
+                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Precio ($ARS)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y bg-white">
@@ -295,6 +296,11 @@ export default function AdminEventualDetalle() {
                         <td className="px-3 py-2 font-medium text-gray-900">{item.descripcion}</td>
                         <td className="px-3 py-2 text-right text-gray-900">{item.cantidad}</td>
                         <td className="px-3 py-2 text-gray-600">{item.unidadLabel || item.unidadMedida}</td>
+                        <td className="px-3 py-2 text-right text-gray-900">
+                          {item.precio !== null && item.precio !== undefined && item.precio !== ""
+                            ? `$ ${Number(item.precio).toLocaleString("es-AR")}`
+                            : "-"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

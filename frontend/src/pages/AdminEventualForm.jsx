@@ -64,7 +64,7 @@ function emptyTrabajo() {
 }
 
 function emptyServicioExtra() {
-  return { descripcion: "", cantidad: "", unidadMedida: "", unidadLabel: "" };
+  return { descripcion: "", cantidad: "", unidadMedida: "", unidadLabel: "", precio: "" };
 }
 
 export default function AdminEventualForm({ modoFinalizacionCoordinador = false }) {
@@ -581,6 +581,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       ...row,
       unidadLabel: UNIDADES.find((u) => u.value === row.unidadMedida)?.label || row.unidadLabel || row.unidadMedida,
       cantidad: Number(row.cantidad),
+      precio: row.precio === "" || row.precio === null || row.precio === undefined ? null : Number(row.precio),
     }));
 
     return {
@@ -1122,7 +1123,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             </div>
 
             <input className="w-full rounded-xl border p-2.5 text-sm" placeholder="Descripcion" value={row.descripcion || ""} onChange={(event) => updateServicio(index, "descripcion", event.target.value)} />
-            <div className="grid gap-2 md:grid-cols-2">
+            <div className="grid gap-2 md:grid-cols-3">
               <input type="number" min="1" className="rounded-xl border p-2.5 text-sm" placeholder="Cantidad" value={row.cantidad} onChange={(event) => updateServicio(index, "cantidad", event.target.value)} />
               <SearchableSelect className="rounded-xl border p-2.5 text-sm" value={row.unidadMedida} onChange={(event) => updateServicio(index, "unidadMedida", event.target.value)}>
                 <option value="">Seleccionar unidad de medida</option>
@@ -1130,6 +1131,21 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
               </SearchableSelect>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500">$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-full rounded-xl border p-2.5 pl-7 pr-12 text-sm"
+                  placeholder="Precio ($ARS) — opcional"
+                  value={row.precio ?? ""}
+                  onChange={(event) => updateServicio(index, "precio", event.target.value)}
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  ARS
+                </span>
+              </div>
             </div>
           </div>
         ))}

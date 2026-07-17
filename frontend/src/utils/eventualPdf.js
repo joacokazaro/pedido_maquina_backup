@@ -115,6 +115,9 @@ function buildServiciosExtrasRows(eventual) {
       safeText(servicio?.descripcion),
       String(servicio?.cantidad ?? "-"),
       safeText(servicio?.unidadLabel || servicio?.unidadMedida, "-"),
+      servicio?.precio !== null && servicio?.precio !== undefined && servicio?.precio !== ""
+        ? `$ ${Number(servicio.precio).toLocaleString("es-AR")}`
+        : "-",
     ]);
   }
 
@@ -292,12 +295,13 @@ export function downloadEventualResumenPdf(eventual) {
       tableWidth: 186,
       styles: { font: "helvetica", fontSize: 8.7, cellPadding: 1.8 },
       headStyles: { fillColor: [240, 240, 240], textColor: [31, 41, 55] },
-      head: [["Servicio extra", "Cantidad", "Unidad"]],
+      head: [["Servicio extra", "Cantidad", "Unidad", "Precio (ARS)"]],
       body: serviciosExtrasRows,
       columnStyles: {
-        0: { cellWidth: 138, fontStyle: "bold" },
+        0: { cellWidth: 106, fontStyle: "bold" },
         1: { cellWidth: 20, halign: "right" },
         2: { cellWidth: 28 },
+        3: { cellWidth: 32, halign: "right" },
       },
     });
     cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;
