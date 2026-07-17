@@ -248,7 +248,19 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         const vehiculosData = vehiculosRes.ok ? await vehiculosRes.json() : null;
         if (cancelado) return;
 
-        setSupervisorMaquinas(Array.isArray(maquinasData?.maquinasFijas) ? maquinasData.maquinasFijas : []);
+        const maquinasFijas = Array.isArray(maquinasData?.maquinasFijas) ? maquinasData.maquinasFijas : [];
+        const idsFijas = new Set(maquinasFijas.map((maquina) => maquina.id));
+        // Máquinas temporales vigentes: pedidos propios ya entregados (al depósito o préstamos
+        // de otro supervisor). El supervisor dispone de ellas hasta la devolución.
+        const maquinasPrestadas = (Array.isArray(maquinasData?.maquinasTemporales) ? maquinasData.maquinasTemporales : [])
+          .filter(
+            (maquina) =>
+              maquina?.pedido?.tipo === "PEDIDO" &&
+              maquina?.pedido?.estado === "ENTREGADO" &&
+              !idsFijas.has(maquina.id)
+          )
+          .map((maquina) => ({ ...maquina, esPrestamo: true }));
+        setSupervisorMaquinas([...maquinasFijas, ...maquinasPrestadas]);
 
         const vehiculosSupervisor = Array.isArray(vehiculosData?.vehiculos) ? vehiculosData.vehiculos : [];
         setSupervisorVehiculos(vehiculosSupervisor);
@@ -318,6 +330,11 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     }
     return Array.from(grupos.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [supervisorMaquinas, busquedaMaquina]);
+
+  const prestamoIds = useMemo(
+    () => new Set(supervisorMaquinas.filter((maquina) => maquina.esPrestamo).map((maquina) => maquina.id)),
+    [supervisorMaquinas]
+  );
 
   const estadoStyles = ESTADO_STYLES[form.estado] || {
     select: "border-slate-300 bg-slate-50 text-slate-800",
@@ -821,7 +838,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             <h2 className="text-lg font-semibold text-gray-900">Máquinas utilizadas</h2>
             <p className="text-xs text-gray-500">
               {form.supervisorId
-                ? "Seleccioná máquinas del supervisor asignado. El resumen se arma por tipo."
+                ? "Seleccioná máquinas del supervisor asignado, incluidas las que tiene temporalmente por préstamos o pedidos vigentes. El resumen se arma por tipo."
                 : "Asigná un supervisor para ver y seleccionar sus máquinas."}
             </p>
           </div>
@@ -889,7 +906,12 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                     {grupo.maquinaIds.map((maquinaId) => (
                       <span
                         key={maquinaId}
-                        className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+                        title={prestamoIds.has(maquinaId) ? "Asignada temporalmente por un préstamo o pedido vigente" : undefined}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          prestamoIds.has(maquinaId)
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-slate-100 text-slate-600"
+                        }`}
                       >
                         {maquinaId}
                       </span>
@@ -1366,6 +1388,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                       supervisores.find((s) => String(s.id) === String(form.supervisorId))?.username ||
                       "supervisor"}
                   </b>
+                  {prestamoIds.size > 0 ? " y máquinas que tiene temporalmente por préstamos o pedidos vigentes" : ""}
                 </p>
               </div>
               <button
@@ -1387,12 +1410,18 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 placeholder="Buscar por ID, tipo, modelo, serie o servicio..."
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
               />
+              {prestamoIds.size > 0 ? (
+                <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700">
+                  <span className="h-2.5 w-2.5 flex-none rounded-full border border-amber-400 bg-amber-100" />
+                  Las máquinas en amarillo las tiene temporalmente por un préstamo o pedido vigente.
+                </p>
+              ) : null}
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
               {supervisorMaquinas.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-500">
-                  El supervisor no tiene máquinas asociadas a sus servicios.
+                  El supervisor no tiene máquinas asociadas a sus servicios ni máquinas temporales vigentes.
                 </p>
               ) : maquinasModalGrupos.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-500">
@@ -1422,6 +1451,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         {maquinasGrupo.map((maquina) => {
                           const seleccionada = seleccionTemp.has(maquina.id);
+                          const esPrestamo = Boolean(maquina.esPrestamo);
                           return (
                             <button
                               type="button"
@@ -1429,22 +1459,35 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                               onClick={() => toggleSeleccionMaquina(maquina.id)}
                               className={`rounded-xl border p-3 text-left transition ${
                                 seleccionada
-                                  ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
-                                  : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40"
+                                  ? esPrestamo
+                                    ? "border-amber-500 bg-amber-50 ring-1 ring-amber-500"
+                                    : "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                                  : esPrestamo
+                                    ? "border-amber-300 bg-amber-50/60 hover:border-amber-400 hover:bg-amber-50"
+                                    : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40"
                               }`}
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-sm font-semibold text-slate-900">{maquina.id}</span>
-                                <span
-                                  className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border transition ${
-                                    seleccionada
-                                      ? "border-blue-600 bg-blue-600 text-white"
-                                      : "border-slate-300 bg-white text-transparent"
-                                  }`}
-                                >
-                                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                    <path d="M5 13l4 4L19 7" />
-                                  </svg>
+                                <span className="flex items-center gap-1.5">
+                                  {esPrestamo ? (
+                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                      {maquina.pedido?.destino === "SUPERVISOR" ? "Préstamo" : "Temporal"}
+                                    </span>
+                                  ) : null}
+                                  <span
+                                    className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border transition ${
+                                      seleccionada
+                                        ? esPrestamo
+                                          ? "border-amber-600 bg-amber-600 text-white"
+                                          : "border-blue-600 bg-blue-600 text-white"
+                                        : "border-slate-300 bg-white text-transparent"
+                                    }`}
+                                  >
+                                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <path d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  </span>
                                 </span>
                               </div>
                               <p className="mt-1 text-xs text-slate-500">
@@ -1454,6 +1497,21 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                               <p className="mt-0.5 text-[11px] text-slate-400">
                                 {maquina.servicio?.nombre || "Sin servicio"} · {maquina.estado}
                               </p>
+                              {esPrestamo ? (
+                                <p className="mt-0.5 text-[11px] font-medium text-amber-600">
+                                  {(() => {
+                                    if (maquina.pedido?.destino === "SUPERVISOR") {
+                                      const prestamista = supervisores.find(
+                                        (s) => s.username === maquina.pedido?.supervisorDestinoUsername
+                                      );
+                                      const nombre = prestamista?.nombre || maquina.pedido?.supervisorDestinoUsername;
+                                      return `Préstamo${nombre ? ` de ${nombre}` : ""}`;
+                                    }
+                                    return "Pedido al depósito";
+                                  })()}
+                                  {maquina.pedido?.id ? ` · ${maquina.pedido.id}` : ""}
+                                </p>
+                              ) : null}
                             </button>
                           );
                         })}

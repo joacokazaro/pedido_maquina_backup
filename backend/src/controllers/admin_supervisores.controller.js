@@ -453,6 +453,8 @@ export async function getMaquinasPorSupervisor(req, res) {
             estado: pedido.estado,
             conFaltantes: pedido.estado === "CERRADO" && faltanteConfirmado,
             tipo: esPrestamoRecibido ? "PRESTAMO" : "PEDIDO",
+            destino: pedido.destino,
+            supervisorDestinoUsername: pedido.supervisorDestinoUsername || null,
             supervisorSolicitante:
               pedido.supervisor?.nombre || pedido.supervisor?.username || null,
           },

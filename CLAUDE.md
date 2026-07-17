@@ -43,6 +43,7 @@ En el frontend, `AuthContext` persiste usuario/roles en `localStorage` y `compon
 
 - **Servicios** son la entidad central: condicionan qué pedidos puede crear un supervisor y qué máquinas puede operar (asignación en "Supervisores x Servicios").
 - **Pedidos** siguen el flujo `PENDIENTE_PREPARACION → PREPARADO → ENTREGADO → PENDIENTE_CONFIRMACION → CERRADO`, con variantes `PENDIENTE_CONFIRMACION_FALTANTES`, `PENDIENTE_CANCELACION` y `CANCELADO`. Destino puede ser depósito o otro supervisor (préstamos).
+- **Dirección de los préstamos (trampa habitual):** `Pedido.destino` es *a quién se le hace* el pedido (quien entrega las máquinas); el solicitante (`Pedido.supervisorId`) es quien las **recibe**. En `GET /supervisores/:id/maquinas` (`admin_supervisores.controller.js`), las `maquinasTemporales` traen `pedido.tipo: "PRESTAMO"` cuando el supervisor consultado es el **prestamista** (le pidieron a él; ídem "Mis Préstamos" en el frontend, que son pedidos que otros le hicieron). Las máquinas que un supervisor tiene temporalmente en su poder son las de `pedido.tipo: "PEDIDO"` con `estado: "ENTREGADO"` — el campo `pedido.destino` de la respuesta distingue si vienen del depósito o de otro supervisor.
 - **Máquinas** tienen estados `disponible / asignada / no_devuelta / fuera_servicio / taller / baja`, más estado de amortización (`AMORTIZADA / NO_AMORTIZADA / SIN_DATOS`) calculado por tipo de máquina y plazo.
 - **Taller** registra ingresos/egresos individuales y masivos con auditoría en `TallerMovimiento`; estados legacy `reparacion` se normalizan a `taller`.
 - **Eventuales** (`activo / finalizado / cancelado`) registran componentes, vehículos, trabajos y servicios extras; baja lógica, PDF solo al finalizar.
@@ -56,6 +57,14 @@ Socket.IO se expone vía `app.set("io", ...)`; los controllers emiten con `req.a
 ### Excel
 
 Importación con multer en `memoryStorage` (validación de MIME, límite de filas y tamaño); exportación conviven `exceljs` y `xlsx` (se busca consolidar en `exceljs`).
+
+### Base de datos SQLite en producción — operaciones manuales
+
+El archivo real en el servidor es `/var/lib/pedido-maquina/db/pedido.db` (`DATABASE_URL` en `backend/.env`). **No confundir con `backend/dev.db`**, que existe en el server pero está vacío/sin uso.
+
+La mayoría de los modelos (incluido `Eventual`) usan `@id @default(autoincrement())`, que Prisma resuelve como `INTEGER PRIMARY KEY AUTOINCREMENT` nativo de SQLite: el contador vive en `sqlite_sequence` y nunca reutiliza un ID borrado, sin importar cuántas filas se eliminen. **Excepción:** `Pedido.id` es `TEXT` con formato `P-0001`, generado a mano en `getNextPedidoCode()` (`pedidos.controller.js`) vía `MAX(SUBSTR(id,3))+1` sobre las filas existentes. Borrar el pedido con el número más alto hace que el próximo insert reutilice un ID ya usado — esto ya rompió el sistema una vez. Antes de borrar filas de `Pedido` a mano, evaluar el impacto en `getNextPedidoCode()`; los modelos con autoincrement real no tienen este riesgo.
+
+Si se opera directo con `sqlite3` (bypaseando Prisma), `PRAGMA foreign_keys` viene en `OFF` por defecto en esa sesión — a diferencia del cliente de Prisma, que sí lo activa. Sin `PRAGMA foreign_keys = ON;` explícito, los `ON DELETE RESTRICT`/`ON DELETE SET NULL` definidos en el schema (p. ej. `HistorialEventual → Eventual` es `RESTRICT`, `Pedido.eventualId → Eventual` es `SET NULL`) no se aplican y pueden quedar filas huérfanas. Siempre: activar el pragma, envolver en `BEGIN TRANSACTION`/`COMMIT`, y sacar un backup (`cp pedido.db pedido.db.bak_<timestamp>` en el mismo directorio) antes de cualquier borrado manual.
 
 ## Convenciones
 

@@ -18,7 +18,7 @@ backend/public/
 .vscode/
 
 backend/prisma/*.db
-
+CLAUDE.md
 
 
 
