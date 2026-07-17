@@ -6,6 +6,7 @@ import { buildActorHeaders } from "../../utils/authHeaders";
 import ConfirmModal from "../../components/ConfirmModal";
 import Paginacion from "../../components/Paginacion";
 import { usePaginacion } from "../../hooks/usePaginacion";
+import SearchableSelect from "../../components/SearchableSelect";
 
 const ESTADOS = ["", "disponible", "asignada", "no_devuelta", "fuera_servicio", "taller", "baja"];
 
@@ -165,11 +166,11 @@ export default function TallerMovimientosMaquinas() {
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <select className="w-full rounded-xl border border-gray-200 bg-white p-2 text-sm" value={estado} onChange={(event) => setEstado(event.target.value)}>
+            <SearchableSelect className="w-full rounded-xl border border-gray-200 bg-white p-2 text-sm" value={estado} onChange={(event) => setEstado(event.target.value)}>
               {ESTADOS.map((item) => (
                 <option key={item || "all"} value={item}>{item || "todos"}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
         </div>
 

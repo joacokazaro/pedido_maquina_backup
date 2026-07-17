@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/maquinas";
 import FondoKazaro from "../components/FondoKazaro";
+import SearchableSelect from "../components/SearchableSelect";
 
 export default function CreatePedido() {
   const { user } = useAuth();
@@ -395,7 +396,7 @@ function limpiarSupervisorDestino() {
         <h2 className="font-semibold mb-3">Otro</h2>
 
         <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-          <select
+          <SearchableSelect
             value={otroTipo}
             onChange={(e) => setOtroTipo(e.target.value)}
             className="w-full sm:flex-1 p-2 rounded-xl border min-w-0"
@@ -404,7 +405,7 @@ function limpiarSupervisorDestino() {
             {availableTipos.map((t) => (
               <option key={t} value={t}>{t}</option>
             ))}
-          </select>
+          </SearchableSelect>
 
           <div className="flex items-center gap-2 flex-shrink-0">
             <button

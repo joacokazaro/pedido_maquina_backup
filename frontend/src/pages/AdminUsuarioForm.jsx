@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "ADMIN" },
@@ -237,7 +238,7 @@ export default function AdminUsuarioForm() {
       {/* ROLES */}
       <div className="mb-3">
         <label className="mb-1 block text-xs font-semibold text-gray-600">Rol principal</label>
-        <select
+        <SearchableSelect
           className="w-full rounded-xl border bg-white p-3"
           value={primaryRole}
           onChange={(event) => handlePrimaryRoleChange(event.target.value)}
@@ -245,10 +246,10 @@ export default function AdminUsuarioForm() {
           {ROLE_OPTIONS.map((role) => (
             <option key={role.value} value={role.value}>{role.label}</option>
           ))}
-        </select>
+        </SearchableSelect>
 
         <label className="mb-1 mt-3 block text-xs font-semibold text-gray-600">Rol adicional (opcional)</label>
-        <select
+        <SearchableSelect
           className="w-full rounded-xl border bg-white p-3"
           value={secondaryRole}
           onChange={(event) => handleSecondaryRoleChange(event.target.value)}
@@ -257,7 +258,7 @@ export default function AdminUsuarioForm() {
           {ROLE_OPTIONS.filter((role) => role.value !== primaryRole).map((role) => (
             <option key={role.value} value={role.value}>{role.label}</option>
           ))}
-        </select>
+        </SearchableSelect>
 
         <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
           Roles efectivos: <b>{selectedRoles.join(" + ")}</b>

@@ -4,6 +4,7 @@ import { API_BASE } from "../../services/apiBase";
 import { useAuth } from "../../context/AuthContext";
 import { buildActorHeaders } from "../../utils/authHeaders";
 import ConfirmModal from "../../components/ConfirmModal";
+import SearchableSelect from "../../components/SearchableSelect";
 
 const ESTADOS = ["", "activo", "asignada", "taller", "baja", "no_devuelta", "fuera_servicio"];
 
@@ -152,11 +153,11 @@ export default function TallerMovimientosVehiculos() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
-          <select className="rounded-xl border border-gray-200 bg-white p-2 text-sm" value={estado} onChange={(event) => setEstado(event.target.value)}>
+          <SearchableSelect className="rounded-xl border border-gray-200 bg-white p-2 text-sm" value={estado} onChange={(event) => setEstado(event.target.value)}>
             {ESTADOS.map((item) => (
               <option key={item || "all"} value={item}>{item || "todos"}</option>
             ))}
-          </select>
+          </SearchableSelect>
         </div>
 
         {canEdit ? (

@@ -6,6 +6,7 @@ import { buildActorHeaders } from "../utils/authHeaders";
 import ConfirmModal from "../components/ConfirmModal";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
+import SearchableSelect from "../components/SearchableSelect";
 
 const SIN_ASIGNAR = "__sin_asignar__";
 
@@ -241,7 +242,7 @@ export default function AdminVehiculosAsignaciones() {
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Empresa
             </label>
-            <select
+            <SearchableSelect
               className="w-full rounded-xl border p-2 text-xs"
               value={empresaFiltro}
               onChange={(e) => setEmpresaFiltro(e.target.value)}
@@ -250,14 +251,14 @@ export default function AdminVehiculosAsignaciones() {
               {empresas.map((empresa) => (
                 <option key={empresa} value={empresa}>{empresa}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Conductor actual
             </label>
-            <select
+            <SearchableSelect
               className="w-full rounded-xl border p-2 text-xs"
               value={conductorFiltro}
               onChange={(e) => setConductorFiltro(e.target.value)}
@@ -268,14 +269,14 @@ export default function AdminVehiculosAsignaciones() {
                   {usuario.nombre || usuario.username}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado de asignación
             </label>
-            <select
+            <SearchableSelect
               className="w-full rounded-xl border p-2 text-xs"
               value={estadoAsignacionFiltro}
               onChange={(e) => setEstadoAsignacionFiltro(e.target.value)}
@@ -283,7 +284,7 @@ export default function AdminVehiculosAsignaciones() {
               <option value="">Todos</option>
               <option value="asignados">Asignados</option>
               <option value="sinAsignar">Sin asignar</option>
-            </select>
+            </SearchableSelect>
           </div>
         </div>
       </div>
@@ -307,7 +308,7 @@ export default function AdminVehiculosAsignaciones() {
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-blue-800">
               Asignar a
             </label>
-            <select
+            <SearchableSelect
               className="w-full rounded-xl border p-2 text-xs"
               value={targetUsuarioId}
               onChange={(e) => {
@@ -322,7 +323,7 @@ export default function AdminVehiculosAsignaciones() {
                   {usuario.nombre || usuario.username}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div className="md:col-span-2">

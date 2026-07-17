@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { API_BASE } from "../../services/apiBase";
 import { useAuth } from "../../context/AuthContext";
 import { buildActorHeaders } from "../../utils/authHeaders";
+import SearchableSelect from "../../components/SearchableSelect";
 
 export default function TallerHistorialVehiculos() {
   const { user } = useAuth();
@@ -75,11 +76,11 @@ export default function TallerHistorialVehiculos() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <select className="rounded-xl border p-2 text-sm" value={accion} onChange={(event) => setAccion(event.target.value)}>
+        <SearchableSelect className="rounded-xl border p-2 text-sm" value={accion} onChange={(event) => setAccion(event.target.value)}>
           <option value="">todas</option>
           <option value="ingreso">ingreso</option>
           <option value="egreso">egreso</option>
-        </select>
+        </SearchableSelect>
       </div>
 
       <div className="space-y-2">

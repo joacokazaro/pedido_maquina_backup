@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = ["", "disponible", "asignada", "no_devuelta", "fuera_servicio", "taller", "baja", "activo"];
 
@@ -185,11 +186,11 @@ export default function TallerPanel() {
               value={maquinaSearch}
               onChange={(e) => setMaquinaSearch(e.target.value)}
             />
-            <select className="rounded-xl border p-2 text-sm" value={maquinaEstado} onChange={(e) => setMaquinaEstado(e.target.value)}>
+            <SearchableSelect className="rounded-xl border p-2 text-sm" value={maquinaEstado} onChange={(e) => setMaquinaEstado(e.target.value)}>
               {ESTADOS.map((estado) => (
                 <option key={`m-${estado || "all"}`} value={estado}>{estado || "todos"}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           {canEdit ? (
@@ -263,11 +264,11 @@ export default function TallerPanel() {
               value={vehiculoSearch}
               onChange={(e) => setVehiculoSearch(e.target.value)}
             />
-            <select className="rounded-xl border p-2 text-sm" value={vehiculoEstado} onChange={(e) => setVehiculoEstado(e.target.value)}>
+            <SearchableSelect className="rounded-xl border p-2 text-sm" value={vehiculoEstado} onChange={(e) => setVehiculoEstado(e.target.value)}>
               {ESTADOS.map((estado) => (
                 <option key={`v-${estado || "all"}`} value={estado}>{estado || "todos"}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           {canEdit ? (

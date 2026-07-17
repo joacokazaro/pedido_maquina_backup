@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
+import SearchableSelect from "../components/SearchableSelect";
 
 export default function AdminUsuarios() {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export default function AdminUsuarios() {
         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
           Rol
         </label>
-        <select
+        <SearchableSelect
           className="w-full p-3 border rounded-xl bg-white"
           value={rol}
           onChange={(e) => setRol(e.target.value)}
@@ -68,7 +69,7 @@ export default function AdminUsuarios() {
           <option value="COORDINADOR">COORDINADOR</option>
           <option value="CONSULTOR">CONSULTOR</option>
           <option value="TALLER">TALLER</option>
-        </select>
+        </SearchableSelect>
       </div>
 
       {/* LISTA */}

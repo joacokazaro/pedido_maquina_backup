@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -222,60 +223,60 @@ export default function AdminVehiculos() {
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <select className="w-full rounded-xl border p-2 text-xs" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}>
+            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}>
               {ESTADOS.map((estado) => (
                 <option key={estado.value} value={estado.value}>{estado.label}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Empresa
             </label>
-            <select className="w-full rounded-xl border p-2 text-xs" value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
+            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
               <option value="">Todas las empresas</option>
               {empresas.map((empresa) => (
                 <option key={empresa} value={empresa}>{empresa}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Faltantes
             </label>
-            <select className="w-full rounded-xl border p-2 text-xs" value={faltanteFiltro} onChange={(e) => setFaltanteFiltro(e.target.value)}>
+            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={faltanteFiltro} onChange={(e) => setFaltanteFiltro(e.target.value)}>
               <option value="">Todos</option>
               <option value="si">Faltantes</option>
               <option value="no">No faltantes</option>
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Seguro
             </label>
-            <select className="w-full rounded-xl border p-2 text-xs" value={seguroFiltro} onChange={(e) => setSeguroFiltro(e.target.value)}>
+            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={seguroFiltro} onChange={(e) => setSeguroFiltro(e.target.value)}>
               <option value="">Todos los seguros</option>
               {seguros.map((seguro) => (
                 <option key={seguro.id} value={String(seguro.id)}>{seguro.nombre}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Conductor
             </label>
-            <select className="w-full rounded-xl border p-2 text-xs" value={conductorFiltro} onChange={(e) => setConductorFiltro(e.target.value)}>
+            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={conductorFiltro} onChange={(e) => setConductorFiltro(e.target.value)}>
               <option value="">Todos los conductores</option>
               {usuarios.map((usuario) => (
                 <option key={usuario.id} value={String(usuario.id)}>
                   {usuario.nombre || usuario.username}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import HistorialPedido from "../components/HistorialPedido";
 import { useAuth } from "../context/AuthContext";
+import SearchableSelect from "../components/SearchableSelect";
 
 
 export default function AdminViewPedido() {
@@ -270,7 +271,7 @@ export default function AdminViewPedido() {
             <label className="mb-1 block text-sm font-semibold text-gray-800">
               Servicio
             </label>
-            <select
+            <SearchableSelect
               value={servicioId}
               onChange={(e) => setServicioId(e.target.value)}
               className="w-full rounded-lg border p-3 text-sm"
@@ -281,7 +282,7 @@ export default function AdminViewPedido() {
                   {servicio.nombre}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>

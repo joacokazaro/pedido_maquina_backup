@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADO_UI = {
   disponible: {
@@ -291,7 +292,7 @@ export default function AsignarMaquinas() {
         <label className="block text-sm font-medium text-gray-700">
           Tipo de maquina
         </label>
-        <select
+        <SearchableSelect
           className="w-full rounded-xl border border-gray-300 bg-white p-3"
           value={filtroTipo}
           onChange={(e) => setFiltroTipo(e.target.value)}
@@ -302,7 +303,7 @@ export default function AsignarMaquinas() {
               {tipo}
             </option>
           ))}
-        </select>
+        </SearchableSelect>
       </div>
 
       <input

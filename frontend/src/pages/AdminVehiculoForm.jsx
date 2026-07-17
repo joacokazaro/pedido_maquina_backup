@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   "disponible",
@@ -357,36 +358,36 @@ export default function AdminVehiculoForm() {
           <div className="grid gap-3 md:grid-cols-4">
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">Seguro</label>
-            <select name="seguroId" value={form.seguroId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+            <SearchableSelect name="seguroId" value={form.seguroId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
               <option value="">Seleccionar seguro</option>
               {seguros.map((seguro) => (
                 <option key={seguro.id} value={String(seguro.id)}>{seguro.nombre}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo de maquina</label>
-            <select name="tipoMaquinaId" value={form.tipoMaquinaId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+            <SearchableSelect name="tipoMaquinaId" value={form.tipoMaquinaId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
               <option value="">Tipo de maquina (default VEHICULO)</option>
               {tiposMaquina.map((tipo) => (
                 <option key={tipo.id} value={String(tipo.id)}>{tipo.nombre}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
-            <select name="estado" value={form.estado} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+            <SearchableSelect name="estado" value={form.estado} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
               {ESTADOS.map((estado) => (
                 <option key={estado} value={estado}>{estado}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-semibold text-gray-600">Tarjeta verde</label>
-            <select
+            <SearchableSelect
               value={form.tarjetaVerde ? "si" : "no"}
               disabled={isReadOnly}
               onChange={(e) => handleBooleanChange("tarjetaVerde", e.target.value === "si")}
@@ -394,7 +395,7 @@ export default function AdminVehiculoForm() {
             >
               <option value="si">Tiene</option>
               <option value="no">No tiene</option>
-            </select>
+            </SearchableSelect>
           </div>
           </div>
 
@@ -419,7 +420,7 @@ export default function AdminVehiculoForm() {
           {DATE_FIELDS.map((field) => (
             <div key={field.key} className="rounded-xl border p-3">
               <label className="mb-2 block text-sm font-semibold text-gray-700">{field.label}</label>
-              <select
+              <SearchableSelect
                 value={form[field.aplicaKey] ? "aplica" : "no_aplica"}
                 disabled={isReadOnly}
                 onChange={(e) => {
@@ -434,7 +435,7 @@ export default function AdminVehiculoForm() {
               >
                 <option value="aplica">Aplica</option>
                 <option value="no_aplica">No aplica</option>
-              </select>
+              </SearchableSelect>
 
               <input
                 type="date"
@@ -479,14 +480,14 @@ export default function AdminVehiculoForm() {
 
           {!usuarioActual && (
             <div className="flex flex-col gap-3 md:flex-row">
-              <select value={usuarioAsignadoId} onChange={(e) => setUsuarioAsignadoId(e.target.value)} className="flex-1 rounded-xl border p-3 bg-white">
+              <SearchableSelect value={usuarioAsignadoId} onChange={(e) => setUsuarioAsignadoId(e.target.value)} className="flex-1 rounded-xl border p-3 bg-white">
                 <option value="">Seleccionar usuario</option>
                 {usuarios.map((usuario) => (
                   <option key={usuario.id} value={String(usuario.id)}>
                     {(usuario.nombre || usuario.username)} ({usuario.rol})
                   </option>
                 ))}
-              </select>
+              </SearchableSelect>
 
               <button onClick={assignVehicle} disabled={!usuarioAsignadoId} className="rounded-xl bg-green-600 px-4 py-3 font-semibold text-white disabled:bg-green-300">
                 Asignar vehículo

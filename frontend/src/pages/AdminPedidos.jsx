@@ -7,6 +7,7 @@ import { usePaginacion } from "../hooks/usePaginacion";
 import { EstadoBadge, formatEstado } from "../utils/estadoPedido.jsx";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import SearchableSelect from "../components/SearchableSelect";
 
 export default function AdminPedidos() {
   const navigate = useNavigate();
@@ -311,7 +312,7 @@ function pedidoTieneMaquina(pedido, texto) {
           <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Estado
           </label>
-          <select
+          <SearchableSelect
             className="w-full p-3 rounded-xl border border-gray-300 bg-white"
             value={estadoFiltro}
             onChange={e => setEstadoFiltro(e.target.value)}
@@ -321,7 +322,7 @@ function pedidoTieneMaquina(pedido, texto) {
                 {formatEstado(e)}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
         </div>
       </div>
 

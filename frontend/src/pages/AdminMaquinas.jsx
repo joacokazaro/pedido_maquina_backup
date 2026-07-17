@@ -6,6 +6,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import { buildActorHeaders } from "../utils/authHeaders";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -629,7 +630,7 @@ export default function AdminMaquinas() {
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
               Tipo de máquina
             </label>
-            <select
+            <SearchableSelect
               className="w-full p-2 rounded-xl border text-xs"
               value={tipoFiltro}
               onChange={e => setTipoFiltro(e.target.value)}
@@ -638,14 +639,14 @@ export default function AdminMaquinas() {
               {tiposUnicos.map(t => (
                 <option key={t} value={t}>{t}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
               Estados
             </label>
-            <select
+            <SearchableSelect
               className="w-full p-2 rounded-xl border text-xs"
               value={estadoFiltro}
               onChange={e => setEstadoFiltro(e.target.value)}
@@ -653,14 +654,14 @@ export default function AdminMaquinas() {
               {ESTADOS.map(e => (
                 <option key={e.value} value={e.value}>{e.label}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
               Supervisor
             </label>
-            <select
+            <SearchableSelect
               className="w-full p-2 rounded-xl border text-xs"
               value={supervisorFiltro}
               onChange={(e) => setSupervisorFiltro(e.target.value)}
@@ -671,7 +672,7 @@ export default function AdminMaquinas() {
                   {s.nombre || s.username}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
         </div>
@@ -813,7 +814,7 @@ export default function AdminMaquinas() {
                     />
 
                     <div className="grid gap-2 md:grid-cols-3">
-                      <select
+                      <SearchableSelect
                         className="rounded-xl border p-2 text-xs"
                         value={bulkTipoFiltro}
                         onChange={(e) => setBulkTipoFiltro(e.target.value)}
@@ -822,9 +823,9 @@ export default function AdminMaquinas() {
                         {tiposUnicos.map((t) => (
                           <option key={t} value={t}>{t}</option>
                         ))}
-                      </select>
+                      </SearchableSelect>
 
-                      <select
+                      <SearchableSelect
                         className="rounded-xl border p-2 text-xs"
                         value={bulkEstadoFiltro}
                         onChange={(e) => setBulkEstadoFiltro(e.target.value)}
@@ -832,9 +833,9 @@ export default function AdminMaquinas() {
                         {ESTADOS.map((e) => (
                           <option key={e.value} value={e.value}>{e.label}</option>
                         ))}
-                      </select>
+                      </SearchableSelect>
 
-                      <select
+                      <SearchableSelect
                         className="rounded-xl border p-2 text-xs"
                         value={bulkServicioActualFiltro}
                         onChange={(e) => setBulkServicioActualFiltro(e.target.value)}
@@ -843,7 +844,7 @@ export default function AdminMaquinas() {
                         {servicios.map((s) => (
                           <option key={s.id} value={s.id}>{s.nombre}</option>
                         ))}
-                      </select>
+                      </SearchableSelect>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -928,7 +929,7 @@ export default function AdminMaquinas() {
                     </p>
                     <div>
                       <label className="mb-1 block font-semibold text-slate-700">Servicio destino</label>
-                      <select
+                      <SearchableSelect
                         className="w-full rounded-xl border p-2"
                         value={bulkServicioDestinoId}
                         onChange={(e) => setBulkServicioDestinoId(e.target.value)}
@@ -937,7 +938,7 @@ export default function AdminMaquinas() {
                         {servicios.map((s) => (
                           <option key={s.id} value={s.id}>{s.nombre}</option>
                         ))}
-                      </select>
+                      </SearchableSelect>
                     </div>
                   </div>
 

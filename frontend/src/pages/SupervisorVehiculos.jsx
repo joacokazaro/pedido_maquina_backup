@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import FondoKazaro from "../components/FondoKazaro";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -98,13 +99,13 @@ export default function SupervisorVehiculos() {
       <div className="mb-4 rounded-2xl bg-white p-3 shadow space-y-3">
         <input className="w-full rounded-xl border p-2.5 text-sm" placeholder="Buscar por patente, modelo, empresa o seguro..." value={search} onChange={(e) => setSearch(e.target.value)} />
         <div className="flex flex-col gap-2 sm:flex-row">
-          <select className="flex-1 rounded-xl border p-2 text-xs" value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
+          <SearchableSelect className="flex-1 rounded-xl border p-2 text-xs" value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
             <option value="">Todas las empresas</option>
             {empresas.map((empresa) => <option key={empresa} value={empresa}>{empresa}</option>)}
-          </select>
-          <select className="flex-1 rounded-xl border p-2 text-xs" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}>
+          </SearchableSelect>
+          <SearchableSelect className="flex-1 rounded-xl border p-2 text-xs" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}>
             {ESTADOS.map((estado) => <option key={estado.value} value={estado.value}>{estado.label}</option>)}
-          </select>
+          </SearchableSelect>
         </div>
       </div>
 

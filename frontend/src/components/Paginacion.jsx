@@ -1,4 +1,5 @@
 import { TAMANOS_PAGINA } from "../hooks/usePaginacion";
+import SearchableSelect from "./SearchableSelect";
 
 function numerosVisibles(pagina, totalPaginas) {
   if (totalPaginas <= 7) {
@@ -93,7 +94,7 @@ export default function Paginacion({
 
       <label className="flex items-center gap-2 text-xs text-slate-500">
         Ver de a
-        <select
+        <SearchableSelect
           className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-semibold text-slate-700 focus:border-kazaro-sky focus:outline-none"
           value={tamano}
           onChange={(e) => onTamano(Number(e.target.value))}
@@ -103,7 +104,7 @@ export default function Paginacion({
               {t}
             </option>
           ))}
-        </select>
+        </SearchableSelect>
       </label>
     </div>
   );

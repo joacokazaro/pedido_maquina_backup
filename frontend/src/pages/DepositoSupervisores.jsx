@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import SearchableSelect from "../components/SearchableSelect";
 
 function estadoBadgeClass(estado) {
   const base = "inline-flex rounded-full px-2 py-1 text-[10px] font-semibold uppercase";
@@ -199,7 +200,7 @@ export default function DepositoSupervisores() {
       <div className="mb-4 rounded-2xl bg-white p-4 shadow">
         <label className="mb-2 block text-sm font-medium text-gray-700">Supervisor</label>
 
-        <select
+        <SearchableSelect
           className="w-full rounded-xl border border-gray-300 bg-white p-3 text-sm"
           value={supervisorId}
           onChange={(e) => setSupervisorId(e.target.value)}
@@ -209,7 +210,7 @@ export default function DepositoSupervisores() {
               {supervisor.nombre || supervisor.username}
             </option>
           ))}
-        </select>
+        </SearchableSelect>
 
         {supervisorSeleccionado && (
           <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-4">

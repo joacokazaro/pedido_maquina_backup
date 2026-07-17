@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ConfirmModal from "./ConfirmModal";
 import { API_BASE } from "../services/apiBase";
+import SearchableSelect from "./SearchableSelect";
 
 function createEmptyRow() {
   return {
@@ -375,7 +376,7 @@ export default function TipoMaquinaReferenciasModal({
             </label>
 
             {mode === "upload" ? (
-              <select
+              <SearchableSelect
                 className="mb-3 rounded-xl border border-gray-200 bg-white p-3 text-sm"
                 value={selectedTipoId}
                 onChange={(e) => setSelectedTipoId(e.target.value)}
@@ -386,7 +387,7 @@ export default function TipoMaquinaReferenciasModal({
                     {tipo.nombre}
                   </option>
                 ))}
-              </select>
+              </SearchableSelect>
             ) : (
               <div className="mb-3 rounded-xl border border-gray-200 bg-white p-3 text-sm font-medium text-gray-700">
                 {tipoInicialNombre || tipoSeleccionado?.nombre || "Tipo seleccionado"}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import FondoKazaro from "../components/FondoKazaro";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -165,7 +166,7 @@ export default function SupervisorMaquinas() {
         />
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <select
+          <SearchableSelect
             className="flex-1 p-2 rounded-xl border text-xs"
             value={servicioFiltro}
             onChange={(e) => setServicioFiltro(e.target.value)}
@@ -176,9 +177,9 @@ export default function SupervisorMaquinas() {
                 {servicio.nombre}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
 
-          <select
+          <SearchableSelect
             className="flex-1 p-2 rounded-xl border text-xs"
             value={estadoFiltro}
             onChange={(e) => setEstadoFiltro(e.target.value)}
@@ -188,7 +189,7 @@ export default function SupervisorMaquinas() {
                 {estado.label}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
         </div>
       </div>
 

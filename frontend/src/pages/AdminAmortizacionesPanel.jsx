@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   { value: "", label: "Estado maquina: todos" },
@@ -367,16 +368,16 @@ export default function AdminAmortizacionesPanel() {
         />
 
         <div className="grid gap-2 md:grid-cols-5">
-          <select className="rounded-xl border p-2 text-xs" value={tipoFiltro} onChange={(event) => setTipoFiltro(event.target.value)}>
+          <SearchableSelect className="rounded-xl border p-2 text-xs" value={tipoFiltro} onChange={(event) => setTipoFiltro(event.target.value)}>
             <option value="">Todos los tipos</option>
             {tiposUnicos.map((tipo) => (
               <option key={tipo} value={tipo}>
                 {tipo}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
 
-          <select
+          <SearchableSelect
             className="rounded-xl border p-2 text-xs"
             value={servicioFiltro}
             onChange={(event) => setServicioFiltro(event.target.value)}
@@ -387,17 +388,17 @@ export default function AdminAmortizacionesPanel() {
                 {servicio}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
 
-          <select className="rounded-xl border p-2 text-xs" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
+          <SearchableSelect className="rounded-xl border p-2 text-xs" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
             {ESTADOS.map((estado) => (
               <option key={estado.value || "todos"} value={estado.value}>
                 {estado.label}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
 
-          <select
+          <SearchableSelect
             className="rounded-xl border p-2 text-xs"
             value={estadoAmortizacionFiltro}
             onChange={(event) => setEstadoAmortizacionFiltro(event.target.value)}
@@ -407,9 +408,9 @@ export default function AdminAmortizacionesPanel() {
                 {estado.label}
               </option>
             ))}
-          </select>
+          </SearchableSelect>
 
-          <select
+          <SearchableSelect
             className="rounded-xl border p-2 text-xs"
             value={ventanaMeses}
             onChange={(event) => setVentanaMeses(event.target.value)}
@@ -419,7 +420,7 @@ export default function AdminAmortizacionesPanel() {
             <option value="3">Proximos 3 meses</option>
             <option value="6">Proximos 6 meses</option>
             <option value="12">Proximos 12 meses</option>
-          </select>
+          </SearchableSelect>
         </div>
 
         <label className="inline-flex items-center gap-2 text-xs font-medium text-slate-700">

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import FondoKazaro from "../components/FondoKazaro";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   "disponible",
@@ -196,13 +197,13 @@ export default function SupervisorMaquinaDetalle() {
           )}
         </div>
 
-        <select value={maquina.estado} disabled className="w-full p-2 rounded-xl border bg-gray-100 text-gray-700">
+        <SearchableSelect value={maquina.estado} disabled className="w-full p-2 rounded-xl border bg-gray-100 text-gray-700">
           {ESTADOS.map((estado) => (
             <option key={estado} value={estado}>
               {estado}
             </option>
           ))}
-        </select>
+        </SearchableSelect>
 
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
           <h2 className="mb-3 text-sm font-semibold text-slate-800">Datos de compra y valuación</h2>

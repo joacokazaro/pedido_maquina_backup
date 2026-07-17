@@ -4,6 +4,7 @@ import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   "disponible",
@@ -333,7 +334,7 @@ export default function AdminMaquinaForm() {
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
-              <select
+              <SearchableSelect
                 name="tipo"
                 value={form.tipo}
                 onChange={handleChange}
@@ -344,7 +345,7 @@ export default function AdminMaquinaForm() {
                 {tipos.map((tipo) => (
                   <option key={tipo.id ?? tipo.nombre} value={tipo.nombre}>{tipo.nombre}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
 
             <div>
@@ -365,24 +366,24 @@ export default function AdminMaquinaForm() {
           <div className="grid gap-3 md:grid-cols-3">
             <div>
               <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio</label>
-              <select name="servicioId" value={form.servicioId} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
+              <SearchableSelect name="servicioId" value={form.servicioId} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
                 <option value="">— Seleccionar servicio —</option>
                 {servicios.map(s => (
                   <option key={s.id} value={s.id}>{s.nombre}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
-              <select name="estado" value={form.estado} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
+              <SearchableSelect name="estado" value={form.estado} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
                 {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
+              </SearchableSelect>
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio para amortización</label>
-              <select
+              <SearchableSelect
                 name="servicioAmortizacionId"
                 value={form.servicioAmortizacionId}
                 onChange={handleChange}
@@ -393,7 +394,7 @@ export default function AdminMaquinaForm() {
                 {servicios.map((s) => (
                   <option key={s.id} value={s.id}>{s.nombre}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
           </div>
         </section>
@@ -457,7 +458,7 @@ export default function AdminMaquinaForm() {
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-gray-600">Empresa</label>
-              <select
+              <SearchableSelect
                 name="empresa"
                 value={form.empresa}
                 onChange={handleChange}
@@ -468,7 +469,7 @@ export default function AdminMaquinaForm() {
                 {EMPRESAS.map((empresa) => (
                   <option key={empresa} value={empresa}>{empresa}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
 
             <div className="md:col-span-2">

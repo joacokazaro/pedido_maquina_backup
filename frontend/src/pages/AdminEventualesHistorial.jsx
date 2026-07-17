@@ -5,6 +5,7 @@ import { formatDateOnly } from "../utils/date";
 import { useAuth } from "../context/AuthContext";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
+import SearchableSelect from "../components/SearchableSelect";
 
 export default function AdminEventualesHistorial() {
   const navigate = useNavigate();
@@ -97,26 +98,26 @@ export default function AdminEventualesHistorial() {
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <select className="w-full rounded-xl border p-2 text-sm" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
+            <SearchableSelect className="w-full rounded-xl border p-2 text-sm" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
               <option value="">Todos los estados</option>
               <option value="activo">Activo</option>
               <option value="finalizado">Finalizado</option>
               <option value="cancelado">Cancelado</option>
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Supervisor
             </label>
-            <select className="w-full rounded-xl border p-2 text-sm" value={supervisorFiltro} onChange={(event) => setSupervisorFiltro(event.target.value)}>
+            <SearchableSelect className="w-full rounded-xl border p-2 text-sm" value={supervisorFiltro} onChange={(event) => setSupervisorFiltro(event.target.value)}>
               <option value="">Todos los supervisores</option>
               {supervisores.map((supervisor) => (
                 <option key={supervisor.id} value={String(supervisor.id)}>
                   {supervisor.nombre || supervisor.username}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>

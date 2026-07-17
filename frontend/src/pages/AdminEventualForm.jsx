@@ -6,6 +6,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { toDateInputValue } from "../utils/date";
 import { REQUEST_RESOURCE_TYPES } from "../constants/maquinas";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTILOS_ESTADO_PEDIDO = {
   CERRADO: "bg-slate-200 text-slate-700",
@@ -708,7 +709,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Supervisor asignado{mostrarComponentes ? "" : " (opcional)"}
             </label>
-            <select
+            <SearchableSelect
               className="w-full rounded-xl border p-3 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
               value={form.supervisorId}
               onChange={(event) => handleSupervisorChange(event.target.value)}
@@ -720,7 +721,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                   {supervisor.nombre || supervisor.username}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
             {supervisorBloqueado ? (
               <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -739,7 +740,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 md:col-span-2">
             <label className="mb-1 block text-sm font-medium text-gray-700">Estado</label>
             <div className="space-y-2">
-              <select
+              <SearchableSelect
                 className={`w-full rounded-xl border p-3 text-sm font-semibold uppercase ${estadoStyles.select}`}
                 value={form.estado}
                 onChange={(event) => updateField("estado", event.target.value)}
@@ -747,7 +748,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 {ESTADOS.map((estado) => (
                   <option key={estado} value={estado}>{estado}</option>
                 ))}
-              </select>
+              </SearchableSelect>
               <p className="text-xs text-gray-600">Definí si el eventual queda activo, finalizado o cancelado.</p>
             </div>
           </div>
@@ -998,7 +999,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           const esDelSupervisor = supervisorVehiculos.some((vehiculo) => vehiculo.id === row.vehiculoId);
           return (
             <div key={`veh-${index}`} className="grid items-center gap-2 md:grid-cols-[1fr_auto_auto]">
-              <select
+              <SearchableSelect
                 className="rounded-xl border p-2.5 text-sm"
                 value={row.vehiculoId}
                 onChange={(event) => updateVehiculoRow(index, event.target.value)}
@@ -1007,7 +1008,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 {vehiculosOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
-              </select>
+              </SearchableSelect>
               {esDelSupervisor ? (
                 <span className="justify-self-start rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 md:justify-self-auto">
                   Del supervisor
@@ -1079,19 +1080,19 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             </div>
 
             <div className="grid gap-2 md:grid-cols-3">
-              <select className="rounded-xl border p-2.5 text-sm" value={row.tipo} onChange={(event) => updateTrabajo(index, "tipo", event.target.value)}>
+              <SearchableSelect className="rounded-xl border p-2.5 text-sm" value={row.tipo} onChange={(event) => updateTrabajo(index, "tipo", event.target.value)}>
                 <option value="">Tipo</option>
                 {TIPOS_TRABAJO.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
-              </select>
+              </SearchableSelect>
               <input type="number" min="1" className="rounded-xl border p-2.5 text-sm" placeholder="Cantidad" value={row.cantidad} onChange={(event) => updateTrabajo(index, "cantidad", event.target.value)} />
-              <select className="rounded-xl border p-2.5 text-sm" value={row.unidadMedida} onChange={(event) => updateTrabajo(index, "unidadMedida", event.target.value)}>
+              <SearchableSelect className="rounded-xl border p-2.5 text-sm" value={row.unidadMedida} onChange={(event) => updateTrabajo(index, "unidadMedida", event.target.value)}>
                 <option value="">Seleccionar unidad de medida</option>
                 {UNIDADES.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
 
             {row.tipo === "OTRO" ? (
@@ -1123,12 +1124,12 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             <input className="w-full rounded-xl border p-2.5 text-sm" placeholder="Descripcion" value={row.descripcion || ""} onChange={(event) => updateServicio(index, "descripcion", event.target.value)} />
             <div className="grid gap-2 md:grid-cols-2">
               <input type="number" min="1" className="rounded-xl border p-2.5 text-sm" placeholder="Cantidad" value={row.cantidad} onChange={(event) => updateServicio(index, "cantidad", event.target.value)} />
-              <select className="rounded-xl border p-2.5 text-sm" value={row.unidadMedida} onChange={(event) => updateServicio(index, "unidadMedida", event.target.value)}>
+              <SearchableSelect className="rounded-xl border p-2.5 text-sm" value={row.unidadMedida} onChange={(event) => updateServicio(index, "unidadMedida", event.target.value)}>
                 <option value="">Seleccionar unidad de medida</option>
                 {UNIDADES.map((item) => (
                   <option key={item.value} value={item.value}>{item.label}</option>
                 ))}
-              </select>
+              </SearchableSelect>
             </div>
           </div>
         ))}
@@ -1228,7 +1229,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               {pedidoDestino === "SUPERVISOR" ? (
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">Supervisor destino *</label>
-                  <select
+                  <SearchableSelect
                     className="w-full rounded-xl border p-2.5 text-sm"
                     value={pedidoSupervisorDestino}
                     onChange={(event) => setPedidoSupervisorDestino(event.target.value)}
@@ -1241,7 +1242,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                           {supervisor.nombre || supervisor.username}
                         </option>
                       ))}
-                  </select>
+                  </SearchableSelect>
                 </div>
               ) : null}
 
@@ -1276,7 +1277,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <p className="mb-2 text-sm font-medium text-gray-700">Otro tipo de máquina</p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <select
+                  <SearchableSelect
                     className="min-w-0 flex-1 rounded-xl border p-2.5 text-sm"
                     value={pedidoOtroTipo}
                     onChange={(event) => setPedidoOtroTipo(event.target.value)}
@@ -1285,7 +1286,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                     {tiposMaquina.map((item) => (
                       <option key={item.tipo} value={item.tipo}>{item.tipo}</option>
                     ))}
-                  </select>
+                  </SearchableSelect>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"

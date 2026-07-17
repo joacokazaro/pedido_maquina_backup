@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -150,7 +151,7 @@ export default function DepositoMaquinas() {
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Tipo
             </label>
-            <select
+            <SearchableSelect
               className="w-full p-2 rounded-xl border text-xs"
               value={tipoFiltro}
               onChange={(e) => setTipoFiltro(e.target.value)}
@@ -159,14 +160,14 @@ export default function DepositoMaquinas() {
               {tiposUnicos.map((tipo) => (
                 <option key={tipo} value={tipo}>{tipo}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div className="flex-1">
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <select
+            <SearchableSelect
               className="w-full p-2 rounded-xl border text-xs"
               value={estadoFiltro}
               onChange={(e) => setEstadoFiltro(e.target.value)}
@@ -174,7 +175,7 @@ export default function DepositoMaquinas() {
               {ESTADOS.map((estado) => (
                 <option key={estado.value} value={estado.value}>{estado.label}</option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
         </div>
       </div>

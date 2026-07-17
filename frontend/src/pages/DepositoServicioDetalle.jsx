@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
+import SearchableSelect from "../components/SearchableSelect";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -134,7 +135,7 @@ export default function DepositoServicioDetalle() {
         />
 
         <div className="flex gap-2">
-          <select
+          <SearchableSelect
             value={tipoFiltro}
             onChange={(e) => setTipoFiltro(e.target.value)}
             className="flex-1 p-2 border rounded-xl text-sm"
@@ -143,9 +144,9 @@ export default function DepositoServicioDetalle() {
             {tipos.map((tipo) => (
               <option key={tipo} value={tipo}>{tipo}</option>
             ))}
-          </select>
+          </SearchableSelect>
 
-          <select
+          <SearchableSelect
             value={estadoFiltro}
             onChange={(e) => setEstadoFiltro(e.target.value)}
             className="flex-1 p-2 border rounded-xl text-sm"
@@ -153,7 +154,7 @@ export default function DepositoServicioDetalle() {
             {ESTADOS.map((estado) => (
               <option key={estado.value} value={estado.value}>{estado.label}</option>
             ))}
-          </select>
+          </SearchableSelect>
         </div>
       </div>
 

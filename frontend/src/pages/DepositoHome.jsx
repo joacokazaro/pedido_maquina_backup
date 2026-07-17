@@ -5,6 +5,7 @@ import { EstadoBadge } from "../utils/estadoPedido.jsx";
 import EventualBadge from "../components/EventualBadge";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
+import SearchableSelect from "../components/SearchableSelect";
 
 export default function DepositoHome() {
   const navigate = useNavigate();
@@ -174,7 +175,7 @@ export default function DepositoHome() {
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <select
+            <SearchableSelect
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
@@ -184,14 +185,14 @@ export default function DepositoHome() {
                   {opcion.label}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Faltantes
             </label>
-            <select
+            <SearchableSelect
               value={filtroFaltantes}
               onChange={(e) => setFiltroFaltantes(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
@@ -199,14 +200,14 @@ export default function DepositoHome() {
               <option value="TODOS">Todos los pedidos</option>
               <option value="CON_FALTANTES">Con faltantes</option>
               <option value="SIN_FALTANTES">Sin faltantes</option>
-            </select>
+            </SearchableSelect>
           </div>
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Supervisor
             </label>
-            <select
+            <SearchableSelect
               value={filtroSupervisor}
               onChange={(e) => setFiltroSupervisor(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
@@ -217,7 +218,7 @@ export default function DepositoHome() {
                   {supervisor}
                 </option>
               ))}
-            </select>
+            </SearchableSelect>
           </div>
         </div>
       </div>
