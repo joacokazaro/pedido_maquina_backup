@@ -5,6 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import { formatDateOnly, formatDateTime } from "../utils/date";
 
+function getTrabajoLabel(item) {
+  if (item?.tipo === "OTRO") {
+    return String(item?.descripcionOtro || item?.label || "").trim() || "Otro";
+  }
+  return item?.label || item?.tipo;
+}
+
 export default function AdminEventualDetalle() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -273,7 +280,7 @@ export default function AdminEventualDetalle() {
                   <tbody className="divide-y bg-white">
                     {trabajosRealizados.map((item, idx) => (
                       <tr key={`trabajo-${idx}`}>
-                        <td className="px-3 py-2 font-medium text-gray-900">{item.label || item.tipo}</td>
+                        <td className="px-3 py-2 font-medium text-gray-900">{getTrabajoLabel(item)}</td>
                         <td className="px-3 py-2 text-right text-gray-900">{item.cantidad}</td>
                         <td className="px-3 py-2 text-gray-600">{item.unidadLabel || item.unidadMedida}</td>
                       </tr>

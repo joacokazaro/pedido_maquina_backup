@@ -87,6 +87,13 @@ function buildMaquinariaRows(eventual) {
   return rows;
 }
 
+function getTrabajoLabel(trabajo) {
+  if (trabajo?.tipo === "OTRO") {
+    return String(trabajo?.descripcionOtro || trabajo?.label || "").trim() || "Otro";
+  }
+  return trabajo?.label || trabajo?.tipo;
+}
+
 function buildTrabajosRows(eventual) {
   const trabajos = Array.isArray(eventual?.trabajosRealizados) ? eventual.trabajosRealizados : [];
 
@@ -94,7 +101,7 @@ function buildTrabajosRows(eventual) {
 
   for (const trabajo of trabajos) {
     rows.push([
-      safeText(trabajo?.label || trabajo?.tipo),
+      safeText(getTrabajoLabel(trabajo)),
       String(trabajo?.cantidad ?? "-"),
       safeText(trabajo?.unidadLabel || trabajo?.unidadMedida, "-"),
     ]);

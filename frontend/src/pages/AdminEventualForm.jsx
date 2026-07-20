@@ -600,12 +600,20 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       .map((row) => String(row.vehiculoId || "").trim())
       .filter(Boolean);
 
-    const trabajos = trabajosRealizados.map((row) => ({
-      ...row,
-      label: TIPOS_TRABAJO.find((t) => t.value === row.tipo)?.label || row.label || row.tipo,
-      unidadLabel: UNIDADES.find((u) => u.value === row.unidadMedida)?.label || row.unidadLabel || row.unidadMedida,
-      cantidad: Number(row.cantidad),
-    }));
+    const trabajos = trabajosRealizados.map((row) => {
+      const descripcionOtro = String(row.descripcionOtro || "").trim();
+      const label =
+        row.tipo === "OTRO" && descripcionOtro
+          ? descripcionOtro
+          : TIPOS_TRABAJO.find((t) => t.value === row.tipo)?.label || row.label || row.tipo;
+
+      return {
+        ...row,
+        label,
+        unidadLabel: UNIDADES.find((u) => u.value === row.unidadMedida)?.label || row.unidadLabel || row.unidadMedida,
+        cantidad: Number(row.cantidad),
+      };
+    });
 
     const servicios = serviciosExtrasSubcontratados.map((row) => ({
       ...row,
