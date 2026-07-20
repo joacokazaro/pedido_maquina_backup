@@ -89,6 +89,8 @@ export default function AdminEventualDetalle() {
   const trabajosRealizados = Array.isArray(eventual.trabajosRealizados) ? eventual.trabajosRealizados : [];
   const serviciosExtras = Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : [];
   const horasBrowix = eventual.horasBrowix || null;
+  const horasSupervisor = eventual.horasSupervisor;
+  const tieneHorasSupervisor = horasSupervisor !== null && horasSupervisor !== undefined;
   const isFinalizado = String(eventual.estado || "").toLowerCase() === "finalizado";
   const maquinasDePedidos = Array.isArray(eventual.maquinasDePedidos) ? eventual.maquinasDePedidos : [];
   const pedidosComplementarios = Array.isArray(eventual.pedidosComplementarios) ? eventual.pedidosComplementarios : [];
@@ -395,6 +397,15 @@ export default function AdminEventualDetalle() {
             ) : null}
           </div>
         ) : null}
+      </div>
+
+      <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/60 to-white p-5 shadow space-y-2">
+        <h2 className="text-lg font-semibold text-gray-900">Horas de supervisor</h2>
+        {tieneHorasSupervisor ? (
+          <p className="text-2xl font-bold text-slate-900">{horasSupervisor} hs</p>
+        ) : (
+          <p className="text-sm text-slate-500">Todavía no se cargaron horas de supervisor para este eventual.</p>
+        )}
       </div>
 
       <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/60 to-white p-5 shadow space-y-4">

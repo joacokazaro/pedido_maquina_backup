@@ -318,18 +318,27 @@ export function downloadEventualResumenPdf(eventual) {
   cursorY += 10;
 
   const horasBrowix = eventual?.horasBrowix || null;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(55, 65, 81);
-  if (!horasBrowix) {
-    doc.text("No se importaron horas de Browix para este eventual.", 14, cursorY);
-    cursorY += 8;
-  } else {
-    doc.setFont("helvetica", "bold");
-    doc.text(`Total: ${horasBrowix.totalHoras} hs`, 14, cursorY);
-    doc.setFont("helvetica", "normal");
-    cursorY += 8;
+  const horasSupervisor = eventual?.horasSupervisor;
+  const tieneHorasSupervisor = horasSupervisor !== null && horasSupervisor !== undefined;
 
+  autoTable(doc, {
+    startY: cursorY,
+    margin: { left: 12, right: 12 },
+    tableWidth: 186,
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [240, 240, 240], textColor: [31, 41, 55] },
+    body: [
+      ["Horas de Browix", horasBrowix ? `${horasBrowix.totalHoras} hs` : "No se importaron"],
+      ["Horas de supervisor", tieneHorasSupervisor ? `${horasSupervisor} hs` : "No se cargaron"],
+    ],
+    columnStyles: {
+      0: { fontStyle: "bold", cellWidth: 55, textColor: [31, 41, 55] },
+      1: { cellWidth: 131 },
+    },
+  });
+  cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;
+
+  if (horasBrowix) {
     const categorias = Array.isArray(horasBrowix.categorias) ? horasBrowix.categorias : [];
     if (categorias.length > 0) {
       autoTable(doc, {
