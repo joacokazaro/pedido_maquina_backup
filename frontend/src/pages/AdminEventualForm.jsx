@@ -135,6 +135,11 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const [importandoHoras, setImportandoHoras] = useState(false);
   const [horasBrowixError, setHorasBrowixError] = useState("");
 
+  const [horasSupervisorInput, setHorasSupervisorInput] = useState("");
+  const [guardandoHorasSupervisor, setGuardandoHorasSupervisor] = useState(false);
+  const [horasSupervisorError, setHorasSupervisorError] = useState("");
+  const [horasSupervisorGuardado, setHorasSupervisorGuardado] = useState(null);
+
   useEffect(() => {
     async function load() {
       try {
@@ -219,6 +224,16 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           setTrabajosRealizados(Array.isArray(eventual.trabajosRealizados) ? eventual.trabajosRealizados : []);
           setServiciosExtrasSubcontratados(Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : []);
           setHorasBrowix(eventual.horasBrowix || null);
+          setHorasSupervisorGuardado(
+            eventual.horasSupervisor !== null && eventual.horasSupervisor !== undefined
+              ? eventual.horasSupervisor
+              : null
+          );
+          setHorasSupervisorInput(
+            eventual.horasSupervisor !== null && eventual.horasSupervisor !== undefined
+              ? String(eventual.horasSupervisor)
+              : ""
+          );
           setObservacionesPosterioresRegistradas(observacionesPosteriores);
         }
       } catch (loadError) {
@@ -548,6 +563,41 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       setHorasBrowixError(importError.message || "Error importando horas de Browix");
     } finally {
       setImportandoHoras(false);
+    }
+  }
+
+  async function guardarHorasSupervisor() {
+    try {
+      setGuardandoHorasSupervisor(true);
+      setHorasSupervisorError("");
+
+      const valor = String(horasSupervisorInput || "").trim();
+      if (valor !== "") {
+        const numero = Number(valor);
+        if (!Number.isFinite(numero) || numero < 0) {
+          throw new Error("Las horas de supervisor deben ser un número mayor o igual a 0.");
+        }
+      }
+
+      const res = await fetch(`${API_BASE}/admin/eventuales/${encodeURIComponent(id)}/horas-supervisor`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...buildActorHeaders(user) },
+        body: JSON.stringify({ horas: valor === "" ? null : Number(valor) }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudieron guardar las horas de supervisor");
+      }
+
+      setHorasSupervisorGuardado(
+        data.horasSupervisor !== null && data.horasSupervisor !== undefined ? data.horasSupervisor : null
+      );
+    } catch (guardarError) {
+      console.error(guardarError);
+      setHorasSupervisorError(guardarError.message || "Error guardando horas de supervisor");
+    } finally {
+      setGuardandoHorasSupervisor(false);
     }
   }
 
@@ -1202,6 +1252,13 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           </div>
         </div>
         <div className="space-y-4 p-4 sm:p-5">
+          {form.estado !== "finalizado" ? (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-medium text-amber-800">
+              La importación de horas de Browix y la carga de horas de supervisor se habilitan recién cuando el
+              eventual se marca como <b>finalizado</b> (y se guarda ese cambio de estado).
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="max-w-2xl">
               <p className="text-sm text-gray-600">
@@ -1209,7 +1266,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 <span className="font-semibold text-gray-800">{form.nombre || "sin nombre"}</span>), dentro del
                 rango de fecha inicio y fecha fin cargados arriba.
               </p>
-              {!form.fechaInicio || !form.fechaFin ? (
+              {(!form.fechaInicio || !form.fechaFin) && form.estado === "finalizado" ? (
                 <p className="mt-1 text-xs font-medium text-amber-600">
                   Cargá fecha de inicio y fecha de fin para poder importar las horas.
                 </p>
@@ -1218,7 +1275,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             <button
               type="button"
               onClick={importarHorasBrowix}
-              disabled={!form.fechaInicio || !form.fechaFin || importandoHoras}
+              disabled={!form.fechaInicio || !form.fechaFin || form.estado !== "finalizado" || importandoHoras}
               className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-orange-300"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1307,6 +1364,45 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           ) : (
             <p className="text-sm text-gray-500">Todavía no se importaron horas de Browix para este eventual.</p>
           )}
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-600">Horas de supervisor (opcional)</p>
+            <p className="mt-1 text-sm text-gray-600">
+              Cantidad de horas del supervisor a cargo del eventual, ingresada manualmente.
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={horasSupervisorInput}
+                onChange={(event) => setHorasSupervisorInput(event.target.value)}
+                disabled={form.estado !== "finalizado" || guardandoHorasSupervisor}
+                placeholder="Ej: 8"
+                className="w-32 rounded-xl border p-2.5 text-sm disabled:cursor-not-allowed disabled:bg-slate-100"
+              />
+              <button
+                type="button"
+                onClick={guardarHorasSupervisor}
+                disabled={form.estado !== "finalizado" || guardandoHorasSupervisor}
+                className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {guardandoHorasSupervisor ? "Guardando..." : "Guardar horas de supervisor"}
+              </button>
+              {horasSupervisorGuardado !== null ? (
+                <span className="text-xs font-medium text-slate-500">
+                  Guardado: <b>{horasSupervisorGuardado} hs</b>
+                </span>
+              ) : null}
+            </div>
+
+            {horasSupervisorError ? (
+              <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+                {horasSupervisorError}
+              </div>
+            ) : null}
+          </div>
         </div>
       </section>
       ) : null}

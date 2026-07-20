@@ -465,6 +465,7 @@ export async function getEventualDetail(eventualId) {
     trabajosRealizados: parseJson(eventual.trabajosRealizados) || [],
     serviciosExtrasSubcontratados: parseJson(eventual.serviciosExtrasSubcontratados) || [],
     horasBrowix: parseJson(eventual.horasBrowix),
+    horasSupervisor: eventual.horasSupervisor,
     historial: eventual.historial.map(mapHistorialEntry),
   };
 }
@@ -895,6 +896,10 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
     throw buildError("Eventual no encontrado", 404);
   }
 
+  if (eventual.estado !== "finalizado") {
+    throw buildError("El eventual debe estar finalizado para importar horas de Browix", 400);
+  }
+
   if (!eventual.fechaInicio || !eventual.fechaFin) {
     throw buildError(
       "El eventual debe tener fecha de inicio y fecha de fin cargadas para importar horas de Browix",
@@ -946,6 +951,52 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
         eventualId: eventual.id,
         accion: "HORAS_BROWIX_IMPORTADAS",
         detalle: JSON.stringify(resultado),
+        usuarioId: actorId,
+      },
+    }),
+  ]);
+
+  return getEventualDetail(eventual.id);
+}
+
+// Carga manual, opcional, de horas de supervisor para el eventual. Igual que
+// las horas de Browix, solo se permite una vez que el eventual está
+// finalizado (no antes: mientras está activo puede seguir cambiando).
+export async function actualizarHorasSupervisorEventual({ eventualId, horas, actorId, actorNombre }) {
+  const eventual = await prisma.eventual.findUnique({ where: { id: Number(eventualId) } });
+  if (!eventual) {
+    throw buildError("Eventual no encontrado", 404);
+  }
+
+  if (eventual.estado !== "finalizado") {
+    throw buildError("El eventual debe estar finalizado para cargar las horas de supervisor", 400);
+  }
+
+  let horasNormalizadas = null;
+  if (horas !== null && horas !== undefined && String(horas).trim() !== "") {
+    const horasNumero = Number(horas);
+    if (!Number.isFinite(horasNumero) || horasNumero < 0) {
+      throw buildError("Las horas de supervisor deben ser un número mayor o igual a 0", 400);
+    }
+    horasNormalizadas = Math.round(horasNumero * 100) / 100;
+  }
+
+  const detalle = {
+    horasSupervisor: horasNormalizadas,
+    actualizadoEn: new Date().toISOString(),
+    actualizadoPor: actorNombre || null,
+  };
+
+  await prisma.$transaction([
+    prisma.eventual.update({
+      where: { id: eventual.id },
+      data: { horasSupervisor: horasNormalizadas },
+    }),
+    prisma.historialEventual.create({
+      data: {
+        eventualId: eventual.id,
+        accion: "HORAS_SUPERVISOR_ACTUALIZADAS",
+        detalle: JSON.stringify(detalle),
         usuarioId: actorId,
       },
     }),

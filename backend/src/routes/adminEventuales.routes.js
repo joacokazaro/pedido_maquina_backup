@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  adminActualizarHorasSupervisor,
   adminGetComponentesCatalogo,
   adminCreateEventual,
   adminDeleteEventual,
@@ -18,6 +19,7 @@ router.get("/eventuales/:id", adminGetEventual);
 router.post("/eventuales", adminCreateEventual);
 router.put("/eventuales/:id", adminUpdateEventual);
 router.post("/eventuales/:id/importar-horas-browix", adminImportarHorasBrowix);
+router.put("/eventuales/:id/horas-supervisor", adminActualizarHorasSupervisor);
 router.delete("/eventuales/:id", adminDeleteEventual);
 
 export default router;
