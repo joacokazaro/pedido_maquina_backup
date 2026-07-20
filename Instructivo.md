@@ -848,6 +848,8 @@ Al completar datos o finalizar se pueden cargar:
 - Servicios extras subcontratados, con precio de la subcontratación opcional en pesos ($ARS).
 - Observaciones posteriores.
 
+Con fecha de inicio y fecha de fin cargadas, el botón **Importar horas de Browix** trae del sistema de marcación el total de horas fichadas cuya ubicación coincide exactamente con el nombre del eventual, dentro de ese rango de fechas. El resultado (total de horas, cantidad de fichajes encontrados y fecha de importación) queda guardado en el eventual y se puede reimportar en cualquier momento, pisando el valor anterior.
+
 Estados de eventual:
 
 - **activo**.
@@ -862,6 +864,7 @@ En el detalle de un eventual se visualiza:
 - Vehículos utilizados.
 - Trabajos realizados con cantidad y unidad.
 - Servicios extras subcontratados, con su precio en pesos ($ARS) si fue cargado.
+- Horas importadas de Browix, si se importaron.
 - Observaciones previas.
 - Observaciones posteriores.
 - Historial de acciones.

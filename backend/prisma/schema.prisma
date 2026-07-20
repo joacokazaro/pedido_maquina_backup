@@ -228,6 +228,7 @@ model Eventual {
   componentesUtilizados String?
   trabajosRealizados    String?
   serviciosExtrasSubcontratados String?
+  horasBrowix   String?
   activo        Boolean             @default(true)
   createdAt     DateTime            @default(now())
 

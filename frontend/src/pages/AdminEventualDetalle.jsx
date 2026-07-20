@@ -81,6 +81,7 @@ export default function AdminEventualDetalle() {
   const vehiculos = Array.isArray(eventual.componentesActuales?.vehiculos) ? eventual.componentesActuales.vehiculos : [];
   const trabajosRealizados = Array.isArray(eventual.trabajosRealizados) ? eventual.trabajosRealizados : [];
   const serviciosExtras = Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : [];
+  const horasBrowix = eventual.horasBrowix || null;
   const isFinalizado = String(eventual.estado || "").toLowerCase() === "finalizado";
   const maquinasDePedidos = Array.isArray(eventual.maquinasDePedidos) ? eventual.maquinasDePedidos : [];
   const pedidosComplementarios = Array.isArray(eventual.pedidosComplementarios) ? eventual.pedidosComplementarios : [];
@@ -317,6 +318,76 @@ export default function AdminEventualDetalle() {
             )}
           </section>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/60 to-white p-5 shadow space-y-2">
+        <h2 className="text-lg font-semibold text-gray-900">Horas de Browix</h2>
+        {horasBrowix ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Total importado</p>
+              <p className="text-2xl font-bold text-amber-900">{horasBrowix.totalHoras} hs</p>
+            </div>
+            <div className="text-xs text-amber-700/80">
+              <p>
+                {horasBrowix.cantidadFichajes} fichaje{horasBrowix.cantidadFichajes === 1 ? "" : "s"} encontrado
+                {horasBrowix.cantidadFichajes === 1 ? "" : "s"} · Rango: {horasBrowix.desde} a {horasBrowix.hasta}
+              </p>
+              <p>
+                Importado el {new Date(horasBrowix.importadoEn).toLocaleString("es-AR")}
+                {horasBrowix.importadoPor ? ` por ${horasBrowix.importadoPor}` : ""}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">Todavía no se importaron horas de Browix para este eventual.</p>
+        )}
+
+        {horasBrowix && Array.isArray(horasBrowix.categorias) && horasBrowix.categorias.length > 0 ? (
+          <div className="overflow-x-auto rounded-xl border border-amber-200">
+            <table className="w-full text-sm">
+              <thead className="bg-amber-100/70">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-amber-800">Categoría</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-amber-800">Personas</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-amber-800">Horas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-amber-100 bg-white">
+                {horasBrowix.categorias.map((cat) => (
+                  <tr key={cat.categoria}>
+                    <td className="px-3 py-2 font-medium text-gray-900">{cat.categoria}</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{cat.cantidadPersonas}</td>
+                    <td className="px-3 py-2 text-right text-gray-900">{cat.totalHoras} hs</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
+        {horasBrowix &&
+        (horasBrowix.fichajesSinLegajo > 0 ||
+          (Array.isArray(horasBrowix.erroresCategorizacion) && horasBrowix.erroresCategorizacion.length > 0)) ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            <p className="font-semibold uppercase tracking-wide">Advertencias de categorización</p>
+            {horasBrowix.fichajesSinLegajo > 0 ? (
+              <p className="mt-1">
+                {horasBrowix.fichajesSinLegajo} fichaje{horasBrowix.fichajesSinLegajo === 1 ? "" : "s"} sin legajo
+                cargado en Browix — esas horas no se pudieron asignar a ninguna persona ni categoría.
+              </p>
+            ) : null}
+            {Array.isArray(horasBrowix.erroresCategorizacion) && horasBrowix.erroresCategorizacion.length > 0 ? (
+              <ul className="mt-1 list-inside list-disc space-y-0.5">
+                {horasBrowix.erroresCategorizacion.map((err, idx) => (
+                  <li key={`${err.legajo}-${idx}`}>
+                    Legajo {err.legajo}{err.nombre ? ` (${err.nombre})` : ""}: {err.motivo}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/60 to-white p-5 shadow space-y-4">

@@ -307,7 +307,59 @@ export function downloadEventualResumenPdf(eventual) {
     cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;
   }
 
-  drawSectionTitle(doc, "5. OBSERVACIONES REGISTRADAS", cursorY);
+  drawSectionTitle(doc, "5. HORAS DE BROWIX", cursorY);
+  cursorY += 10;
+
+  const horasBrowix = eventual?.horasBrowix || null;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(55, 65, 81);
+  if (!horasBrowix) {
+    doc.text("No se importaron horas de Browix para este eventual.", 14, cursorY);
+    cursorY += 8;
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total: ${horasBrowix.totalHoras} hs`, 14, cursorY);
+    doc.setFont("helvetica", "normal");
+    cursorY += 6;
+    doc.text(
+      `${horasBrowix.cantidadFichajes} fichaje(s) encontrados - Rango: ${horasBrowix.desde} a ${horasBrowix.hasta}`,
+      14,
+      cursorY
+    );
+    cursorY += 6;
+    doc.text(
+      `Importado el ${new Date(horasBrowix.importadoEn).toLocaleString("es-AR")}${horasBrowix.importadoPor ? ` por ${horasBrowix.importadoPor}` : ""}`,
+      14,
+      cursorY
+    );
+    cursorY += 8;
+
+    const categorias = Array.isArray(horasBrowix.categorias) ? horasBrowix.categorias : [];
+    if (categorias.length > 0) {
+      autoTable(doc, {
+        startY: cursorY,
+        margin: { left: 12, right: 12 },
+        tableWidth: 186,
+        styles: { font: "helvetica", fontSize: 8.7, cellPadding: 1.8 },
+        headStyles: { fillColor: [240, 240, 240], textColor: [31, 41, 55] },
+        head: [["Categoria", "Personas", "Horas"]],
+        body: categorias.map((cat) => [
+          safeText(cat?.categoria, "Sin categoria"),
+          String(cat?.cantidadPersonas ?? "-"),
+          `${cat?.totalHoras ?? "-"} hs`,
+        ]),
+        columnStyles: {
+          0: { cellWidth: 126, fontStyle: "bold" },
+          1: { cellWidth: 30, halign: "right" },
+          2: { cellWidth: 30, halign: "right" },
+        },
+      });
+      cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;
+    }
+  }
+
+  drawSectionTitle(doc, "6. OBSERVACIONES REGISTRADAS", cursorY);
   cursorY += 10;
 
   const observationsRows = extractObservationRows(eventual);

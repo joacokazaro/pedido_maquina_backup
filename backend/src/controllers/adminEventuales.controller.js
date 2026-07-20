@@ -2,9 +2,13 @@ import {
   getComponentesCatalogo,
   deleteEventual,
   getEventualDetail,
+  importarHorasBrowixEventual,
   listEventuales,
   saveEventual,
 } from "../services/eventuales.service.js";
+import { requireActor } from "../services/requestActor.service.js";
+
+const ROLES_HORAS_BROWIX = ["admin", "coordinador"];
 
 function handleError(res, error, fallbackMessage) {
   const status = error?.status || 500;
@@ -69,6 +73,22 @@ export async function adminUpdateEventual(req, res) {
     res.json(eventual);
   } catch (error) {
     handleError(res, error, "Error completando datos del eventual");
+  }
+}
+
+export async function adminImportarHorasBrowix(req, res) {
+  const actor = await requireActor(req, res, ROLES_HORAS_BROWIX);
+  if (!actor) return;
+
+  try {
+    const eventual = await importarHorasBrowixEventual({
+      eventualId: req.params.id,
+      actorId: actor.id,
+      actorNombre: actor.nombre || actor.username,
+    });
+    res.json(eventual);
+  } catch (error) {
+    handleError(res, error, "Error importando horas de Browix");
   }
 }
 

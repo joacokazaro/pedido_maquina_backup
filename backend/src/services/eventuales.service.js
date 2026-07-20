@@ -1,5 +1,11 @@
 import prisma from "../db/prisma.js";
 import { userHasRole, whereHasRole } from "./roles.service.js";
+import {
+  getFichajesPorRango,
+  sumarHorasTeoricasPorUbicacion,
+  agruparMinutosPorLegajo,
+  getCategoriasPorLegajos,
+} from "./browix.service.js";
 
 export const ESTADOS_EVENTUAL_VALIDOS = ["activo", "finalizado", "cancelado"];
 
@@ -458,6 +464,7 @@ export async function getEventualDetail(eventualId) {
     legacyComponentes: legacyComponentes && typeof legacyComponentes === "object" ? legacyComponentes : null,
     trabajosRealizados: parseJson(eventual.trabajosRealizados) || [],
     serviciosExtrasSubcontratados: parseJson(eventual.serviciosExtrasSubcontratados) || [],
+    horasBrowix: parseJson(eventual.horasBrowix),
     historial: eventual.historial.map(mapHistorialEntry),
   };
 }
@@ -804,6 +811,147 @@ export async function addSupervisorObservation(eventualId, actorUsername, observ
   });
 
   return getEventualDetail(eventualId);
+}
+
+function redondearHoras(minutos) {
+  return Math.round((minutos / 60) * 100) / 100;
+}
+
+// Agrupa los fichajes por legajo y consulta en Browix la categoría de cada
+// persona (customfield 137) para poder desglosar las horas totales por
+// categoría. Un fallo al categorizar una persona puntual (legajo no
+// encontrado, sin categoría cargada, error de red, etc.) no aborta la
+// importación completa: esa persona queda igual en el desglose por persona
+// (bajo "Sin categoría") y el motivo del fallo se reporta en
+// erroresCategorizacion para quedar registrado.
+async function categorizarHorasBrowix(fichajes, ubicacion) {
+  const { grupos, sinLegajo } = agruparMinutosPorLegajo(fichajes, ubicacion);
+
+  // Secuencial (no Promise.allSettled en paralelo): Browix limita getUsers a
+  // 1 consulta/segundo por uuid y devuelve HTTP 400 si se la satura con
+  // consultas concurrentes, aunque cada legajo sea válido.
+  const resultadosCategoria = await getCategoriasPorLegajos(grupos.map((grupo) => grupo.legajo));
+
+  const erroresCategorizacion = [];
+
+  const personas = grupos.map((grupo, idx) => {
+    const outcome = resultadosCategoria[idx];
+    const totalHoras = redondearHoras(grupo.totalMinutos);
+    const nombreFichaje = [grupo.nombre, grupo.apellido].filter(Boolean).join(" ").trim() || null;
+
+    const base = {
+      legajo: grupo.legajo,
+      totalMinutos: grupo.totalMinutos,
+      totalHoras,
+      cantidadFichajes: grupo.cantidadFichajes,
+    };
+
+    if (outcome.status === "rejected") {
+      const motivo = outcome.reason?.message || "Error consultando Browix";
+      console.error(`Error obteniendo categoría de Browix para legajo ${grupo.legajo}`, outcome.reason);
+      erroresCategorizacion.push({ legajo: grupo.legajo, nombre: nombreFichaje, motivo });
+      return { ...base, nombre: nombreFichaje, categoria: null, error: motivo };
+    }
+
+    const usuario = outcome.value;
+
+    if (!usuario.encontrado) {
+      const motivo = "No se encontró el legajo en Browix (getUsers)";
+      erroresCategorizacion.push({ legajo: grupo.legajo, nombre: nombreFichaje, motivo });
+      return { ...base, nombre: nombreFichaje, categoria: null, error: motivo };
+    }
+
+    const nombreCompleto =
+      [usuario.nombre, usuario.apellido].filter(Boolean).join(" ").trim() || nombreFichaje;
+
+    if (!usuario.categoria) {
+      const motivo = "El usuario no tiene categoría cargada en Browix (campo personalizado 137)";
+      erroresCategorizacion.push({ legajo: grupo.legajo, nombre: nombreCompleto, motivo });
+      return { ...base, nombre: nombreCompleto, categoria: null, error: motivo };
+    }
+
+    return { ...base, nombre: nombreCompleto, categoria: usuario.categoria, error: null };
+  });
+
+  const categoriasMap = new Map();
+  for (const persona of personas) {
+    const clave = persona.categoria || "Sin categoría";
+    const actual = categoriasMap.get(clave) || { categoria: clave, totalMinutos: 0, cantidadPersonas: 0 };
+    actual.totalMinutos += persona.totalMinutos;
+    actual.cantidadPersonas += 1;
+    categoriasMap.set(clave, actual);
+  }
+
+  const categorias = Array.from(categoriasMap.values())
+    .map((c) => ({ ...c, totalHoras: redondearHoras(c.totalMinutos) }))
+    .sort((a, b) => b.totalMinutos - a.totalMinutos);
+
+  return { personas, categorias, fichajesSinLegajo: sinLegajo, erroresCategorizacion };
+}
+
+export async function importarHorasBrowixEventual({ eventualId, actorId, actorNombre }) {
+  const eventual = await prisma.eventual.findUnique({ where: { id: Number(eventualId) } });
+  if (!eventual) {
+    throw buildError("Eventual no encontrado", 404);
+  }
+
+  if (!eventual.fechaInicio || !eventual.fechaFin) {
+    throw buildError(
+      "El eventual debe tener fecha de inicio y fecha de fin cargadas para importar horas de Browix",
+      400
+    );
+  }
+
+  const fichajes = await getFichajesPorRango(eventual.fechaInicio, eventual.fechaFin);
+  const { totalMinutos, cantidadFichajes } = sumarHorasTeoricasPorUbicacion(fichajes, eventual.nombre);
+  const { personas, categorias, fichajesSinLegajo, erroresCategorizacion } = await categorizarHorasBrowix(
+    fichajes,
+    eventual.nombre
+  );
+
+  if (fichajesSinLegajo > 0) {
+    console.warn(
+      `Eventual ${eventual.id}: ${fichajesSinLegajo} fichaje(s) sin legajo cargado en Browix, no se pudieron atribuir a una persona/categoría`
+    );
+  }
+  if (erroresCategorizacion.length > 0) {
+    console.warn(
+      `Eventual ${eventual.id}: no se pudo determinar la categoría de ${erroresCategorizacion.length} persona(s)`,
+      erroresCategorizacion
+    );
+  }
+
+  const resultado = {
+    totalMinutos,
+    totalHoras: Math.round((totalMinutos / 60) * 100) / 100,
+    cantidadFichajes,
+    ubicacion: eventual.nombre,
+    desde: eventual.fechaInicio.toISOString().slice(0, 10),
+    hasta: eventual.fechaFin.toISOString().slice(0, 10),
+    importadoEn: new Date().toISOString(),
+    importadoPor: actorNombre || null,
+    personas,
+    categorias,
+    fichajesSinLegajo,
+    erroresCategorizacion,
+  };
+
+  await prisma.$transaction([
+    prisma.eventual.update({
+      where: { id: eventual.id },
+      data: { horasBrowix: JSON.stringify(resultado) },
+    }),
+    prisma.historialEventual.create({
+      data: {
+        eventualId: eventual.id,
+        accion: "HORAS_BROWIX_IMPORTADAS",
+        detalle: JSON.stringify(resultado),
+        usuarioId: actorId,
+      },
+    }),
+  ]);
+
+  return getEventualDetail(eventual.id);
 }
 
 export async function finalizeSupervisorEventual(eventualId, actorUsername) {
