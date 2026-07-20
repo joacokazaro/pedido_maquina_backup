@@ -6,8 +6,13 @@
 
 const BROWIX_BASE_URL = process.env.BROWIX_BASE_URL || "https://cloud01.browix.com";
 const BROWIX_WORKGROUP_UUID = process.env.BROWIX_WORKGROUP_UUID || "d54d7b99cbdc69591966e3acbbeba8bb";
-// Grupo/workgroup fijo donde se cargan los fichajes de eventuales en Browix.
-const BROWIX_GRUPO_ID = process.env.BROWIX_GRUPO_ID || "2141";
+// Grupos/workgroups donde se cargan los fichajes de eventuales en Browix. Puede
+// haber más de uno (lista separada por comas); se consultan todos y se combinan
+// los fichajes para armar el total.
+const BROWIX_GRUPO_IDS = String(process.env.BROWIX_GRUPO_IDS || process.env.BROWIX_GRUPO_ID || "2141,2303,1444")
+  .split(",")
+  .map((id) => id.trim())
+  .filter(Boolean);
 const BROWIX_AUTH_TOKEN = process.env.BROWIX_AUTH_TOKEN || "";
 // Customfield fijo en Browix donde se carga la categoría del empleado (ver getUsers).
 const BROWIX_CUSTOMFIELD_CATEGORIA_ID = "137";
@@ -22,8 +27,24 @@ function formatFecha(date) {
   return date.toISOString().slice(0, 10);
 }
 
-export async function getFichajesPorRango(desde, hasta) {
-  const url = `${BROWIX_BASE_URL}/v1/externalpermissions/getWorkgroupschedulePlan/uuid:${BROWIX_WORKGROUP_UUID}/${formatFecha(desde)}/${formatFecha(hasta)}/${BROWIX_GRUPO_ID}`;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function esErrorPorLimiteDeConsultas(mensaje) {
+  return /tiempo m.nimo entre consultas/i.test(String(mensaje || ""));
+}
+
+// Cada endpoint de Browix informa su propio límite en el body del 400 (ej.
+// "ha excedido el tiempo mínimo entre consultas de N segundos"). Se midió
+// empíricamente: getWorkgroupschedulePlan (fichajes por grupo) exige 10s,
+// getUsers (categoría por legajo) exige 1s. Los márgenes de acá dejan un
+// colchón sobre esos mínimos.
+const BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS = Number(process.env.BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS) || 10500;
+const BROWIX_MIN_MS_ENTRE_CONSULTAS_LEGAJOS = Number(process.env.BROWIX_MIN_MS_ENTRE_CONSULTAS_LEGAJOS) || 1100;
+
+async function getFichajesPorGrupo(desde, hasta, grupoId) {
+  const url = `${BROWIX_BASE_URL}/v1/externalpermissions/getWorkgroupschedulePlan/uuid:${BROWIX_WORKGROUP_UUID}/${formatFecha(desde)}/${formatFecha(hasta)}/${grupoId}`;
 
   const headers = { Accept: "application/json" };
   if (BROWIX_AUTH_TOKEN) headers["X-AUTH-TOKEN"] = BROWIX_AUTH_TOKEN;
@@ -32,19 +53,62 @@ export async function getFichajesPorRango(desde, hasta) {
   try {
     response = await fetch(url, { headers });
   } catch {
-    throw buildBrowixError("No se pudo conectar con Browix");
-  }
-
-  if (!response.ok) {
-    throw buildBrowixError(`Browix respondió con error (HTTP ${response.status})`);
+    throw buildBrowixError(`No se pudo conectar con Browix para el grupo ${grupoId}`);
   }
 
   const body = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const erroresBody = body?.response?.errors;
+    const detalle =
+      (typeof erroresBody?.error === "string" && erroresBody.error) ||
+      (typeof erroresBody === "string" && erroresBody) ||
+      body?.response?.message ||
+      null;
+    const error = buildBrowixError(
+      `Browix respondió con error (HTTP ${response.status}) al consultar el grupo ${grupoId}${detalle ? `: ${detalle}` : ""}`
+    );
+    error.rateLimited = esErrorPorLimiteDeConsultas(detalle);
+    throw error;
+  }
+
   if (!body || body.response?.result !== "ok" || !Array.isArray(body.response?.data)) {
-    throw buildBrowixError("Respuesta inesperada de Browix");
+    throw buildBrowixError(`Respuesta inesperada de Browix al consultar el grupo ${grupoId}`);
   }
 
   return body.response.data;
+}
+
+// Consulta los fichajes de todos los grupos configurados (BROWIX_GRUPO_IDS) y
+// combina los resultados. Se consultan secuencialmente (con espaciado de 10s+)
+// en vez de en paralelo por el límite de Browix; si un grupo choca igual
+// contra el límite (por ejemplo por otra consulta concurrente de otro
+// proceso sobre el mismo uuid) reintenta una vez más. Si un grupo falla de
+// forma definitiva se aborta toda la importación en vez de reportar un total
+// parcial que subestimaría las horas en silencio.
+export async function getFichajesPorRango(desde, hasta) {
+  if (BROWIX_GRUPO_IDS.length === 0) {
+    throw buildBrowixError("No hay grupos de Browix configurados (BROWIX_GRUPO_IDS)");
+  }
+
+  const fichajes = [];
+  for (let i = 0; i < BROWIX_GRUPO_IDS.length; i += 1) {
+    if (i > 0) await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS);
+
+    const grupoId = BROWIX_GRUPO_IDS[i];
+    try {
+      const fichajesGrupo = await getFichajesPorGrupo(desde, hasta, grupoId);
+      fichajes.push(...fichajesGrupo);
+    } catch (error) {
+      if (!error?.rateLimited) throw error;
+
+      await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS);
+      const fichajesGrupo = await getFichajesPorGrupo(desde, hasta, grupoId);
+      fichajes.push(...fichajesGrupo);
+    }
+  }
+
+  return fichajes;
 }
 
 // Suma minutos_teoricos_de_jornada de los fichajes cuya ubicacion matchea
@@ -95,20 +159,6 @@ export function agruparMinutosPorLegajo(fichajes, ubicacion) {
   }
 
   return { grupos: Array.from(porLegajo.values()), sinLegajo };
-}
-
-// Browix limita getUsers a 1 consulta por segundo por uuid (lo informa en el
-// propio body del 400: "ha excedido el tiempo mínimo entre consultas de 1
-// segundos"). Como se pide la categoría de una persona a la vez, hay que
-// espaciar las consultas; este es el margen de seguridad sobre ese límite.
-const BROWIX_MIN_MS_ENTRE_CONSULTAS = Number(process.env.BROWIX_MIN_MS_ENTRE_CONSULTAS) || 1100;
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function esErrorPorLimiteDeConsultas(mensaje) {
-  return /tiempo m.nimo entre consultas/i.test(String(mensaje || ""));
 }
 
 // Consulta en Browix los datos de un empleado por legajo (external_code) para
@@ -189,7 +239,7 @@ export async function getCategoriasPorLegajos(legajos) {
   const resultados = [];
 
   for (let i = 0; i < legajos.length; i += 1) {
-    if (i > 0) await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS);
+    if (i > 0) await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_LEGAJOS);
 
     try {
       const usuario = await getCategoriaPorLegajo(legajos[i]);
@@ -202,7 +252,7 @@ export async function getCategoriasPorLegajos(legajos) {
 
       // Reintento único ante rate-limit: espera un ciclo completo más y
       // vuelve a intentar antes de darse por vencido con este legajo.
-      await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS);
+      await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_LEGAJOS);
       try {
         const usuario = await getCategoriaPorLegajo(legajos[i]);
         resultados.push({ status: "fulfilled", value: usuario });

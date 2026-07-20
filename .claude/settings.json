@@ -206,7 +206,10 @@
       "Bash(curl -s -X DELETE \"http://localhost:3000/api/admin/eventuales/30\" -H \"Content-Type: application/json\" -d '{\"usuario\":\"admin\"}')",
       "Bash(node \"C:/Users/KAZARO~1/AppData/Local/Temp/claude/c--Users-KAZARO-72-Desktop-pedido-maquina-backup/1c3465d9-a651-42aa-b312-3f0a7dfe0a21/scratchpad/borrar-eventual-30.mjs\")",
       "Bash(./node_modules/.bin/eslint src/pages/AdminEventualForm.jsx src/pages/AdminEventualDetalle.jsx src/utils/eventualPdf.js)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(node -r dotenv/config _test_browix_grupos.mjs)",
+      "Bash(node _test_browix_grupos.mjs)",
+      "Bash(curl -s -w \"\\\\nHTTP_CODE:%{http_code}\\\\n\" \"https://cloud01.browix.com/v1/externalpermissions/getWorkgroupschedulePlan/uuid:d54d7b99cbdc69591966e3acbbeba8bb/2026-07-01/2026-07-08/2303\" -H \"Accept: application/json\")"
     ]
   }
 }
