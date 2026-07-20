@@ -321,18 +321,6 @@ export function downloadEventualResumenPdf(eventual) {
     doc.setFont("helvetica", "bold");
     doc.text(`Total: ${horasBrowix.totalHoras} hs`, 14, cursorY);
     doc.setFont("helvetica", "normal");
-    cursorY += 6;
-    doc.text(
-      `${horasBrowix.cantidadFichajes} fichaje(s) encontrados - Rango: ${horasBrowix.desde} a ${horasBrowix.hasta}`,
-      14,
-      cursorY
-    );
-    cursorY += 6;
-    doc.text(
-      `Importado el ${new Date(horasBrowix.importadoEn).toLocaleString("es-AR")}${horasBrowix.importadoPor ? ` por ${horasBrowix.importadoPor}` : ""}`,
-      14,
-      cursorY
-    );
     cursorY += 8;
 
     const categorias = Array.isArray(horasBrowix.categorias) ? horasBrowix.categorias : [];
