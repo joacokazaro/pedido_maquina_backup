@@ -55,6 +55,7 @@ export default function AdminMaquinaForm() {
     servicioId: "",
     fechaCompra: "",
     proveedorFactura: "",
+    valorCompra: "",
     empresa: "",
     anio: "",
     antiguedad: "",
@@ -114,6 +115,7 @@ export default function AdminMaquinaForm() {
             servicioId: data.servicio?.id || "",
             fechaCompra: toDateInputValue(data.fechaCompra),
             proveedorFactura: data.proveedorFactura || "",
+            valorCompra: data.valorCompra ?? "",
             empresa: data.empresa || "",
             anio: data.anio ?? "",
             antiguedad: data.antiguedad ?? "",
@@ -202,6 +204,7 @@ export default function AdminMaquinaForm() {
         servicioId: form.servicioId ? Number(form.servicioId) : null,
         fechaCompra: form.fechaCompra || null,
         proveedorFactura: form.proveedorFactura || null,
+        valorCompra: toNullableNumber(form.valorCompra),
         empresa: form.empresa || null,
         anio: form.anio === "" ? null : Number(form.anio),
         valorUsadaDolares: toNullableNumber(form.valorUsadaDolares),
@@ -477,6 +480,20 @@ export default function AdminMaquinaForm() {
               <input
                 name="proveedorFactura"
                 value={form.proveedorFactura}
+                onChange={handleChange}
+                disabled={isReadOnly}
+                className="w-full p-2 rounded-xl border"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor compra $ARS:</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                name="valorCompra"
+                value={form.valorCompra}
                 onChange={handleChange}
                 disabled={isReadOnly}
                 className="w-full p-2 rounded-xl border"

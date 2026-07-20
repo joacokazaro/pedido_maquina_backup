@@ -87,6 +87,7 @@ model Maquina {
   servicioId   Int
   fechaCompra  DateTime?
   proveedorFactura String?
+  valorCompra  Float?
   empresa      String?
   anio         Int?
   amortizacion Int?

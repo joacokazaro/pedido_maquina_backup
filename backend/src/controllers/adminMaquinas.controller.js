@@ -231,6 +231,14 @@ function getImportValue(row, ...keys) {
   return undefined;
 }
 
+// Distingue "celda vacía/columna ausente" (no tocar el dato existente en una
+// actualización) de "celda con contenido" (aplicar el valor).
+function hasImportValue(raw) {
+  if (raw === undefined || raw === null) return false;
+  if (typeof raw === "string") return raw.trim() !== "";
+  return true;
+}
+
 function parseEstadoObligatorio(raw) {
   const value = String(raw || "").trim();
   if (!value) {
@@ -365,58 +373,84 @@ async function readWorkbookRows(buffer) {
   return rawRows;
 }
 
+// ID = clave principal. Fila con ID inexistente -> alta (columnas base
+// obligatorias, igual que siempre). Fila con ID existente -> actualización
+// parcial: una celda vacía o una columna ausente del archivo significa "no
+// tocar ese dato", nunca vaciarlo. Por eso cada campo tiene su propio flag
+// *Provided calculado sobre el valor crudo, antes de normalizar/validar.
 async function parseAndValidateMaquinasImport(fileBuffer) {
   const rows = await readWorkbookRows(fileBuffer);
 
-  const parsedRows = rows.map((row, index) => ({
-    rowNumber: index + 2,
-    id: String(getImportValue(row, "CODIGO", "COD", "ID") || "").trim(),
-    tipo: String(getImportValue(row, "TIPO") || "").trim(),
-    modelo: String(getImportValue(row, "MODELO") || "").trim(),
-    serie: getImportValue(row, "SERIE"),
-    estado: getImportValue(row, "ESTADO"),
-    servicioOriginal: String(
-      getImportValue(row, "SERVICIO_ORIGINAL", "SERVICIO") || ""
-    ).trim(),
-    fechaCompra: getImportValue(row, "FECHA_COMPRA", "FECHA_COMPRA"),
-    proveedorFactura: getImportValue(
-      row,
-      "PROVEEDOR_N_FACTURA",
-      "PROVEEDOR_FACTURA",
-      "PROVEEDOR"
-    ),
-    empresa: getImportValue(row, "EMPRESA"),
-    anio: getImportValue(row, "ANIO", "AÑO"),
-    amortizacion: getImportValue(row, "AMORTIZACION", "AMORTIZACIÓN"),
-    valorUsadaDolares: getImportValue(row, "VALOR_USADA_USD"),
-    valorUsadaPesos: getImportValue(row, "VALOR_USADA_ARS"),
-    valorNuevaDolares: getImportValue(row, "VALOR_NUEVA_USD"),
-    valorNuevaPesos: getImportValue(row, "VALOR_NUEVA_ARS"),
-    origenInfo: getImportValue(row, "ORIGEN_INFO"),
-    servicioAmortizacion: String(
-      getImportValue(row, "SERVICIO_AMORTIZACION") || ""
-    ).trim(),
-    comentarios: getImportValue(row, "COMENTARIOS"),
-  }));
+  const parsedRows = rows.map((row, index) => {
+    const idRaw = getImportValue(row, "CODIGO", "COD", "ID");
+    const tipoRaw = getImportValue(row, "TIPO");
+    const modeloRaw = getImportValue(row, "MODELO");
+    const serieRaw = getImportValue(row, "SERIE");
+    const estadoRaw = getImportValue(row, "ESTADO");
+    const servicioOriginalRaw = getImportValue(row, "SERVICIO_ORIGINAL", "SERVICIO");
+    const fechaCompraRaw = getImportValue(row, "FECHA_COMPRA");
+    const proveedorFacturaRaw = getImportValue(row, "PROVEEDOR_N_FACTURA", "PROVEEDOR_FACTURA", "PROVEEDOR");
+    const valorCompraRaw = getImportValue(row, "VALOR_COMPRA");
+    const empresaRaw = getImportValue(row, "EMPRESA");
+    const anioRaw = getImportValue(row, "ANIO", "AÑO");
+    const amortizacionRaw = getImportValue(row, "AMORTIZACION", "AMORTIZACIÓN");
+    const valorUsadaDolaresRaw = getImportValue(row, "VALOR_USADA_USD");
+    const valorUsadaPesosRaw = getImportValue(row, "VALOR_USADA_ARS");
+    const valorNuevaDolaresRaw = getImportValue(row, "VALOR_NUEVA_USD");
+    const valorNuevaPesosRaw = getImportValue(row, "VALOR_NUEVA_ARS");
+    const origenInfoRaw = getImportValue(row, "ORIGEN_INFO");
+    const servicioAmortizacionRaw = getImportValue(row, "SERVICIO_AMORTIZACION");
+    const comentariosRaw = getImportValue(row, "COMENTARIOS");
 
+    return {
+      rowNumber: index + 2,
+      id: String(idRaw || "").trim(),
+      tipo: String(tipoRaw || "").trim(),
+      tipoProvided: hasImportValue(tipoRaw),
+      modelo: String(modeloRaw || "").trim(),
+      modeloProvided: hasImportValue(modeloRaw),
+      serie: serieRaw,
+      serieProvided: hasImportValue(serieRaw),
+      estadoRaw: String(estadoRaw || "").trim(),
+      estadoProvided: hasImportValue(estadoRaw),
+      servicioOriginal: String(servicioOriginalRaw || "").trim(),
+      servicioOriginalProvided: hasImportValue(servicioOriginalRaw),
+      fechaCompra: fechaCompraRaw,
+      fechaCompraProvided: hasImportValue(fechaCompraRaw),
+      proveedorFactura: proveedorFacturaRaw,
+      proveedorFacturaProvided: hasImportValue(proveedorFacturaRaw),
+      valorCompra: valorCompraRaw,
+      valorCompraProvided: hasImportValue(valorCompraRaw),
+      empresa: empresaRaw,
+      empresaProvided: hasImportValue(empresaRaw),
+      anio: anioRaw,
+      anioProvided: hasImportValue(anioRaw),
+      amortizacion: amortizacionRaw,
+      valorUsadaDolares: valorUsadaDolaresRaw,
+      valorUsadaDolaresProvided: hasImportValue(valorUsadaDolaresRaw),
+      valorUsadaPesos: valorUsadaPesosRaw,
+      valorUsadaPesosProvided: hasImportValue(valorUsadaPesosRaw),
+      valorNuevaDolares: valorNuevaDolaresRaw,
+      valorNuevaDolaresProvided: hasImportValue(valorNuevaDolaresRaw),
+      valorNuevaPesos: valorNuevaPesosRaw,
+      valorNuevaPesosProvided: hasImportValue(valorNuevaPesosRaw),
+      origenInfo: origenInfoRaw,
+      origenInfoProvided: hasImportValue(origenInfoRaw),
+      servicioAmortizacion: String(servicioAmortizacionRaw || "").trim(),
+      servicioAmortizacionProvided: hasImportValue(servicioAmortizacionRaw),
+      comentarios: comentariosRaw,
+      comentariosProvided: hasImportValue(comentariosRaw),
+    };
+  });
+
+  // Obligatorios/duplicados que no dependen de qué haya en la base: el ID
+  // siempre hace falta (es la clave) y no puede repetirse dentro del archivo.
   const errores = [];
   const ids = new Map();
 
   for (const item of parsedRows) {
     if (!item.id) {
       errores.push(`Fila ${item.rowNumber}: Código obligatorio`);
-    }
-    if (!item.tipo) {
-      errores.push(`Fila ${item.rowNumber}: Tipo obligatorio`);
-    }
-    if (!item.modelo) {
-      errores.push(`Fila ${item.rowNumber}: Modelo obligatorio`);
-    }
-    if (!String(item.estado || "").trim()) {
-      errores.push(`Fila ${item.rowNumber}: Estado obligatorio`);
-    }
-    if (!item.servicioOriginal) {
-      errores.push(`Fila ${item.rowNumber}: Servicio Original obligatorio`);
     }
 
     if (item.id) {
@@ -463,66 +497,160 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
 
   for (const item of parsedRows) {
     try {
-      const tipoNorm = normalizeTipoMaquina(item.tipo);
-      const tipo = tipoByNombre.get(tipoNorm.toLowerCase());
-      if (!tipo) {
-        throw new Error("Tipo de máquina inválido. Crealo desde Tipos de máquinas.");
+      const existente = existentesById.get(item.id) || null;
+      const isUpdate = Boolean(existente);
+
+      if (!isUpdate) {
+        // ALTA: las columnas base siguen siendo obligatorias.
+        if (!item.tipo) throw new Error("Tipo obligatorio");
+        if (!item.modelo) throw new Error("Modelo obligatorio");
+        if (!item.estadoRaw) throw new Error("Estado obligatorio");
+        if (!item.servicioOriginal) throw new Error("Servicio Original obligatorio");
+
+        const tipoNorm = normalizeTipoMaquina(item.tipo);
+        const tipo = tipoByNombre.get(tipoNorm.toLowerCase());
+        if (!tipo) {
+          throw new Error("Tipo de máquina inválido. Crealo desde Tipos de máquinas.");
+        }
+
+        const servicio = servicioByName.get(item.servicioOriginal.toLowerCase());
+        if (!servicio) {
+          throw new Error("Servicio Original inexistente");
+        }
+
+        let servicioAmortizacionId = null;
+        if (item.servicioAmortizacionProvided) {
+          const servicioAmort = servicioByName.get(item.servicioAmortizacion.toLowerCase());
+          if (!servicioAmort) {
+            throw new Error("Servicio amortización inexistente");
+          }
+          servicioAmortizacionId = servicioAmort.id;
+        }
+
+        const empresa = normalizeEmpresa(item.empresa);
+        const anio = parseNullableInt(item.anio, "Año");
+        const amortizacionManual = parseNullableInt(item.amortizacion, "Amortización");
+        const fechaCompra = parseNullableImportDate(item.fechaCompra, "Fecha de compra");
+        const estado = parseEstadoObligatorio(item.estadoRaw);
+
+        normalizedRows.push({
+          rowNumber: item.rowNumber,
+          id: item.id,
+          isUpdate: false,
+          nuevoServicioId: servicio.id,
+          servicioAnteriorId: null,
+          createData: {
+            id: item.id,
+            tipo: tipoNorm,
+            tipoMaquinaId: tipo.id,
+            modelo: item.modelo,
+            serie: parseNullableString(item.serie),
+            estado,
+            servicioId: servicio.id,
+            fechaCompra,
+            proveedorFactura: parseNullableString(item.proveedorFactura),
+            valorCompra: parseNullableNonNegativeFloat(item.valorCompra, "Valor de compra"),
+            empresa,
+            anio,
+            amortizacion: tipo.plazoAmortizacion?.meses ?? amortizacionManual,
+            antiguedad: calcularAntiguedad(anio),
+            valorUsadaDolares: parseNullableNonNegativeFloat(
+              item.valorUsadaDolares,
+              "Valor usada en dólares"
+            ),
+            valorUsadaPesos: parseNullableNonNegativeFloat(
+              item.valorUsadaPesos,
+              "Valor herramienta usada en pesos"
+            ),
+            valorNuevaDolares: parseNullableNonNegativeFloat(
+              item.valorNuevaDolares,
+              "Valor herramienta nueva en dólares"
+            ),
+            valorNuevaPesos: parseNullableNonNegativeFloat(
+              item.valorNuevaPesos,
+              "Valor herramienta nueva en pesos"
+            ),
+            origenInfo: parseNullableString(item.origenInfo),
+            servicioAmortizacionId,
+            comentarios: parseNullableString(item.comentarios),
+          },
+        });
+        continue;
       }
 
-      const servicio = servicioByName.get(item.servicioOriginal.toLowerCase());
-      if (!servicio) {
-        throw new Error("Servicio Original inexistente");
+      // ACTUALIZACIÓN: solo entran a `data` los campos con celda informada;
+      // lo que no vino en el archivo queda intacto.
+      const data = {};
+
+      if (item.tipoProvided) {
+        const tipoNorm = normalizeTipoMaquina(item.tipo);
+        const tipo = tipoByNombre.get(tipoNorm.toLowerCase());
+        if (!tipo) {
+          throw new Error("Tipo de máquina inválido. Crealo desde Tipos de máquinas.");
+        }
+        data.tipo = tipoNorm;
+        data.tipoMaquinaId = tipo.id;
+        data.amortizacion = resolveAmortizacionByTipo(tipo);
       }
 
-      let servicioAmortizacionId = null;
-      if (item.servicioAmortizacion) {
+      if (item.modeloProvided) data.modelo = item.modelo;
+      if (item.serieProvided) data.serie = parseNullableString(item.serie);
+      if (item.estadoProvided) data.estado = parseEstadoObligatorio(item.estadoRaw);
+
+      let nuevoServicioId = existente.servicioId;
+      if (item.servicioOriginalProvided) {
+        const servicio = servicioByName.get(item.servicioOriginal.toLowerCase());
+        if (!servicio) {
+          throw new Error("Servicio Original inexistente");
+        }
+        data.servicioId = servicio.id;
+        nuevoServicioId = servicio.id;
+      }
+
+      if (item.fechaCompraProvided) {
+        data.fechaCompra = parseNullableImportDate(item.fechaCompra, "Fecha de compra");
+      }
+      if (item.proveedorFacturaProvided) data.proveedorFactura = parseNullableString(item.proveedorFactura);
+      if (item.valorCompraProvided) data.valorCompra = parseNullableNonNegativeFloat(item.valorCompra, "Valor de compra");
+      if (item.empresaProvided) data.empresa = normalizeEmpresa(item.empresa);
+
+      if (item.anioProvided) {
+        const anio = parseNullableInt(item.anio, "Año");
+        data.anio = anio;
+        data.antiguedad = calcularAntiguedad(anio);
+      }
+
+      if (item.valorUsadaDolaresProvided) {
+        data.valorUsadaDolares = parseNullableNonNegativeFloat(item.valorUsadaDolares, "Valor usada en dólares");
+      }
+      if (item.valorUsadaPesosProvided) {
+        data.valorUsadaPesos = parseNullableNonNegativeFloat(item.valorUsadaPesos, "Valor herramienta usada en pesos");
+      }
+      if (item.valorNuevaDolaresProvided) {
+        data.valorNuevaDolares = parseNullableNonNegativeFloat(item.valorNuevaDolares, "Valor herramienta nueva en dólares");
+      }
+      if (item.valorNuevaPesosProvided) {
+        data.valorNuevaPesos = parseNullableNonNegativeFloat(item.valorNuevaPesos, "Valor herramienta nueva en pesos");
+      }
+      if (item.origenInfoProvided) data.origenInfo = parseNullableString(item.origenInfo);
+
+      if (item.servicioAmortizacionProvided) {
         const servicioAmort = servicioByName.get(item.servicioAmortizacion.toLowerCase());
         if (!servicioAmort) {
           throw new Error("Servicio amortización inexistente");
         }
-        servicioAmortizacionId = servicioAmort.id;
+        data.servicioAmortizacionId = servicioAmort.id;
       }
 
-      const empresa = normalizeEmpresa(item.empresa);
-      const anio = parseNullableInt(item.anio, "Año");
-      const amortizacion = parseNullableInt(item.amortizacion, "Amortización");
-      const fechaCompra = parseNullableImportDate(item.fechaCompra, "Fecha de compra");
-      const estado = parseEstadoObligatorio(item.estado);
+      if (item.comentariosProvided) data.comentarios = parseNullableString(item.comentarios);
 
       normalizedRows.push({
         rowNumber: item.rowNumber,
         id: item.id,
-        tipo: tipoNorm,
-        tipoMaquinaId: tipo.id,
-        modelo: item.modelo,
-        serie: parseNullableString(item.serie),
-        estado,
-        servicioId: servicio.id,
-        fechaCompra,
-        proveedorFactura: parseNullableString(item.proveedorFactura),
-        empresa,
-        anio,
-        amortizacion: tipo.plazoAmortizacion?.meses ?? amortizacion,
-        antiguedad: calcularAntiguedad(anio),
-        valorUsadaDolares: parseNullableNonNegativeFloat(
-          item.valorUsadaDolares,
-          "Valor usada en dólares"
-        ),
-        valorUsadaPesos: parseNullableNonNegativeFloat(
-          item.valorUsadaPesos,
-          "Valor herramienta usada en pesos"
-        ),
-        valorNuevaDolares: parseNullableNonNegativeFloat(
-          item.valorNuevaDolares,
-          "Valor herramienta nueva en dólares"
-        ),
-        valorNuevaPesos: parseNullableNonNegativeFloat(
-          item.valorNuevaPesos,
-          "Valor herramienta nueva en pesos"
-        ),
-        origenInfo: parseNullableString(item.origenInfo),
-        servicioAmortizacionId,
-        comentarios: parseNullableString(item.comentarios),
+        isUpdate: true,
+        updateData: data,
+        nuevoServicioId,
+        servicioAnteriorId: existente.servicioId,
       });
     } catch (e) {
       errores.push(`Fila ${item.rowNumber}${item.id ? ` (${item.id})` : ""}: ${e.message}`);
@@ -538,8 +666,8 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
 
   const resumen = {
     detectadas: normalizedRows.length,
-    creadas: normalizedRows.filter((item) => !existentesById.has(item.id)).length,
-    actualizadas: normalizedRows.filter((item) => existentesById.has(item.id)).length,
+    creadas: normalizedRows.filter((item) => !item.isUpdate).length,
+    actualizadas: normalizedRows.filter((item) => item.isUpdate).length,
   };
 
   return {
@@ -1865,6 +1993,7 @@ export async function adminGetPedidosHistoricosByMaquina(req, res) {
         estado: canonicalEstadoMaquina(maquina.estado),
         fechaCompra: maquina.fechaCompra,
         proveedorFactura: maquina.proveedorFactura,
+        valorCompra: maquina.valorCompra,
         empresa: maquina.empresa,
         anio: maquina.anio,
         amortizacion: resolveAmortizacionByTipo(maquina.tipoMaquina),
@@ -1915,6 +2044,7 @@ export async function adminCreateMaquina(req, res) {
       servicioId,
       fechaCompra,
       proveedorFactura,
+      valorCompra,
       empresa,
       anio,
       valorUsadaDolares,
@@ -1972,6 +2102,7 @@ export async function adminCreateMaquina(req, res) {
         servicioId: Number(servicioId),
         fechaCompra: parseNullableDate(fechaCompra, "Fecha de compra"),
         proveedorFactura: parseNullableString(proveedorFactura),
+        valorCompra: parseNullableNonNegativeFloat(valorCompra, "Valor de compra"),
         empresa: empresaNormalizada,
         anio: anioParsed,
         amortizacion: resolveAmortizacionByTipo(tipoSeleccionado),
@@ -2020,6 +2151,7 @@ export async function adminUpdateMaquina(req, res) {
       servicioId,
       fechaCompra,
       proveedorFactura,
+      valorCompra,
       empresa,
       anio,
       valorUsadaDolares,
@@ -2096,6 +2228,11 @@ export async function adminUpdateMaquina(req, res) {
           proveedorFactura !== undefined
             ? parseNullableString(proveedorFactura)
             : existe.proveedorFactura,
+
+        valorCompra:
+          valorCompra !== undefined
+            ? parseNullableNonNegativeFloat(valorCompra, "Valor de compra")
+            : existe.valorCompra,
 
         empresa:
           empresa !== undefined
@@ -2561,6 +2698,7 @@ export async function adminExportMaquinas(req, res) {
       "Servicio Original",
       "Fecha compra",
       "Proveedor/N factura",
+      "Valor compra",
       "Empresa",
       "Año",
       "Amortización",
@@ -2591,6 +2729,7 @@ export async function adminExportMaquinas(req, res) {
         maquina.servicio?.nombre ?? "",
         maquina.fechaCompra ? maquina.fechaCompra.toISOString().slice(0, 10) : "",
         maquina.proveedorFactura ?? "",
+        maquina.valorCompra ?? "",
         maquina.empresa ?? "",
         maquina.anio ?? "",
         maquina.amortizacion ?? "",
@@ -2652,6 +2791,7 @@ export async function adminDownloadMaquinasTemplate(req, res) {
       { header: "* SERVICIO_ORIGINAL", required: true, width: 26 },
       { header: "FECHA_COMPRA", required: false, width: 16 },
       { header: "PROVEEDOR_N_FACTURA", required: false, width: 28 },
+      { header: "VALOR_COMPRA", required: false, width: 16 },
       { header: "EMPRESA", required: false, width: 16 },
       { header: "ANIO", required: false, width: 12 },
       { header: "AMORTIZACION", required: false, width: 16 },
@@ -2779,37 +2919,12 @@ export async function adminConfirmImportMaquinas(req, res) {
       return res.status(400).json({ error: "El archivo supera el máximo permitido de 5 MB" });
     }
 
-    const { normalizedRows, existentesById, resumen } = await parseAndValidateMaquinasImport(req.file.buffer);
+    const { normalizedRows, resumen } = await parseAndValidateMaquinasImport(req.file.buffer);
 
     await prisma.$transaction(async (tx) => {
       for (const item of normalizedRows) {
-        const exists = existentesById.has(item.id);
-
-        if (!exists) {
-          const creada = await tx.maquina.create({
-            data: {
-              id: item.id,
-              tipo: item.tipo,
-              tipoMaquinaId: item.tipoMaquinaId,
-              modelo: item.modelo,
-              serie: item.serie,
-              estado: item.estado,
-              servicioId: item.servicioId,
-              fechaCompra: item.fechaCompra,
-              proveedorFactura: item.proveedorFactura,
-              empresa: item.empresa,
-              anio: item.anio,
-              amortizacion: item.amortizacion,
-              antiguedad: item.antiguedad,
-              valorUsadaDolares: item.valorUsadaDolares,
-              valorUsadaPesos: item.valorUsadaPesos,
-              valorNuevaDolares: item.valorNuevaDolares,
-              valorNuevaPesos: item.valorNuevaPesos,
-              origenInfo: item.origenInfo,
-              servicioAmortizacionId: item.servicioAmortizacionId,
-              comentarios: item.comentarios,
-            },
-          });
+        if (!item.isUpdate) {
+          const creada = await tx.maquina.create({ data: item.createData });
 
           await insertMaquinaServicioHistorial(tx, {
             maquinaId: creada.id,
@@ -2821,40 +2936,15 @@ export async function adminConfirmImportMaquinas(req, res) {
           continue;
         }
 
-        const anterior = await tx.maquina.findUnique({
-          where: { id: item.id },
-          select: { servicioId: true },
-        });
-
         const actualizada = await tx.maquina.update({
           where: { id: item.id },
-          data: {
-            tipo: item.tipo,
-            tipoMaquinaId: item.tipoMaquinaId,
-            modelo: item.modelo,
-            serie: item.serie,
-            estado: item.estado,
-            servicioId: item.servicioId,
-            fechaCompra: item.fechaCompra,
-            proveedorFactura: item.proveedorFactura,
-            empresa: item.empresa,
-            anio: item.anio,
-            amortizacion: item.amortizacion,
-            antiguedad: item.antiguedad,
-            valorUsadaDolares: item.valorUsadaDolares,
-            valorUsadaPesos: item.valorUsadaPesos,
-            valorNuevaDolares: item.valorNuevaDolares,
-            valorNuevaPesos: item.valorNuevaPesos,
-            origenInfo: item.origenInfo,
-            servicioAmortizacionId: item.servicioAmortizacionId,
-            comentarios: item.comentarios,
-          },
+          data: item.updateData,
         });
 
-        if (anterior && anterior.servicioId !== item.servicioId) {
+        if (item.nuevoServicioId !== item.servicioAnteriorId) {
           await insertMaquinaServicioHistorial(tx, {
             maquinaId: actualizada.id,
-            servicioId: item.servicioId,
+            servicioId: item.nuevoServicioId,
             tipoMovimiento: "individual",
           });
         }

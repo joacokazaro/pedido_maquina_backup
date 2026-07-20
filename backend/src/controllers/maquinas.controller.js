@@ -79,6 +79,7 @@ function mapMaquinaResponse(m) {
     servicio: m.servicio?.nombre ?? null,
     fechaCompra: m.fechaCompra,
     proveedorFactura: m.proveedorFactura,
+    valorCompra: m.valorCompra,
     empresa: m.empresa,
     anio: m.anio,
     amortizacion: m.amortizacion,

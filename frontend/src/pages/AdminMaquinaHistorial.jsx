@@ -123,6 +123,9 @@ export default function AdminMaquinaHistorial() {
                 <span className="font-semibold">Proveedor / N° factura:</span> {maquina.proveedorFactura || "-"}
               </p>
               <p>
+                <span className="font-semibold">Valor compra $ARS:</span> {formatMoneda(maquina.valorCompra, "ARS")}
+              </p>
+              <p>
                 <span className="font-semibold">Año:</span> {maquina.anio ?? "-"}
               </p>
               <p>

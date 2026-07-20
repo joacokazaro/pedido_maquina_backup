@@ -80,6 +80,7 @@ export default function SupervisorMaquinaDetalle() {
           estado: maquinaData.estado,
           fechaCompra: maquinaData.fechaCompra,
           proveedorFactura: maquinaData.proveedorFactura,
+          valorCompra: maquinaData.valorCompra,
           empresa: maquinaData.empresa,
           anio: maquinaData.anio,
           amortizacion: maquinaData.amortizacion,
@@ -212,6 +213,7 @@ export default function SupervisorMaquinaDetalle() {
             <p><b>Fecha de compra:</b> {formatFecha(maquina.fechaCompra)}</p>
             <p><b>Empresa:</b> {maquina.empresa || "-"}</p>
             <p className="md:col-span-2"><b>Proveedor / N° factura:</b> {maquina.proveedorFactura || "-"}</p>
+            <p><b>Valor compra $ARS:</b> {formatMoneda(maquina.valorCompra, "ARS")}</p>
             <p><b>Año:</b> {maquina.anio ?? "-"}</p>
             <p><b>Antigüedad:</b> {maquina.antiguedad ?? "-"}</p>
             <p><b>Amortización:</b> {maquina.amortizacion ?? "-"}</p>

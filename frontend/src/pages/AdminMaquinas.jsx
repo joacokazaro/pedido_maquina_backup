@@ -1053,7 +1053,9 @@ export default function AdminMaquinas() {
               <div className="p-4 space-y-4">
                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                   <p className="text-xs text-gray-600 mb-2">
-                    Reglas: solo .xlsx, máximo 5 MB y hasta 5000 filas.
+                    Reglas: solo .xlsx, máximo 5 MB y hasta 5000 filas. El <b>Código</b> es la clave: si no existe se da
+                    de alta (ahí sí son obligatorias las columnas base); si ya existe se actualiza — una celda vacía o
+                    una columna que no incluiste significa "no cambiar ese dato", nunca lo vacía.
                   </p>
                   <div className="mb-3 flex justify-end">
                     <button

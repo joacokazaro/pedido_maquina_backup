@@ -210,7 +210,18 @@
       "Bash(node -r dotenv/config _test_browix_grupos.mjs)",
       "Bash(node _test_browix_grupos.mjs)",
       "Bash(curl -s -w \"\\\\nHTTP_CODE:%{http_code}\\\\n\" \"https://cloud01.browix.com/v1/externalpermissions/getWorkgroupschedulePlan/uuid:d54d7b99cbdc69591966e3acbbeba8bb/2026-07-01/2026-07-08/2303\" -H \"Accept: application/json\")",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/api/admin/eventuales)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/api/admin/eventuales)",
+      "Bash(node \"C:/Users/KAZARO~1/AppData/Local/Temp/claude/c--Users-KAZARO-72-Desktop-pedido-maquina-backup/923b59ad-a46e-4d55-a8ca-ae5f65ae4c16/scratchpad/inspect.mjs\")",
+      "Bash(node _test_import_inspect.mjs)",
+      "Bash(node _test_import_run.mjs)",
+      "Bash(node _test_import_errors.mjs)",
+      "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, Path\")",
+      "Bash(node --check src/controllers/maquinas.controller.js)",
+      "Bash(node _test_valor_compra.mjs)",
+      "Bash(node _test_maquinas_inspect.mjs)",
+      "Bash(node _test_maquinas_import_run.mjs)",
+      "Bash(node _test_maquinas_import_errors.mjs)",
+      "Bash(node _test_valorcompra_import.mjs)"
     ]
   }
 }

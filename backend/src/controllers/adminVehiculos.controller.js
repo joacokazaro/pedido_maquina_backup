@@ -133,6 +133,32 @@ function getImportValue(row, ...keys) {
   return undefined;
 }
 
+// Distingue "celda vacía/columna ausente" (no tocar el dato existente en una
+// actualización) de "celda con contenido" (aplicar el valor), sin importar el
+// tipo de dato crudo que venga (string, número de fecha Excel, Date, etc.).
+function hasImportValue(raw) {
+  if (raw === undefined || raw === null) return false;
+  if (typeof raw === "string") return raw.trim() !== "";
+  return true;
+}
+
+// Aplica al objeto `data` de un update un par fecha/aplica respetando la regla
+// "vacío = no cambiar": aplica solo se toca si vino informado (y si pasa a
+// false, fuerza la fecha a null, igual que en el alta); la fecha solo se toca
+// si vino informada.
+function applyFechaAplicaUpdate(data, aplicaKey, fechaKey, aplicaProvided, aplicaValue, fechaProvided, fechaValue) {
+  if (aplicaProvided) {
+    data[aplicaKey] = aplicaValue;
+    if (!aplicaValue) {
+      data[fechaKey] = null;
+      return;
+    }
+  }
+  if (fechaProvided) {
+    data[fechaKey] = fechaValue;
+  }
+}
+
 function excelSerialToDateParts(serial) {
   const utcDays = Math.floor(serial - 25569);
   const date = new Date(utcDays * 86400 * 1000);
@@ -1308,67 +1334,106 @@ export async function adminImportVehiculos(req, res) {
       return res.status(400).json({ error: "El archivo no contiene filas para importar" });
     }
 
+    // ID = clave principal. Fila con ID inexistente -> alta (columnas base
+    // obligatorias). Fila con ID existente -> actualización parcial: una
+    // celda vacía o una columna ausente del archivo significa "no tocar ese
+    // dato", nunca "vaciarlo". Por eso cada campo se acompaña de su propio
+    // flag *Provided calculado sobre el valor crudo, antes de normalizar.
     const preparedRows = rows.map((row, index) => {
-      const id = normalizeString(getImportValue(row, "ID", "COD"));
-      const patente = normalizeString(getImportValue(row, "PATENTE")).toUpperCase();
-      const seguroNombre = normalizeString(getImportValue(row, "SEGURO"));
-      const estadoRaw = normalizeString(getImportValue(row, "ESTADO"));
-      const conductorUsername = normalizeString(getImportValue(row, "CONDUCTOR_DESIGNADO", "CONDUCTOR", "CONDUCTOR_USERNAME"));
+      const idRaw = getImportValue(row, "ID", "COD");
+      const patenteRaw = getImportValue(row, "PATENTE");
+      const empresaRaw = getImportValue(row, "EMPRESA");
+      const estadoRaw = getImportValue(row, "ESTADO");
+      const vehiculoRaw = getImportValue(row, "VEHICULO");
+      const modeloRaw = getImportValue(row, "MODELO");
+      const numeroPolizaRaw = getImportValue(row, "NUMERO_POLIZA", "NRO_POLIZA", "POLIZA");
+      const motorRaw = getImportValue(row, "MOTOR");
+      const chasisRaw = getImportValue(row, "CHASIS");
+      const tipoCoberturaRaw = getImportValue(row, "TIPO_COBERTURA", "TIPO_COBERTURA_SEGURO", "COBERTURA");
+      const seguroRaw = getImportValue(row, "SEGURO");
+      const conductorRaw = getImportValue(row, "CONDUCTOR_DESIGNADO", "CONDUCTOR", "CONDUCTOR_USERNAME");
+      const tarjetaVerdeRaw = getImportValue(row, "TARJETA_VERDE");
+      const vtoSeguroRaw = getImportValue(row, "VTO_SEGURO");
+      const vtoSeguroAplicaRaw = getImportValue(row, "VTO_SEGURO_APLICA");
+      const vtoMatafuegoRaw = getImportValue(row, "VTO_MATAFUEGO");
+      const vtoMatafuegoAplicaRaw = getImportValue(row, "VTO_MATAFUEGO_APLICA");
+      const vtoItvRaw = getImportValue(row, "VTO_ITV");
+      const vtoItvAplicaRaw = getImportValue(row, "VTO_ITV_APLICA");
+      const obleaGncRaw = getImportValue(row, "OBLEA_GNC");
+      const obleaGncAplicaRaw = getImportValue(row, "OBLEA_GNC_APLICA");
+      const pruebaHidraulicaGncRaw = getImportValue(row, "PRUEBA_HIDRAULICA_GNC");
+      const pruebaHidraulicaGncAplicaRaw = getImportValue(row, "PRUEBA_HIDRAULICA_GNC_APLICA");
 
       return {
         rowNumber: index + 2,
-        id,
-        patente,
-        empresa: normalizeString(getImportValue(row, "EMPRESA")),
-        estadoRaw,
+        id: normalizeString(idRaw),
+        patente: normalizeString(patenteRaw).toUpperCase(),
+        patenteProvided: hasImportValue(patenteRaw),
+        empresa: normalizeString(empresaRaw),
+        empresaProvided: hasImportValue(empresaRaw),
+        estadoRaw: normalizeString(estadoRaw),
         estado: normalizeEstadoVehiculo(estadoRaw),
-        vehiculo: normalizeString(getImportValue(row, "VEHICULO")),
-        modelo: normalizeString(getImportValue(row, "MODELO")),
-        numeroPoliza: normalizeString(getImportValue(row, "NUMERO_POLIZA", "NRO_POLIZA", "POLIZA")),
-        motor: normalizeString(getImportValue(row, "MOTOR")),
-        chasis: normalizeString(getImportValue(row, "CHASIS")),
-        tipoCobertura: normalizeString(getImportValue(row, "TIPO_COBERTURA", "TIPO_COBERTURA_SEGURO", "COBERTURA")),
-        seguroNombre,
-        conductorUsername,
-        tarjetaVerde: normalizeBoolean(getImportValue(row, "TARJETA_VERDE"), false),
-        vtoSeguro: parseExcelDate(getImportValue(row, "VTO_SEGURO")),
-        vtoSeguroAplica: !normalizeBoolean(getImportValue(row, "VTO_SEGURO_APLICA"), false) ? getImportValue(row, "VTO_SEGURO_APLICA") === "" ? true : normalizeBoolean(getImportValue(row, "VTO_SEGURO_APLICA"), true) : true,
-        vtoMatafuego: parseExcelDate(getImportValue(row, "VTO_MATAFUEGO")),
-        vtoMatafuegoAplica: getImportValue(row, "VTO_MATAFUEGO_APLICA") === "" ? true : normalizeBoolean(getImportValue(row, "VTO_MATAFUEGO_APLICA"), true),
-        vtoItv: parseExcelDate(getImportValue(row, "VTO_ITV")),
-        vtoItvAplica: getImportValue(row, "VTO_ITV_APLICA") === "" ? true : normalizeBoolean(getImportValue(row, "VTO_ITV_APLICA"), true),
-        obleaGnc: parseExcelDate(getImportValue(row, "OBLEA_GNC")),
-        obleaGncAplica: getImportValue(row, "OBLEA_GNC_APLICA") === "" ? true : normalizeBoolean(getImportValue(row, "OBLEA_GNC_APLICA"), true),
-        pruebaHidraulicaGnc: parseExcelDate(getImportValue(row, "PRUEBA_HIDRAULICA_GNC")),
-        pruebaHidraulicaGncAplica: getImportValue(row, "PRUEBA_HIDRAULICA_GNC_APLICA") === "" ? true : normalizeBoolean(getImportValue(row, "PRUEBA_HIDRAULICA_GNC_APLICA"), true),
+        estadoProvided: hasImportValue(estadoRaw),
+        vehiculo: normalizeString(vehiculoRaw),
+        vehiculoProvided: hasImportValue(vehiculoRaw),
+        modelo: normalizeString(modeloRaw),
+        modeloProvided: hasImportValue(modeloRaw),
+        numeroPoliza: normalizeString(numeroPolizaRaw),
+        numeroPolizaProvided: hasImportValue(numeroPolizaRaw),
+        motor: normalizeString(motorRaw),
+        motorProvided: hasImportValue(motorRaw),
+        chasis: normalizeString(chasisRaw),
+        chasisProvided: hasImportValue(chasisRaw),
+        tipoCobertura: normalizeString(tipoCoberturaRaw),
+        tipoCoberturaProvided: hasImportValue(tipoCoberturaRaw),
+        seguroNombre: normalizeString(seguroRaw),
+        seguroProvided: hasImportValue(seguroRaw),
+        conductorUsername: normalizeString(conductorRaw),
+        conductorProvided: hasImportValue(conductorRaw),
+        tarjetaVerde: normalizeBoolean(tarjetaVerdeRaw, false),
+        tarjetaVerdeProvided: hasImportValue(tarjetaVerdeRaw),
+        vtoSeguro: parseExcelDate(vtoSeguroRaw),
+        vtoSeguroProvided: hasImportValue(vtoSeguroRaw),
+        vtoSeguroAplica: normalizeBoolean(vtoSeguroAplicaRaw, true),
+        vtoSeguroAplicaProvided: hasImportValue(vtoSeguroAplicaRaw),
+        vtoMatafuego: parseExcelDate(vtoMatafuegoRaw),
+        vtoMatafuegoProvided: hasImportValue(vtoMatafuegoRaw),
+        vtoMatafuegoAplica: normalizeBoolean(vtoMatafuegoAplicaRaw, true),
+        vtoMatafuegoAplicaProvided: hasImportValue(vtoMatafuegoAplicaRaw),
+        vtoItv: parseExcelDate(vtoItvRaw),
+        vtoItvProvided: hasImportValue(vtoItvRaw),
+        vtoItvAplica: normalizeBoolean(vtoItvAplicaRaw, true),
+        vtoItvAplicaProvided: hasImportValue(vtoItvAplicaRaw),
+        obleaGnc: parseExcelDate(obleaGncRaw),
+        obleaGncProvided: hasImportValue(obleaGncRaw),
+        obleaGncAplica: normalizeBoolean(obleaGncAplicaRaw, true),
+        obleaGncAplicaProvided: hasImportValue(obleaGncAplicaRaw),
+        pruebaHidraulicaGnc: parseExcelDate(pruebaHidraulicaGncRaw),
+        pruebaHidraulicaGncProvided: hasImportValue(pruebaHidraulicaGncRaw),
+        pruebaHidraulicaGncAplica: normalizeBoolean(pruebaHidraulicaGncAplicaRaw, true),
+        pruebaHidraulicaGncAplicaProvided: hasImportValue(pruebaHidraulicaGncAplicaRaw),
       };
     });
 
-    const idsDuplicadosArchivo = new Set();
-    const patentesDuplicadasArchivo = new Set();
+    // Duplicados dentro del propio archivo (no depende de qué haya en la base).
+    const erroresArchivo = [];
     const idsSeen = new Set();
     const patentesSeen = new Set();
 
     for (const item of preparedRows) {
-      if (!item.id) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: ID obligatorio`);
-      if (!item.empresa) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: EMPRESA obligatoria`);
-      if (!item.estadoRaw) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: ESTADO obligatorio`);
-      if (!item.vehiculo) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: VEHICULO obligatorio`);
-      if (!item.patente) patentesDuplicadasArchivo.add(`Fila ${item.rowNumber}: PATENTE obligatoria`);
-      if (!item.modelo) idsDuplicadosArchivo.add(`Fila ${item.rowNumber}: MODELO obligatorio`);
+      if (!item.id) erroresArchivo.push(`Fila ${item.rowNumber}: ID obligatorio`);
 
       if (item.id) {
-        if (idsSeen.has(item.id)) idsDuplicadosArchivo.add(`ID duplicado en archivo: ${item.id}`);
+        if (idsSeen.has(item.id)) erroresArchivo.push(`ID duplicado en archivo: ${item.id}`);
         idsSeen.add(item.id);
       }
 
-      if (item.patente) {
-        if (patentesSeen.has(item.patente)) patentesDuplicadasArchivo.add(`PATENTE duplicada en archivo: ${item.patente}`);
+      if (item.patenteProvided) {
+        if (patentesSeen.has(item.patente)) erroresArchivo.push(`PATENTE duplicada en archivo: ${item.patente}`);
         patentesSeen.add(item.patente);
       }
     }
 
-    const erroresArchivo = [...idsDuplicadosArchivo, ...patentesDuplicadasArchivo];
     if (erroresArchivo.length > 0) {
       return res.status(400).json({ error: "El archivo tiene errores de validación", detalles: erroresArchivo });
     }
@@ -1378,10 +1443,10 @@ export async function adminImportVehiculos(req, res) {
         where: {
           OR: [
             { id: { in: preparedRows.map((item) => item.id) } },
-            { patente: { in: preparedRows.map((item) => item.patente) } },
+            { patente: { in: preparedRows.filter((item) => item.patenteProvided).map((item) => item.patente) } },
           ],
         },
-        select: { id: true, patente: true },
+        select: { id: true, patente: true, conductorActualId: true },
       }),
       prisma.seguro.findMany({
         where: {
@@ -1397,15 +1462,32 @@ export async function adminImportVehiculos(req, res) {
       ensureVehiculoTipoMaquina(),
     ]);
 
-    const errores = [];
-    const idsExistentes = new Set(existentes.map((item) => item.id));
-    const patentesExistentes = new Set(existentes.map((item) => item.patente));
+    const existingById = new Map(existentes.map((item) => [item.id, item]));
+    const existingByPatente = new Map(existentes.map((item) => [item.patente, item]));
     const segurosMap = new Map(seguros.map((item) => [item.nombre.toUpperCase(), item]));
     const usuariosMap = new Map(usuarios.map((item) => [item.username.toUpperCase(), item]));
 
+    const errores = [];
     for (const item of preparedRows) {
-      if (idsExistentes.has(item.id)) errores.push(`Ya existe un vehículo con ID ${item.id}`);
-      if (patentesExistentes.has(item.patente)) errores.push(`Ya existe un vehículo con patente ${item.patente}`);
+      const existente = existingById.get(item.id) || null;
+      item.isUpdate = Boolean(existente);
+      item.existente = existente;
+
+      if (!item.isUpdate) {
+        if (!item.empresa) errores.push(`Fila ${item.rowNumber}: EMPRESA obligatoria para dar de alta un vehículo nuevo`);
+        if (!item.estadoRaw) errores.push(`Fila ${item.rowNumber}: ESTADO obligatorio para dar de alta un vehículo nuevo`);
+        if (!item.vehiculo) errores.push(`Fila ${item.rowNumber}: VEHICULO obligatorio para dar de alta un vehículo nuevo`);
+        if (!item.patente) errores.push(`Fila ${item.rowNumber}: PATENTE obligatoria para dar de alta un vehículo nuevo`);
+        if (!item.modelo) errores.push(`Fila ${item.rowNumber}: MODELO obligatorio para dar de alta un vehículo nuevo`);
+      }
+
+      if (item.patenteProvided) {
+        const colision = existingByPatente.get(item.patente);
+        if (colision && colision.id !== item.id) {
+          errores.push(`Fila ${item.rowNumber}: la patente ${item.patente} ya pertenece al vehículo ${colision.id}`);
+        }
+      }
+
       if (item.seguroNombre && !segurosMap.has(item.seguroNombre.toUpperCase())) errores.push(`Seguro inexistente para ${item.id}: ${item.seguroNombre}`);
       if (item.conductorUsername && !usuariosMap.has(item.conductorUsername.toUpperCase())) {
         errores.push(`Usuario conductor inexistente para ${item.id}: ${item.conductorUsername}`);
@@ -1416,53 +1498,108 @@ export async function adminImportVehiculos(req, res) {
       return res.status(409).json({ error: "La importación fue rechazada", detalles: errores });
     }
 
+    let creados = 0;
+    let actualizados = 0;
+
     await prisma.$transaction(async (tx) => {
       for (const item of preparedRows) {
         const seguro = item.seguroNombre ? segurosMap.get(item.seguroNombre.toUpperCase()) : null;
         const conductor = item.conductorUsername ? usuariosMap.get(item.conductorUsername.toUpperCase()) : null;
 
-        await tx.vehiculo.create({
-          data: {
-            id: item.id,
-            tipoMaquinaId: tipoMaquinaVehiculo.id,
-            empresa: item.empresa,
-            estado: item.estado || "activo",
-            vehiculo: item.vehiculo,
-            patente: item.patente,
-            modelo: item.modelo,
-            numeroPoliza: item.numeroPoliza || null,
-            motor: item.motor || "N/D",
-            chasis: item.chasis || "N/D",
-            tipoCobertura: item.tipoCobertura || "N/D",
-            seguroId: seguro?.id ?? null,
-            conductorActualId: conductor?.id || null,
-            tarjetaVerde: item.tarjetaVerde,
-            vtoSeguro: item.vtoSeguroAplica ? item.vtoSeguro : null,
-            vtoSeguroAplica: item.vtoSeguroAplica,
-            vtoMatafuego: item.vtoMatafuegoAplica ? item.vtoMatafuego : null,
-            vtoMatafuegoAplica: item.vtoMatafuegoAplica,
-            vtoItv: item.vtoItvAplica ? item.vtoItv : null,
-            vtoItvAplica: item.vtoItvAplica,
-            obleaGnc: item.obleaGncAplica ? item.obleaGnc : null,
-            obleaGncAplica: item.obleaGncAplica,
-            pruebaHidraulicaGnc: item.pruebaHidraulicaGncAplica ? item.pruebaHidraulicaGnc : null,
-            pruebaHidraulicaGncAplica: item.pruebaHidraulicaGncAplica,
-          },
-        });
+        if (!item.isUpdate) {
+          await tx.vehiculo.create({
+            data: {
+              id: item.id,
+              tipoMaquinaId: tipoMaquinaVehiculo.id,
+              empresa: item.empresa,
+              estado: item.estado || "activo",
+              vehiculo: item.vehiculo,
+              patente: item.patente,
+              modelo: item.modelo,
+              numeroPoliza: item.numeroPoliza || null,
+              motor: item.motor || "N/D",
+              chasis: item.chasis || "N/D",
+              tipoCobertura: item.tipoCobertura || "N/D",
+              seguroId: seguro?.id ?? null,
+              conductorActualId: conductor?.id || null,
+              tarjetaVerde: item.tarjetaVerde,
+              vtoSeguro: item.vtoSeguroAplica ? item.vtoSeguro : null,
+              vtoSeguroAplica: item.vtoSeguroAplica,
+              vtoMatafuego: item.vtoMatafuegoAplica ? item.vtoMatafuego : null,
+              vtoMatafuegoAplica: item.vtoMatafuegoAplica,
+              vtoItv: item.vtoItvAplica ? item.vtoItv : null,
+              vtoItvAplica: item.vtoItvAplica,
+              obleaGnc: item.obleaGncAplica ? item.obleaGnc : null,
+              obleaGncAplica: item.obleaGncAplica,
+              pruebaHidraulicaGnc: item.pruebaHidraulicaGncAplica ? item.pruebaHidraulicaGnc : null,
+              pruebaHidraulicaGncAplica: item.pruebaHidraulicaGncAplica,
+            },
+          });
 
-        if (conductor) {
+          if (conductor) {
+            await tx.vehiculoAsignacion.create({
+              data: {
+                vehiculoId: item.id,
+                usuarioId: conductor.id,
+                observacion: "Importación inicial",
+              },
+            });
+          }
+
+          creados += 1;
+          continue;
+        }
+
+        // Actualización parcial: solo entran a `data` los campos con celda
+        // informada. Lo que no vino en el archivo queda intacto.
+        const data = {};
+        if (item.empresaProvided) data.empresa = item.empresa;
+        if (item.estadoProvided) data.estado = item.estado;
+        if (item.vehiculoProvided) data.vehiculo = item.vehiculo;
+        if (item.patenteProvided) data.patente = item.patente;
+        if (item.modeloProvided) data.modelo = item.modelo;
+        if (item.numeroPolizaProvided) data.numeroPoliza = item.numeroPoliza || null;
+        if (item.motorProvided) data.motor = item.motor;
+        if (item.chasisProvided) data.chasis = item.chasis;
+        if (item.tipoCoberturaProvided) data.tipoCobertura = item.tipoCobertura;
+        if (item.tarjetaVerdeProvided) data.tarjetaVerde = item.tarjetaVerde;
+        if (item.seguroProvided) data.seguroId = seguro?.id ?? null;
+
+        applyFechaAplicaUpdate(data, "vtoSeguroAplica", "vtoSeguro", item.vtoSeguroAplicaProvided, item.vtoSeguroAplica, item.vtoSeguroProvided, item.vtoSeguro);
+        applyFechaAplicaUpdate(data, "vtoMatafuegoAplica", "vtoMatafuego", item.vtoMatafuegoAplicaProvided, item.vtoMatafuegoAplica, item.vtoMatafuegoProvided, item.vtoMatafuego);
+        applyFechaAplicaUpdate(data, "vtoItvAplica", "vtoItv", item.vtoItvAplicaProvided, item.vtoItvAplica, item.vtoItvProvided, item.vtoItv);
+        applyFechaAplicaUpdate(data, "obleaGncAplica", "obleaGnc", item.obleaGncAplicaProvided, item.obleaGncAplica, item.obleaGncProvided, item.obleaGnc);
+        applyFechaAplicaUpdate(data, "pruebaHidraulicaGncAplica", "pruebaHidraulicaGnc", item.pruebaHidraulicaGncAplicaProvided, item.pruebaHidraulicaGncAplica, item.pruebaHidraulicaGncProvided, item.pruebaHidraulicaGnc);
+
+        // Conductor: solo se toca si vino informado y es distinto al actual.
+        // Reasignar cierra la asignación abierta y abre una nueva, igual que
+        // hacerlo a mano en dos pasos (desasignar + asignar).
+        if (item.conductorProvided && conductor && conductor.id !== item.existente.conductorActualId) {
+          await tx.vehiculoAsignacion.updateMany({
+            where: { vehiculoId: item.id, fechaHasta: null },
+            data: { fechaHasta: new Date() },
+          });
           await tx.vehiculoAsignacion.create({
             data: {
               vehiculoId: item.id,
               usuarioId: conductor.id,
-              observacion: "Importación inicial",
+              observacion: "Reasignado por importación",
             },
           });
+          data.conductorActualId = conductor.id;
         }
+
+        await tx.vehiculo.update({ where: { id: item.id }, data });
+        actualizados += 1;
       }
     });
 
-    res.status(201).json({ message: "Vehículos importados correctamente", total: preparedRows.length });
+    res.status(200).json({
+      message: "Vehículos importados correctamente",
+      total: preparedRows.length,
+      creados,
+      actualizados,
+    });
   } catch (e) {
     console.error("adminImportVehiculos:", e);
     res.status(500).json({ error: "Error importando vehículos" });

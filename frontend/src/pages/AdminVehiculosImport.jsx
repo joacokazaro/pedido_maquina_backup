@@ -93,8 +93,9 @@ export default function AdminVehiculosImport() {
         <header className="rounded-2xl bg-white p-5 shadow">
           <h1 className="text-2xl font-bold text-gray-900">Importar vehículos desde Excel</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Usá una planilla con encabezados en la primera fila. La importación se rechaza si faltan datos obligatorios,
-            o si el ID o la patente están duplicados.
+            Usá una planilla con encabezados en la primera fila. El <b>ID</b> es la clave: si no existe, se da de alta el
+            vehículo (ahí sí son obligatorias las columnas base); si ya existe, se actualiza — y una celda vacía o una
+            columna que no incluiste significa "no cambiar ese dato", nunca lo vacía.
           </p>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -175,8 +176,9 @@ export default function AdminVehiculosImport() {
             <p><b>Campos *_APLICA:</b> usar <b>SI</b> o <b>NO</b>.</p>
             <p><b>Fechas:</b> conviene cargarlas como fecha real de Excel o en formato <b>DD/MM/AAAA</b>.</p>
             <p><b>NÚMERO_POLIZA:</b> podés usar también los encabezados <b>NRO_POLIZA</b> o <b>POLIZA</b>.</p>
-            <p><b>SEGURO:</b> es opcional. Si no se informa, se guarda vacío.</p>
-            <p><b>CONDUCTOR_USERNAME:</b> si se informa, debe existir ese usuario.</p>
+            <p><b>SEGURO:</b> es opcional. Si no se informa, se guarda vacío (en un alta) o no se modifica (en una actualización).</p>
+            <p><b>CONDUCTOR_USERNAME:</b> si se informa, debe existir ese usuario. En una actualización, si el vehículo ya tenía otro conductor asignado, se reasigna automáticamente (se cierra la asignación anterior y se abre una nueva).</p>
+            <p><b>PATENTE:</b> en una actualización, si la cambiás, no puede coincidir con la de otro vehículo.</p>
           </div>
         </section>
       </div>
