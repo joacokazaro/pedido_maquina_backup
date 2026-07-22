@@ -4,6 +4,7 @@ import {
   deleteEventual,
   getEventualDetail,
   importarHorasBrowixEventual,
+  importarInsumosEventual,
   listEventuales,
   saveEventual,
 } from "../services/eventuales.service.js";
@@ -90,6 +91,22 @@ export async function adminImportarHorasBrowix(req, res) {
     res.json(eventual);
   } catch (error) {
     handleError(res, error, "Error importando horas de Browix");
+  }
+}
+
+export async function adminImportarInsumos(req, res) {
+  const actor = await requireActor(req, res, ROLES_HORAS_EVENTUAL);
+  if (!actor) return;
+
+  try {
+    const eventual = await importarInsumosEventual({
+      eventualId: req.params.id,
+      actorId: actor.id,
+      actorNombre: actor.nombre || actor.username,
+    });
+    res.json(eventual);
+  } catch (error) {
+    handleError(res, error, "Error importando insumos");
   }
 }
 

@@ -6,6 +6,7 @@ import {
   agruparMinutosPorLegajo,
   getCategoriasPorLegajos,
 } from "./browix.service.js";
+import { resolverServiciosPorNombre, getPedidosInsumos } from "./insumos.service.js";
 
 export const ESTADOS_EVENTUAL_VALIDOS = ["activo", "finalizado", "cancelado"];
 
@@ -465,6 +466,7 @@ export async function getEventualDetail(eventualId) {
     trabajosRealizados: parseJson(eventual.trabajosRealizados) || [],
     serviciosExtrasSubcontratados: parseJson(eventual.serviciosExtrasSubcontratados) || [],
     horasBrowix: parseJson(eventual.horasBrowix),
+    insumosImportados: parseJson(eventual.insumosImportados),
     horasSupervisor: eventual.horasSupervisor,
     historial: eventual.historial.map(mapHistorialEntry),
   };
@@ -955,6 +957,108 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
       data: {
         eventualId: eventual.id,
         accion: "HORAS_BROWIX_IMPORTADAS",
+        detalle: JSON.stringify(resultado),
+        usuarioId: actorId,
+      },
+    }),
+  ]);
+
+  return getEventualDetail(eventual.id);
+}
+
+// Agrupa los items de una lista de pedidos de insumos por insumo (código +
+// nombre, ya que el código puede venir null y no alcanza solo). Suma
+// cantidad y subtotal de cada insumo a través de todos los pedidos.
+function agruparItemsPorInsumo(pedidos) {
+  const porInsumo = new Map();
+
+  for (const pedido of pedidos) {
+    for (const item of Array.isArray(pedido.items) ? pedido.items : []) {
+      const clave = `${item.codigo || ""}__${item.insumo || ""}`;
+      const actual = porInsumo.get(clave) || {
+        codigo: item.codigo ?? null,
+        insumo: item.insumo,
+        cantidad: 0,
+        subtotal: 0,
+      };
+      actual.cantidad += Number(item.cantidad) || 0;
+      actual.subtotal += Number(item.subtotal) || 0;
+      porInsumo.set(clave, actual);
+    }
+  }
+
+  return Array.from(porInsumo.values()).sort((a, b) => b.subtotal - a.subtotal);
+}
+
+// Importa desde la API de pedidos de insumos (insumos.kazaro.com.ar) los
+// pedidos hechos para el servicio homónimo al eventual, dentro del rango
+// fechaInicio/fechaFin. Matchea por nombre exacto (mismo criterio que
+// Browix), no por id: no hay una relación directa Eventual -> Servicio en el
+// schema. A diferencia de las horas de Browix, se puede reimportar tantas
+// veces como se quiera mientras el eventual esté finalizado, siempre pisando
+// el resultado anterior.
+export async function importarInsumosEventual({ eventualId, actorId, actorNombre }) {
+  const eventual = await prisma.eventual.findUnique({ where: { id: Number(eventualId) } });
+  if (!eventual) {
+    throw buildError("Eventual no encontrado", 404);
+  }
+
+  if (eventual.estado !== "finalizado") {
+    throw buildError("El eventual debe estar finalizado para importar insumos", 400);
+  }
+
+  if (!eventual.fechaInicio || !eventual.fechaFin) {
+    throw buildError(
+      "El eventual debe tener fecha de inicio y fecha de fin cargadas para importar insumos",
+      400
+    );
+  }
+
+  const coincidencias = await resolverServiciosPorNombre(eventual.nombre);
+
+  const pedidos = [];
+  for (const { token, servicioId } of coincidencias) {
+    const pedidosEmpresa = await getPedidosInsumos({
+      token,
+      servicioId,
+      desde: eventual.fechaInicio,
+      hasta: eventual.fechaFin,
+    });
+    pedidos.push(...pedidosEmpresa);
+  }
+
+  const insumos = agruparItemsPorInsumo(pedidos);
+  const total = pedidos.reduce((acc, p) => acc + (Number(p.total) || 0), 0);
+
+  const resultado = {
+    servicioIds: coincidencias.map((c) => c.servicioId),
+    servicioNombre: eventual.nombre,
+    cantidadPedidos: pedidos.length,
+    total: Math.round(total * 100) / 100,
+    desde: eventual.fechaInicio.toISOString().slice(0, 10),
+    hasta: eventual.fechaFin.toISOString().slice(0, 10),
+    importadoEn: new Date().toISOString(),
+    importadoPor: actorNombre || null,
+    insumos,
+    pedidos: pedidos.map((p) => ({
+      pedidoId: p.pedidoId,
+      numero: p.numero,
+      fechaHoraArgentina: p.fechaHoraArgentina,
+      solicitante: p.solicitante,
+      estado: p.estado,
+      total: p.total,
+    })),
+  };
+
+  await prisma.$transaction([
+    prisma.eventual.update({
+      where: { id: eventual.id },
+      data: { insumosImportados: JSON.stringify(resultado) },
+    }),
+    prisma.historialEventual.create({
+      data: {
+        eventualId: eventual.id,
+        accion: "INSUMOS_IMPORTADOS",
         detalle: JSON.stringify(resultado),
         usuarioId: actorId,
       },

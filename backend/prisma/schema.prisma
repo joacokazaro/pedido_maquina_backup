@@ -231,6 +231,7 @@ model Eventual {
   trabajosRealizados    String?
   serviciosExtrasSubcontratados String?
   horasBrowix   String?
+  insumosImportados String?
   horasSupervisor Float?
   activo        Boolean             @default(true)
   createdAt     DateTime            @default(now())

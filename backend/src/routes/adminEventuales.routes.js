@@ -6,6 +6,7 @@ import {
   adminDeleteEventual,
   adminGetEventual,
   adminImportarHorasBrowix,
+  adminImportarInsumos,
   adminListEventuales,
   adminUpdateEventual,
 } from "../controllers/adminEventuales.controller.js";
@@ -19,6 +20,7 @@ router.get("/eventuales/:id", adminGetEventual);
 router.post("/eventuales", adminCreateEventual);
 router.put("/eventuales/:id", adminUpdateEventual);
 router.post("/eventuales/:id/importar-horas-browix", adminImportarHorasBrowix);
+router.post("/eventuales/:id/importar-insumos", adminImportarInsumos);
 router.put("/eventuales/:id/horas-supervisor", adminActualizarHorasSupervisor);
 router.delete("/eventuales/:id", adminDeleteEventual);
 

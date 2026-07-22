@@ -135,6 +135,10 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const [importandoHoras, setImportandoHoras] = useState(false);
   const [horasBrowixError, setHorasBrowixError] = useState("");
 
+  const [insumosImportados, setInsumosImportados] = useState(null);
+  const [importandoInsumos, setImportandoInsumos] = useState(false);
+  const [insumosError, setInsumosError] = useState("");
+
   const [horasSupervisorInput, setHorasSupervisorInput] = useState("");
   const [guardandoHorasSupervisor, setGuardandoHorasSupervisor] = useState(false);
   const [horasSupervisorError, setHorasSupervisorError] = useState("");
@@ -224,6 +228,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           setTrabajosRealizados(Array.isArray(eventual.trabajosRealizados) ? eventual.trabajosRealizados : []);
           setServiciosExtrasSubcontratados(Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : []);
           setHorasBrowix(eventual.horasBrowix || null);
+          setInsumosImportados(eventual.insumosImportados || null);
           setHorasSupervisorGuardado(
             eventual.horasSupervisor !== null && eventual.horasSupervisor !== undefined
               ? eventual.horasSupervisor
@@ -563,6 +568,30 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       setHorasBrowixError(importError.message || "Error importando horas de Browix");
     } finally {
       setImportandoHoras(false);
+    }
+  }
+
+  async function importarInsumos() {
+    try {
+      setImportandoInsumos(true);
+      setInsumosError("");
+
+      const res = await fetch(`${API_BASE}/admin/eventuales/${encodeURIComponent(id)}/importar-insumos`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...buildActorHeaders(user) },
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudieron importar los insumos");
+      }
+
+      setInsumosImportados(data.insumosImportados || null);
+    } catch (importError) {
+      console.error(importError);
+      setInsumosError(importError.message || "Error importando insumos");
+    } finally {
+      setImportandoInsumos(false);
     }
   }
 
@@ -1411,6 +1440,121 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               </div>
             ) : null}
           </div>
+        </div>
+      </section>
+      ) : null}
+
+      {mostrarCamposPosteriores ? (
+      <section className="overflow-hidden rounded-3xl border-2 border-emerald-300/70 bg-white shadow-sm">
+        <div className="flex items-center gap-3 border-b-2 border-emerald-200 bg-emerald-50 px-4 py-3 sm:px-5">
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-emerald-600 text-sm font-bold text-white">5</span>
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-emerald-900">Insumos</h2>
+            <p className="text-xs text-emerald-700/70">Insumos pedidos para este eventual en la plataforma de insumos.</p>
+          </div>
+        </div>
+        <div className="space-y-4 p-4 sm:p-5">
+          {form.estado !== "finalizado" ? (
+            <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
+              La importación de insumos se habilita recién cuando el eventual se marca como <b>finalizado</b> (y se
+              guarda ese cambio de estado).
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="max-w-2xl">
+              <p className="text-sm text-gray-600">
+                Busca en la plataforma de insumos los pedidos hechos para el servicio cuyo nombre coincide
+                exactamente con el nombre del eventual (
+                <span className="font-semibold text-gray-800">{form.nombre || "sin nombre"}</span>), dentro del
+                rango de fecha inicio y fecha fin cargados arriba.
+              </p>
+              {(!form.fechaInicio || !form.fechaFin) && form.estado === "finalizado" ? (
+                <p className="mt-1 text-xs font-medium text-amber-600">
+                  Cargá fecha de inicio y fecha de fin para poder importar los insumos.
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={importarInsumos}
+              disabled={!form.fechaInicio || !form.fechaFin || form.estado !== "finalizado" || importandoInsumos}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 3" />
+              </svg>
+              {importandoInsumos ? "Importando..." : "Importar insumos"}
+            </button>
+          </div>
+
+          {insumosError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{insumosError}</div>
+          ) : null}
+
+          {insumosImportados ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Total importado</p>
+                  <p className="text-2xl font-bold text-emerald-900">
+                    {insumosImportados.total.toLocaleString("es-AR", { style: "currency", currency: "ARS" })}
+                  </p>
+                </div>
+                <div className="text-xs text-emerald-700/80">
+                  <p>
+                    {insumosImportados.cantidadPedidos} pedido{insumosImportados.cantidadPedidos === 1 ? "" : "s"} encontrado
+                    {insumosImportados.cantidadPedidos === 1 ? "" : "s"}
+                  </p>
+                  <p>Rango: {insumosImportados.desde} a {insumosImportados.hasta}</p>
+                  <p>
+                    Importado el {new Date(insumosImportados.importadoEn).toLocaleString("es-AR")}
+                    {insumosImportados.importadoPor ? ` por ${insumosImportados.importadoPor}` : ""}
+                  </p>
+                </div>
+              </div>
+
+              {!insumosImportados.servicioIds?.length ? (
+                <p className="mt-2 text-xs font-medium text-emerald-700">
+                  No se encontró ningún servicio con nombre "{insumosImportados.servicioNombre}" en la plataforma de
+                  insumos. Verificá que el nombre del eventual coincida exactamente con el nombre del servicio
+                  cargado ahí.
+                </p>
+              ) : insumosImportados.cantidadPedidos === 0 ? (
+                <p className="mt-2 text-xs font-medium text-emerald-700">
+                  No se encontraron pedidos de insumos para este servicio en ese rango de fechas.
+                </p>
+              ) : null}
+
+              {Array.isArray(insumosImportados.insumos) && insumosImportados.insumos.length > 0 ? (
+                <div className="mt-4 overflow-x-auto rounded-xl border border-emerald-200">
+                  <table className="w-full text-sm">
+                    <thead className="bg-emerald-100/70">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-emerald-800">Insumo</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-emerald-800">Cantidad</th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-emerald-800">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-emerald-100 bg-white">
+                      {insumosImportados.insumos.map((insumo, idx) => (
+                        <tr key={`${insumo.codigo || "sin-codigo"}-${idx}`}>
+                          <td className="px-3 py-2 font-medium text-gray-900">{insumo.insumo}</td>
+                          <td className="px-3 py-2 text-right text-gray-700">{insumo.cantidad}</td>
+                          <td className="px-3 py-2 text-right text-gray-900">
+                            {insumo.subtotal.toLocaleString("es-AR", { style: "currency", currency: "ARS" })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Todavía no se importaron insumos para este eventual.</p>
+          )}
         </div>
       </section>
       ) : null}
