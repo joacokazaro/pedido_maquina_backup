@@ -2111,9 +2111,9 @@ export async function adminCreateMaquina(req, res) {
       comentarios,
     } = req.body || {};
 
-    if (!id || !tipo || !modelo || !servicioId) {
+    if (!id || !tipo || !modelo) {
       return res.status(400).json({
-        error: "id, tipo, modelo y servicioId son obligatorios",
+        error: "id, tipo y modelo son obligatorios",
       });
     }
 
@@ -2122,6 +2122,15 @@ export async function adminCreateMaquina(req, res) {
       return res.status(409).json({
         error: `Ya existe una máquina con código ${id}`,
       });
+    }
+
+    const servicioIdParsed =
+      servicioId !== undefined && servicioId !== null && String(servicioId).trim() !== ""
+        ? Number(servicioId)
+        : null;
+
+    if (servicioIdParsed !== null && (!Number.isInteger(servicioIdParsed) || servicioIdParsed <= 0)) {
+      return res.status(400).json({ error: "servicioId inválido" });
     }
 
     const empresaNormalizada = normalizeEmpresa(empresa);
@@ -2155,7 +2164,7 @@ export async function adminCreateMaquina(req, res) {
             ? String(serie)
             : null,
         estado: normalizeEstado(estado),
-        servicioId: Number(servicioId),
+        servicioId: servicioIdParsed,
         fechaCompra: fechaCompraParsed,
         proveedorFactura: parseNullableString(proveedorFactura),
         valorCompra: parseNullableNonNegativeFloat(valorCompra, "Valor de compra"),
@@ -2173,12 +2182,14 @@ export async function adminCreateMaquina(req, res) {
       },
     });
 
-    await insertMaquinaServicioHistorial(prisma, {
-      maquinaId: nueva.id,
-      servicioId: nueva.servicioId,
-      fechaAsignacion: nueva.createdAt,
-      tipoMovimiento: "individual",
-    });
+    if (nueva.servicioId !== null) {
+      await insertMaquinaServicioHistorial(prisma, {
+        maquinaId: nueva.id,
+        servicioId: nueva.servicioId,
+        fechaAsignacion: nueva.createdAt,
+        tipoMovimiento: "individual",
+      });
+    }
 
     res.status(201).json({
       message: "Máquina creada correctamente",
@@ -2250,8 +2261,14 @@ export async function adminUpdateMaquina(req, res) {
 
     const nuevoServicioId =
       servicioId !== undefined
-        ? Number(servicioId)
+        ? servicioId === null || String(servicioId).trim() === ""
+          ? null
+          : Number(servicioId)
         : existe.servicioId;
+
+    if (nuevoServicioId !== null && (!Number.isInteger(nuevoServicioId) || nuevoServicioId <= 0)) {
+      return res.status(400).json({ error: "servicioId inválido" });
+    }
 
     const tipoSeleccionado =
       tipo !== undefined && String(tipo).trim() !== ""
@@ -2340,7 +2357,7 @@ export async function adminUpdateMaquina(req, res) {
       },
     });
 
-    if (nuevoServicioId !== existe.servicioId) {
+    if (nuevoServicioId !== null && nuevoServicioId !== existe.servicioId) {
       await insertMaquinaServicioHistorial(prisma, {
         maquinaId: actualizada.id,
         servicioId: nuevoServicioId,

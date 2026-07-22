@@ -244,9 +244,9 @@ export default function AdminMaquinaForm() {
       return;
     }
 
-    if (String(form.tipo || "").trim() === "" || String(form.modelo || "").trim() === "" || String(form.servicioId || "").trim() === "") {
+    if (String(form.tipo || "").trim() === "" || String(form.modelo || "").trim() === "") {
       setSaving(false);
-      setError("Tipo, modelo y servicio son obligatorios");
+      setError("Tipo y modelo son obligatorios");
       return;
     }
 
@@ -434,7 +434,7 @@ export default function AdminMaquinaForm() {
                   <option key={s.id} value={s.id}>{s.nombre}</option>
                 ))}
               </SearchableSelect>
-              {esEdicion ? (
+              {esEdicion && form.servicioId ? (
                 <p className="mt-1 text-xs text-gray-500">
                   Supervisor{supervisoresServicio.length === 1 ? "" : "es"} del servicio:{" "}
                   {supervisoresServicio.length > 0 ? (

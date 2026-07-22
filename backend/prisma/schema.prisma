@@ -85,7 +85,7 @@ model Maquina {
   modelo       String
   serie        String?
   estado       String          @default("disponible")
-  servicioId   Int
+  servicioId   Int?
   fechaCompra  DateTime?
   proveedorFactura String?
   valorCompra  Float?
@@ -104,7 +104,7 @@ model Maquina {
   createdAt    DateTime        @default(now())
 
   // Relaciones
-  servicio     Servicio        @relation("ServicioPrincipalMaquina", fields: [servicioId], references: [id])
+  servicio     Servicio?       @relation("ServicioPrincipalMaquina", fields: [servicioId], references: [id])
   servicioAmortizacion Servicio? @relation("ServicioAmortizacionMaquina", fields: [servicioAmortizacionId], references: [id])
   tipoMaquina  TipoMaquina?    @relation("MaquinaTipoMaquina", fields: [tipoMaquinaId], references: [id])
   asignaciones PedidoMaquina[]
