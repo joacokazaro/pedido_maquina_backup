@@ -65,6 +65,7 @@ import AdminVehiculosImport from "./pages/AdminVehiculosImport";
 import AdminViewPedido from "./pages/AdminViewPedido";
 import AdminServicios from "./pages/AdminServicios";
 import AdminServicioForm from "./pages/AdminServicioForm";
+import AdminServiciosImport from "./pages/AdminServiciosImport";
 import AdminSeguros from "./pages/AdminSeguros";
 import AdminSupervisoresServicios from "./pages/AdminSupervisoresServicios";
 import AdminEventualesPanel from "./pages/AdminEventualesPanel";
@@ -555,6 +556,11 @@ function App() {
       <Route
         path="/admin/servicios/nuevo"
         element={renderAdminOnlyPage(<AdminServicioForm />)}
+      />
+
+      <Route
+        path="/admin/servicios/importar"
+        element={renderAdminOnlyPage(<AdminServiciosImport />)}
       />
 
       <Route

@@ -46,6 +46,7 @@ model UsuarioRol {
 model Servicio {
   id        Int       @id @default(autoincrement())
   nombre    String    @unique
+  idBrowix  String?
   activo    Boolean   @default(true)
   createdAt DateTime  @default(now())
 

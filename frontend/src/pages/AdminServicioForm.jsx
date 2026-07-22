@@ -22,6 +22,7 @@ export default function AdminServicioForm() {
   const esEdicion = Boolean(id);
 
   const [nombre, setNombre] = useState("");
+  const [idBrowix, setIdBrowix] = useState("");
   const [maquinas, setMaquinas] = useState([]);
   const [loading, setLoading] = useState(esEdicion);
   const [saving, setSaving] = useState(false);
@@ -37,6 +38,7 @@ export default function AdminServicioForm() {
       .then(r => r.json())
       .then(data => {
         setNombre(data.nombre || "");
+        setIdBrowix(data.idBrowix || "");
         setMaquinas(data.maquinas || []);
       })
       .catch(() => setError("Error cargando servicio"))
@@ -57,7 +59,7 @@ export default function AdminServicioForm() {
         {
           method: esEdicion ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nombre }),
+          body: JSON.stringify({ nombre, idBrowix }),
         }
       );
 
@@ -141,6 +143,19 @@ export default function AdminServicioForm() {
             value={nombre}
             onChange={e => setNombre(e.target.value)}
             disabled={isReadOnly}
+            className="w-full p-2 border rounded-xl"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold mb-1">
+            ID Browix
+          </label>
+          <input
+            value={idBrowix}
+            onChange={e => setIdBrowix(e.target.value)}
+            disabled={isReadOnly}
+            placeholder="Ej: K12"
             className="w-full p-2 border rounded-xl"
           />
         </div>

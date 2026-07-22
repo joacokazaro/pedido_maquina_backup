@@ -11,6 +11,7 @@ export default function AdminServicios() {
   const { user } = useAuth();
   const rolUpper = String(user?.rol || "").toUpperCase();
   const isReadOnly = rolUpper === "CONSULTOR";
+  const isAdmin = rolUpper === "ADMIN";
 
   const [servicios, setServicios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -139,6 +140,25 @@ export default function AdminServicios() {
         </h1>
       </header>
 
+      {isAdmin ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+          {!isReadOnly ? (
+            <button
+              onClick={() => navigate("/admin/servicios/importar")}
+              className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-200"
+            >
+              Importar Excel
+            </button>
+          ) : null}
+          <a
+            href={`${API_BASE}/admin/servicios/export`}
+            className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-200"
+          >
+            Exportar Excel
+          </a>
+        </div>
+      ) : null}
+
       {/* FILTROS */}
       <div className="bg-white rounded-xl shadow p-3 mb-4 space-y-3">
         <input
@@ -199,6 +219,11 @@ export default function AdminServicios() {
                 {!s.activo ? (
                   <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 font-medium">
                     Dado de baja
+                  </span>
+                ) : null}
+                {s.idBrowix ? (
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium">
+                    {s.idBrowix}
                   </span>
                 ) : null}
               </div>
