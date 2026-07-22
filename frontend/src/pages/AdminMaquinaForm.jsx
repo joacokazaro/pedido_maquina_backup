@@ -89,6 +89,7 @@ export default function AdminMaquinaForm() {
   const [servicios, setServicios] = useState([]);
   const [tipos, setTipos] = useState([]);
   const [asignacion, setAsignacion] = useState(null);
+  const [supervisoresServicio, setSupervisoresServicio] = useState([]);
   const [loading, setLoading] = useState(esEdicion);
   const [saving, setSaving] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -151,6 +152,7 @@ export default function AdminMaquinaForm() {
           });
           setAnioEditableManualmente(isManualYearOverride(anio, fechaCompra));
           setAsignacion(data.asignacion || null);
+          setSupervisoresServicio(Array.isArray(data.servicio?.supervisores) ? data.servicio.supervisores : []);
           const existeTipoActual = listaTipos.some((tipo) => tipo.nombre === data.tipo);
           setTipos(
             existeTipoActual
@@ -432,6 +434,18 @@ export default function AdminMaquinaForm() {
                   <option key={s.id} value={s.id}>{s.nombre}</option>
                 ))}
               </SearchableSelect>
+              {esEdicion ? (
+                <p className="mt-1 text-xs text-gray-500">
+                  Supervisor{supervisoresServicio.length === 1 ? "" : "es"} del servicio:{" "}
+                  {supervisoresServicio.length > 0 ? (
+                    <span className="font-semibold text-gray-700">
+                      {supervisoresServicio.map((s) => s.nombre || s.username).join(", ")}
+                    </span>
+                  ) : (
+                    <span className="italic">Sin supervisor asignado</span>
+                  )}
+                </p>
+              ) : null}
             </div>
 
             <div>

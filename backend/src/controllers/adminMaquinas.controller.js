@@ -1810,7 +1810,16 @@ export async function adminGetMaquinaById(req, res) {
       where: { id },
       include: {
         servicio: {
-          select: { id: true, nombre: true },
+          select: {
+            id: true,
+            nombre: true,
+            supervisores: {
+              where: { usuario: { activo: true } },
+              select: {
+                usuario: { select: { id: true, username: true, nombre: true } },
+              },
+            },
+          },
         },
         servicioAmortizacion: {
           select: { id: true, nombre: true },
@@ -1871,6 +1880,13 @@ export async function adminGetMaquinaById(req, res) {
 
     res.json({
       ...maquina,
+      servicio: maquina.servicio
+        ? {
+            id: maquina.servicio.id,
+            nombre: maquina.servicio.nombre,
+            supervisores: (maquina.servicio.supervisores || []).map((s) => s.usuario),
+          }
+        : null,
       tipo: maquina.tipoMaquina?.nombre || maquina.tipo,
       amortizacion: resolveAmortizacionByTipo(maquina.tipoMaquina),
       estadoAmortizacion: ESTADOS_AMORTIZACION_VALIDOS.has(maquina.estadoAmortizacion)
@@ -3007,5 +3023,50 @@ export async function adminConfirmImportMaquinas(req, res) {
       return res.status(status).json({ error: e.message, detalles: e.detalles || [] });
     }
     res.status(500).json({ error: "Error importando máquinas" });
+  }
+}
+
+/* ========================================================
+   POST /admin/maquinas/backfill-anio
+   Backfill único para máquinas que ya tenían fechaCompra cargada
+   antes de existir el año/antigüedad autocalculados (ver
+   getAnioFromFechaCompra / calcularAntiguedad): esas máquinas nunca
+   se volvieron a guardar desde entonces, así que su año y antigüedad
+   quedaron en null. No toca máquinas que ya tienen año (manual o
+   autocalculado) ni las que no tienen fechaCompra.
+======================================================== */
+export async function adminBackfillAnioMaquinas(req, res) {
+  const actor = await requireActor(req, res, ["admin"]);
+  if (!actor) return;
+
+  try {
+    const pendientes = await prisma.maquina.findMany({
+      where: { anio: null, fechaCompra: { not: null } },
+      select: { id: true, fechaCompra: true },
+    });
+
+    let actualizadas = 0;
+
+    await prisma.$transaction(async (tx) => {
+      for (const maquina of pendientes) {
+        const anio = getAnioFromFechaCompra(maquina.fechaCompra);
+        if (anio === null) continue;
+
+        await tx.maquina.update({
+          where: { id: maquina.id },
+          data: { anio, antiguedad: calcularAntiguedad(anio) },
+        });
+        actualizadas += 1;
+      }
+    });
+
+    res.json({
+      message: "Backfill completado",
+      detectadas: pendientes.length,
+      actualizadas,
+    });
+  } catch (e) {
+    console.error("adminBackfillAnioMaquinas:", e);
+    res.status(500).json({ error: "Error aplicando el backfill de año" });
   }
 }

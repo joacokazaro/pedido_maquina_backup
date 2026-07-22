@@ -29,6 +29,7 @@ import {
   adminDeletePlazoAmortizacion,
   adminRecalcularEstadoAmortizacion,
   adminRecalcularEstadoAmortizacionByMaquina,
+  adminBackfillAnioMaquinas,
 } from "../controllers/adminMaquinas.controller.js";
 
 const router = Router();
@@ -45,6 +46,7 @@ router.get("/maquinas/export", adminExportMaquinas);
 router.get("/maquinas/import/template", adminDownloadMaquinasTemplate);
 router.post("/maquinas/import/preview", upload.single("file"), adminPreviewImportMaquinas);
 router.post("/maquinas/import/confirm", upload.single("file"), adminConfirmImportMaquinas);
+router.post("/maquinas/backfill-anio", adminBackfillAnioMaquinas);
 
 // TIPOS DE MÁQUINA
 router.get("/maquinas/tipos", adminGetTiposMaquina);
