@@ -61,7 +61,7 @@ export default function AdminMaquinaForm() {
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
   const esEdicion = Boolean(id);
-  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER") || hasRole("DEPOSITO");
 
   const [form, setForm] = useState({
     id: "",

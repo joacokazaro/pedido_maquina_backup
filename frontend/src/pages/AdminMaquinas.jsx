@@ -23,7 +23,7 @@ export default function AdminMaquinas() {
   const { user, hasRole } = useAuth();
   const isAdmin = hasRole("ADMIN");
   const canOperateTaller = hasRole("ADMIN") || hasRole("TALLER");
-  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER") || hasRole("DEPOSITO");
 
   const [allMaquinas, setAllMaquinas] = useState([]);
   const [servicios, setServicios] = useState([]);
@@ -593,14 +593,12 @@ export default function AdminMaquinas() {
           ) : null}
         </div>
 
-        {isAdmin ? (
-          <a
-            href={`${API_BASE}/admin/maquinas/export`}
-            className={actionBtnExcel}
-          >
-            Exportar Excel
-          </a>
-        ) : null}
+        <a
+          href={`${API_BASE}/admin/maquinas/export`}
+          className={actionBtnExcel}
+        >
+          Exportar Excel
+        </a>
       </div>
 
       {resumen && (

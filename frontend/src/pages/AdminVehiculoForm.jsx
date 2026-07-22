@@ -32,7 +32,7 @@ export default function AdminVehiculoForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
-  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER") || hasRole("DEPOSITO");
   const isEdit = Boolean(id);
 
   const [form, setForm] = useState({

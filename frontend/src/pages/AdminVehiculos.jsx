@@ -21,7 +21,7 @@ export default function AdminVehiculos() {
   const { user, hasRole } = useAuth();
   const isAdmin = hasRole("ADMIN");
   const canOperateTaller = hasRole("ADMIN") || hasRole("TALLER");
-  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER");
+  const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER") || hasRole("DEPOSITO");
   const [vehiculos, setVehiculos] = useState([]);
   const [seguros, setSeguros] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
@@ -200,14 +200,12 @@ export default function AdminVehiculos() {
               </button>
             </>
           ) : null}
-          {isAdmin ? (
-            <a
-              href={`${API_BASE}/admin/vehiculos/export`}
-              className={actionBtnExcel}
-            >
-              Exportar Excel
-            </a>
-          ) : null}
+          <a
+            href={`${API_BASE}/admin/vehiculos/export`}
+            className={actionBtnExcel}
+          >
+            Exportar Excel
+          </a>
       </div>
 
       <div className="mb-4 rounded-2xl bg-white p-3 shadow space-y-3">

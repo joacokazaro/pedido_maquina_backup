@@ -118,7 +118,7 @@ function App() {
   );
 
   const renderInventarioTallerPage = (page) => (
-    <ProtectedRoute allowedRoles={["ADMIN", "COORDINADOR", "CONSULTOR", "TALLER"]}>
+    <ProtectedRoute allowedRoles={["ADMIN", "COORDINADOR", "CONSULTOR", "TALLER", "DEPOSITO"]}>
       <AdminLayout>{page}</AdminLayout>
     </ProtectedRoute>
   );

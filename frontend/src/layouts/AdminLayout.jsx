@@ -115,6 +115,8 @@ const NAV_GROUPS_DEPOSITO = [
 		label: "Inventario",
 		items: [
 			{ label: "Máquinas", to: "/deposito/maquinas" },
+			{ label: "Máquinas (todas)", to: "/admin/maquinas" },
+			{ label: "Vehículos (todos)", to: "/admin/vehiculos" },
 		],
 	},
 	{
