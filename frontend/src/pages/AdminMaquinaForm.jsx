@@ -39,6 +39,23 @@ function toNullableNumber(value) {
   return Number.isFinite(num) ? num : null;
 }
 
+function getYearFromDateInput(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const [year] = raw.split("-");
+  return /^\d{4}$/.test(year) ? year : "";
+}
+
+function isManualYearOverride(anio, fechaCompra) {
+  const normalizedYear = String(anio ?? "").trim();
+  if (!normalizedYear) return false;
+
+  const autoYear = getYearFromDateInput(fechaCompra);
+  if (!autoYear) return true;
+
+  return normalizedYear !== autoYear;
+}
+
 export default function AdminMaquinaForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -78,6 +95,7 @@ export default function AdminMaquinaForm() {
   const [error, setError] = useState("");
   const [amortizacionBusy, setAmortizacionBusy] = useState(false);
   const [amortizacionInfo, setAmortizacionInfo] = useState(null);
+  const [anioEditableManualmente, setAnioEditableManualmente] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -106,6 +124,9 @@ export default function AdminMaquinaForm() {
 
         if (esEdicion) {
           const data = await maqRes.json();
+          const fechaCompra = toDateInputValue(data.fechaCompra);
+          const anio = data.anio ?? "";
+
           setForm({
             id: data.id,
             tipo: data.tipo,
@@ -113,11 +134,11 @@ export default function AdminMaquinaForm() {
             serie: data.serie || "",
             estado: data.estado,
             servicioId: data.servicio?.id || "",
-            fechaCompra: toDateInputValue(data.fechaCompra),
+            fechaCompra,
             proveedorFactura: data.proveedorFactura || "",
             valorCompra: data.valorCompra ?? "",
             empresa: data.empresa || "",
-            anio: data.anio ?? "",
+            anio,
             antiguedad: data.antiguedad ?? "",
             valorUsadaDolares: data.valorUsadaDolares ?? "",
             valorUsadaPesos: data.valorUsadaPesos ?? "",
@@ -128,6 +149,7 @@ export default function AdminMaquinaForm() {
             estadoAmortizacion: data.estadoAmortizacionLabel || "Sin datos",
             comentarios: data.comentarios || ""
           });
+          setAnioEditableManualmente(isManualYearOverride(anio, fechaCompra));
           setAsignacion(data.asignacion || null);
           const existeTipoActual = listaTipos.some((tipo) => tipo.nombre === data.tipo);
           setTipos(
@@ -138,6 +160,7 @@ export default function AdminMaquinaForm() {
                 )
           );
         } else {
+          setAnioEditableManualmente(false);
           setTipos(listaTipos.sort((a, b) => a.nombre.localeCompare(b.nombre)));
         }
 
@@ -155,7 +178,37 @@ export default function AdminMaquinaForm() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      if (name === "fechaCompra") {
+        return {
+          ...prev,
+          fechaCompra: value,
+          anio: anioEditableManualmente ? prev.anio : getYearFromDateInput(value),
+        };
+      }
+
+      if (name === "anio") {
+        return {
+          ...prev,
+          anio: value,
+        };
+      }
+
+      return { ...prev, [name]: value };
+    });
+  }
+
+  function handleToggleAnioManual() {
+    setAnioEditableManualmente((prev) => {
+      const next = !prev;
+      if (!next) {
+        setForm((current) => ({
+          ...current,
+          anio: getYearFromDateInput(current.fechaCompra),
+        }));
+      }
+      return next;
+    });
   }
 
   async function handleDelete() {
@@ -196,6 +249,10 @@ export default function AdminMaquinaForm() {
     }
 
     try {
+      const anioPayload = anioEditableManualmente
+        ? form.anio === "" ? null : Number(form.anio)
+        : null;
+
       const payload = {
         tipo: form.tipo,
         modelo: form.modelo,
@@ -206,7 +263,7 @@ export default function AdminMaquinaForm() {
         proveedorFactura: form.proveedorFactura || null,
         valorCompra: toNullableNumber(form.valorCompra),
         empresa: form.empresa || null,
-        anio: form.anio === "" ? null : Number(form.anio),
+        anio: anioPayload,
         valorUsadaDolares: toNullableNumber(form.valorUsadaDolares),
         valorUsadaPesos: toNullableNumber(form.valorUsadaPesos),
         valorNuevaDolares: toNullableNumber(form.valorNuevaDolares),
@@ -501,15 +558,33 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Año</label>
+              <div className="mb-1 flex items-center gap-2">
+                <label className="block text-xs font-semibold text-gray-600">Año</label>
+                {!isReadOnly ? (
+                  <button
+                    type="button"
+                    onClick={handleToggleAnioManual}
+                    className={`inline-flex h-5 w-5 items-center justify-center rounded border text-[10px] transition ${anioEditableManualmente ? "border-amber-400 bg-amber-50 text-amber-700" : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100"}`}
+                    title={anioEditableManualmente ? "Volver al cálculo automático" : "Editar año manualmente"}
+                    aria-label={anioEditableManualmente ? "Volver al cálculo automático" : "Editar año manualmente"}
+                  >
+                    ✎
+                  </button>
+                ) : null}
+              </div>
               <input
                 type="number"
                 name="anio"
                 value={form.anio}
                 onChange={handleChange}
-                disabled={isReadOnly}
-                className="w-full p-2 rounded-xl border"
+                disabled={isReadOnly || !anioEditableManualmente}
+                className={`w-full rounded-xl border p-2 ${isReadOnly || !anioEditableManualmente ? "bg-gray-100" : "bg-white"}`}
               />
+              <p className="mt-1 text-[11px] text-slate-500">
+                {anioEditableManualmente
+                  ? "Edición manual habilitada para máquinas usadas."
+                  : "Se calcula automáticamente desde la fecha de compra."}
+              </p>
             </div>
 
             <div>

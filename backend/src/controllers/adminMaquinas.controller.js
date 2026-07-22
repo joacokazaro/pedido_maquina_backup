@@ -82,12 +82,43 @@ function parseNullableNonNegativeFloat(raw, fieldName) {
 function parseNullableDate(raw, fieldName) {
   if (!raw) return null;
 
+  const value = String(raw).trim();
+  const isoDateOnly = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoDateOnly) {
+    const [, year, month, day] = isoDateOnly;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    if (Number.isNaN(date.getTime())) {
+      throw new Error(`${fieldName} inválida`);
+    }
+    return date;
+  }
+
   const date = new Date(raw);
   if (Number.isNaN(date.getTime())) {
     throw new Error(`${fieldName} inválida`);
   }
 
   return date;
+}
+
+function getAnioFromFechaCompra(fechaCompra) {
+  if (!fechaCompra) return null;
+  return fechaCompra.getUTCFullYear();
+}
+
+function hasManualYearOverride(anio, fechaCompra) {
+  if (anio === null || anio === undefined) return false;
+
+  const autoAnio = getAnioFromFechaCompra(fechaCompra);
+  if (autoAnio === null) return true;
+
+  return anio !== autoAnio;
+}
+
+function resolveAnioMaquina(rawAnio, fechaCompra) {
+  const anioManual = parseNullableInt(rawAnio, "Año");
+  if (anioManual !== null) return anioManual;
+  return getAnioFromFechaCompra(fechaCompra);
 }
 
 function excelSerialToDateParts(serial) {
@@ -126,11 +157,11 @@ function parseExcelDate(raw) {
   const ddmmyyyy = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (ddmmyyyy) {
     const [, day, month, year] = ddmmyyyy;
-    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
     if (
-      date.getFullYear() === Number(year) &&
-      date.getMonth() === Number(month) - 1 &&
-      date.getDate() === Number(day)
+      date.getUTCFullYear() === Number(year) &&
+      date.getUTCMonth() === Number(month) - 1 &&
+      date.getUTCDate() === Number(day)
     ) {
       return date;
     }
@@ -528,9 +559,9 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
         }
 
         const empresa = normalizeEmpresa(item.empresa);
-        const anio = parseNullableInt(item.anio, "Año");
-        const amortizacionManual = parseNullableInt(item.amortizacion, "Amortización");
         const fechaCompra = parseNullableImportDate(item.fechaCompra, "Fecha de compra");
+        const anio = resolveAnioMaquina(item.anio, fechaCompra);
+        const amortizacionManual = parseNullableInt(item.amortizacion, "Amortización");
         const estado = parseEstadoObligatorio(item.estadoRaw);
 
         normalizedRows.push({
@@ -607,15 +638,23 @@ async function parseAndValidateMaquinasImport(fileBuffer) {
         nuevoServicioId = servicio.id;
       }
 
+      const fechaCompraActualizada = item.fechaCompraProvided
+        ? parseNullableImportDate(item.fechaCompra, "Fecha de compra")
+        : existente.fechaCompra;
+
       if (item.fechaCompraProvided) {
-        data.fechaCompra = parseNullableImportDate(item.fechaCompra, "Fecha de compra");
+        data.fechaCompra = fechaCompraActualizada;
       }
       if (item.proveedorFacturaProvided) data.proveedorFactura = parseNullableString(item.proveedorFactura);
       if (item.valorCompraProvided) data.valorCompra = parseNullableNonNegativeFloat(item.valorCompra, "Valor de compra");
       if (item.empresaProvided) data.empresa = normalizeEmpresa(item.empresa);
 
       if (item.anioProvided) {
-        const anio = parseNullableInt(item.anio, "Año");
+        const anio = resolveAnioMaquina(item.anio, fechaCompraActualizada);
+        data.anio = anio;
+        data.antiguedad = calcularAntiguedad(anio);
+      } else if (item.fechaCompraProvided && !hasManualYearOverride(existente.anio, existente.fechaCompra)) {
+        const anio = getAnioFromFechaCompra(fechaCompraActualizada);
         data.anio = anio;
         data.antiguedad = calcularAntiguedad(anio);
       }
@@ -2070,7 +2109,8 @@ export async function adminCreateMaquina(req, res) {
     }
 
     const empresaNormalizada = normalizeEmpresa(empresa);
-    const anioParsed = parseNullableInt(anio, "Año");
+    const fechaCompraParsed = parseNullableDate(fechaCompra, "Fecha de compra");
+    const anioParsed = resolveAnioMaquina(anio, fechaCompraParsed);
     const antiguedadCalculada = calcularAntiguedad(anioParsed);
     const servicioAmortizacionIdParsed =
       servicioAmortizacionId !== undefined &&
@@ -2100,7 +2140,7 @@ export async function adminCreateMaquina(req, res) {
             : null,
         estado: normalizeEstado(estado),
         servicioId: Number(servicioId),
-        fechaCompra: parseNullableDate(fechaCompra, "Fecha de compra"),
+        fechaCompra: fechaCompraParsed,
         proveedorFactura: parseNullableString(proveedorFactura),
         valorCompra: parseNullableNonNegativeFloat(valorCompra, "Valor de compra"),
         empresa: empresaNormalizada,
@@ -2168,8 +2208,16 @@ export async function adminUpdateMaquina(req, res) {
       return res.status(404).json({ error: "Máquina no encontrada" });
     }
 
+    const fechaCompraParsed =
+      fechaCompra !== undefined
+        ? parseNullableDate(fechaCompra, "Fecha de compra")
+        : existe.fechaCompra;
     const anioParsed =
-      anio !== undefined ? parseNullableInt(anio, "Año") : existe.anio;
+      anio !== undefined
+        ? resolveAnioMaquina(anio, fechaCompraParsed)
+        : fechaCompra !== undefined && !hasManualYearOverride(existe.anio, existe.fechaCompra)
+          ? getAnioFromFechaCompra(fechaCompraParsed)
+          : existe.anio;
     const servicioAmortizacionIdParsed =
       servicioAmortizacionId !== undefined
         ? servicioAmortizacionId === null || String(servicioAmortizacionId).trim() === ""
@@ -2219,10 +2267,7 @@ export async function adminUpdateMaquina(req, res) {
 
         servicioId: nuevoServicioId,
 
-        fechaCompra:
-          fechaCompra !== undefined
-            ? parseNullableDate(fechaCompra, "Fecha de compra")
-            : existe.fechaCompra,
+        fechaCompra: fechaCompraParsed,
 
         proveedorFactura:
           proveedorFactura !== undefined
@@ -2313,7 +2358,7 @@ export async function adminMoverMaquinasMasivo(req, res) {
     } = req.body || {};
 
     const ids = Array.isArray(maquinaIds)
-      ? [...new Set(maquinaIds.map((id) => String(id || "").trim()).filter(Boolean))]
+      ? [...new Set(maquinaIds.map((value) => String(value || "").trim()).filter(Boolean))]
       : [];
 
     if (!ids.length) {
