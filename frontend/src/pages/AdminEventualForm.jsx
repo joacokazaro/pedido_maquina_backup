@@ -1464,21 +1464,16 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="max-w-2xl">
               <p className="text-sm text-gray-600">
-                Busca en la plataforma de insumos los pedidos hechos para el servicio cuyo nombre coincide
+                Busca en la plataforma de insumos todos los pedidos hechos para el servicio cuyo nombre coincide
                 exactamente con el nombre del eventual (
-                <span className="font-semibold text-gray-800">{form.nombre || "sin nombre"}</span>), dentro del
-                rango de fecha inicio y fecha fin cargados arriba.
+                <span className="font-semibold text-gray-800">{form.nombre || "sin nombre"}</span>). No se acota por
+                fecha: trae todo el historial de pedidos de ese servicio.
               </p>
-              {(!form.fechaInicio || !form.fechaFin) && form.estado === "finalizado" ? (
-                <p className="mt-1 text-xs font-medium text-amber-600">
-                  Cargá fecha de inicio y fecha de fin para poder importar los insumos.
-                </p>
-              ) : null}
             </div>
             <button
               type="button"
               onClick={importarInsumos}
-              disabled={!form.fechaInicio || !form.fechaFin || form.estado !== "finalizado" || importandoInsumos}
+              disabled={form.estado !== "finalizado" || importandoInsumos}
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1507,7 +1502,6 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                     {insumosImportados.cantidadPedidos} pedido{insumosImportados.cantidadPedidos === 1 ? "" : "s"} encontrado
                     {insumosImportados.cantidadPedidos === 1 ? "" : "s"}
                   </p>
-                  <p>Rango: {insumosImportados.desde} a {insumosImportados.hasta}</p>
                   <p>
                     Importado el {new Date(insumosImportados.importadoEn).toLocaleString("es-AR")}
                     {insumosImportados.importadoPor ? ` por ${insumosImportados.importadoPor}` : ""}
@@ -1523,7 +1517,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 </p>
               ) : insumosImportados.cantidadPedidos === 0 ? (
                 <p className="mt-2 text-xs font-medium text-emerald-700">
-                  No se encontraron pedidos de insumos para este servicio en ese rango de fechas.
+                  No se encontraron pedidos de insumos para este servicio.
                 </p>
               ) : null}
 

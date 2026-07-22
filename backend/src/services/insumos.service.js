@@ -1,8 +1,10 @@
 /*
   Cliente de la API de pedidos de insumos (insumos.kazaro.com.ar). Se usa para
   importar a un eventual los insumos pedidos para el servicio homónimo,
-  matcheando por "servicio.nombre" == nombre del eventual dentro del rango
-  fechaInicio/fechaFin (mismo criterio que Browix con "ubicacion").
+  matcheando por "servicio.nombre" == nombre del eventual. Sin filtro de
+  fecha: se trae todo el historial de pedidos de ese servicio, a diferencia
+  de Browix (que sí acota por fechaInicio/fechaFin) — el nombre del eventual
+  es único en el sistema, así que no hace falta acotar por rango.
 
   La API de insumos separa los datos por empresa (un token por empresa), pero
   acá "Servicio"/"Eventual" no tienen un campo empresa: los nombres de Pulizia
@@ -22,10 +24,6 @@ function buildInsumosError(message, status = 502) {
   const error = new Error(message);
   error.status = status;
   return error;
-}
-
-function formatFecha(date) {
-  return date.toISOString().slice(0, 10);
 }
 
 async function insumosFetch(token, path, params = {}) {
@@ -80,17 +78,15 @@ export async function resolverServiciosPorNombre(nombre) {
 }
 
 // Trae todos los pedidos de un servicio (de una empresa puntual, identificada
-// por su token) en un rango de fechas, recorriendo todas las páginas
+// por su token), sin acotar por fecha, recorriendo todas las páginas
 // (limit=500, el máximo permitido por la API).
-export async function getPedidosInsumos({ token, servicioId, desde, hasta }) {
+export async function getPedidosInsumos({ token, servicioId }) {
   const pedidos = [];
   let page = 1;
 
   while (true) {
     const body = await insumosFetch(token, "/pedidos", {
       servicioId,
-      desde: formatFecha(desde),
-      hasta: formatFecha(hasta),
       page,
       limit: 500,
     });

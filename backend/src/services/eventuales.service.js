@@ -990,13 +990,14 @@ function agruparItemsPorInsumo(pedidos) {
   return Array.from(porInsumo.values()).sort((a, b) => b.subtotal - a.subtotal);
 }
 
-// Importa desde la API de pedidos de insumos (insumos.kazaro.com.ar) los
-// pedidos hechos para el servicio homónimo al eventual, dentro del rango
-// fechaInicio/fechaFin. Matchea por nombre exacto (mismo criterio que
-// Browix), no por id: no hay una relación directa Eventual -> Servicio en el
-// schema. A diferencia de las horas de Browix, se puede reimportar tantas
-// veces como se quiera mientras el eventual esté finalizado, siempre pisando
-// el resultado anterior.
+// Importa desde la API de pedidos de insumos (insumos.kazaro.com.ar) todos
+// los pedidos hechos para el servicio homónimo al eventual. Matchea por
+// nombre exacto (mismo criterio que Browix), no por id: no hay una relación
+// directa Eventual -> Servicio en el schema. Sin filtro de fecha: el nombre
+// del eventual es único en el sistema, así que no hace falta acotar por
+// rango (a diferencia de Browix). A diferencia de las horas de Browix, se
+// puede reimportar tantas veces como se quiera mientras el eventual esté
+// finalizado, siempre pisando el resultado anterior.
 export async function importarInsumosEventual({ eventualId, actorId, actorNombre }) {
   const eventual = await prisma.eventual.findUnique({ where: { id: Number(eventualId) } });
   if (!eventual) {
@@ -1007,23 +1008,11 @@ export async function importarInsumosEventual({ eventualId, actorId, actorNombre
     throw buildError("El eventual debe estar finalizado para importar insumos", 400);
   }
 
-  if (!eventual.fechaInicio || !eventual.fechaFin) {
-    throw buildError(
-      "El eventual debe tener fecha de inicio y fecha de fin cargadas para importar insumos",
-      400
-    );
-  }
-
   const coincidencias = await resolverServiciosPorNombre(eventual.nombre);
 
   const pedidos = [];
   for (const { token, servicioId } of coincidencias) {
-    const pedidosEmpresa = await getPedidosInsumos({
-      token,
-      servicioId,
-      desde: eventual.fechaInicio,
-      hasta: eventual.fechaFin,
-    });
+    const pedidosEmpresa = await getPedidosInsumos({ token, servicioId });
     pedidos.push(...pedidosEmpresa);
   }
 
@@ -1035,8 +1024,6 @@ export async function importarInsumosEventual({ eventualId, actorId, actorNombre
     servicioNombre: eventual.nombre,
     cantidadPedidos: pedidos.length,
     total: Math.round(total * 100) / 100,
-    desde: eventual.fechaInicio.toISOString().slice(0, 10),
-    hasta: eventual.fechaFin.toISOString().slice(0, 10),
     importadoEn: new Date().toISOString(),
     importadoPor: actorNombre || null,
     insumos,
