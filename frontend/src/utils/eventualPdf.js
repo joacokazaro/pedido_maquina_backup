@@ -363,7 +363,55 @@ export function downloadEventualResumenPdf(eventual) {
     }
   }
 
-  drawSectionTitle(doc, "6. OBSERVACIONES REGISTRADAS", cursorY);
+  drawSectionTitle(doc, "6. INSUMOS", cursorY);
+  cursorY += 10;
+
+  const insumosImportados = eventual?.insumosImportados || null;
+  const insumosRows = Array.isArray(insumosImportados?.insumos) ? insumosImportados.insumos : [];
+
+  autoTable(doc, {
+    startY: cursorY,
+    margin: { left: 12, right: 12 },
+    tableWidth: 186,
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [240, 240, 240], textColor: [31, 41, 55] },
+    body: [
+      [
+        "Total importado",
+        insumosImportados ? `$ ${Number(insumosImportados.total).toLocaleString("es-AR")}` : "No se importaron",
+      ],
+      ["Cantidad de pedidos", insumosImportados ? String(insumosImportados.cantidadPedidos) : "-"],
+    ],
+    columnStyles: {
+      0: { fontStyle: "bold", cellWidth: 55, textColor: [31, 41, 55] },
+      1: { cellWidth: 131 },
+    },
+  });
+  cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;
+
+  if (insumosRows.length > 0) {
+    autoTable(doc, {
+      startY: cursorY,
+      margin: { left: 12, right: 12 },
+      tableWidth: 186,
+      styles: { font: "helvetica", fontSize: 8.7, cellPadding: 1.8 },
+      headStyles: { fillColor: [240, 240, 240], textColor: [31, 41, 55] },
+      head: [["Insumo", "Cantidad", "Subtotal (ARS)"]],
+      body: insumosRows.map((insumo) => [
+        safeText(insumo?.insumo),
+        String(insumo?.cantidad ?? "-"),
+        `$ ${Number(insumo?.subtotal ?? 0).toLocaleString("es-AR")}`,
+      ]),
+      columnStyles: {
+        0: { cellWidth: 120, fontStyle: "bold" },
+        1: { cellWidth: 30, halign: "right" },
+        2: { cellWidth: 36, halign: "right" },
+      },
+    });
+    cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;
+  }
+
+  drawSectionTitle(doc, "7. OBSERVACIONES REGISTRADAS", cursorY);
   cursorY += 10;
 
   const observationsRows = extractObservationRows(eventual);

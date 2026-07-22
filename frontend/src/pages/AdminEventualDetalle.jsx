@@ -89,6 +89,7 @@ export default function AdminEventualDetalle() {
   const trabajosRealizados = Array.isArray(eventual.trabajosRealizados) ? eventual.trabajosRealizados : [];
   const serviciosExtras = Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : [];
   const horasBrowix = eventual.horasBrowix || null;
+  const insumosImportados = eventual.insumosImportados || null;
   const horasSupervisor = eventual.horasSupervisor;
   const tieneHorasSupervisor = horasSupervisor !== null && horasSupervisor !== undefined;
   const isFinalizado = String(eventual.estado || "").toLowerCase() === "finalizado";
@@ -403,6 +404,57 @@ export default function AdminEventualDetalle() {
                 ))}
               </ul>
             ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/60 to-white p-5 shadow space-y-2">
+        <h2 className="text-lg font-semibold text-gray-900">Insumos</h2>
+        {insumosImportados ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Total importado</p>
+              <p className="text-2xl font-bold text-emerald-900">
+                {insumosImportados.total.toLocaleString("es-AR", { style: "currency", currency: "ARS" })}
+              </p>
+            </div>
+            <div className="text-xs text-emerald-700/80">
+              <p>
+                {insumosImportados.cantidadPedidos} pedido{insumosImportados.cantidadPedidos === 1 ? "" : "s"} encontrado
+                {insumosImportados.cantidadPedidos === 1 ? "" : "s"}
+              </p>
+              <p>
+                Importado el {new Date(insumosImportados.importadoEn).toLocaleString("es-AR")}
+                {insumosImportados.importadoPor ? ` por ${insumosImportados.importadoPor}` : ""}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">Todavía no se importaron insumos para este eventual.</p>
+        )}
+
+        {insumosImportados && Array.isArray(insumosImportados.insumos) && insumosImportados.insumos.length > 0 ? (
+          <div className="overflow-x-auto rounded-xl border border-emerald-200">
+            <table className="w-full text-sm">
+              <thead className="bg-emerald-100/70">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-emerald-800">Insumo</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-emerald-800">Cantidad</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-emerald-800">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-emerald-100 bg-white">
+                {insumosImportados.insumos.map((insumo, idx) => (
+                  <tr key={`${insumo.codigo || "sin-codigo"}-${idx}`}>
+                    <td className="px-3 py-2 font-medium text-gray-900">{insumo.insumo}</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{insumo.cantidad}</td>
+                    <td className="px-3 py-2 text-right text-gray-900">
+                      {insumo.subtotal.toLocaleString("es-AR", { style: "currency", currency: "ARS" })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : null}
       </div>
