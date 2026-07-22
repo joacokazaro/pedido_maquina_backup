@@ -333,9 +333,17 @@ export default function AdminEventualDetalle() {
         <h2 className="text-lg font-semibold text-gray-900">Horas de Browix</h2>
         {horasBrowix ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Total importado</p>
-              <p className="text-2xl font-bold text-amber-900">{horasBrowix.totalHoras} hs</p>
+            <div className="flex flex-wrap items-end gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Total importado (teórico)</p>
+                <p className="text-2xl font-bold text-amber-900">{horasBrowix.totalHoras} hs</p>
+              </div>
+              {typeof horasBrowix.totalHorasReal === "number" ? (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Total real (marcado)</p>
+                  <p className="text-lg font-semibold text-slate-700">{horasBrowix.totalHorasReal} hs</p>
+                </div>
+              ) : null}
             </div>
             <div className="text-xs text-amber-700/80">
               <p>

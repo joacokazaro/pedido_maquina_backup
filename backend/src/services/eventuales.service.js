@@ -908,7 +908,10 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
   }
 
   const fichajes = await getFichajesPorRango(eventual.fechaInicio, eventual.fechaFin);
-  const { totalMinutos, cantidadFichajes } = sumarHorasTeoricasPorUbicacion(fichajes, eventual.nombre);
+  const { totalMinutos, totalMinutosReal, cantidadFichajes } = sumarHorasTeoricasPorUbicacion(
+    fichajes,
+    eventual.nombre
+  );
   const { personas, categorias, fichajesSinLegajo, erroresCategorizacion } = await categorizarHorasBrowix(
     fichajes,
     eventual.nombre
@@ -929,6 +932,8 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
   const resultado = {
     totalMinutos,
     totalHoras: Math.round((totalMinutos / 60) * 100) / 100,
+    totalMinutosReal,
+    totalHorasReal: Math.round((totalMinutosReal / 60) * 100) / 100,
     cantidadFichajes,
     ubicacion: eventual.nombre,
     desde: eventual.fechaInicio.toISOString().slice(0, 10),

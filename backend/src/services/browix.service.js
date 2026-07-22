@@ -111,8 +111,12 @@ export async function getFichajesPorRango(desde, hasta) {
   return fichajes;
 }
 
-// Suma minutos_teoricos_de_jornada de los fichajes cuya ubicacion matchea
-// exactamente el nombre del eventual (case/espacios sensibles: se tipea igual).
+// Suma minutos_teoricos_de_jornada (planificado, el que se usa para el
+// desglose por categoría y el PDF) y minutos_desde_entrada_a_salida (real,
+// según marcaciones efectivas — 0 si la persona estuvo ausente) de los
+// fichajes cuya ubicacion matchea exactamente el nombre del eventual
+// (case/espacios sensibles: se tipea igual). El real se devuelve solo como
+// dato de control en el resumen de importación, no reemplaza al teórico.
 export function sumarHorasTeoricasPorUbicacion(fichajes, ubicacion) {
   const nombreEsperado = String(ubicacion || "").trim();
   const coincidencias = fichajes.filter((f) => String(f?.ubicacion || "").trim() === nombreEsperado);
@@ -122,7 +126,12 @@ export function sumarHorasTeoricasPorUbicacion(fichajes, ubicacion) {
     return acc + (Number.isFinite(minutos) ? minutos : 0);
   }, 0);
 
-  return { totalMinutos, cantidadFichajes: coincidencias.length };
+  const totalMinutosReal = coincidencias.reduce((acc, f) => {
+    const minutos = Number(f?.minutos_desde_entrada_a_salida);
+    return acc + (Number.isFinite(minutos) ? minutos : 0);
+  }, 0);
+
+  return { totalMinutos, totalMinutosReal, cantidadFichajes: coincidencias.length };
 }
 
 // Agrupa por legajo los fichajes cuya ubicacion matchea el eventual, para poder
