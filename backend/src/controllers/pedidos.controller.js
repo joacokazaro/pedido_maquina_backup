@@ -10,7 +10,7 @@ import {
   getUsuariosDepositoIds,
   getUsuariosAdminIds,
 } from "../services/notificaciones.service.js";
-import { userHasRole } from "../services/roles.service.js";
+import { userHasRole, userHasAnyRole } from "../services/roles.service.js";
 
 /* ========================================================
    HELPERS
@@ -205,12 +205,16 @@ export async function crearPedido(req, res) {
 
     const supervisor = await prisma.usuario.findUnique({
       where: { username: supervisorUsername },
+      include: { roles: true },
     });
     if (!supervisor)
       return res.status(404).json({ error: "Supervisor no encontrado" });
 
     const actor = actorUsername
-      ? await prisma.usuario.findUnique({ where: { username: actorUsername } })
+      ? await prisma.usuario.findUnique({
+          where: { username: actorUsername },
+          include: { roles: true },
+        })
       : null;
 
     let eventual = null;
@@ -222,6 +226,26 @@ export async function crearPedido(req, res) {
       });
       if (!eventual || !eventual.activo)
         return res.status(404).json({ error: "Eventual no encontrado" });
+
+      // Autorización del pedido de eventual:
+      // - El flujo de backoffice (admin/coordinador disparando el pedido complementario a
+      //   nombre del supervisor del eventual) sigue permitido tal cual.
+      // - El auto-servicio del propio supervisor solo lo puede hacer un "supervisor_limpieza"
+      //   y únicamente sobre un eventual asignado a él. Un "encargado_ev" NO puede.
+      const actorEfectivo = actor || supervisor;
+      const esBackoffice = userHasAnyRole(actorEfectivo, ["admin", "coordinador"]);
+      if (!esBackoffice) {
+        if (!userHasRole(supervisor, "supervisor_limpieza")) {
+          return res.status(403).json({
+            error: "Solo un Supervisor Limpieza puede crear pedidos para un eventual",
+          });
+        }
+        if (eventual.supervisorId !== supervisor.id) {
+          return res.status(403).json({
+            error: "No sos el supervisor asignado a este eventual",
+          });
+        }
+      }
 
       // Con pedidos ya disparados, el supervisor del eventual queda fijado
       const pedidosPrevios = await prisma.pedido.count({

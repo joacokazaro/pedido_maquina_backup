@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import SearchableSelect from "../components/SearchableSelect";
+import { ROLE_LABELS } from "../constants/roles";
 
 const ROLE_OPTIONS = [
-  { value: "ADMIN", label: "ADMIN" },
-  { value: "SUPERVISOR", label: "SUPERVISOR" },
-  { value: "DEPOSITO", label: "DEPOSITO" },
-  { value: "COORDINADOR", label: "COORDINADOR" },
-  { value: "CONSULTOR", label: "CONSULTOR" },
-  { value: "TALLER", label: "TALLER" },
+  { value: "ADMIN", label: ROLE_LABELS.ADMIN },
+  { value: "ENCARGADO_EV", label: ROLE_LABELS.ENCARGADO_EV },
+  { value: "SUPERVISOR_LIMPIEZA", label: ROLE_LABELS.SUPERVISOR_LIMPIEZA },
+  { value: "DEPOSITO", label: ROLE_LABELS.DEPOSITO },
+  { value: "COORDINADOR", label: ROLE_LABELS.COORDINADOR },
+  { value: "CONSULTOR", label: ROLE_LABELS.CONSULTOR },
+  { value: "TALLER", label: ROLE_LABELS.TALLER },
 ];
 
 const FUSION_PAIR = ["DEPOSITO", "TALLER"];
@@ -22,7 +24,7 @@ export default function AdminUsuarioForm() {
   const [form, setForm] = useState({
     username: "",
     nombre: "",
-    roles: ["SUPERVISOR"],
+    roles: ["ENCARGADO_EV"],
     password: "",
     activo: true,
     vtoCarnetConductor: "",
@@ -44,7 +46,7 @@ export default function AdminUsuarioForm() {
       setForm({
         username: data.username,
         nombre: data.nombre || "",
-        roles: Array.isArray(data.roles) && data.roles.length > 0 ? data.roles : [data.rol || "SUPERVISOR"],
+        roles: Array.isArray(data.roles) && data.roles.length > 0 ? data.roles : [data.rol || "ENCARGADO_EV"],
         password: "",
         activo: data.activo !== false,
         vtoCarnetConductor: data.vtoCarnetConductor ? new Date(data.vtoCarnetConductor).toISOString().slice(0, 10) : "",
@@ -55,7 +57,7 @@ export default function AdminUsuarioForm() {
   }, [isEdit, username]);
 
   const selectedRoles = Array.isArray(form.roles) ? form.roles : [];
-  const primaryRole = selectedRoles[0] || "SUPERVISOR";
+  const primaryRole = selectedRoles[0] || "ENCARGADO_EV";
   const secondaryRole = selectedRoles[1] || "";
 
   function isAllowedRoleCombination(roles) {
@@ -94,7 +96,7 @@ export default function AdminUsuarioForm() {
     const normalized = String(role || "").toUpperCase();
 
     setForm((prev) => {
-      const currentPrimary = (Array.isArray(prev.roles) ? prev.roles[0] : "") || "SUPERVISOR";
+      const currentPrimary = (Array.isArray(prev.roles) ? prev.roles[0] : "") || "ENCARGADO_EV";
 
       if (!normalized || normalized === currentPrimary) {
         return { ...prev, roles: [currentPrimary] };
@@ -121,7 +123,7 @@ export default function AdminUsuarioForm() {
     const payload = {
       nombre: form.nombre,
       roles: (Array.isArray(form.roles) ? form.roles : []).map((r) => String(r || "").toLowerCase()),
-      rol: (form.roles?.[0] || "SUPERVISOR").toLowerCase(),
+      rol: (form.roles?.[0] || "ENCARGADO_EV").toLowerCase(),
       activo: Boolean(form.activo),
       vtoCarnetConductor: form.vtoCarnetConductor || null,
     };

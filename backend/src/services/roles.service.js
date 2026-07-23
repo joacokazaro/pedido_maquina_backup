@@ -4,8 +4,14 @@ export const ROLES_VALIDOS = [
   "consultor",
   "taller",
   "deposito",
-  "supervisor",
+  "encargado_ev",
+  "supervisor_limpieza",
 ];
+
+// Roles "supervisores": comparten todas las funcionalidades del ex-rol "supervisor".
+// "encargado_ev" es el rename directo; "supervisor_limpieza" hereda todo y además puede
+// crear pedidos para eventuales asignados (única diferencia, gestionada en crearPedido).
+export const ROLES_SUPERVISION = ["encargado_ev", "supervisor_limpieza"];
 
 export function normalizeRole(value) {
   const role = String(value || "").trim().toLowerCase();
@@ -26,10 +32,10 @@ export function isAllowedRoleCombination(roles = []) {
   return normalized.includes("deposito") && normalized.includes("taller");
 }
 
-export function derivePrimaryRole(roles = [], fallbackRole = "supervisor") {
+export function derivePrimaryRole(roles = [], fallbackRole = "encargado_ev") {
   const normalized = normalizeRoles(roles);
   if (normalized.length === 0) {
-    return normalizeRole(fallbackRole) || "supervisor";
+    return normalizeRole(fallbackRole) || "encargado_ev";
   }
 
   for (const role of ROLES_VALIDOS) {

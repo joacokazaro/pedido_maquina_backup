@@ -46,7 +46,7 @@ export default function DepositoPedido() {
   if (!pedido) return null;
 
   function volverAlListado() {
-    if (hasRole("SUPERVISOR") && !hasRole("DEPOSITO")) {
+    if ((hasRole("ENCARGADO_EV") || hasRole("SUPERVISOR_LIMPIEZA")) && !hasRole("DEPOSITO")) {
       navigate("/supervisor/prestamos");
     } else {
       navigate("/deposito/pedidos");

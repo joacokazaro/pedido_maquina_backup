@@ -4,6 +4,7 @@ import { API_BASE } from "../services/apiBase";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import SearchableSelect from "../components/SearchableSelect";
+import { ROLE_LABELS, roleLabel } from "../constants/roles";
 
 export default function AdminUsuarios() {
   const navigate = useNavigate();
@@ -63,12 +64,13 @@ export default function AdminUsuarios() {
           onChange={(e) => setRol(e.target.value)}
         >
           <option value="">Todos</option>
-          <option value="ADMIN">ADMIN</option>
-          <option value="SUPERVISOR">SUPERVISOR</option>
-          <option value="DEPOSITO">DEPOSITO</option>
-          <option value="COORDINADOR">COORDINADOR</option>
-          <option value="CONSULTOR">CONSULTOR</option>
-          <option value="TALLER">TALLER</option>
+          <option value="ADMIN">{ROLE_LABELS.ADMIN}</option>
+          <option value="ENCARGADO_EV">{ROLE_LABELS.ENCARGADO_EV}</option>
+          <option value="SUPERVISOR_LIMPIEZA">{ROLE_LABELS.SUPERVISOR_LIMPIEZA}</option>
+          <option value="DEPOSITO">{ROLE_LABELS.DEPOSITO}</option>
+          <option value="COORDINADOR">{ROLE_LABELS.COORDINADOR}</option>
+          <option value="CONSULTOR">{ROLE_LABELS.CONSULTOR}</option>
+          <option value="TALLER">{ROLE_LABELS.TALLER}</option>
         </SearchableSelect>
       </div>
 
@@ -84,7 +86,7 @@ export default function AdminUsuarios() {
             <p className="text-sm text-gray-600">@{u.username}</p>
 
             <span className="inline-block mt-2 text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
-              {Array.isArray(u.roles) && u.roles.length > 0 ? u.roles.join(" · ") : u.rol}
+              {Array.isArray(u.roles) && u.roles.length > 0 ? u.roles.map(roleLabel).join(" · ") : roleLabel(u.rol)}
             </span>
 
             {!u.activo && (

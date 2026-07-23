@@ -1,5 +1,10 @@
 import prisma from "../db/prisma.js";
-import { userHasRole, whereHasRole } from "./roles.service.js";
+import {
+  userHasRole,
+  userHasAnyRole,
+  whereHasAnyRole,
+  ROLES_SUPERVISION,
+} from "./roles.service.js";
 import {
   getFichajesPorRango,
   sumarHorasTeoricasPorUbicacion,
@@ -205,7 +210,7 @@ async function getSupervisorById(supervisorId) {
   return prisma.usuario.findFirst({
     where: {
       id: Number(supervisorId),
-      ...whereHasRole("supervisor"),
+      ...whereHasAnyRole(ROLES_SUPERVISION),
       activo: true,
     },
     select: { id: true, username: true, nombre: true },
@@ -776,9 +781,79 @@ export async function deleteEventual(eventualId, actorUsername) {
   return true;
 }
 
+// El supervisor_limpieza puede cargar las máquinas y vehículos utilizados de un eventual
+// asignado a él, sin pasar por el flujo completo del coordinador (saveEventual). Solo se
+// tocan esos dos campos; el resto del eventual queda intacto.
+export async function updateEventualComponentesBySupervisor({
+  eventualId,
+  actorUsername,
+  maquinasUtilizadas,
+  vehiculoIds,
+}) {
+  const actor = await getActorByUsername(actorUsername);
+  if (!actor || !userHasRole(actor, "supervisor_limpieza")) {
+    throw buildError("Solo un Supervisor Limpieza puede cargar componentes", 403);
+  }
+
+  const eventual = await prisma.eventual.findUnique({
+    where: { id: Number(eventualId) },
+  });
+  if (!eventual || !eventual.activo) {
+    throw buildError("Eventual no encontrado", 404);
+  }
+  if (eventual.supervisorId !== actor.id) {
+    throw buildError("No sos el supervisor asignado a este eventual", 403);
+  }
+
+  const maquinas = normalizeMaquinasUtilizadas(maquinasUtilizadas);
+  const maquinasErrors = validateMaquinasUtilizadas(maquinas);
+  if (maquinasErrors.length > 0) {
+    throw buildError(`Máquinas utilizadas inválidas: ${maquinasErrors.join("; ")}`, 400);
+  }
+
+  const vids = uniqueStrings(vehiculoIds);
+  await ensureVehiculosExist(vids);
+
+  const maquinasJson = maquinas.length > 0 ? JSON.stringify(maquinas) : null;
+  const vehiculosJson = vids.length > 0 ? JSON.stringify(vids) : null;
+
+  const previousMaquinas = parseJson(eventual.maquinasUtilizadas) || [];
+  const previousVehiculoIds = parseJson(eventual.vehiculosUtilizados) || [];
+
+  await prisma.$transaction(async (tx) => {
+    await tx.eventual.update({
+      where: { id: Number(eventualId) },
+      data: {
+        maquinasUtilizadas: maquinasJson,
+        vehiculosUtilizados: vehiculosJson,
+      },
+    });
+
+    await tx.historialEventual.create({
+      data: {
+        eventualId: Number(eventualId),
+        accion: "SUPERVISOR_CARGO_COMPONENTES",
+        detalle: JSON.stringify({
+          anterior: {
+            maquinasUtilizadas: previousMaquinas,
+            vehiculoIds: previousVehiculoIds,
+          },
+          actual: {
+            maquinasUtilizadas: maquinas,
+            vehiculoIds: vids,
+          },
+        }),
+        usuarioId: actor.id,
+      },
+    });
+  });
+
+  return getEventualDetail(eventualId);
+}
+
 export async function addSupervisorObservation(eventualId, actorUsername, observacion) {
   const actor = await getActorByUsername(actorUsername);
-  if (!actor || !userHasRole(actor, "supervisor")) {
+  if (!actor || !userHasAnyRole(actor, ROLES_SUPERVISION)) {
     throw buildError("Supervisor invalido", 403);
   }
 
@@ -1103,7 +1178,7 @@ export async function actualizarHorasSupervisorEventual({ eventualId, horas, act
 
 export async function finalizeSupervisorEventual(eventualId, actorUsername) {
   const actor = await getActorByUsername(actorUsername);
-  if (!actor || !userHasRole(actor, "supervisor")) {
+  if (!actor || !userHasAnyRole(actor, ROLES_SUPERVISION)) {
     throw buildError("Supervisor invalido", 403);
   }
 

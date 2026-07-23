@@ -2,6 +2,7 @@ import {
   addSupervisorObservation,
   getEventualDetail,
   listEventuales,
+  updateEventualComponentesBySupervisor,
 } from "../services/eventuales.service.js";
 
 function handleError(res, error, fallbackMessage) {
@@ -44,6 +45,20 @@ export async function getEventualSupervisor(req, res) {
     res.json(eventual);
   } catch (error) {
     handleError(res, error, "Error obteniendo eventual");
+  }
+}
+
+export async function updateSupervisorComponentes(req, res) {
+  try {
+    const eventual = await updateEventualComponentesBySupervisor({
+      eventualId: req.params.id,
+      actorUsername: req.body?.usuario,
+      maquinasUtilizadas: req.body?.maquinasUtilizadas,
+      vehiculoIds: req.body?.vehiculoIds,
+    });
+    res.json(eventual);
+  } catch (error) {
+    handleError(res, error, "Error guardando componentes del eventual");
   }
 }
 

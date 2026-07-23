@@ -20,5 +20,5 @@ backend/public/
 backend/prisma/*.db
 CLAUDE.md
 api-pedidos-para-entregar.md
-
-
+KAZARO_FRONTEND_STYLE_TRANSFER.md
+.claude

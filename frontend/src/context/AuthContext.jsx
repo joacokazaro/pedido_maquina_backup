@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { io as ioClient } from "socket.io-client";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
+import { ROLES_SUPERVISION } from "../constants/roles";
 
 function normalizeAuthUser(raw) {
   if (!raw) return null;
@@ -47,7 +48,7 @@ function hasAnyRole(user, allowedRoles = []) {
 }
 
 const AuthContext = createContext();
-const AUTH_SESSION_VERSION = "2";
+const AUTH_SESSION_VERSION = "3";
 const AUTH_SESSION_VERSION_KEY = "authSessionVersion";
 
 export function AuthProvider({ children }) {
@@ -154,7 +155,7 @@ export function AuthProvider({ children }) {
       navigate("/admin");
       return;
     }
-    if (hasRole(normalized, "SUPERVISOR")) {
+    if (hasAnyRole(normalized, ROLES_SUPERVISION)) {
       navigate("/supervisor");
       return;
     }

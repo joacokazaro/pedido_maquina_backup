@@ -6,6 +6,7 @@ import { waitForBackend } from "./services/waitForBackend";
 
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ROLES_SUPERVISION } from "./constants/roles";
 import ConsultorHome from "./pages/ConsultorHome";
 import TallerHome from "./pages/TallerHome";
 import TallerModuleHome from "./pages/taller/TallerModuleHome";
@@ -98,7 +99,7 @@ function App() {
   const isTaller = hasRole("TALLER");
 
   // 👉 Roles que participan del ciclo OPERATIVO de préstamo
-  const ROLES_OPERATIVOS = ["SUPERVISOR", "DEPOSITO"];
+  const ROLES_OPERATIVOS = [...ROLES_SUPERVISION, "DEPOSITO"];
   const renderAdminOnlyPage = (page) => (
     <ProtectedRoute allowedRoles={["ADMIN"]}>
       <AdminLayout>{page}</AdminLayout>
@@ -216,7 +217,7 @@ function App() {
       <Route
         path="/supervisor"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <SupervisorDashboard />
           </ProtectedRoute>
         }
@@ -225,7 +226,7 @@ function App() {
       <Route
         path="/supervisor/pedidos"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <SupervisorMisPedidos />
           </ProtectedRoute>
         }
@@ -234,7 +235,7 @@ function App() {
       <Route
         path="/supervisor/maquinas"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <SupervisorMaquinas />
           </ProtectedRoute>
         }
@@ -243,7 +244,7 @@ function App() {
       <Route
         path="/supervisor/vehiculos"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <SupervisorVehiculos />
           </ProtectedRoute>
         }
@@ -252,7 +253,7 @@ function App() {
       <Route
         path="/supervisor/maquinas/:id"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <SupervisorMaquinaDetalle />
           </ProtectedRoute>
         }
@@ -261,7 +262,7 @@ function App() {
       <Route
         path="/supervisor/prestamos"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <SupervisorMisPrestamos />
           </ProtectedRoute>
         }
@@ -270,7 +271,7 @@ function App() {
       <Route
         path="/supervisor/pedido/nuevo"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <CreatePedido />
           </ProtectedRoute>
         }
@@ -279,7 +280,7 @@ function App() {
       <Route
         path="/supervisor/eventuales"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <SupervisorMisEventuales />
           </ProtectedRoute>
         }
@@ -288,7 +289,7 @@ function App() {
       <Route
         path="/supervisor/eventuales/:id"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <SupervisorEventualDetalle />
           </ProtectedRoute>
         }
@@ -297,7 +298,7 @@ function App() {
       <Route
         path="/supervisor/pedido/:id"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <ViewPedido />
           </ProtectedRoute>
         }
@@ -306,7 +307,7 @@ function App() {
       <Route
         path="/supervisor/pedido/:id/devolucion"
         element={
-          <ProtectedRoute allowedRoles={["SUPERVISOR"]}>
+          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
             <RegistrarDevolucion />
           </ProtectedRoute>
         }

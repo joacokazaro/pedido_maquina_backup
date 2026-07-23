@@ -5,10 +5,23 @@ import { API_BASE } from "../services/apiBase";
 import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/maquinas";
 import FondoKazaro from "../components/FondoKazaro";
 import SearchableSelect from "../components/SearchableSelect";
+import { ROLES_SUPERVISION } from "../constants/roles";
 
 export default function CreatePedido() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Roles del usuario (en MAYÚSCULAS). Ambos roles supervisores cargan solo sus servicios;
+  // solo "supervisor_limpieza" puede además pedir para un eventual asignado a él.
+  const rolesUpper = Array.isArray(user?.roles)
+    ? user.roles.map((r) => String(r || "").toUpperCase())
+    : [];
+  const rolPrimario = String(user?.rol || "").toUpperCase();
+  const esSupervisor = ROLES_SUPERVISION.some(
+    (r) => rolesUpper.includes(r) || rolPrimario === r
+  );
+  const esSupervisorLimpieza =
+    rolesUpper.includes("SUPERVISOR_LIMPIEZA") || rolPrimario === "SUPERVISOR_LIMPIEZA";
 
   /* =========================
      ESTADOS
@@ -22,6 +35,15 @@ export default function CreatePedido() {
 
   const [servicios, setServicios] = useState([]);
   const [servicioId, setServicioId] = useState("");
+
+  // Modo de pedido: contra un servicio normal o contra un eventual asignado
+  // (este último solo disponible para supervisor_limpieza).
+  const [modoPedido, setModoPedido] = useState("SERVICIO"); // "SERVICIO" | "EVENTUAL"
+  const [eventuales, setEventuales] = useState([]);
+  const [eventualId, setEventualId] = useState("");
+  const [eventualQuery, setEventualQuery] = useState("");
+  const [openEventuales, setOpenEventuales] = useState(false);
+  const comboEvtRef = useRef(null);
 
   // tipos disponibles (para 'Otro')
   const [availableTipos, setAvailableTipos] = useState([]);
@@ -58,11 +80,6 @@ const comboSupRef = useRef(null);
   useEffect(() => {
   if (!user?.username) return;
 
-    const rolesUpper = Array.isArray(user?.roles)
-      ? user.roles.map((r) => String(r || "").toUpperCase())
-      : [];
-    const esSupervisor = rolesUpper.includes("SUPERVISOR") || String(user?.rol || "").toUpperCase() === "SUPERVISOR";
-
   // ✅ si es supervisor: solo sus servicios
   // ✅ si fuera admin (si alguna vez lo usás acá): todos los servicios
   const url =
@@ -78,7 +95,26 @@ const comboSupRef = useRef(null);
       else setServicios([]);
     })
     .catch(() => setServicios([]));
-}, [user?.username, user?.rol, user?.roles]);
+}, [user?.username, esSupervisor]);
+
+/* =========================
+   CARGAR EVENTUALES (solo supervisor_limpieza)
+========================= */
+useEffect(() => {
+  if (!user?.username || !esSupervisorLimpieza) {
+    setEventuales([]);
+    return;
+  }
+
+  fetch(`${API_BASE}/eventuales/mis/${encodeURIComponent(user.username)}?activo=true`)
+    .then((r) => r.json())
+    .then((data) => {
+      // Solo eventuales activos asignados a él pueden recibir pedidos
+      const arr = Array.isArray(data) ? data : [];
+      setEventuales(arr.filter((e) => String(e.estado || "").toLowerCase() === "activo"));
+    })
+    .catch(() => setEventuales([]));
+}, [user?.username, esSupervisorLimpieza]);
 
 /* =========================
    CARGAR TIPOS (OTRO)
@@ -150,6 +186,16 @@ useEffect(() => {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
+  // Cerrar dropdown de eventuales si clickeás afuera
+  useEffect(() => {
+    function onDown(e) {
+      if (!comboEvtRef.current) return;
+      if (!comboEvtRef.current.contains(e.target)) setOpenEventuales(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
   // Si ya hay servicioId, precargar el texto en el input (por si vuelve a renderizar)
   useEffect(() => {
     if (!servicioId) return;
@@ -190,6 +236,24 @@ function limpiarSupervisorDestino() {
     if (!q) return servicios;
     return servicios.filter((s) => (s.nombre || "").toLowerCase().includes(q));
   }, [servicios, servicioQuery]);
+
+  const eventualesFiltrados = useMemo(() => {
+    const q = eventualQuery.trim().toLowerCase();
+    if (!q) return eventuales;
+    return eventuales.filter((e) => (e.nombre || "").toLowerCase().includes(q));
+  }, [eventuales, eventualQuery]);
+
+  function seleccionarEventual(e) {
+    setEventualId(String(e.id));
+    setEventualQuery(e.nombre);
+    setOpenEventuales(false);
+  }
+
+  function limpiarEventual() {
+    setEventualId("");
+    setEventualQuery("");
+    setOpenEventuales(false);
+  }
 
   /* =========================
      HANDLERS
@@ -238,7 +302,14 @@ function limpiarSupervisorDestino() {
       return;
     }
 
-    if (!servicioId) {
+    const esModoEventual = esSupervisorLimpieza && modoPedido === "EVENTUAL";
+
+    if (esModoEventual) {
+      if (!eventualId) {
+        setMensaje("Seleccioná el eventual para el que pedís las máquinas.");
+        return;
+      }
+    } else if (!servicioId) {
       setMensaje("Seleccioná el servicio donde se utilizarán las máquinas.");
       return;
     }
@@ -257,7 +328,10 @@ function limpiarSupervisorDestino() {
     body: JSON.stringify({
       supervisorUsername: user.username,
       itemsSolicitados,
-      servicioId: Number(servicioId),
+      // El pedido va contra un eventual asignado (supervisor_limpieza) o un servicio normal
+      ...(esModoEventual
+        ? { eventualId: Number(eventualId) }
+        : { servicioId: Number(servicioId) }),
       observacion: observacion.trim() || null,
 
       destino,
@@ -284,6 +358,8 @@ function limpiarSupervisorDestino() {
       );
       setServicioId("");
       setServicioQuery("");
+      setEventualId("");
+      setEventualQuery("");
       setOtros([]);
       setOtroTipo("");
       setOtroCantidad(1);
@@ -301,6 +377,8 @@ function limpiarSupervisorDestino() {
   /* =========================
      RENDER
   ========================== */
+  const modoEventualActivo = esSupervisorLimpieza && modoPedido === "EVENTUAL";
+
   return (
     <div className="min-h-screen px-4 py-6">
       <FondoKazaro />
@@ -318,6 +396,51 @@ function limpiarSupervisorDestino() {
       <p className="text-sm text-gray-600 mb-4">
         Seleccioná la cantidad de máquinas o vehículos que necesitás.
       </p>
+
+      {/* TIPO DE PEDIDO (solo supervisor_limpieza) */}
+      {esSupervisorLimpieza && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2">
+            Tipo de pedido *
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setModoPedido("SERVICIO");
+                setEventualId("");
+                setEventualQuery("");
+              }}
+              className={`rounded-xl p-4 shadow border transition text-left
+                ${
+                  modoPedido === "SERVICIO"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                }`}
+            >
+              <div className="font-semibold text-lg">Servicio</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setModoPedido("EVENTUAL");
+                setServicioId("");
+                setServicioQuery("");
+              }}
+              className={`rounded-xl p-4 shadow border transition text-left
+                ${
+                  modoPedido === "EVENTUAL"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                }`}
+            >
+              <div className="font-semibold text-lg">Eventual</div>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* DESTINO DEL PEDIDO */}
 <div className="mb-6">
@@ -591,7 +714,92 @@ function limpiarSupervisorDestino() {
 )}
 
        
+      {/* EVENTUAL (BUSCABLE) — solo supervisor_limpieza en modo eventual */}
+      {modoEventualActivo && (
+        <div className="mt-6" ref={comboEvtRef}>
+          <label className="block text-sm font-medium mb-1">
+            Eventual para el que pedís los recursos *
+          </label>
+
+          <div className="relative">
+            <input
+              value={eventualQuery}
+              onChange={(e) => {
+                setEventualQuery(e.target.value);
+                setOpenEventuales(true);
+                setEventualId("");
+              }}
+              onFocus={() => setOpenEventuales(true)}
+              placeholder="Escribí para buscar…"
+              className="w-full bg-white rounded-xl shadow p-3 text-sm
+                         border border-gray-300 focus:ring-2
+                         focus:ring-blue-400 focus:outline-none pr-20"
+            />
+
+            <div className="absolute inset-y-0 right-2 flex items-center gap-2">
+              {eventualQuery && (
+                <button
+                  type="button"
+                  onClick={limpiarEventual}
+                  className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+                  title="Limpiar"
+                >
+                  ✕
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setOpenEventuales((p) => !p)}
+                className="text-xs px-2 py-1 rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+                title="Abrir/cerrar"
+              >
+                ▾
+              </button>
+            </div>
+
+            {openEventuales && (
+              <div className="absolute z-20 mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div className="max-h-72 overflow-auto">
+                  {eventualesFiltrados.length === 0 ? (
+                    <div className="p-3 text-sm text-gray-500">
+                      No tenés eventuales activos asignados.
+                    </div>
+                  ) : (
+                    eventualesFiltrados.map((e) => {
+                      const selected = String(e.id) === String(eventualId);
+                      return (
+                        <button
+                          key={e.id}
+                          type="button"
+                          onClick={() => seleccionarEventual(e)}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50
+                            ${selected ? "bg-blue-50" : "bg-white"}`}
+                        >
+                          <div className="font-medium text-gray-800">{e.nombre}</div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-2 text-xs text-gray-500">
+            {eventualId ? (
+              <span>
+                Seleccionado:{" "}
+                <span className="text-gray-800 font-medium">{eventualQuery}</span>
+              </span>
+            ) : (
+              <span>Elegí uno de tus eventuales activos asignados.</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* SERVICIO (BUSCABLE) */}
+      {!modoEventualActivo && (
       <div className="mt-6" ref={comboRef}>
         <label className="block text-sm font-medium mb-1">
           Servicio donde se utilizarán los recursos *
@@ -680,6 +888,7 @@ function limpiarSupervisorDestino() {
           )}
         </div>
       </div>
+      )}
 
       {/* OBSERVACIÓN */}
       <div className="mt-4">
