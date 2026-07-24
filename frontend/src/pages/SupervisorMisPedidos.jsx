@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { EstadoBadge } from "../utils/estadoPedido.jsx";
 import { Link } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
-import { useNavigate } from "react-router-dom";
 import FondoKazaro from "../components/FondoKazaro";
 import EventualBadge from "../components/EventualBadge";
 
@@ -16,7 +16,6 @@ export default function SupervisorMisPedidos() {
   const [filtro, setFiltro] = useState("TODOS");
 
 
-  const navigate = useNavigate();
 
   /* =========================
      CARGA DE PEDIDOS
@@ -119,12 +118,7 @@ export default function SupervisorMisPedidos() {
     <div className="min-h-screen flex flex-col items-center px-4 py-10">
       <FondoKazaro />
 
-      <button
-  onClick={() => navigate("/supervisor")}
-  className="mb-4 self-start text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
->
-  ← Volver al panel
-</button>
+      <BotonVolver className="mb-4 self-start">Volver al panel</BotonVolver>
 
 
       {/* TÍTULO */}

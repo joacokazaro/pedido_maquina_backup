@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import SearchableSelect from "../components/SearchableSelect";
@@ -241,12 +242,7 @@ export default function AsignarMaquinas() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-32">
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-      >
-        <span className="text-lg">←</span> Volver
-      </button>
+      <BotonVolver />
 
       <h1 className="mb-4 text-2xl font-bold">Asignar maquinas</h1>
 

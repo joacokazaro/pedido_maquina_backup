@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
@@ -8,7 +8,7 @@ import SearchableSelect from "../components/SearchableSelect";
 const ESTADOS = ["", "disponible", "asignada", "no_devuelta", "fuera_servicio", "taller", "baja", "activo"];
 
 export default function TallerPanel() {
-  const navigate = useNavigate();
+
   const { user, hasRole } = useAuth();
   const canEdit = hasRole("ADMIN") || hasRole("TALLER");
   const actorHeaders = useMemo(() => buildActorHeaders(user), [user]);
@@ -149,13 +149,7 @@ export default function TallerPanel() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <div className="mb-4">
         <h1 className="text-2xl font-bold">Taller</h1>

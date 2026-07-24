@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import { formatDateOnly, formatDateTime } from "../utils/date";
@@ -8,7 +9,6 @@ import FondoKazaro from "../components/FondoKazaro";
 
 export default function SupervisorEventualDetalle() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [eventual, setEventual] = useState(null);
@@ -418,12 +418,7 @@ export default function SupervisorEventualDetalle() {
   return (
     <div className="min-h-screen p-4 pb-24 space-y-4 max-w-2xl mx-auto">
       <FondoKazaro />
-      <button
-        onClick={() => navigate(-1)}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm"
-      >
-        ← Volver
-      </button>
+      <BotonVolver className="" />
 
       {error ? (
         <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>

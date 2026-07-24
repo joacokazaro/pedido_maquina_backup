@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 
 function formatDate(value) {
@@ -9,7 +10,7 @@ function formatDate(value) {
 
 export default function AdminVehiculoHistorial() {
   const { id } = useParams();
-  const navigate = useNavigate();
+
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -47,12 +48,7 @@ export default function AdminVehiculoHistorial() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
       <div className="mx-auto max-w-4xl space-y-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-        >
-          ← Volver
-        </button>
+        <BotonVolver className="" />
 
         <div className="rounded-2xl bg-white p-5 shadow">
           <h1 className="text-2xl font-bold">Historial de asignaciones</h1>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import HistorialPedido from "../components/HistorialPedido";
 import PedidoResumen from "../components/PedidoResumen";
@@ -123,12 +124,7 @@ export default function ViewPedido() {
     <div className="min-h-screen p-4 pb-24">
       <FondoKazaro />
 
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 px-3 py-2 bg-white border rounded-lg"
-      >
-      Volver
-      </button>
+      <BotonVolver />
 
       <h1 className="text-2xl font-bold mb-1">Pedido {pedido.id}</h1>
 

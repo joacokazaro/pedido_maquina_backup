@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
@@ -157,12 +158,7 @@ export default function AdminVehiculos() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <header className="mb-3">
         <h1 className="text-2xl font-bold">Vehículos</h1>

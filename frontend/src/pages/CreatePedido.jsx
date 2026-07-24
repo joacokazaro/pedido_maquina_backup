@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/maquinas";
 import FondoKazaro from "../components/FondoKazaro";
@@ -387,14 +388,7 @@ function limpiarSupervisorDestino() {
     <div className="min-h-screen px-4 py-6">
       <FondoKazaro />
       {/* VOLVER */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg
-                   bg-white border border-gray-200 shadow-sm
-                   hover:shadow transition text-gray-700 text-sm font-medium"
-      >
-        <span className="text-lg">←</span> Volver
-      </button>
+      <BotonVolver />
 
       <h1 className="text-2xl font-bold mb-4">Nuevo pedido</h1>
       <p className="text-sm text-gray-600 mb-4">

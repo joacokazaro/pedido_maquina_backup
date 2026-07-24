@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import FondoKazaro from "../components/FondoKazaro";
@@ -34,7 +35,7 @@ function formatMoneda(value, currency) {
 
 export default function SupervisorMaquinaDetalle() {
   const { id } = useParams();
-  const navigate = useNavigate();
+
   const { user } = useAuth();
 
   const [maquina, setMaquina] = useState(null);
@@ -123,9 +124,7 @@ export default function SupervisorMaquinaDetalle() {
     <div className="min-h-screen p-4 pb-24">
       <FondoKazaro />
       <header className="mb-4 flex justify-between">
-        <button onClick={() => navigate(-1)} className="text-xs text-blue-600 underline">
-          Volver
-        </button>
+        <BotonVolver className="" />
         <h1 className="text-lg font-bold">Detalle de máquina</h1>
         <div />
       </header>

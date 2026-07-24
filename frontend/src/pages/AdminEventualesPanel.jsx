@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 
 export default function AdminEventualesPanel() {
-  const navigate = useNavigate();
+
   const { user } = useAuth();
   const rolUpper = String(user?.rol || "").toUpperCase();
   const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
@@ -45,12 +46,7 @@ export default function AdminEventualesPanel() {
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-10">
-      <button
-        onClick={() => navigate("/admin")}
-        className="mb-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm"
-      >
-        ← Volver al panel
-      </button>
+      <BotonVolver>Volver al panel</BotonVolver>
 
       <header className="mx-auto mb-8 max-w-4xl text-center">
         <h1 className="text-3xl font-extrabold text-gray-800">Panel de eventuales</h1>

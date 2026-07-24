@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import Paginacion from "../components/Paginacion";
@@ -31,7 +31,7 @@ const FILTROS_SERV = [
 ];
 
 export default function AdminSupervisoresServicios() {
-  const navigate = useNavigate();
+
   const { user } = useAuth();
   const isReadOnly = String(user?.rol || "").toUpperCase() === "CONSULTOR";
 
@@ -180,12 +180,7 @@ export default function AdminSupervisoresServicios() {
       )}
 
       {/* HEADER */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-5 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 shadow-sm hover:shadow transition text-slate-700 text-sm font-medium"
-      >
-        ← Volver
-      </button>
+      <BotonVolver className="mb-5" />
 
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-kazaro-deep font-display">Supervisores × Servicios</h1>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import FondoKazaro from "../components/FondoKazaro";
@@ -14,7 +14,7 @@ const ESTADOS = [
 ];
 
 export default function SupervisorVehiculos() {
-  const navigate = useNavigate();
+
   const { user } = useAuth();
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,12 +84,7 @@ export default function SupervisorVehiculos() {
   return (
     <div className="min-h-screen p-4 pb-24">
       <FondoKazaro />
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <header className="mb-4">
         <h1 className="text-2xl font-bold">Mis vehículos</h1>

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 
 const COLUMNAS = ["ID", "NOMBRE", "ID_BROWIX", "ACTIVO"];
@@ -55,12 +56,7 @@ export default function AdminServiciosImport() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <div className="mx-auto max-w-7xl space-y-4">
         <header className="rounded-2xl bg-white p-5 shadow">

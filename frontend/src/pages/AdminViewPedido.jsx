@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import HistorialPedido from "../components/HistorialPedido";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +9,7 @@ import SearchableSelect from "../components/SearchableSelect";
 
 export default function AdminViewPedido() {
   const { id } = useParams();
-  const navigate = useNavigate();
+
   const { user } = useAuth();
 
   const [pedido, setPedido] = useState(null);
@@ -178,14 +179,7 @@ export default function AdminViewPedido() {
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
 
       {/* VOLVER */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg
-                   bg-white border border-gray-200 shadow-sm hover:shadow
-                   text-gray-700 text-sm font-medium"
-      >
-        <span className="text-lg">←</span> Volver
-      </button>
+      <BotonVolver />
 
       {/* HEADER */}
 <h1 className="text-2xl font-bold mb-1">Pedido {pedido.id}</h1>

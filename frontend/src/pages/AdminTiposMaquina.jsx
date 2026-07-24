@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import ConfirmModal from "../components/ConfirmModal";
 import TipoMaquinaReferenciasModal from "../components/TipoMaquinaReferenciasModal";
 import { API_BASE } from "../services/apiBase";
@@ -8,7 +8,6 @@ import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 
 export default function AdminTiposMaquina() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const rolUpper = String(user?.rol || "").toUpperCase();
   const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
@@ -150,13 +149,7 @@ export default function AdminTiposMaquina() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <header className="mb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">

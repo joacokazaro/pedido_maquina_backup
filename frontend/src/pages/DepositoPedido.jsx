@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import HistorialPedido from "../components/HistorialPedido";
@@ -109,14 +110,7 @@ export default function DepositoPedido() {
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
 
       {/* Volver */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg
-                   bg-white border border-gray-200 shadow-sm hover:shadow
-                   text-gray-700 text-sm font-medium"
-      >
-        <span className="text-lg">←</span> Volver
-      </button>
+      <BotonVolver />
 
       <h1 className="text-2xl font-bold mb-1">Pedido {pedido.id}</h1>
 

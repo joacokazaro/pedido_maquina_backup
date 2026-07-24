@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
@@ -147,9 +148,7 @@ export default function AdminEventualDetalle() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24 space-y-4">
-      <button onClick={() => navigate(-1)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm">
-        ← Volver
-      </button>
+      <BotonVolver className="" />
 
       <div className="rounded-2xl bg-white p-5 shadow space-y-2">
         <div className="flex flex-wrap items-center gap-2">

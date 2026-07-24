@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import Paginacion from "../components/Paginacion";
@@ -17,7 +18,7 @@ const ESTADOS = [
 ];
 
 export default function DepositoMaquinas() {
-  const navigate = useNavigate();
+
   const { user } = useAuth();
 
   const [allMaquinas, setAllMaquinas] = useState([]);
@@ -122,12 +123,7 @@ export default function DepositoMaquinas() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow transition text-gray-700 text-sm font-medium"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <header className="mb-4 flex items-center justify-between gap-3">
         <div>

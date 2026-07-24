@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import SearchableSelect from "../components/SearchableSelect";
 
@@ -15,7 +16,7 @@ const ESTADOS = [
 
 export default function DepositoServicioDetalle() {
   const { id } = useParams();
-  const navigate = useNavigate();
+
 
   const [servicio, setServicio] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,13 +99,7 @@ export default function DepositoServicioDetalle() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24 sm:pr-20">
       <div className="mb-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow transition text-gray-700 text-sm font-medium"
-        >
-          <span className="text-lg leading-none">←</span>
-          Volver
-        </button>
+        <BotonVolver className="" />
       </div>
 
       <div className="mb-4">

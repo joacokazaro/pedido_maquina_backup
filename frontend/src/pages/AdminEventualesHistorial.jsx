@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { formatDateOnly } from "../utils/date";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +9,7 @@ import { usePaginacion } from "../hooks/usePaginacion";
 import SearchableSelect from "../components/SearchableSelect";
 
 export default function AdminEventualesHistorial() {
-  const navigate = useNavigate();
+
   const { user } = useAuth();
   const rolUpper = String(user?.rol || "").toUpperCase();
   const isReadOnly = rolUpper === "COORDINADOR" || rolUpper === "CONSULTOR";
@@ -67,12 +68,7 @@ export default function AdminEventualesHistorial() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <button
-        onClick={() => navigate("/admin/eventuales")}
-        className="mb-4 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm"
-      >
-        ← Volver al panel de eventuales
-      </button>
+      <BotonVolver>Volver al panel de eventuales</BotonVolver>
 
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>

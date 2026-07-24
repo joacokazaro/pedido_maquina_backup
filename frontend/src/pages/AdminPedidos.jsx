@@ -6,6 +6,7 @@ import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import { EstadoBadge, formatEstado } from "../utils/estadoPedido.jsx";
 import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import SearchableSelect from "../components/SearchableSelect";
 
@@ -278,14 +279,7 @@ function pedidoTieneMaquina(pedido, texto) {
     <div className="p-4 min-h-screen bg-gray-50 pb-24">
 
       {/* VOLVER */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 px-3 py-2 rounded-lg
-                 bg-white border border-gray-200 shadow-sm
-                 hover:shadow transition text-gray-700 text-sm font-medium"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <h1 className="text-2xl font-bold mb-4">Gestión de Pedidos</h1>
 

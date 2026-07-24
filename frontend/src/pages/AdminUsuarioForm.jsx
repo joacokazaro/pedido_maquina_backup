@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import SearchableSelect from "../components/SearchableSelect";
 import { ROLE_LABELS } from "../constants/roles";
@@ -187,12 +188,7 @@ export default function AdminUsuarioForm() {
     <div className="min-h-screen bg-gray-50 p-4 pb-32 relative">
 
       {/* VOLVER */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 px-3 py-2 rounded-lg bg-white border shadow text-sm"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <div className="mb-4">
         <h1 className="text-2xl font-bold">

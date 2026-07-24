@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import SearchableSelect from "../components/SearchableSelect";
 
@@ -80,7 +80,7 @@ function MaquinaCard({ maquina, temporal = false }) {
 }
 
 export default function DepositoSupervisores() {
-  const navigate = useNavigate();
+
 
   const [supervisores, setSupervisores] = useState([]);
   const [supervisorId, setSupervisorId] = useState("");
@@ -182,12 +182,7 @@ export default function DepositoSupervisores() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
       <div className="mb-4">
-        <button
-          onClick={() => navigate("/deposito")}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-        >
-          ← Volver
-        </button>
+        <BotonVolver className="" />
       </div>
 
       <header className="mb-4">

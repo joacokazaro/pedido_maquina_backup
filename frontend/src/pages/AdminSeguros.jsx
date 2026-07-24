@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import ConfirmModal from "../components/ConfirmModal";
 import { API_BASE } from "../services/apiBase";
 
 export default function AdminSeguros() {
-  const navigate = useNavigate();
+
   const [seguros, setSeguros] = useState([]);
   const [nombre, setNombre] = useState("");
   const [editing, setEditing] = useState(null);
@@ -65,12 +65,7 @@ export default function AdminSeguros() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <h1 className="mb-4 text-2xl font-bold">Seguros</h1>
 

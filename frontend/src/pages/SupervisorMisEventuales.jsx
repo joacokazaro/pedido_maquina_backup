@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import { formatDateOnly } from "../utils/date";
@@ -8,7 +9,7 @@ import FondoKazaro from "../components/FondoKazaro";
 const FILTROS = ["TODOS", "activo", "finalizado", "cancelado"];
 
 export default function SupervisorMisEventuales() {
-  const navigate = useNavigate();
+
   const { user } = useAuth();
   const [eventuales, setEventuales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,12 +50,7 @@ export default function SupervisorMisEventuales() {
   return (
     <div className="min-h-screen px-4 py-10">
       <FondoKazaro />
-      <button
-        onClick={() => navigate("/supervisor")}
-        className="mb-4 self-start text-sm font-medium text-gray-600 hover:text-gray-900"
-      >
-        ← Volver al panel
-      </button>
+      <BotonVolver>Volver al panel</BotonVolver>
 
       <header className="mb-6 text-center">
         <h1 className="text-3xl font-extrabold text-gray-800">Mis eventuales</h1>

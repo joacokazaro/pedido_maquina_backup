@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
@@ -342,13 +343,7 @@ export default function AdminMaquinaForm() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
       <header className="mb-4">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="mb-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:shadow"
-        >
-          ← Volver
-        </button>
+        <BotonVolver />
         <h1 className="text-lg font-bold">
           {esEdicion ? "Editar máquina" : "Nueva máquina"}
         </h1>

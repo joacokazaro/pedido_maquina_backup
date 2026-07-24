@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
@@ -99,12 +100,7 @@ export default function DepositoServicios() {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate("/deposito")}
-          className="text-xs text-blue-600 underline"
-        >
-          Volver
-        </button>
+        <BotonVolver className="" />
       </header>
 
       <div className="bg-white rounded-xl shadow p-3 mb-4 space-y-3">

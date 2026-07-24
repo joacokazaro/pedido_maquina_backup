@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
@@ -36,12 +37,7 @@ export default function AdminUsuarios() {
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
 
       {/* VOLVER */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 px-3 py-2 rounded-lg bg-white border shadow text-sm"
-      >
-        ← Volver
-      </button>
+      <BotonVolver />
 
       <h1 className="text-2xl font-bold mb-4">Usuarios</h1>
 
