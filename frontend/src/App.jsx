@@ -6,7 +6,7 @@ import { waitForBackend } from "./services/waitForBackend";
 
 import Login from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { ROLES_SUPERVISION } from "./constants/roles";
+import { ROLES_PEDIDO_TITULAR } from "./constants/roles";
 import ConsultorHome from "./pages/ConsultorHome";
 import TallerHome from "./pages/TallerHome";
 import TallerModuleHome from "./pages/taller/TallerModuleHome";
@@ -99,7 +99,7 @@ function App() {
   const isTaller = hasRole("TALLER");
 
   // 👉 Roles que participan del ciclo OPERATIVO de préstamo
-  const ROLES_OPERATIVOS = [...ROLES_SUPERVISION, "DEPOSITO"];
+  const ROLES_OPERATIVOS = [...ROLES_PEDIDO_TITULAR, "DEPOSITO"];
   const renderAdminOnlyPage = (page) => (
     <ProtectedRoute allowedRoles={["ADMIN"]}>
       <AdminLayout>{page}</AdminLayout>
@@ -217,7 +217,7 @@ function App() {
       <Route
         path="/supervisor"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <SupervisorDashboard />
           </ProtectedRoute>
         }
@@ -226,7 +226,7 @@ function App() {
       <Route
         path="/supervisor/pedidos"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <SupervisorMisPedidos />
           </ProtectedRoute>
         }
@@ -235,7 +235,7 @@ function App() {
       <Route
         path="/supervisor/maquinas"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <SupervisorMaquinas />
           </ProtectedRoute>
         }
@@ -244,7 +244,7 @@ function App() {
       <Route
         path="/supervisor/vehiculos"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <SupervisorVehiculos />
           </ProtectedRoute>
         }
@@ -253,7 +253,7 @@ function App() {
       <Route
         path="/supervisor/maquinas/:id"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <SupervisorMaquinaDetalle />
           </ProtectedRoute>
         }
@@ -262,7 +262,7 @@ function App() {
       <Route
         path="/supervisor/prestamos"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <SupervisorMisPrestamos />
           </ProtectedRoute>
         }
@@ -271,7 +271,7 @@ function App() {
       <Route
         path="/supervisor/pedido/nuevo"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <CreatePedido />
           </ProtectedRoute>
         }
@@ -280,7 +280,7 @@ function App() {
       <Route
         path="/supervisor/eventuales"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <SupervisorMisEventuales />
           </ProtectedRoute>
         }
@@ -289,7 +289,7 @@ function App() {
       <Route
         path="/supervisor/eventuales/:id"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <SupervisorEventualDetalle />
           </ProtectedRoute>
         }
@@ -298,7 +298,7 @@ function App() {
       <Route
         path="/supervisor/pedido/:id"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <ViewPedido />
           </ProtectedRoute>
         }
@@ -307,7 +307,7 @@ function App() {
       <Route
         path="/supervisor/pedido/:id/devolucion"
         element={
-          <ProtectedRoute allowedRoles={ROLES_SUPERVISION}>
+          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
             <RegistrarDevolucion />
           </ProtectedRoute>
         }

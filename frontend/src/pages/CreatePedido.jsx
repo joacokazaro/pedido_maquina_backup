@@ -17,9 +17,13 @@ export default function CreatePedido() {
     ? user.roles.map((r) => String(r || "").toUpperCase())
     : [];
   const rolPrimario = String(user?.rol || "").toUpperCase();
-  const esSupervisor = ROLES_SUPERVISION.some(
-    (r) => rolesUpper.includes(r) || rolPrimario === r
-  );
+  // El coordinador pide a su propio nombre como un supervisor más: carga SOLO sus
+  // servicios asignados (igual que un supervisor), pero no accede al modo eventual.
+  const esCoordinador =
+    rolesUpper.includes("COORDINADOR") || rolPrimario === "COORDINADOR";
+  const esSupervisor =
+    esCoordinador ||
+    ROLES_SUPERVISION.some((r) => rolesUpper.includes(r) || rolPrimario === r);
   const esSupervisorLimpieza =
     rolesUpper.includes("SUPERVISOR_LIMPIEZA") || rolPrimario === "SUPERVISOR_LIMPIEZA";
 

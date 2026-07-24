@@ -3,6 +3,20 @@ import PanelHome from "../components/PanelHome";
 export default function CoordinadorHome() {
   const sections = [
     {
+      title: "Nuevo pedido",
+      description: "Creá un pedido de máquinas a tu propio nombre, al depósito o a un supervisor.",
+      to: "/supervisor/pedido/nuevo",
+      icon: "pedidos",
+      accent: "blue",
+    },
+    {
+      title: "Mis pedidos",
+      description: "Seguí los pedidos que realizaste y registrá sus devoluciones.",
+      to: "/supervisor/pedidos",
+      icon: "prestamos",
+      accent: "navy",
+    },
+    {
       title: "Máquinas",
       description: "Consultá el inventario de máquinas en modo lectura.",
       to: "/admin/maquinas",

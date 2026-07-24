@@ -105,9 +105,11 @@ function mapVehiculoSupervisor(vehiculo) {
 ======================================================== */
 export async function adminGetSupervisores(req, res) {
   try {
+   // Incluimos "coordinador": puede crear pedidos a su propio nombre (como un supervisor
+   // más), así que necesita poder recibir servicios asignados desde esta pantalla.
    const supervisores = await prisma.usuario.findMany({
   where: {
-    ...whereHasAnyRole([...ROLES_SUPERVISION, "deposito"]),
+    ...whereHasAnyRole([...ROLES_SUPERVISION, "coordinador", "deposito"]),
   },
   include: {
     serviciosAsignados: {

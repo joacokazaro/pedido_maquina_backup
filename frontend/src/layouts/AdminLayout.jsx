@@ -42,6 +42,13 @@ const NAV_GROUPS_COORDINADOR = [
 		to: "/admin",
 	},
 	{
+		label: "Pedidos",
+		items: [
+			{ label: "Nuevo pedido", to: "/supervisor/pedido/nuevo" },
+			{ label: "Mis pedidos", to: "/supervisor/pedidos" },
+		],
+	},
+	{
 		label: "Inventario",
 		items: [
 			{ label: "Máquinas", to: "/admin/maquinas" },

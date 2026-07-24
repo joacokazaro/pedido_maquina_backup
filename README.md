@@ -32,6 +32,8 @@ Centralizar el proceso operativo de la flota evitando:
 
 ### 📋 Coordinador
 - Acceso de solo lectura a inventario, taller, eventuales, pedidos históricos y kits
+- Gestión de eventuales (completar datos, finalizar, importar horas Browix e insumos)
+- Puede crear pedidos de máquinas **a su propio nombre**, como un supervisor más (requiere tener servicios asignados en "Supervisores x Servicios"); accede al ciclo operativo de esos pedidos (Mis Pedidos, devoluciones)
 - Vista operativa de estado general del sistema
 
 ### 🔍 Consultor
