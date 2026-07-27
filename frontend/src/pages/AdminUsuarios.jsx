@@ -6,12 +6,18 @@ import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import SearchableSelect from "../components/SearchableSelect";
 import { ROLE_LABELS, roleLabel } from "../constants/roles";
+import { useAuth } from "../context/AuthContext";
+import { buildActorHeaders } from "../utils/authHeaders";
 
 export default function AdminUsuarios() {
   const navigate = useNavigate();
+  const { user, hasRole } = useAuth();
+  const isAdmin = hasRole("ADMIN");
   const [usuarios, setUsuarios] = useState([]);
   const [search, setSearch] = useState("");
   const [rol, setRol] = useState("");
+  const [exportando, setExportando] = useState(false);
+  const [error, setError] = useState("");
   const paginacion = usePaginacion(usuarios, { reinicio: [search, rol] });
 
   async function load() {
@@ -33,13 +39,61 @@ export default function AdminUsuarios() {
     load();
   }, [search, rol]);
 
+  async function exportarExcel() {
+    setError("");
+    setExportando(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin-users/export`, {
+        headers: { ...buildActorHeaders(user) },
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "No se pudo exportar los usuarios");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "usuarios.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || "Error exportando usuarios");
+    } finally {
+      setExportando(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
 
       {/* VOLVER */}
       <BotonVolver />
 
-      <h1 className="text-2xl font-bold mb-4">Usuarios</h1>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold">Usuarios</h1>
+
+        {isAdmin && (
+          <button
+            onClick={exportarExcel}
+            disabled={exportando}
+            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:opacity-60"
+          >
+            {exportando ? "Exportando..." : "Exportar Excel"}
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div className="mb-3 rounded-xl bg-red-100 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* BUSCAR */}
       <input

@@ -20,6 +20,22 @@ export const ROLES_SUPERVISION = ["encargado_ev", "supervisor_limpieza"];
 // Cualquiera de ellos puede crear pedidos para los eventuales asignados a él.
 export const ROLES_PEDIDO_TITULAR = [...ROLES_SUPERVISION, "coordinador"];
 
+// Etiquetas legibles (espejo de frontend/src/constants/roles.js) para exportaciones y PDFs.
+export const ROLE_LABELS = {
+  admin: "Admin",
+  coordinador: "Coordinador",
+  consultor: "Consultor",
+  taller: "Taller",
+  deposito: "Depósito",
+  encargado_ev: "Encargado EV",
+  supervisor_limpieza: "Supervisor Limpieza",
+};
+
+export function roleLabel(role) {
+  const key = String(role || "").trim().toLowerCase();
+  return ROLE_LABELS[key] || String(role || "").toUpperCase();
+}
+
 export function normalizeRole(value) {
   const role = String(value || "").trim().toLowerCase();
   return ROLES_VALIDOS.includes(role) ? role : null;

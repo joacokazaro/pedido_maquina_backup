@@ -327,6 +327,7 @@ Todo cuelga de `/api`. Los routers admin se montan como varios routers sobre el 
 
 ### Usuarios
 - `GET|POST /api/admin-users` · `GET|PUT|DELETE /api/admin-users/:username`
+- `GET /api/admin-users/export` (Excel de usuarios, solo admin; nunca incluye la contraseña)
 
 ---
 

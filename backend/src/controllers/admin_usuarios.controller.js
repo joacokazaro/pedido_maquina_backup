@@ -1,13 +1,17 @@
 import prisma from "../db/prisma.js";
+import ExcelJS from "exceljs";
 import {
   buildUserRoleResponse,
   derivePrimaryRole,
   isAllowedRoleCombination,
   normalizeRole,
   normalizeRoles,
+  roleLabel,
+  rolesFromUser,
   ROLES_VALIDOS,
   whereHasRole,
 } from "../services/roles.service.js";
+import { requireActor } from "../services/requestActor.service.js";
 
 /* =====================================================
    CONSTANTES
@@ -38,6 +42,19 @@ function parseRolesFromPayload(payload, fallbackRole = null) {
 
   const single = normalizeRole(payload?.rol ?? fallbackRole);
   return single ? [single] : [];
+}
+
+function formatDateForSpreadsheet(value) {
+  if (!value) return "";
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
 }
 
 function parseNullableDate(value) {
@@ -104,6 +121,80 @@ export async function adminGetUsuarios(req, res) {
   } catch (e) {
     console.error("adminGetUsuarios:", e);
     res.status(500).json({ error: "Error listando usuarios" });
+  }
+}
+
+/* =====================================================
+   GET /admin-users/export
+   Excel con los datos de los usuarios (nunca la contraseña)
+===================================================== */
+export async function adminExportUsuarios(req, res) {
+  try {
+    const actor = await requireActor(req, res, ["admin"]);
+    if (!actor) return;
+
+    const usuarios = await prisma.usuario.findMany({
+      select: {
+        username: true,
+        nombre: true,
+        rol: true,
+        roles: { select: { rol: true } },
+        activo: true,
+        vtoCarnetConductor: true,
+        createdAt: true,
+      },
+      orderBy: { nombre: "asc" },
+    });
+
+    const headers = [
+      "NOMBRE Y APELLIDO",
+      "USUARIO",
+      "ROL",
+      "ROLES",
+      "ESTADO",
+      "VTO CARNET CONDUCTOR",
+      "FECHA DE ALTA",
+    ];
+
+    const rows = usuarios.map((u) => {
+      const roles = rolesFromUser(u);
+      return [
+        u.nombre || "",
+        u.username,
+        roleLabel(derivePrimaryRole(roles, u.rol)),
+        roles.map(roleLabel).join(" · "),
+        u.activo ? "Activo" : "Inactivo",
+        formatDateForSpreadsheet(u.vtoCarnetConductor),
+        formatDateForSpreadsheet(u.createdAt),
+      ];
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Usuarios");
+    const headerRow = worksheet.addRow(headers);
+    headerRow.font = { bold: true };
+    rows.forEach((row) => worksheet.addRow(row));
+    headers.forEach((header, index) => {
+      worksheet.getColumn(index + 1).width = Math.max(
+        header.length + 2,
+        ...rows.map((row) => String(row[index] ?? "").length + 2)
+      );
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="usuarios-${Date.now()}.xlsx"`
+    );
+    res.send(buffer);
+  } catch (e) {
+    console.error("adminExportUsuarios:", e);
+    res.status(500).json({ error: "Error exportando usuarios" });
   }
 }
 
