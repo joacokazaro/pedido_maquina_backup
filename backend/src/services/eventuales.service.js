@@ -4,6 +4,7 @@ import {
   userHasAnyRole,
   whereHasAnyRole,
   ROLES_SUPERVISION,
+  ROLES_PEDIDO_TITULAR,
 } from "./roles.service.js";
 import {
   getFichajesPorRango,
@@ -204,13 +205,15 @@ async function getActorByUsername(username) {
   });
 }
 
+// El supervisor de un eventual puede ser cualquier rol titular: los de supervisión y
+// también el coordinador, que pide a su propio nombre como un supervisor más.
 async function getSupervisorById(supervisorId) {
   if (!Number.isInteger(Number(supervisorId)) || Number(supervisorId) <= 0) return null;
 
   return prisma.usuario.findFirst({
     where: {
       id: Number(supervisorId),
-      ...whereHasAnyRole(ROLES_SUPERVISION),
+      ...whereHasAnyRole(ROLES_PEDIDO_TITULAR),
       activo: true,
     },
     select: { id: true, username: true, nombre: true },
@@ -781,9 +784,12 @@ export async function deleteEventual(eventualId, actorUsername) {
   return true;
 }
 
-// El supervisor_limpieza puede cargar las máquinas y vehículos utilizados de un eventual
-// asignado a él, sin pasar por el flujo completo del coordinador (saveEventual). Solo se
-// tocan esos dos campos; el resto del eventual queda intacto.
+// Solo el supervisor_limpieza puede cargar las máquinas y vehículos utilizados de un
+// eventual asignado a él, sin pasar por el flujo completo del coordinador (saveEventual).
+// Solo se tocan esos dos campos; el resto del eventual queda intacto.
+// ⚠️ Esta es la ÚNICA diferencia de permisos entre supervisor_limpieza y encargado_ev:
+// el encargado ve estos datos en modo lectura. No ampliar el rol acá sin revisar
+// SupervisorEventualDetalle.jsx (`puedeCargarComponentes`).
 export async function updateEventualComponentesBySupervisor({
   eventualId,
   actorUsername,
@@ -853,7 +859,7 @@ export async function updateEventualComponentesBySupervisor({
 
 export async function addSupervisorObservation(eventualId, actorUsername, observacion) {
   const actor = await getActorByUsername(actorUsername);
-  if (!actor || !userHasAnyRole(actor, ROLES_SUPERVISION)) {
+  if (!actor || !userHasAnyRole(actor, ROLES_PEDIDO_TITULAR)) {
     throw buildError("Supervisor invalido", 403);
   }
 

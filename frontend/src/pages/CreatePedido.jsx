@@ -6,27 +6,22 @@ import { API_BASE } from "../services/apiBase";
 import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/maquinas";
 import FondoKazaro from "../components/FondoKazaro";
 import SearchableSelect from "../components/SearchableSelect";
-import { ROLES_SUPERVISION } from "../constants/roles";
+import { ROLES_PEDIDO_TITULAR } from "../constants/roles";
 
 export default function CreatePedido() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Roles del usuario (en MAYÚSCULAS). Ambos roles supervisores cargan solo sus servicios;
-  // solo "supervisor_limpieza" puede además pedir para un eventual asignado a él.
+  // Roles del usuario (en MAYÚSCULAS). Todos los roles titulares (ambos supervisores y el
+  // coordinador, que pide a su propio nombre como un supervisor más) cargan SOLO sus
+  // servicios asignados y pueden además pedir para un eventual asignado a ellos.
   const rolesUpper = Array.isArray(user?.roles)
     ? user.roles.map((r) => String(r || "").toUpperCase())
     : [];
   const rolPrimario = String(user?.rol || "").toUpperCase();
-  // El coordinador pide a su propio nombre como un supervisor más: carga SOLO sus
-  // servicios asignados (igual que un supervisor), pero no accede al modo eventual.
-  const esCoordinador =
-    rolesUpper.includes("COORDINADOR") || rolPrimario === "COORDINADOR";
-  const esSupervisor =
-    esCoordinador ||
-    ROLES_SUPERVISION.some((r) => rolesUpper.includes(r) || rolPrimario === r);
-  const esSupervisorLimpieza =
-    rolesUpper.includes("SUPERVISOR_LIMPIEZA") || rolPrimario === "SUPERVISOR_LIMPIEZA";
+  const esSupervisor = ROLES_PEDIDO_TITULAR.some(
+    (r) => rolesUpper.includes(r) || rolPrimario === r
+  );
 
   /* =========================
      ESTADOS
@@ -41,14 +36,18 @@ export default function CreatePedido() {
   const [servicios, setServicios] = useState([]);
   const [servicioId, setServicioId] = useState("");
 
-  // Modo de pedido: contra un servicio normal o contra un eventual asignado
-  // (este último solo disponible para supervisor_limpieza).
+  // Modo de pedido: contra un servicio normal o contra un eventual asignado al usuario.
   const [modoPedido, setModoPedido] = useState("SERVICIO"); // "SERVICIO" | "EVENTUAL"
   const [eventuales, setEventuales] = useState([]);
   const [eventualId, setEventualId] = useState("");
   const [eventualQuery, setEventualQuery] = useState("");
   const [openEventuales, setOpenEventuales] = useState(false);
   const comboEvtRef = useRef(null);
+
+  // El selector Servicio/Eventual solo se muestra si el usuario tiene eventuales activos
+  // asignados: así el encargado sin eventuales ve la pantalla de siempre. La titularidad
+  // del eventual la vuelve a validar el backend en crearPedido.
+  const puedePedirParaEventual = esSupervisor && eventuales.length > 0;
 
   // tipos disponibles (para 'Otro')
   const [availableTipos, setAvailableTipos] = useState([]);
@@ -103,10 +102,10 @@ const comboSupRef = useRef(null);
 }, [user?.username, esSupervisor]);
 
 /* =========================
-   CARGAR EVENTUALES (solo supervisor_limpieza)
+   CARGAR EVENTUALES ASIGNADOS AL USUARIO
 ========================= */
 useEffect(() => {
-  if (!user?.username || !esSupervisorLimpieza) {
+  if (!user?.username || !esSupervisor) {
     setEventuales([]);
     return;
   }
@@ -119,7 +118,7 @@ useEffect(() => {
       setEventuales(arr.filter((e) => String(e.estado || "").toLowerCase() === "activo"));
     })
     .catch(() => setEventuales([]));
-}, [user?.username, esSupervisorLimpieza]);
+}, [user?.username, esSupervisor]);
 
 /* =========================
    CARGAR TIPOS (OTRO)
@@ -307,7 +306,7 @@ function limpiarSupervisorDestino() {
       return;
     }
 
-    const esModoEventual = esSupervisorLimpieza && modoPedido === "EVENTUAL";
+    const esModoEventual = puedePedirParaEventual && modoPedido === "EVENTUAL";
 
     if (esModoEventual) {
       if (!eventualId) {
@@ -333,7 +332,7 @@ function limpiarSupervisorDestino() {
     body: JSON.stringify({
       supervisorUsername: user.username,
       itemsSolicitados,
-      // El pedido va contra un eventual asignado (supervisor_limpieza) o un servicio normal
+      // El pedido va contra un eventual asignado al usuario o contra un servicio normal
       ...(esModoEventual
         ? { eventualId: Number(eventualId) }
         : { servicioId: Number(servicioId) }),
@@ -382,7 +381,7 @@ function limpiarSupervisorDestino() {
   /* =========================
      RENDER
   ========================== */
-  const modoEventualActivo = esSupervisorLimpieza && modoPedido === "EVENTUAL";
+  const modoEventualActivo = puedePedirParaEventual && modoPedido === "EVENTUAL";
 
   return (
     <div className="min-h-screen px-4 py-6">
@@ -395,8 +394,8 @@ function limpiarSupervisorDestino() {
         Seleccioná la cantidad de máquinas o vehículos que necesitás.
       </p>
 
-      {/* TIPO DE PEDIDO (solo supervisor_limpieza) */}
-      {esSupervisorLimpieza && (
+      {/* TIPO DE PEDIDO (solo si tiene eventuales asignados) */}
+      {puedePedirParaEventual && (
         <div className="mb-6">
           <label className="block text-sm font-medium mb-2">
             Tipo de pedido *
@@ -712,7 +711,7 @@ function limpiarSupervisorDestino() {
 )}
 
        
-      {/* EVENTUAL (BUSCABLE) — solo supervisor_limpieza en modo eventual */}
+      {/* EVENTUAL (BUSCABLE) — solo en modo eventual */}
       {modoEventualActivo && (
         <div className="mt-6" ref={comboEvtRef}>
           <label className="block text-sm font-medium mb-1">

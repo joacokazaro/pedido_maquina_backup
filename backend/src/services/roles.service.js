@@ -10,8 +10,15 @@ export const ROLES_VALIDOS = [
 
 // Roles "supervisores": comparten todas las funcionalidades del ex-rol "supervisor".
 // "encargado_ev" es el rename directo; "supervisor_limpieza" hereda todo y además puede
-// crear pedidos para eventuales asignados (única diferencia, gestionada en crearPedido).
+// cargar las máquinas y vehículos utilizados de un eventual asignado a él (única
+// diferencia, gestionada en updateEventualComponentesBySupervisor).
 export const ROLES_SUPERVISION = ["encargado_ev", "supervisor_limpieza"];
+
+// Roles que pueden ser TITULARES de un pedido (reciben las máquinas a su nombre) y ser
+// asignados como supervisor de un eventual: los de supervisión y el coordinador, que
+// además de su rol de backoffice opera como "un supervisor más".
+// Cualquiera de ellos puede crear pedidos para los eventuales asignados a él.
+export const ROLES_PEDIDO_TITULAR = [...ROLES_SUPERVISION, "coordinador"];
 
 export function normalizeRole(value) {
   const role = String(value || "").trim().toLowerCase();

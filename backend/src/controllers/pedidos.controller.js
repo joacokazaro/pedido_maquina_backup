@@ -10,7 +10,11 @@ import {
   getUsuariosDepositoIds,
   getUsuariosAdminIds,
 } from "../services/notificaciones.service.js";
-import { userHasRole, userHasAnyRole } from "../services/roles.service.js";
+import {
+  userHasRole,
+  userHasAnyRole,
+  ROLES_PEDIDO_TITULAR,
+} from "../services/roles.service.js";
 
 /* ========================================================
    HELPERS
@@ -229,15 +233,20 @@ export async function crearPedido(req, res) {
 
       // Autorización del pedido de eventual:
       // - El flujo de backoffice (admin/coordinador disparando el pedido complementario a
-      //   nombre del supervisor del eventual) sigue permitido tal cual.
-      // - El auto-servicio del propio supervisor solo lo puede hacer un "supervisor_limpieza"
-      //   y únicamente sobre un eventual asignado a él. Un "encargado_ev" NO puede.
+      //   nombre de OTRO usuario, el supervisor del eventual) sigue permitido tal cual.
+      // - El auto-servicio (el titular pide para sí mismo) lo puede hacer cualquier rol
+      //   titular —ambos roles de supervisión y el coordinador— y únicamente sobre un
+      //   eventual asignado a él.
       const actorEfectivo = actor || supervisor;
-      const esBackoffice = userHasAnyRole(actorEfectivo, ["admin", "coordinador"]);
+      const esAutoServicio = actorEfectivo.id === supervisor.id;
+      const esBackoffice =
+        userHasRole(actorEfectivo, "admin") ||
+        (userHasRole(actorEfectivo, "coordinador") && !esAutoServicio);
+
       if (!esBackoffice) {
-        if (!userHasRole(supervisor, "supervisor_limpieza")) {
+        if (!userHasAnyRole(supervisor, ROLES_PEDIDO_TITULAR)) {
           return res.status(403).json({
-            error: "Solo un Supervisor Limpieza puede crear pedidos para un eventual",
+            error: "Tu rol no puede crear pedidos para un eventual",
           });
         }
         if (eventual.supervisorId !== supervisor.id) {

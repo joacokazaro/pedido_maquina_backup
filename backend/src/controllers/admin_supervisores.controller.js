@@ -1,5 +1,9 @@
 import prisma from "../db/prisma.js";
-import { whereHasAnyRole, ROLES_SUPERVISION } from "../services/roles.service.js";
+import {
+  whereHasAnyRole,
+  ROLES_SUPERVISION,
+  ROLES_PEDIDO_TITULAR,
+} from "../services/roles.service.js";
 
 /* ========================================================
    HELPERS
@@ -105,11 +109,11 @@ function mapVehiculoSupervisor(vehiculo) {
 ======================================================== */
 export async function adminGetSupervisores(req, res) {
   try {
-   // Incluimos "coordinador": puede crear pedidos a su propio nombre (como un supervisor
-   // más), así que necesita poder recibir servicios asignados desde esta pantalla.
+   // ROLES_PEDIDO_TITULAR incluye al "coordinador": puede crear pedidos a su propio nombre
+   // (como un supervisor más), así que necesita poder recibir servicios asignados acá.
    const supervisores = await prisma.usuario.findMany({
   where: {
-    ...whereHasAnyRole([...ROLES_SUPERVISION, "coordinador", "deposito"]),
+    ...whereHasAnyRole([...ROLES_PEDIDO_TITULAR, "deposito"]),
   },
   include: {
     serviciosAsignados: {
@@ -272,13 +276,14 @@ export async function adminGetUsuariosOperativos(req, res) {
 
 /* ========================================================
    GET /supervisores/catalogo
-   Lista solo usuarios con rol supervisor
+   Lista los usuarios que pueden ser titulares de un pedido: roles de supervisión
+   y coordinador (pide a su nombre y puede ser supervisor de un eventual).
 ======================================================== */
 export async function getSupervisoresCatalogo(req, res) {
   try {
     const supervisores = await prisma.usuario.findMany({
       where: {
-        ...whereHasAnyRole(ROLES_SUPERVISION),
+        ...whereHasAnyRole(ROLES_PEDIDO_TITULAR),
         activo: true,
       },
       include: {
@@ -327,7 +332,7 @@ export async function getMaquinasPorSupervisor(req, res) {
     const supervisor = await prisma.usuario.findFirst({
       where: {
         id: supervisorId,
-        ...whereHasAnyRole(ROLES_SUPERVISION),
+        ...whereHasAnyRole(ROLES_PEDIDO_TITULAR),
         activo: true,
       },
       include: {
@@ -497,7 +502,7 @@ export async function getVehiculosPorSupervisor(req, res) {
     const usuario = await prisma.usuario.findFirst({
       where: {
         id: supervisorId,
-        ...whereHasAnyRole(ROLES_SUPERVISION),
+        ...whereHasAnyRole(ROLES_PEDIDO_TITULAR),
         activo: true,
       },
       select: {

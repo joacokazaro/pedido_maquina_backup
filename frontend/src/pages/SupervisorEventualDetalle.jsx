@@ -6,6 +6,7 @@ import { API_BASE } from "../services/apiBase";
 import { formatDateOnly, formatDateTime } from "../utils/date";
 import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/maquinas";
 import FondoKazaro from "../components/FondoKazaro";
+import { ROLES_PEDIDO_TITULAR } from "../constants/roles";
 
 export default function SupervisorEventualDetalle() {
   const { id } = useParams();
@@ -17,13 +18,18 @@ export default function SupervisorEventualDetalle() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Rol: solo supervisor_limpieza puede cargar componentes y disparar pedidos
+  // Rol: cualquier titular (ambos supervisores y el coordinador) puede disparar pedidos
+  // para su eventual, pero SOLO el supervisor_limpieza puede cargar los componentes
+  // (máquinas y vehículos utilizados). Para el resto esos bloques son de lectura.
   const rolesUpper = Array.isArray(user?.roles)
     ? user.roles.map((r) => String(r || "").toUpperCase())
     : [];
   const rolPrimario = String(user?.rol || "").toUpperCase();
   const esSupervisorLimpieza =
     rolesUpper.includes("SUPERVISOR_LIMPIEZA") || rolPrimario === "SUPERVISOR_LIMPIEZA";
+  const esTitular = ROLES_PEDIDO_TITULAR.some(
+    (r) => rolesUpper.includes(r) || rolPrimario === r
+  );
 
   // Recursos del supervisor + selección de componentes
   const [supervisorMaquinas, setSupervisorMaquinas] = useState([]);
@@ -139,7 +145,7 @@ export default function SupervisorEventualDetalle() {
 
   // Tipos para "Otro" y supervisores destino (para pedidos)
   useEffect(() => {
-    if (!esSupervisorLimpieza) return;
+    if (!esTitular) return;
 
     fetch(`${API_BASE}/admin/maquinas/tipos`)
       .then((r) => (r.ok ? r.json() : []))
@@ -159,7 +165,7 @@ export default function SupervisorEventualDetalle() {
         setSupervisoresDestino(arr.filter((s) => String(s.username) !== String(user?.username)));
       })
       .catch(() => setSupervisoresDestino([]));
-  }, [esSupervisorLimpieza, user?.username]);
+  }, [esTitular, user?.username]);
 
   async function saveObservation() {
     try {
@@ -398,7 +404,10 @@ export default function SupervisorEventualDetalle() {
     ? eventual.pedidosComplementarios
     : [];
   const isActivo = String(eventual.estado || "").toLowerCase() === "activo";
-  const puedeEditar = esSupervisorLimpieza && isActivo;
+  // Cargar máquinas/vehículos utilizados: exclusivo del supervisor_limpieza.
+  const puedeCargarComponentes = esSupervisorLimpieza && isActivo;
+  // Disparar un pedido para el eventual: cualquier rol titular asignado a él.
+  const puedePedir = esTitular && isActivo;
 
   const observacionesPosteriores = (Array.isArray(eventual.historial) ? eventual.historial : [])
     .filter((entry) =>
@@ -447,7 +456,7 @@ export default function SupervisorEventualDetalle() {
       <div className="rounded-2xl bg-white p-5 shadow space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-semibold text-gray-900">Máquinas utilizadas</h2>
-          {puedeEditar ? (
+          {puedeCargarComponentes ? (
             <button
               onClick={abrirSelectorMaquinas}
               className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
@@ -457,11 +466,11 @@ export default function SupervisorEventualDetalle() {
           ) : null}
         </div>
 
-        {(puedeEditar ? maquinasResumen : maquinasLectura).length === 0 ? (
+        {(puedeCargarComponentes ? maquinasResumen : maquinasLectura).length === 0 ? (
           <p className="text-sm text-gray-500">Sin máquinas cargadas.</p>
         ) : (
           <div className="space-y-2">
-            {(puedeEditar ? maquinasResumen : maquinasLectura).map((item, idx) => (
+            {(puedeCargarComponentes ? maquinasResumen : maquinasLectura).map((item, idx) => (
               <div key={`${item.tipo}-${idx}`} className="rounded-lg border p-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-semibold text-gray-900">{item.tipo}</p>
@@ -509,7 +518,7 @@ export default function SupervisorEventualDetalle() {
       <div className="rounded-2xl bg-white p-5 shadow space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-semibold text-gray-900">Vehículos utilizados</h2>
-          {puedeEditar ? (
+          {puedeCargarComponentes ? (
             <button
               onClick={abrirSelectorVehiculos}
               className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
@@ -519,11 +528,11 @@ export default function SupervisorEventualDetalle() {
           ) : null}
         </div>
 
-        {(puedeEditar ? vehiculosSel : eventual.componentesActuales?.vehiculoIds || []).length === 0 ? (
+        {(puedeCargarComponentes ? vehiculosSel : eventual.componentesActuales?.vehiculoIds || []).length === 0 ? (
           <p className="text-sm text-gray-500">Sin vehículos cargados.</p>
         ) : (
           <div className="space-y-2">
-            {(puedeEditar
+            {(puedeCargarComponentes
               ? vehiculosSel
               : eventual.componentesActuales?.vehiculoIds || []
             ).map((vid) => (
@@ -536,7 +545,7 @@ export default function SupervisorEventualDetalle() {
       </div>
 
       {/* GUARDAR COMPONENTES */}
-      {puedeEditar ? (
+      {puedeCargarComponentes ? (
         <div className="space-y-2">
           {compMsg ? (
             <div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{compMsg}</div>
@@ -552,7 +561,7 @@ export default function SupervisorEventualDetalle() {
       ) : null}
 
       {/* PEDIDO */}
-      {puedeEditar ? (
+      {puedePedir ? (
         <div className="rounded-2xl bg-white p-5 shadow space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-lg font-semibold text-gray-900">Pedido para el eventual</h2>
