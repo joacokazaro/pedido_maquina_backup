@@ -159,9 +159,7 @@ export default function AdminEventualDetalle() {
         <p className="text-sm text-gray-600">
           Fecha de última modificación:{" "}
           <b>
-            {eventual.ultimaModificacion
-              ? new Date(eventual.ultimaModificacion).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
-              : "-"}
+            {formatDateTime(eventual.ultimaModificacion)}
           </b>
         </p>
       </div>
@@ -351,7 +349,7 @@ export default function AdminEventualDetalle() {
                 {horasBrowix.cantidadFichajes === 1 ? "" : "s"} · Rango: {horasBrowix.desde} a {horasBrowix.hasta}
               </p>
               <p>
-                Importado el {new Date(horasBrowix.importadoEn).toLocaleString("es-AR")}
+                Importado el {formatDateTime(horasBrowix.importadoEn)}
                 {horasBrowix.importadoPor ? ` por ${horasBrowix.importadoPor}` : ""}
               </p>
             </div>
@@ -423,7 +421,7 @@ export default function AdminEventualDetalle() {
                 {insumosImportados.cantidadPedidos === 1 ? "" : "s"}
               </p>
               <p>
-                Importado el {new Date(insumosImportados.importadoEn).toLocaleString("es-AR")}
+                Importado el {formatDateTime(insumosImportados.importadoEn)}
                 {insumosImportados.importadoPor ? ` por ${insumosImportados.importadoPor}` : ""}
               </p>
             </div>

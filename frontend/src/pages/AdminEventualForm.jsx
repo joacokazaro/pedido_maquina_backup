@@ -5,7 +5,7 @@ import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
-import { toDateInputValue } from "../utils/date";
+import { formatDateTime, toDateInputValue } from "../utils/date";
 import { REQUEST_RESOURCE_TYPES } from "../constants/maquinas";
 import SearchableSelect from "../components/SearchableSelect";
 import { buildActorHeaders } from "../utils/authHeaders";
@@ -1337,7 +1337,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                   </p>
                   <p>Rango: {horasBrowix.desde} a {horasBrowix.hasta}</p>
                   <p>
-                    Importado el {new Date(horasBrowix.importadoEn).toLocaleString("es-AR")}
+                    Importado el {formatDateTime(horasBrowix.importadoEn)}
                     {horasBrowix.importadoPor ? ` por ${horasBrowix.importadoPor}` : ""}
                   </p>
                 </div>
@@ -1499,7 +1499,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                     {insumosImportados.cantidadPedidos === 1 ? "" : "s"}
                   </p>
                   <p>
-                    Importado el {new Date(insumosImportados.importadoEn).toLocaleString("es-AR")}
+                    Importado el {formatDateTime(insumosImportados.importadoEn)}
                     {insumosImportados.importadoPor ? ` por ${insumosImportados.importadoPor}` : ""}
                   </p>
                 </div>

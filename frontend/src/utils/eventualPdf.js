@@ -17,6 +17,9 @@ function formatDate(value) {
   });
 }
 
+// hour12: false explícito: el locale es-AR resuelve a reloj de 12 horas y no
+// agrega el sufijo a. m. / p. m., con lo cual las 04:56 y las 16:56 se
+// imprimen idénticas.
 function formatDateTime(value) {
   if (!value) return "No informado";
   const date = new Date(value);
@@ -27,6 +30,7 @@ function formatDateTime(value) {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 }
 
