@@ -111,20 +111,35 @@ export async function getFichajesPorRango(desde, hasta) {
   return fichajes;
 }
 
+// Solo cuentan los fichajes con jornada efectivamente asignada. Los días de
+// franco rotativo (ROT), licencia (ENF) o sin turno cargado aparecen igual en
+// la planificación del eventual pero con 0 minutos teóricos: la persona figura
+// en el cronograma y no fue. Se descartan acá, una sola vez, para que no
+// inflen el conteo de fichajes ni el de personas por categoría.
+function tieneJornadaAsignada(fichaje) {
+  const minutos = Number(fichaje?.minutos_teoricos_de_jornada);
+  return Number.isFinite(minutos) && minutos > 0;
+}
+
+// Fichajes cuya ubicacion matchea exactamente el nombre del eventual
+// (case/espacios sensibles: se tipea igual) y que además tienen jornada
+// asignada.
+function filtrarFichajesDeJornada(fichajes, ubicacion) {
+  const nombreEsperado = String(ubicacion || "").trim();
+  return fichajes.filter(
+    (f) => String(f?.ubicacion || "").trim() === nombreEsperado && tieneJornadaAsignada(f)
+  );
+}
+
 // Suma minutos_teoricos_de_jornada (planificado, el que se usa para el
 // desglose por categoría y el PDF) y minutos_desde_entrada_a_salida (real,
 // según marcaciones efectivas — 0 si la persona estuvo ausente) de los
-// fichajes cuya ubicacion matchea exactamente el nombre del eventual
-// (case/espacios sensibles: se tipea igual). El real se devuelve solo como
+// fichajes con jornada asignada en el eventual. El real se devuelve solo como
 // dato de control en el resumen de importación, no reemplaza al teórico.
 export function sumarHorasTeoricasPorUbicacion(fichajes, ubicacion) {
-  const nombreEsperado = String(ubicacion || "").trim();
-  const coincidencias = fichajes.filter((f) => String(f?.ubicacion || "").trim() === nombreEsperado);
+  const coincidencias = filtrarFichajesDeJornada(fichajes, ubicacion);
 
-  const totalMinutos = coincidencias.reduce((acc, f) => {
-    const minutos = Number(f?.minutos_teoricos_de_jornada);
-    return acc + (Number.isFinite(minutos) ? minutos : 0);
-  }, 0);
+  const totalMinutos = coincidencias.reduce((acc, f) => acc + Number(f.minutos_teoricos_de_jornada), 0);
 
   const totalMinutosReal = coincidencias.reduce((acc, f) => {
     const minutos = Number(f?.minutos_desde_entrada_a_salida);
@@ -134,21 +149,21 @@ export function sumarHorasTeoricasPorUbicacion(fichajes, ubicacion) {
   return { totalMinutos, totalMinutosReal, cantidadFichajes: coincidencias.length };
 }
 
-// Agrupa por legajo los fichajes cuya ubicacion matchea el eventual, para poder
-// después consultar la categoría de cada persona y desglosar las horas.
+// Agrupa por legajo los fichajes con jornada asignada en el eventual, para
+// poder después consultar la categoría de cada persona y desglosar las horas.
+// Quien solo tuvo ROT/ENF/sin turno no genera grupo: no se le consulta la
+// categoría ni suma como persona del eventual.
 // Fichajes sin legajo cargado no se pueden atribuir a nadie: se cuentan aparte
 // (sinLegajo) en vez de descartarse en silencio.
 export function agruparMinutosPorLegajo(fichajes, ubicacion) {
-  const nombreEsperado = String(ubicacion || "").trim();
-  const coincidencias = fichajes.filter((f) => String(f?.ubicacion || "").trim() === nombreEsperado);
+  const coincidencias = filtrarFichajesDeJornada(fichajes, ubicacion);
 
   const porLegajo = new Map();
   let sinLegajo = 0;
 
   for (const fichaje of coincidencias) {
     const legajo = String(fichaje?.legajo || "").trim();
-    const minutos = Number(fichaje?.minutos_teoricos_de_jornada);
-    const minutosValidos = Number.isFinite(minutos) ? minutos : 0;
+    const minutosValidos = Number(fichaje.minutos_teoricos_de_jornada);
 
     if (!legajo) {
       sinLegajo += 1;

@@ -848,7 +848,7 @@ Al completar datos o finalizar se pueden cargar:
 - Servicios extras subcontratados, con precio de la subcontratación opcional en pesos ($ARS).
 - Observaciones posteriores.
 
-Con fecha de inicio y fecha de fin cargadas, el botón **Importar horas de Browix** trae del sistema de marcación el total de horas fichadas cuya ubicación coincide exactamente con el nombre del eventual, dentro de ese rango de fechas. El resultado (total de horas, cantidad de fichajes encontrados y fecha de importación) queda guardado en el eventual y se puede reimportar en cualquier momento, pisando el valor anterior.
+Con fecha de inicio y fecha de fin cargadas, el botón **Importar horas de Browix** trae del sistema de marcación el total de horas fichadas cuya ubicación coincide exactamente con el nombre del eventual, dentro de ese rango de fechas. Solo se cuentan los días con jornada asignada: quien figura en la planificación con franco rotativo (ROT), licencia (ENF) o sin turno cargado no suma horas ni cuenta como persona del eventual. El resultado (total de horas, cantidad de fichajes encontrados y fecha de importación) queda guardado en el eventual y se puede reimportar en cualquier momento, pisando el valor anterior.
 
 Estados de eventual:
 
