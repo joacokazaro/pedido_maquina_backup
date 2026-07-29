@@ -188,10 +188,10 @@ export default function ConfirmarDevolucion() {
       </div>
 
       <div className="bg-white rounded-xl shadow p-4 mb-4">
-        <label className="block text-sm font-semibold mb-1">
+        <label htmlFor="confirmar-devolucion-observacion-opcional" className="block text-sm font-semibold mb-1">
           Observación (opcional)
         </label>
-        <textarea
+        <textarea id="confirmar-devolucion-observacion-opcional"
           className="w-full p-3 border rounded-xl text-sm"
           rows="3"
           value={observacion}

@@ -30,6 +30,24 @@ const TIPOS_TRABAJO_VALIDOS = [
 
 const UNIDADES_MEDIDA_VALIDAS = ["UNIDAD", "M2", "M3", "METROS_LINEALES", "HORAS", "KG"];
 
+// Insumos que se cargan a mano en el eventual, aparte de los que se importan
+// desde la plataforma de insumos. No tienen precio: solo cantidad consumida.
+const TIPOS_INSUMO_EXTRA_VALIDOS = [
+  "NAFTA_PREPARADA",
+  "NAFTA_PURA",
+  "BOLSAS",
+  "TANZA",
+  "ACEITE_CADENA_MOTOSIERRA",
+  "GASOIL_PREMIUM",
+  "GASOIL_COMUN",
+  "HERBICIDA",
+  "OTRO",
+];
+
+// Unidades propias de los insumos (litros/cc para combustibles y aceites), distintas
+// de las de trabajos y servicios extras.
+const UNIDADES_INSUMO_VALIDAS = ["LITROS", "UNIDADES", "METROS", "CC"];
+
 function normalizeText(value) {
   return String(value || "").trim();
 }
@@ -125,7 +143,46 @@ function validateServiciosExtras(items) {
   return errors;
 }
 
+function validateInsumosExtras(items) {
+  if (!Array.isArray(items)) return [];
+
+  const errors = [];
+  items.forEach((item, idx) => {
+    const label = `Insumo extra ${idx + 1}`;
+    if (!item || typeof item !== "object") {
+      errors.push(`${label}: dato inválido`);
+      return;
+    }
+    if (!TIPOS_INSUMO_EXTRA_VALIDOS.includes(item.tipo)) {
+      errors.push(`${label}: tipo de insumo inválido`);
+    }
+    if (item.tipo === "OTRO" && !normalizeText(item.descripcionOtro)) {
+      errors.push(`${label}: la descripción es obligatoria para tipo "Otro"`);
+    }
+    const cantidad = Number(item.cantidad);
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      errors.push(`${label}: la cantidad debe ser un número mayor a 0`);
+    }
+    if (!UNIDADES_INSUMO_VALIDAS.includes(item.unidadMedida)) {
+      errors.push(`${label}: unidad de medida inválida`);
+    }
+  });
+
+  return errors;
+}
+
 function normalizeTrabajoItem(item) {
+  return {
+    tipo: normalizeText(item.tipo),
+    label: normalizeText(item.label),
+    descripcionOtro: item.tipo === "OTRO" ? normalizeText(item.descripcionOtro) : null,
+    cantidad: Number(item.cantidad),
+    unidadMedida: normalizeText(item.unidadMedida),
+    unidadLabel: normalizeText(item.unidadLabel),
+  };
+}
+
+function normalizeInsumoExtraItem(item) {
   return {
     tipo: normalizeText(item.tipo),
     label: normalizeText(item.label),
@@ -484,6 +541,7 @@ export async function getEventualDetail(eventualId) {
     serviciosExtrasSubcontratados: parseJson(eventual.serviciosExtrasSubcontratados) || [],
     horasBrowix: parseJson(eventual.horasBrowix),
     insumosImportados: parseJson(eventual.insumosImportados),
+    insumosExtras: parseJson(eventual.insumosExtras) || [],
     horasSupervisor: eventual.horasSupervisor,
     historial: eventual.historial.map(mapHistorialEntry),
   };
@@ -496,6 +554,9 @@ function buildEventualPayload(payload) {
   const serviciosRaw = Array.isArray(payload.serviciosExtrasSubcontratados)
     ? payload.serviciosExtrasSubcontratados
     : parseJson(payload.serviciosExtrasSubcontratados) || [];
+  const insumosExtrasRaw = Array.isArray(payload.insumosExtras)
+    ? payload.insumosExtras
+    : parseJson(payload.insumosExtras) || [];
 
   return {
     nombre: normalizeText(payload.nombre),
@@ -509,6 +570,7 @@ function buildEventualPayload(payload) {
     vehiculoIds: uniqueStrings(payload.vehiculoIds),
     trabajosRealizados: Array.isArray(trabajosRaw) ? trabajosRaw : [],
     serviciosExtrasSubcontratados: Array.isArray(serviciosRaw) ? serviciosRaw : [],
+    insumosExtras: Array.isArray(insumosExtrasRaw) ? insumosExtrasRaw : [],
   };
 }
 
@@ -551,11 +613,15 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
 
   const trabajosErrors = validateTrabajosRealizados(data.trabajosRealizados);
   const serviciosErrors = validateServiciosExtras(data.serviciosExtrasSubcontratados);
+  const insumosExtrasErrors = validateInsumosExtras(data.insumosExtras);
   if (trabajosErrors.length > 0) {
     throw buildError(`Trabajos realizados inválidos: ${trabajosErrors.join("; ")}`, 400);
   }
   if (serviciosErrors.length > 0) {
     throw buildError(`Servicios extras inválidos: ${serviciosErrors.join("; ")}`, 400);
+  }
+  if (insumosExtrasErrors.length > 0) {
+    throw buildError(`Insumos extra inválidos: ${insumosExtrasErrors.join("; ")}`, 400);
   }
 
   if (data.estado === "finalizado" && data.trabajosRealizados.length === 0) {
@@ -613,8 +679,10 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
 
   const trabajosNormalizados = data.trabajosRealizados.map(normalizeTrabajoItem);
   const serviciosNormalizados = data.serviciosExtrasSubcontratados.map(normalizeServicioExtraItem);
+  const insumosExtrasNormalizados = data.insumosExtras.map(normalizeInsumoExtraItem);
   const trabajosJson = trabajosNormalizados.length > 0 ? JSON.stringify(trabajosNormalizados) : null;
   const serviciosJson = serviciosNormalizados.length > 0 ? JSON.stringify(serviciosNormalizados) : null;
+  const insumosExtrasJson = insumosExtrasNormalizados.length > 0 ? JSON.stringify(insumosExtrasNormalizados) : null;
 
   const isFinalizedEdit = Boolean(existing && (existing.historial?.length || existing.estado === "finalizado"));
   const observacionesPreviasPersistidas = existing
@@ -644,6 +712,7 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
             vehiculosUtilizados: vehiculosUtilizadosJson,
             trabajosRealizados: trabajosJson,
             serviciosExtrasSubcontratados: serviciosJson,
+            insumosExtras: insumosExtrasJson,
           },
         })
       : await tx.eventual.create({
@@ -658,6 +727,7 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
             vehiculosUtilizados: vehiculosUtilizadosJson,
             trabajosRealizados: trabajosJson,
             serviciosExtrasSubcontratados: serviciosJson,
+            insumosExtras: insumosExtrasJson,
             activo: true,
           },
         });
@@ -733,6 +803,9 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
         }
         if (serviciosNormalizados.length > 0) {
           detalleObservacion.serviciosExtrasSubcontratados = serviciosNormalizados;
+        }
+        if (insumosExtrasNormalizados.length > 0) {
+          detalleObservacion.insumosExtras = insumosExtrasNormalizados;
         }
       }
 

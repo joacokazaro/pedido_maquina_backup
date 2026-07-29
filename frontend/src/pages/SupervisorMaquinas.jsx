@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import FondoKazaro from "../components/FondoKazaro";
 import SearchableSelect from "../components/SearchableSelect";
+import { EstadoMaquinaBadge } from "../utils/estadoMaquina";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -214,7 +215,7 @@ export default function SupervisorMaquinas() {
                   )}
                 </div>
 
-                <span className={estadoBadgeClass(maquina.estado)}>{maquina.estado}</span>
+                <EstadoMaquinaBadge estado={maquina.estado} className="h-fit" />
               </div>
             </Link>
           );
@@ -230,22 +231,3 @@ export default function SupervisorMaquinas() {
   );
 }
 
-function estadoBadgeClass(estado) {
-  const base = "px-2 py-1 rounded-full text-[10px] font-semibold uppercase h-fit";
-  switch (estado) {
-    case "disponible":
-      return `${base} bg-green-100 text-green-700`;
-    case "asignada":
-      return `${base} bg-blue-100 text-blue-700`;
-    case "no_devuelta":
-      return `${base} bg-red-100 text-red-700`;
-    case "fuera_servicio":
-      return `${base} bg-orange-100 text-orange-700`;
-    case "taller":
-      return `${base} bg-yellow-100 text-yellow-700`;
-    case "baja":
-      return `${base} bg-gray-200 text-gray-500`;
-    default:
-      return `${base} bg-gray-100 text-gray-600`;
-  }
-}

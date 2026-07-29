@@ -168,10 +168,10 @@ export default function DepositoHome() {
 
         <div className="grid gap-3 md:grid-cols-3">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="deposito-home-estado" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <SearchableSelect
+            <SearchableSelect id="deposito-home-estado"
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
@@ -185,10 +185,10 @@ export default function DepositoHome() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="deposito-home-faltantes" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Faltantes
             </label>
-            <SearchableSelect
+            <SearchableSelect id="deposito-home-faltantes"
               value={filtroFaltantes}
               onChange={(e) => setFiltroFaltantes(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
@@ -200,10 +200,10 @@ export default function DepositoHome() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="deposito-home-supervisor" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Supervisor
             </label>
-            <SearchableSelect
+            <SearchableSelect id="deposito-home-supervisor"
               value={filtroSupervisor}
               onChange={(e) => setFiltroSupervisor(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"

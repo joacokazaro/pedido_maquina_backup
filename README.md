@@ -54,7 +54,7 @@ Hereda **todo** lo del encargado EV y suma una única diferencia: es el único r
 
 ### 📋 Coordinador
 - Acceso de solo lectura a inventario, taller, eventuales, pedidos históricos y amortizaciones
-- Gestión de eventuales: completar datos, finalizar, importar horas de **Browix** e **insumos**
+- Gestión de eventuales: completar datos, finalizar, importar horas de **Browix** e **insumos**, y cargar **insumos extra** a mano
 - Puede crear pedidos de máquinas **a su propio nombre**, como un supervisor más (requiere tener servicios asignados en "Supervisores x Servicios"); accede al ciclo operativo de esos pedidos (Mis Pedidos, devoluciones)
 - Puede ser **supervisor asignado de un eventual** y crear pedidos para los eventuales que tenga asignados, igual que los roles de supervisión
 - No es `supervisor_limpieza`: no carga máquinas ni vehículos utilizados desde la pantalla del supervisor (sí desde el backoffice, en `/admin/eventuales/:id/completar`)
@@ -152,6 +152,7 @@ Módulo dedicado para el rol Taller (visible en lectura para Admin, Coordinador,
 - Historial de acciones (`HistorialEventual`) y PDF al finalizar
 - **Importación de horas desde Browix**: suma `minutos_teoricos_de_jornada` de los fichajes cuya `ubicacion` matchea exacto el nombre del eventual, entre `fechaInicio` y `fechaFin` (ambas obligatorias). El resultado pisa `Eventual.horasBrowix` en cada reimportación
 - **Importación de insumos** desde `insumos.kazaro.com.ar`, matcheando por nombre de servicio, sin filtro de fecha
+- **Insumos extra** (`Eventual.insumosExtras`): carga manual de consumos que no salen de la plataforma de insumos (nafta preparada/pura, bolsas, tanza, aceite de cadena, gasoil premium/común, herbicida y "Otro" con descripción libre) en litros, unidades, metros o centímetros cúbicos. Sin precio; se guardan junto al resto del eventual desde `/admin/eventuales/:id/completar` (admin y coordinador) y se pueden cargar en cualquier estado
 - Carga manual de horas de supervisor
 - **Pedidos complementarios**: el supervisor asignado al eventual (cualquier rol de `ROLES_PEDIDO_TITULAR`) puede dispararlos desde `/supervisor/pedido/nuevo` o desde el detalle del eventual; admin y coordinador pueden dispararlos como backoffice a nombre del supervisor asignado. El pedido usa (o crea) un `Servicio` homónimo al eventual y se lo autoasigna al supervisor
 - **Desvincular un pedido complementario** (`DELETE /api/admin/eventuales/:id/pedidos/:pedidoId`, desde `/admin/eventuales/:id/completar`): saca el pedido del eventual sin borrarlo —sigue su circuito normal—, de modo que sus máquinas dejan de sumarse a las utilizadas y deja de fijar al supervisor titular. Es la forma de deshacer un disparo equivocado sin borrar el pedido, que rompería `getNextPedidoCode()`. Los pedidos `CANCELADO` tampoco fijan al supervisor (`contarPedidosQueFijanSupervisor`)

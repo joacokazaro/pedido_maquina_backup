@@ -47,6 +47,27 @@ const UNIDADES = [
   { value: "KG", label: "Kilogramos" },
 ];
 
+// Insumos que se cargan a mano en el eventual, aparte de los que se importan desde
+// la plataforma de insumos. Sin precio: solo cantidad consumida.
+const TIPOS_INSUMO_EXTRA = [
+  { value: "NAFTA_PREPARADA", label: "Nafta preparada" },
+  { value: "NAFTA_PURA", label: "Nafta pura" },
+  { value: "BOLSAS", label: "Bolsas" },
+  { value: "TANZA", label: "Tanza" },
+  { value: "ACEITE_CADENA_MOTOSIERRA", label: "Aceite para cadena de motosierra" },
+  { value: "GASOIL_PREMIUM", label: "Gasoil premium" },
+  { value: "GASOIL_COMUN", label: "Gasoil común" },
+  { value: "HERBICIDA", label: "Herbicida" },
+  { value: "OTRO", label: "Otro" },
+];
+
+const UNIDADES_INSUMO = [
+  { value: "LITROS", label: "Litros" },
+  { value: "UNIDADES", label: "Unidades" },
+  { value: "METROS", label: "Metros" },
+  { value: "CC", label: "Centímetros cúbicos" },
+];
+
 const ESTADO_STYLES = {
   activo: {
     select: "border-emerald-300 bg-emerald-50 text-emerald-800",
@@ -67,6 +88,10 @@ function emptyVehiculoRow() {
 }
 
 function emptyTrabajo() {
+  return { tipo: "", label: "", descripcionOtro: "", cantidad: "", unidadMedida: "", unidadLabel: "" };
+}
+
+function emptyInsumoExtra() {
   return { tipo: "", label: "", descripcionOtro: "", cantidad: "", unidadMedida: "", unidadLabel: "" };
 }
 
@@ -151,6 +176,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const [insumosImportados, setInsumosImportados] = useState(null);
   const [importandoInsumos, setImportandoInsumos] = useState(false);
   const [insumosError, setInsumosError] = useState("");
+  const [insumosExtras, setInsumosExtras] = useState([]);
 
   const [horasSupervisorInput, setHorasSupervisorInput] = useState("");
   const [guardandoHorasSupervisor, setGuardandoHorasSupervisor] = useState(false);
@@ -242,6 +268,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           setServiciosExtrasSubcontratados(Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : []);
           setHorasBrowix(eventual.horasBrowix || null);
           setInsumosImportados(eventual.insumosImportados || null);
+          setInsumosExtras(Array.isArray(eventual.insumosExtras) ? eventual.insumosExtras : []);
           setHorasSupervisorGuardado(
             eventual.horasSupervisor !== null && eventual.horasSupervisor !== undefined
               ? eventual.horasSupervisor
@@ -714,6 +741,18 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     setTrabajosRealizados((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function updateInsumoExtra(index, key, value) {
+    setInsumosExtras((prev) => prev.map((row, i) => (i === index ? { ...row, [key]: value } : row)));
+  }
+
+  function addInsumoExtra() {
+    setInsumosExtras((prev) => [...prev, emptyInsumoExtra()]);
+  }
+
+  function removeInsumoExtra(index) {
+    setInsumosExtras((prev) => prev.filter((_, i) => i !== index));
+  }
+
   function updateServicio(index, key, value) {
     setServiciosExtrasSubcontratados((prev) => prev.map((row, i) => (i === index ? { ...row, [key]: value } : row)));
   }
@@ -754,6 +793,22 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       };
     });
 
+    const insumos = insumosExtras.map((row) => {
+      const descripcionOtro = String(row.descripcionOtro || "").trim();
+      const label =
+        row.tipo === "OTRO" && descripcionOtro
+          ? descripcionOtro
+          : TIPOS_INSUMO_EXTRA.find((i) => i.value === row.tipo)?.label || row.label || row.tipo;
+
+      return {
+        ...row,
+        label,
+        unidadLabel:
+          UNIDADES_INSUMO.find((u) => u.value === row.unidadMedida)?.label || row.unidadLabel || row.unidadMedida,
+        cantidad: Number(row.cantidad),
+      };
+    });
+
     const servicios = serviciosExtrasSubcontratados.map((row) => ({
       ...row,
       unidadLabel: UNIDADES.find((u) => u.value === row.unidadMedida)?.label || row.unidadLabel || row.unidadMedida,
@@ -774,6 +829,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       vehiculoIds,
       trabajosRealizados: mostrarCamposPosteriores ? trabajos : undefined,
       serviciosExtrasSubcontratados: mostrarCamposPosteriores ? servicios : undefined,
+      insumosExtras: mostrarCamposPosteriores ? insumos : undefined,
     };
   }
 
@@ -869,8 +925,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
-            <input
+            <label htmlFor="admin-eventual-form-nombre" className="mb-1 block text-sm font-medium text-gray-700">Nombre</label>
+            <input id="admin-eventual-form-nombre"
               className="w-full rounded-xl border p-3 text-sm"
               value={form.nombre}
               onChange={(event) => updateField("nombre", event.target.value)}
@@ -879,10 +935,10 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label htmlFor="admin-eventual-form-supervisor-asignado" className="mb-1 block text-sm font-medium text-gray-700">
               Supervisor asignado{mostrarComponentes ? "" : " (opcional)"}
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-eventual-form-supervisor-asignado"
               className="w-full rounded-xl border p-3 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
               value={form.supervisorId}
               onChange={(event) => handleSupervisorChange(event.target.value)}
@@ -911,9 +967,9 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           </div>
 
           <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 md:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-gray-700">Estado</label>
+            <label htmlFor="admin-eventual-form-estado" className="mb-1 block text-sm font-medium text-gray-700">Estado</label>
             <div className="space-y-2">
-              <SearchableSelect
+              <SearchableSelect id="admin-eventual-form-estado"
                 className={`w-full rounded-xl border p-3 text-sm font-semibold uppercase ${estadoStyles.select}`}
                 value={form.estado}
                 onChange={(event) => updateField("estado", event.target.value)}
@@ -927,15 +983,15 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Fecha inicio</label>
-            <input type="date" className="w-full rounded-xl border p-3 text-sm" value={form.fechaInicio} onChange={(event) => updateField("fechaInicio", event.target.value)} />
+            <label htmlFor="admin-eventual-form-fecha-inicio" className="mb-1 block text-sm font-medium text-gray-700">Fecha inicio</label>
+            <input id="admin-eventual-form-fecha-inicio" type="date" className="w-full rounded-xl border p-3 text-sm" value={form.fechaInicio} onChange={(event) => updateField("fechaInicio", event.target.value)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label htmlFor="admin-eventual-form-fecha-fin" className="mb-1 block text-sm font-medium text-gray-700">
               Fecha fin{form.estado === "finalizado" ? " (obligatoria para finalizar)" : ""}
             </label>
-            <input
+            <input id="admin-eventual-form-fecha-fin"
               type="date"
               className={`w-full rounded-xl border p-3 text-sm ${
                 form.estado === "finalizado" && !form.fechaFin ? "border-amber-400 bg-amber-50" : ""
@@ -952,8 +1008,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Observaciones previas</label>
-          <textarea
+          <label htmlFor="admin-eventual-form-observaciones-previas" className="mb-1 block text-sm font-medium text-gray-700">Observaciones previas</label>
+          <textarea id="admin-eventual-form-observaciones-previas"
             rows={4}
             className="w-full rounded-xl border p-3 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
             value={form.observaciones}
@@ -969,8 +1025,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
 
         {isEdit ? (
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Observaciones posteriores</label>
-            <textarea
+            <label htmlFor="admin-eventual-form-observaciones-posteriores" className="mb-1 block text-sm font-medium text-gray-700">Observaciones posteriores</label>
+            <textarea id="admin-eventual-form-observaciones-posteriores"
               rows={3}
               className="w-full rounded-xl border p-3 text-sm"
               value={form.observacionesPosteriores}
@@ -983,7 +1039,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 <div className="space-y-2">
                   {observacionesPosterioresRegistradas.map((item) => (
                     <div key={item.id} className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-                      <p className="text-xs text-slate-500">{item.usuario} · {new Date(item.fecha).toLocaleString("es-AR")}</p>
+                      <p className="text-xs text-slate-500">{item.usuario} · {formatDateTime(item.fecha)}</p>
                       <p className="mt-1 whitespace-pre-line text-slate-700">{item.observacion}</p>
                     </div>
                   ))}
@@ -1528,14 +1584,15 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-emerald-600 text-sm font-bold text-white">5</span>
           <div>
             <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-emerald-900">Insumos</h2>
-            <p className="text-xs text-emerald-700/70">Insumos pedidos para este eventual en la plataforma de insumos.</p>
+            <p className="text-xs text-emerald-700/70">Insumos pedidos en la plataforma de insumos y consumos cargados a mano.</p>
           </div>
         </div>
         <div className="space-y-4 p-4 sm:p-5">
           {form.estado !== "finalizado" ? (
             <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
-              La importación de insumos se habilita recién cuando el eventual se marca como <b>finalizado</b> (y se
-              guarda ese cambio de estado).
+              La importación desde la plataforma de insumos se habilita recién cuando el eventual se marca como{" "}
+              <b>finalizado</b>. Los <b>insumos extra</b> se pueden cargar en
+              cualquier momento.
             </div>
           ) : null}
 
@@ -1627,6 +1684,58 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           ) : (
             <p className="text-sm text-gray-500">Todavía no se importaron insumos para este eventual.</p>
           )}
+
+          <div className="rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50/60 to-white p-4 shadow-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Insumos extra</h2>
+                <p className="text-xs text-gray-500">
+                  Insumos consumidos que no salen de la plataforma de insumos (combustibles, bolsas, tanza, etc.).
+                  Se cargan a mano y se guardan con el botón <b>Guardar</b> del formulario.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addInsumoExtra}
+                className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-white"
+              >
+                Agregar insumo
+              </button>
+            </div>
+
+            {insumosExtras.length === 0 ? <p className="text-sm text-gray-500">Sin insumos extra cargados.</p> : null}
+
+            {insumosExtras.map((row, index) => (
+              <div key={`ins-${index}`} className="rounded-xl border bg-white p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Insumo {index + 1}</span>
+                  <button type="button" onClick={() => removeInsumoExtra(index)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700">
+                    Quitar insumo
+                  </button>
+                </div>
+
+                <div className="grid gap-2 md:grid-cols-3">
+                  <SearchableSelect className="rounded-xl border p-2.5 text-sm" value={row.tipo} onChange={(event) => updateInsumoExtra(index, "tipo", event.target.value)}>
+                    <option value="">Insumo</option>
+                    {TIPOS_INSUMO_EXTRA.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </SearchableSelect>
+                  <input type="number" min="0" step="0.01" className="rounded-xl border p-2.5 text-sm" placeholder="Cantidad" value={row.cantidad} onChange={(event) => updateInsumoExtra(index, "cantidad", event.target.value)} />
+                  <SearchableSelect className="rounded-xl border p-2.5 text-sm" value={row.unidadMedida} onChange={(event) => updateInsumoExtra(index, "unidadMedida", event.target.value)}>
+                    <option value="">Seleccionar unidad de medida</option>
+                    {UNIDADES_INSUMO.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </SearchableSelect>
+                </div>
+
+                {row.tipo === "OTRO" ? (
+                  <input className="w-full rounded-xl border p-2.5 text-sm" placeholder="Descripcion" value={row.descripcionOtro || ""} onChange={(event) => updateInsumoExtra(index, "descripcionOtro", event.target.value)} />
+                ) : null}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
       ) : null}
@@ -1721,8 +1830,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
 
               {pedidoDestino === "SUPERVISOR" ? (
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Supervisor destino *</label>
-                  <SearchableSelect
+                  <label htmlFor="admin-eventual-form-supervisor-destino" className="mb-1 block text-sm font-medium text-gray-700">Supervisor destino *</label>
+                  <SearchableSelect id="admin-eventual-form-supervisor-destino"
                     className="w-full rounded-xl border p-2.5 text-sm"
                     value={pedidoSupervisorDestino}
                     onChange={(event) => setPedidoSupervisorDestino(event.target.value)}
@@ -1825,8 +1934,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Observaciones (fechas, motivos, etc.)</label>
-                <textarea
+                <label htmlFor="admin-eventual-form-observaciones-fechas-motivos-etc" className="mb-1 block text-sm font-medium text-gray-700">Observaciones (fechas, motivos, etc.)</label>
+                <textarea id="admin-eventual-form-observaciones-fechas-motivos-etc"
                   rows={3}
                   className="w-full rounded-xl border p-2.5 text-sm"
                   value={pedidoObservacion}

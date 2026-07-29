@@ -4,6 +4,7 @@ import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
 import SearchableSelect from "../components/SearchableSelect";
+import { formatDateTime } from "../utils/date";
 
 const ESTADOS = ["", "disponible", "asignada", "no_devuelta", "fuera_servicio", "taller", "baja", "activo"];
 
@@ -240,7 +241,7 @@ export default function TallerPanel() {
             {historialMaquinas.map((entry) => (
               <div key={entry.id} className="rounded-lg bg-gray-50 p-2">
                 <p>
-                  <b>{entry.maquina?.id || "-"}</b> · {entry.accion} · {new Date(entry.createdAt).toLocaleString("es-AR")}
+                  <b>{entry.maquina?.id || "-"}</b> · {entry.accion} · {formatDateTime(entry.createdAt)}
                 </p>
                 <p>Usuario: {entry.usuario?.nombre || entry.usuario?.username || "-"}</p>
                 <p>Observacion: {entry.observacion || "-"}</p>
@@ -318,7 +319,7 @@ export default function TallerPanel() {
             {historialVehiculos.map((entry) => (
               <div key={entry.id} className="rounded-lg bg-gray-50 p-2">
                 <p>
-                  <b>{entry.vehiculo?.id || "-"}</b> · {entry.accion} · {new Date(entry.createdAt).toLocaleString("es-AR")}
+                  <b>{entry.vehiculo?.id || "-"}</b> · {entry.accion} · {formatDateTime(entry.createdAt)}
                 </p>
                 <p>Usuario: {entry.usuario?.nombre || entry.usuario?.username || "-"}</p>
                 <p>Observacion: {entry.observacion || "-"}</p>

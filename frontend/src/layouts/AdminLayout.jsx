@@ -101,8 +101,8 @@ const NAV_GROUPS_TALLER = [
 	{
 		label: "Inventario",
 		items: [
-			{ label: "Maquinas", to: "/admin/maquinas" },
-			{ label: "Vehiculos", to: "/admin/vehiculos" },
+			{ label: "Máquinas", to: "/admin/maquinas" },
+			{ label: "Vehículos", to: "/admin/vehiculos" },
 		],
 	},
 	{

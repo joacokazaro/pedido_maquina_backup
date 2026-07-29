@@ -233,10 +233,10 @@ export default function AdminVehiculosAsignaciones() {
 
         <div className="grid gap-2 md:grid-cols-3">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-vehiculos-asignaciones-empresa" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Empresa
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-vehiculos-asignaciones-empresa"
               className="w-full rounded-xl border p-2 text-xs"
               value={empresaFiltro}
               onChange={(e) => setEmpresaFiltro(e.target.value)}
@@ -249,10 +249,10 @@ export default function AdminVehiculosAsignaciones() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-vehiculos-asignaciones-conductor-actual" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Conductor actual
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-vehiculos-asignaciones-conductor-actual"
               className="w-full rounded-xl border p-2 text-xs"
               value={conductorFiltro}
               onChange={(e) => setConductorFiltro(e.target.value)}
@@ -267,10 +267,10 @@ export default function AdminVehiculosAsignaciones() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-vehiculos-asignaciones-estado-de-asignacion" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado de asignación
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-vehiculos-asignaciones-estado-de-asignacion"
               className="w-full rounded-xl border p-2 text-xs"
               value={estadoAsignacionFiltro}
               onChange={(e) => setEstadoAsignacionFiltro(e.target.value)}
@@ -299,10 +299,10 @@ export default function AdminVehiculosAsignaciones() {
 
         <div className="grid gap-2 md:grid-cols-3">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-blue-800">
+            <label htmlFor="admin-vehiculos-asignaciones-asignar-a" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-blue-800">
               Asignar a
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-vehiculos-asignaciones-asignar-a"
               className="w-full rounded-xl border p-2 text-xs"
               value={targetUsuarioId}
               onChange={(e) => {
@@ -321,10 +321,10 @@ export default function AdminVehiculosAsignaciones() {
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-blue-800">
+            <label htmlFor="admin-vehiculos-asignaciones-observacion-opcional" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-blue-800">
               Observación (opcional)
             </label>
-            <input
+            <input id="admin-vehiculos-asignaciones-observacion-opcional"
               className="w-full rounded-xl border p-2 text-xs"
               value={observacion}
               onChange={(e) => setObservacion(e.target.value)}

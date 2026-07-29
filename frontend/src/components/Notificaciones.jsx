@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
+import { formatDateTime } from "../utils/date";
 
 export default function Notificaciones({ embedded = false }) {
   const { user } = useAuth();
@@ -126,17 +127,6 @@ export default function Notificaciones({ embedded = false }) {
     [notificaciones]
   );
 
-  function formatFecha(ts) {
-    const d = new Date(ts);
-    return d.toLocaleString("es-AR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-
   if (!user) return null;
 
   return (
@@ -212,7 +202,7 @@ export default function Notificaciones({ embedded = false }) {
                       {n.mensaje}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {formatFecha(n.createdAt)}
+                      {formatDateTime(n.createdAt)}
                     </div>
                   </button>
 

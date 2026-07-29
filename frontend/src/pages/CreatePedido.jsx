@@ -6,6 +6,7 @@ import { API_BASE } from "../services/apiBase";
 import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/maquinas";
 import FondoKazaro from "../components/FondoKazaro";
 import SearchableSelect from "../components/SearchableSelect";
+import Alerta from "../components/Alerta";
 import { ROLES_PEDIDO_TITULAR } from "../constants/roles";
 
 export default function CreatePedido() {
@@ -59,7 +60,13 @@ export default function CreatePedido() {
 
   const [observacion, setObservacion] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mensaje, setMensaje] = useState("");
+  // { tono, texto } — el tono distingue el error del éxito, que antes
+  // compartían la misma caja azul de info.
+  const [mensaje, setMensaje] = useState(null);
+
+  function avisar(texto, tono = "error") {
+    setMensaje(texto ? { tono, texto } : null);
+  }
 
   // OTROS: tipo libre seleccionado y cantidad
   const [otroTipo, setOtroTipo] = useState("");
@@ -220,21 +227,6 @@ const supervisoresFiltrados = useMemo(() => {
   });
 }, [supervisores, supervisorQuery]);
 
-function seleccionarSupervisorDestino(s) {
-  setSupervisorDestinoId(String(s.id ?? s.username)); 
-  // si tu backend usa id numérico, usá s.id
-  // si usa username, usá s.username
-  setSupervisorQuery(s.nombre ? `${s.nombre} (${s.username})` : s.username);
-  setOpenSupervisores(false);
-}
-
-function limpiarSupervisorDestino() {
-  setSupervisorDestinoId("");
-  setSupervisorQuery("");
-  setOpenSupervisores(false);
-}
-
-
   const serviciosFiltrados = useMemo(() => {
     const q = servicioQuery.trim().toLowerCase();
     if (!q) return servicios;
@@ -283,10 +275,10 @@ function limpiarSupervisorDestino() {
   }
 
   async function handleCrear() {
-    setMensaje("");
+    setMensaje(null);
 
     if (!user?.username) {
-      setMensaje("Sesión inválida. Volvé a iniciar sesión.");
+      avisar("Sesión inválida. Volvé a iniciar sesión.");
       return;
     }
 
@@ -302,7 +294,7 @@ function limpiarSupervisorDestino() {
     }
 
     if (itemsSolicitados.length === 0) {
-      setMensaje("Seleccioná al menos 1 máquina para pedir.");
+      avisar("Seleccioná al menos 1 máquina para pedir.");
       return;
     }
 
@@ -310,16 +302,16 @@ function limpiarSupervisorDestino() {
 
     if (esModoEventual) {
       if (!eventualId) {
-        setMensaje("Seleccioná el eventual para el que pedís las máquinas.");
+        avisar("Seleccioná el eventual para el que pedís las máquinas.");
         return;
       }
     } else if (!servicioId) {
-      setMensaje("Seleccioná el servicio donde se utilizarán las máquinas.");
+      avisar("Seleccioná el servicio donde se utilizarán las máquinas.");
       return;
     }
 
     if (destino === "SUPERVISOR" && !supervisorDestinoUsername) {
-  setMensaje("Seleccioná el supervisor destino.");
+  avisar("Seleccioná el supervisor destino.");
   return;
 }
 
@@ -351,7 +343,7 @@ function limpiarSupervisorDestino() {
         throw new Error(data?.error || "Error creando el pedido");
       }
 
-      setMensaje(`Pedido creado: ${data.pedido.id}`);
+      avisar(`Pedido creado: ${data.pedido.id}`, "exito");
 
       // reset
       setCantidades(
@@ -372,7 +364,7 @@ function limpiarSupervisorDestino() {
       setTimeout(() => navigate("/supervisor"), 1200);
     } catch (err) {
       console.error(err);
-      setMensaje(err.message || "Ocurrió un error al crear el pedido.");
+      avisar(err.message || "Ocurrió un error al crear el pedido.");
     } finally {
       setLoading(false);
     }
@@ -551,8 +543,8 @@ function limpiarSupervisorDestino() {
             <button
               type="button"
               onClick={() => {
-                if (!otroTipo) return setMensaje("Seleccioná un tipo para 'Otro'.");
-                if (!otroCantidad || otroCantidad < 1) return setMensaje("Ingresá una cantidad válida.");
+                if (!otroTipo) return avisar("Seleccioná un tipo para 'Otro'.");
+                if (!otroCantidad || otroCantidad < 1) return avisar("Ingresá una cantidad válida.");
 
                 setOtros((prev) => {
                   const exists = prev.find((x) => x.tipo === otroTipo);
@@ -565,7 +557,7 @@ function limpiarSupervisorDestino() {
                 // reset
                 setOtroTipo("");
                 setOtroCantidad(1);
-                setMensaje("");
+                setMensaje(null);
               }}
               className="px-3 py-2 rounded-lg bg-blue-600 text-white whitespace-nowrap flex-shrink-0"
             >
@@ -616,12 +608,12 @@ function limpiarSupervisorDestino() {
       {/* SUPERVISOR DESTINO (solo si aplica) */}
 {destino === "SUPERVISOR" && (
   <div className="mb-6" ref={comboSupRef}>
-    <label className="block text-sm font-medium mb-1">
+    <label htmlFor="create-pedido-supervisor-destino" className="block text-sm font-medium mb-1">
       Supervisor destino *
     </label>
 
     <div className="relative">
-      <input
+      <input id="create-pedido-supervisor-destino"
         value={supervisorQuery}
         onChange={(e) => {
           setSupervisorQuery(e.target.value);
@@ -714,12 +706,12 @@ function limpiarSupervisorDestino() {
       {/* EVENTUAL (BUSCABLE) — solo en modo eventual */}
       {modoEventualActivo && (
         <div className="mt-6" ref={comboEvtRef}>
-          <label className="block text-sm font-medium mb-1">
+          <label htmlFor="create-pedido-eventual-para-el-que" className="block text-sm font-medium mb-1">
             Eventual para el que pedís los recursos *
           </label>
 
           <div className="relative">
-            <input
+            <input id="create-pedido-eventual-para-el-que"
               value={eventualQuery}
               onChange={(e) => {
                 setEventualQuery(e.target.value);
@@ -798,12 +790,12 @@ function limpiarSupervisorDestino() {
       {/* SERVICIO (BUSCABLE) */}
       {!modoEventualActivo && (
       <div className="mt-6" ref={comboRef}>
-        <label className="block text-sm font-medium mb-1">
+        <label htmlFor="create-pedido-servicio-donde-se-utilizaran" className="block text-sm font-medium mb-1">
           Servicio donde se utilizarán los recursos *
         </label>
 
         <div className="relative">
-          <input
+          <input id="create-pedido-servicio-donde-se-utilizaran"
             value={servicioQuery}
             onChange={(e) => {
               setServicioQuery(e.target.value);
@@ -889,11 +881,11 @@ function limpiarSupervisorDestino() {
 
       {/* OBSERVACIÓN */}
       <div className="mt-4">
-        <label className="block text-sm font-medium mb-1">
+        <label htmlFor="create-pedido-observaciones-fechas-motivos-etc" className="block text-sm font-medium mb-1">
           Observaciones (fechas, motivos, etc.)
         </label>
 
-        <textarea
+        <textarea id="create-pedido-observaciones-fechas-motivos-etc"
           value={observacion}
           onChange={(e) => setObservacion(e.target.value)}
           placeholder="Agregar comentarios acerca del pedido"
@@ -905,9 +897,9 @@ function limpiarSupervisorDestino() {
       </div>
 
       {mensaje && (
-        <div className="mt-4 text-sm text-center text-blue-700 bg-blue-100 rounded-lg py-2">
-          {mensaje}
-        </div>
+        <Alerta tono={mensaje.tono} className="mt-4">
+          {mensaje.texto}
+        </Alerta>
       )}
 
       <button

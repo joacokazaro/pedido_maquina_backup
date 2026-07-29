@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import Alerta from "../components/Alerta";
 
 const BEAM_COLORS = {
   aqua: { core: "rgba(40, 225, 227, 0.95)", glow: "rgba(40, 225, 227, 0.55)" },
@@ -201,14 +202,17 @@ export default function Login() {
                 </div>
 
                 {error && (
-                  <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                  <Alerta tono="error" className="mb-5">
                     {error}
-                  </div>
+                  </Alerta>
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-[#16264b]">
+                    <label
+                      htmlFor="login-usuario"
+                      className="mb-2 block text-sm font-bold text-[#16264b]"
+                    >
                       Usuario
                     </label>
                     <div className="flex h-12 items-center rounded-lg border border-[#c9d6e6] bg-white px-4 text-[#32425f] transition focus-within:border-[#1e88bd] focus-within:ring-4 focus-within:ring-[#dff7f6]">
@@ -216,8 +220,13 @@ export default function Login() {
                         <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                       </svg>
                       <input
+                        id="login-usuario"
+                        name="username"
                         type="text"
-                        placeholder="Ingresa tu usuario"
+                        autoComplete="username"
+                        autoFocus
+                        required
+                        placeholder="Ingresá tu usuario"
                         className="h-full min-w-0 flex-1 border-0 bg-transparent text-sm text-[#16264b] outline-none placeholder:text-[#72819a]"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
@@ -226,7 +235,10 @@ export default function Login() {
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-[#16264b]">
+                    <label
+                      htmlFor="login-password"
+                      className="mb-2 block text-sm font-bold text-[#16264b]"
+                    >
                       Contraseña
                     </label>
                     <div className="flex h-12 items-center rounded-lg border border-[#c9d6e6] bg-white px-4 text-[#32425f] transition focus-within:border-[#1e88bd] focus-within:ring-4 focus-within:ring-[#dff7f6]">
@@ -236,8 +248,12 @@ export default function Login() {
                         <path d="M12 14v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                       </svg>
                       <input
+                        id="login-password"
+                        name="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Ingresa tu contraseña"
+                        autoComplete="current-password"
+                        required
+                        placeholder="Ingresá tu contraseña"
                         className="h-full min-w-0 flex-1 border-0 bg-transparent text-sm text-[#16264b] outline-none placeholder:text-[#72819a]"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

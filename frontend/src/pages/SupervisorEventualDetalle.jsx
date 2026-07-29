@@ -939,8 +939,8 @@ export default function SupervisorEventualDetalle() {
 
               {/* Observación */}
               <div>
-                <label className="mb-1 block text-sm font-medium">Observaciones</label>
-                <textarea
+                <label htmlFor="supervisor-eventual-detalle-observaciones" className="mb-1 block text-sm font-medium">Observaciones</label>
+                <textarea id="supervisor-eventual-detalle-observaciones"
                   rows={3}
                   value={pedidoObs}
                   onChange={(e) => setPedidoObs(e.target.value)}

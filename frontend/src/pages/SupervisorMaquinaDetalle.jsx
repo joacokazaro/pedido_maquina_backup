@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import FondoKazaro from "../components/FondoKazaro";
 import SearchableSelect from "../components/SearchableSelect";
+import { formatDateOnly } from "../utils/date";
 
 const ESTADOS = [
   "disponible",
@@ -15,12 +16,7 @@ const ESTADOS = [
   "baja",
 ];
 
-function formatFecha(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("es-AR");
-}
+const formatFecha = formatDateOnly;
 
 function formatMoneda(value, currency) {
   if (value === null || value === undefined || value === "") return "-";
@@ -157,28 +153,28 @@ export default function SupervisorMaquinaDetalle() {
 
         <div className="grid gap-2 md:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Código</label>
-            <input value={maquina.id} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
+            <label htmlFor="supervisor-maquina-detalle-codigo" className="mb-1 block text-xs font-semibold text-gray-600">Código</label>
+            <input id="supervisor-maquina-detalle-codigo" value={maquina.id} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
-            <input value={maquina.tipo} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
+            <label htmlFor="supervisor-maquina-detalle-tipo" className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
+            <input id="supervisor-maquina-detalle-tipo" value={maquina.tipo} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
-            <input value={maquina.modelo} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
+            <label htmlFor="supervisor-maquina-detalle-modelo" className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
+            <input id="supervisor-maquina-detalle-modelo" value={maquina.modelo} disabled className="w-full p-2 rounded-xl border bg-gray-100" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Serie</label>
-            <input value={maquina.serie} disabled className="w-full p-2 rounded-xl border bg-gray-100" placeholder="Sin serie" />
+            <label htmlFor="supervisor-maquina-detalle-serie" className="mb-1 block text-xs font-semibold text-gray-600">Serie</label>
+            <input id="supervisor-maquina-detalle-serie" value={maquina.serie} disabled className="w-full p-2 rounded-xl border bg-gray-100" placeholder="Sin serie" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio original</label>
-            <input
+            <label htmlFor="supervisor-maquina-detalle-servicio-original" className="mb-1 block text-xs font-semibold text-gray-600">Servicio original</label>
+            <input id="supervisor-maquina-detalle-servicio-original"
               value={maquina.servicioOriginal?.nombre || "-"}
               disabled
               className="w-full p-2 rounded-xl border bg-gray-100"
@@ -187,8 +183,8 @@ export default function SupervisorMaquinaDetalle() {
 
           {maquina.pedido && maquina.servicioActual?.id !== maquina.servicioOriginal?.id && (
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio actual</label>
-              <input
+              <label htmlFor="supervisor-maquina-detalle-servicio-actual" className="mb-1 block text-xs font-semibold text-gray-600">Servicio actual</label>
+              <input id="supervisor-maquina-detalle-servicio-actual"
                 value={maquina.servicioActual?.nombre || "-"}
                 disabled
                 className="w-full p-2 rounded-xl border bg-gray-100"

@@ -262,10 +262,10 @@ export default function AdminViewPedido() {
       {editando && (
         <div className="bg-white rounded-xl shadow p-4 mb-4 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-800">
+            <label htmlFor="admin-view-pedido-servicio" className="mb-1 block text-sm font-semibold text-gray-800">
               Servicio
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-view-pedido-servicio"
               value={servicioId}
               onChange={(e) => setServicioId(e.target.value)}
               className="w-full rounded-lg border p-3 text-sm"
@@ -280,10 +280,10 @@ export default function AdminViewPedido() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-semibold text-gray-800">
+            <label htmlFor="admin-view-pedido-observacion" className="mb-1 block text-sm font-semibold text-gray-800">
               Observación
             </label>
-            <textarea
+            <textarea id="admin-view-pedido-observacion"
               rows={3}
               value={observacion}
               onChange={(e) => setObservacion(e.target.value)}

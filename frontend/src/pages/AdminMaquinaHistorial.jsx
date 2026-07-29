@@ -3,24 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import EventualBadge from "../components/EventualBadge";
+import { formatDateOnly, formatDateTime } from "../utils/date";
+import { formatEstadoMaquina } from "../utils/estadoMaquina";
+import { formatEstado as formatEstadoPedido } from "../utils/estadoPedido";
 
-function formatEstado(estado) {
-  return String(estado || "").replaceAll("_", " ");
-}
-
-function formatFecha(fecha) {
-  if (!fecha) return "-";
-
-  return new Date(fecha).toLocaleString("es-AR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-}
-
-function formatSoloFecha(fecha) {
-  if (!fecha) return "-";
-  return new Date(fecha).toLocaleDateString("es-AR");
-}
+const formatFecha = formatDateTime;
+const formatSoloFecha = formatDateOnly;
 
 function formatMoneda(valor, currency) {
   if (valor === null || valor === undefined || valor === "") return "-";
@@ -106,7 +94,7 @@ export default function AdminMaquinaHistorial() {
                 <span className="font-semibold">Servicio actual:</span> {maquina.servicio?.nombre || "-"}
               </p>
               <p>
-                <span className="font-semibold">Estado:</span> {formatEstado(maquina.estado)}
+                <span className="font-semibold">Estado:</span> {formatEstadoMaquina(maquina.estado)}
               </p>
               <p>
                 <span className="font-semibold">Fecha compra:</span> {formatSoloFecha(maquina.fechaCompra)}
@@ -183,7 +171,7 @@ export default function AdminMaquinaHistorial() {
                           {pedido.esEventual ? <EventualBadge /> : null}
                         </p>
                         <p>
-                          <span className="font-medium">Estado:</span> {formatEstado(pedido.estado)}
+                          <span className="font-medium">Estado:</span> {formatEstadoPedido(pedido.estado)}
                         </p>
                         <p>
                           <span className="font-medium">Fecha:</span> {formatFecha(pedido.createdAt)}

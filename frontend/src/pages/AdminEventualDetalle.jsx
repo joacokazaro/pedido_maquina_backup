@@ -91,6 +91,7 @@ export default function AdminEventualDetalle() {
   const serviciosExtras = Array.isArray(eventual.serviciosExtrasSubcontratados) ? eventual.serviciosExtrasSubcontratados : [];
   const horasBrowix = eventual.horasBrowix || null;
   const insumosImportados = eventual.insumosImportados || null;
+  const insumosExtras = Array.isArray(eventual.insumosExtras) ? eventual.insumosExtras : [];
   const horasSupervisor = eventual.horasSupervisor;
   const tieneHorasSupervisor = horasSupervisor !== null && horasSupervisor !== undefined;
   const isFinalizado = String(eventual.estado || "").toLowerCase() === "finalizado";
@@ -454,6 +455,34 @@ export default function AdminEventualDetalle() {
             </table>
           </div>
         ) : null}
+
+        <section className="rounded-xl border border-slate-200 bg-white p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Insumos extra (carga manual)</p>
+          {insumosExtras.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-500">Sin insumos extra cargados.</p>
+          ) : (
+            <div className="mt-2 overflow-x-auto rounded-xl border border-slate-100">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Insumo</th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Cantidad</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Unidad</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y bg-white">
+                  {insumosExtras.map((item, idx) => (
+                    <tr key={`insumo-extra-${idx}`}>
+                      <td className="px-3 py-2 font-medium text-gray-900">{getTrabajoLabel(item)}</td>
+                      <td className="px-3 py-2 text-right text-gray-900">{item.cantidad}</td>
+                      <td className="px-3 py-2 text-gray-600">{item.unidadLabel || item.unidadMedida}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
 
       <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50/60 to-white p-5 shadow space-y-2">

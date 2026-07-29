@@ -8,6 +8,7 @@ import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import { buildActorHeaders } from "../utils/authHeaders";
 import SearchableSelect from "../components/SearchableSelect";
+import { EstadoMaquinaBadge } from "../utils/estadoMaquina";
 
 const ESTADOS = [
   { value: "", label: "Todos" },
@@ -619,10 +620,10 @@ export default function AdminMaquinas() {
 
         <div className="grid gap-2 md:grid-cols-3">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+            <label htmlFor="admin-maquinas-tipo-de-maquina" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
               Tipo de máquina
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-maquinas-tipo-de-maquina"
               className="w-full p-2 rounded-xl border text-xs"
               value={tipoFiltro}
               onChange={e => setTipoFiltro(e.target.value)}
@@ -635,10 +636,10 @@ export default function AdminMaquinas() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+            <label htmlFor="admin-maquinas-estados" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
               Estados
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-maquinas-estados"
               className="w-full p-2 rounded-xl border text-xs"
               value={estadoFiltro}
               onChange={e => setEstadoFiltro(e.target.value)}
@@ -650,10 +651,10 @@ export default function AdminMaquinas() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+            <label htmlFor="admin-maquinas-supervisor" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-600">
               Supervisor
             </label>
-            <SearchableSelect
+            <SearchableSelect id="admin-maquinas-supervisor"
               className="w-full p-2 rounded-xl border text-xs"
               value={supervisorFiltro}
               onChange={(e) => setSupervisorFiltro(e.target.value)}
@@ -694,9 +695,7 @@ export default function AdminMaquinas() {
                 <p className="text-sm font-bold uppercase">{m.tipo}</p>
                 <p className="text-xs text-gray-500">Código: <b>{m.id}</b></p>
               </div>
-              <span className={estadoBadgeClass(m.estado)}>
-                {m.estado}
-              </span>
+              <EstadoMaquinaBadge estado={m.estado} />
             </div>
 
             {m.modelo && (
@@ -889,7 +888,7 @@ export default function AdminMaquinas() {
                                       Pedido activo
                                     </span>
                                   ) : null}
-                                  <span className={estadoBadgeClass(m.estado)}>{m.estado}</span>
+                                  <EstadoMaquinaBadge estado={m.estado} />
                                 </div>
                               </div>
                               <p className="text-xs text-gray-600">Código: <b>{m.id}</b></p>
@@ -920,8 +919,8 @@ export default function AdminMaquinas() {
                       Seleccionadas: <b>{selectedIds.length}</b>
                     </p>
                     <div>
-                      <label className="mb-1 block font-semibold text-slate-700">Servicio destino</label>
-                      <SearchableSelect
+                      <label htmlFor="admin-maquinas-servicio-destino" className="mb-1 block font-semibold text-slate-700">Servicio destino</label>
+                      <SearchableSelect id="admin-maquinas-servicio-destino"
                         className="w-full rounded-xl border p-2"
                         value={bulkServicioDestinoId}
                         onChange={(e) => setBulkServicioDestinoId(e.target.value)}
@@ -1125,15 +1124,3 @@ export default function AdminMaquinas() {
   );
 }
 
-function estadoBadgeClass(estado) {
-  const base = "px-2 py-1 rounded-full text-[10px] font-semibold uppercase";
-  switch (estado) {
-    case "disponible": return `${base} bg-green-100 text-green-700`;
-    case "asignada": return `${base} bg-blue-100 text-blue-700`;
-    case "no_devuelta": return `${base} bg-red-100 text-red-700`;
-    case "fuera_servicio": return `${base} bg-orange-100 text-orange-700`;
-    case "taller": return `${base} bg-yellow-100 text-yellow-700`;
-    case "baja": return `${base} bg-gray-200 text-gray-500`;
-    default: return `${base} bg-gray-100 text-gray-600`;
-  }
-}

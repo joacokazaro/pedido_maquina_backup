@@ -208,8 +208,8 @@ export default function AdminUsuarioForm() {
 
       {/* USERNAME */}
       <div className="mb-3">
-        <label className="mb-1 block text-xs font-semibold text-gray-600">Usuario</label>
-        <input
+        <label htmlFor="admin-usuario-form-usuario" className="mb-1 block text-xs font-semibold text-gray-600">Usuario</label>
+        <input id="admin-usuario-form-usuario"
           disabled={isEdit}
           className={`w-full p-3 border rounded-xl ${
             isEdit ? "bg-gray-100 cursor-not-allowed" : "bg-white"
@@ -223,8 +223,8 @@ export default function AdminUsuarioForm() {
 
       {/* NOMBRE */}
       <div className="mb-3">
-        <label className="mb-1 block text-xs font-semibold text-gray-600">Nombre completo</label>
-        <input
+        <label htmlFor="admin-usuario-form-nombre-completo" className="mb-1 block text-xs font-semibold text-gray-600">Nombre completo</label>
+        <input id="admin-usuario-form-nombre-completo"
           className="w-full p-3 border rounded-xl bg-white"
           value={form.nombre}
           onChange={(e) =>
@@ -235,8 +235,8 @@ export default function AdminUsuarioForm() {
 
       {/* ROLES */}
       <div className="mb-3">
-        <label className="mb-1 block text-xs font-semibold text-gray-600">Rol principal</label>
-        <SearchableSelect
+        <label htmlFor="admin-usuario-form-rol-principal" className="mb-1 block text-xs font-semibold text-gray-600">Rol principal</label>
+        <SearchableSelect id="admin-usuario-form-rol-principal"
           className="w-full rounded-xl border bg-white p-3"
           value={primaryRole}
           onChange={(event) => handlePrimaryRoleChange(event.target.value)}
@@ -246,8 +246,8 @@ export default function AdminUsuarioForm() {
           ))}
         </SearchableSelect>
 
-        <label className="mb-1 mt-3 block text-xs font-semibold text-gray-600">Rol adicional (opcional)</label>
-        <SearchableSelect
+        <label htmlFor="admin-usuario-form-rol-adicional-opcional" className="mb-1 mt-3 block text-xs font-semibold text-gray-600">Rol adicional (opcional)</label>
+        <SearchableSelect id="admin-usuario-form-rol-adicional-opcional"
           className="w-full rounded-xl border bg-white p-3"
           value={secondaryRole}
           onChange={(event) => handleSecondaryRoleChange(event.target.value)}
@@ -265,8 +265,8 @@ export default function AdminUsuarioForm() {
 
       {/* PASSWORD */}
       <div className="mb-3">
-        <label className="mb-1 block text-xs font-semibold text-gray-600">Contraseña{isEdit ? " (dejar vacío para no cambiar)" : ""}</label>
-        <input
+        <label htmlFor="admin-usuario-form-contrasena" className="mb-1 block text-xs font-semibold text-gray-600">Contraseña{isEdit ? " (dejar vacío para no cambiar)" : ""}</label>
+        <input id="admin-usuario-form-contrasena"
           type="password"
           className="w-full p-3 border rounded-xl bg-white"
           value={form.password}
@@ -277,10 +277,10 @@ export default function AdminUsuarioForm() {
       </div>
 
       <div className="mb-3">
-        <label className="mb-1 block text-xs font-semibold text-gray-600">
+        <label htmlFor="admin-usuario-form-vto-carnet-conductor" className="mb-1 block text-xs font-semibold text-gray-600">
           Vto. carnet conductor
         </label>
-        <input
+        <input id="admin-usuario-form-vto-carnet-conductor"
           type="date"
           className="w-full rounded-xl border bg-white p-3"
           value={form.vtoCarnetConductor}

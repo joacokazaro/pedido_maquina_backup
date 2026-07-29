@@ -4,6 +4,7 @@ import { API_BASE } from "../../services/apiBase";
 import { useAuth } from "../../context/AuthContext";
 import { buildActorHeaders } from "../../utils/authHeaders";
 import SearchableSelect from "../../components/SearchableSelect";
+import { formatDateTime } from "../../utils/date";
 
 export default function TallerHistorialVehiculos() {
   const { user } = useAuth();
@@ -87,7 +88,7 @@ export default function TallerHistorialVehiculos() {
         {filtrado.map((entry) => (
           <div key={entry.id} className="rounded-xl border bg-white p-3 text-sm">
             <p>
-              <b>{entry.vehiculo?.id || "-"}</b> · {entry.accion} · {new Date(entry.createdAt).toLocaleString("es-AR")}
+              <b>{entry.vehiculo?.id || "-"}</b> · {entry.accion} · {formatDateTime(entry.createdAt)}
             </p>
             <p className="text-gray-700">Usuario: {entry.usuario?.nombre || entry.usuario?.username || "-"}</p>
             <p className="text-gray-700">Observacion: {entry.observacion || "-"}</p>

@@ -214,10 +214,10 @@ export default function AdminVehiculos() {
 
         <div className="grid gap-2 md:grid-cols-4">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-vehiculos-estado" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}>
+            <SearchableSelect id="admin-vehiculos-estado" className="w-full rounded-xl border p-2 text-xs" value={estadoFiltro} onChange={(e) => setEstadoFiltro(e.target.value)}>
               {ESTADOS.map((estado) => (
                 <option key={estado.value} value={estado.value}>{estado.label}</option>
               ))}
@@ -225,10 +225,10 @@ export default function AdminVehiculos() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-vehiculos-empresa" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Empresa
             </label>
-            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
+            <SearchableSelect id="admin-vehiculos-empresa" className="w-full rounded-xl border p-2 text-xs" value={empresaFiltro} onChange={(e) => setEmpresaFiltro(e.target.value)}>
               <option value="">Todas las empresas</option>
               {empresas.map((empresa) => (
                 <option key={empresa} value={empresa}>{empresa}</option>
@@ -237,10 +237,10 @@ export default function AdminVehiculos() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-vehiculos-faltantes" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Faltantes
             </label>
-            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={faltanteFiltro} onChange={(e) => setFaltanteFiltro(e.target.value)}>
+            <SearchableSelect id="admin-vehiculos-faltantes" className="w-full rounded-xl border p-2 text-xs" value={faltanteFiltro} onChange={(e) => setFaltanteFiltro(e.target.value)}>
               <option value="">Todos</option>
               <option value="si">Faltantes</option>
               <option value="no">No faltantes</option>
@@ -248,10 +248,10 @@ export default function AdminVehiculos() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-vehiculos-seguro" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Seguro
             </label>
-            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={seguroFiltro} onChange={(e) => setSeguroFiltro(e.target.value)}>
+            <SearchableSelect id="admin-vehiculos-seguro" className="w-full rounded-xl border p-2 text-xs" value={seguroFiltro} onChange={(e) => setSeguroFiltro(e.target.value)}>
               <option value="">Todos los seguros</option>
               {seguros.map((seguro) => (
                 <option key={seguro.id} value={String(seguro.id)}>{seguro.nombre}</option>
@@ -260,10 +260,10 @@ export default function AdminVehiculos() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-vehiculos-conductor" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Conductor
             </label>
-            <SearchableSelect className="w-full rounded-xl border p-2 text-xs" value={conductorFiltro} onChange={(e) => setConductorFiltro(e.target.value)}>
+            <SearchableSelect id="admin-vehiculos-conductor" className="w-full rounded-xl border p-2 text-xs" value={conductorFiltro} onChange={(e) => setConductorFiltro(e.target.value)}>
               <option value="">Todos los conductores</option>
               {usuarios.map((usuario) => (
                 <option key={usuario.id} value={String(usuario.id)}>

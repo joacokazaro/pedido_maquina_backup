@@ -22,28 +22,28 @@ const ESTADO_UI = {
   },
   no_devuelta: {
     badge: "No devuelta",
-    detalle: "Figura pendiente de devolucion.",
+    detalle: "Figura pendiente de devolución.",
     card: "border-rose-200 bg-rose-50/80",
     badgeClass: "border border-rose-200 bg-rose-100 text-rose-700",
     indicator: "bg-rose-500",
   },
   fuera_servicio: {
     badge: "Fuera de servicio",
-    detalle: "No esta disponible para prestar.",
+    detalle: "No está disponible para prestar.",
     card: "border-slate-200 bg-slate-100/80",
     badgeClass: "border border-slate-300 bg-slate-200 text-slate-700",
     indicator: "bg-slate-500",
   },
   taller: {
     badge: "En taller",
-    detalle: "No esta disponible para prestar.",
+    detalle: "No está disponible para prestar.",
     card: "border-orange-200 bg-orange-50/80",
     badgeClass: "border border-orange-200 bg-orange-100 text-orange-700",
     indicator: "bg-orange-500",
   },
   baja: {
     badge: "Baja",
-    detalle: "No esta disponible para prestar.",
+    detalle: "No está disponible para prestar.",
     card: "border-zinc-300 bg-zinc-100/80",
     badgeClass: "border border-zinc-300 bg-zinc-200 text-zinc-700",
     indicator: "bg-zinc-500",
@@ -244,7 +244,7 @@ export default function AsignarMaquinas() {
     <div className="min-h-screen bg-gray-50 p-4 pb-32">
       <BotonVolver />
 
-      <h1 className="mb-4 text-2xl font-bold">Asignar maquinas</h1>
+      <h1 className="mb-4 text-2xl font-bold">Asignar máquinas</h1>
 
       <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <h2 className="mb-2 text-sm font-semibold text-gray-800">
@@ -285,10 +285,10 @@ export default function AsignarMaquinas() {
       </div>
 
       <div className="mb-4 space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
-          Tipo de maquina
+        <label htmlFor="asignar-maquinas-tipo-de-maquina" className="block text-sm font-medium text-gray-700">
+          Tipo de máquina
         </label>
-        <SearchableSelect
+        <SearchableSelect id="asignar-maquinas-tipo-de-maquina"
           className="w-full rounded-xl border border-gray-300 bg-white p-3"
           value={filtroTipo}
           onChange={(e) => setFiltroTipo(e.target.value)}
@@ -304,7 +304,7 @@ export default function AsignarMaquinas() {
 
       <input
         className="mb-4 w-full rounded-xl border border-gray-300 p-3"
-        placeholder="Buscar por codigo, tipo o modelo..."
+        placeholder="Buscar por código, tipo o modelo..."
         value={filtroTexto}
         onChange={(e) => setFiltroTexto(e.target.value)}
       />
@@ -363,7 +363,7 @@ export default function AsignarMaquinas() {
                   </div>
 
                   <p className="mt-2 text-lg font-bold text-slate-950">
-                    Codigo: {maquina.id}
+                    Código: {maquina.id}
                   </p>
 
                   {maquina.modelo && (
@@ -406,21 +406,21 @@ export default function AsignarMaquinas() {
 
         {filtradas.length === 0 && (
           <p className="text-sm text-gray-500">
-            No hay maquinas que coincidan con el filtro.
+            No hay máquinas que coincidan con el filtro.
           </p>
         )}
       </div>
 
       <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-        <label className="mb-2 block text-sm font-medium text-gray-700">
-          Observacion (opcional)
+        <label htmlFor="asignar-maquinas-observacion-opcional" className="mb-2 block text-sm font-medium text-gray-700">
+          Observación (opcional)
         </label>
-        <textarea
+        <textarea id="asignar-maquinas-observacion-opcional"
           className="w-full rounded-lg border p-3"
           rows={3}
           value={observacion}
           onChange={(e) => setObservacion(e.target.value)}
-          placeholder="Agregar una observacion opcional..."
+          placeholder="Agregar una observación opcional..."
         />
       </div>
 
@@ -439,7 +439,7 @@ export default function AsignarMaquinas() {
           className="w-full rounded-xl bg-green-600 py-3 font-semibold text-white transition hover:bg-green-700"
           onClick={confirmarAsignacion}
         >
-          Confirmar asignacion
+          Confirmar asignación
         </button>
       </div>
 
@@ -452,7 +452,7 @@ export default function AsignarMaquinas() {
             className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="mb-3 text-lg font-bold">Justificacion requerida</h2>
+            <h2 className="mb-3 text-lg font-bold">Justificación requerida</h2>
 
             <p className="mb-3 text-sm text-gray-600">
               La cantidad asignada no coincide con lo solicitado. Es necesario
@@ -464,7 +464,7 @@ export default function AsignarMaquinas() {
               rows="3"
               value={justificacion}
               onChange={(e) => setJustificacion(e.target.value)}
-              placeholder="Escribi la justificacion..."
+              placeholder="Escribí la justificación..."
             />
 
             <div className="flex gap-2">

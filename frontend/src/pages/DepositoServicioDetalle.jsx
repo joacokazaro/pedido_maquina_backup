@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import SearchableSelect from "../components/SearchableSelect";
+import { EstadoMaquinaBadge } from "../utils/estadoMaquina";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -162,7 +163,7 @@ export default function DepositoServicioDetalle() {
                 <div className="text-xs text-gray-500">Código: {maquina.id}</div>
               </div>
 
-              <span className={estadoBadgeClass(maquina.estado)}>{maquina.estado}</span>
+              <EstadoMaquinaBadge estado={maquina.estado} className="h-fit" />
             </div>
 
             <div className="mt-2 text-xs text-gray-600 space-y-1">
@@ -183,23 +184,3 @@ export default function DepositoServicioDetalle() {
   );
 }
 
-function estadoBadgeClass(estado) {
-  const base = "px-2 py-1 rounded-full text-[10px] font-semibold uppercase h-fit";
-
-  switch (estado) {
-    case "disponible":
-      return `${base} bg-green-100 text-green-700`;
-    case "asignada":
-      return `${base} bg-blue-100 text-blue-700`;
-    case "no_devuelta":
-      return `${base} bg-red-100 text-red-700`;
-    case "fuera_servicio":
-      return `${base} bg-orange-100 text-orange-700`;
-    case "taller":
-      return `${base} bg-yellow-100 text-yellow-700`;
-    case "baja":
-      return `${base} bg-gray-200 text-gray-500`;
-    default:
-      return `${base} bg-gray-100 text-gray-600`;
-  }
-}

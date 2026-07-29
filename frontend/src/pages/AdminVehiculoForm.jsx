@@ -5,6 +5,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import SearchableSelect from "../components/SearchableSelect";
+import { formatDateOnly } from "../utils/date";
 
 const ESTADOS = [
   "disponible",
@@ -300,49 +301,49 @@ export default function AdminVehiculoForm() {
 
           <div className="space-y-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-gray-600">ID</label>
-          <input name="id" disabled={isEdit || isReadOnly} value={form.id} onChange={handleChange} className={`w-full rounded-xl border p-3 ${isEdit ? "bg-gray-100" : "bg-white"}`} placeholder="ID" />
+          <label htmlFor="admin-vehiculo-form-id" className="mb-1 block text-xs font-semibold text-gray-600">ID</label>
+          <input id="admin-vehiculo-form-id" name="id" disabled={isEdit || isReadOnly} value={form.id} onChange={handleChange} className={`w-full rounded-xl border p-3 ${isEdit ? "bg-gray-100" : "bg-white"}`} placeholder="ID" />
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-gray-600">Empresa</label>
-          <input name="empresa" value={form.empresa} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Empresa" />
+          <label htmlFor="admin-vehiculo-form-empresa" className="mb-1 block text-xs font-semibold text-gray-600">Empresa</label>
+          <input id="admin-vehiculo-form-empresa" name="empresa" value={form.empresa} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Empresa" />
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Vehiculo</label>
-            <input name="vehiculo" value={form.vehiculo} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Vehículo" />
+            <label htmlFor="admin-vehiculo-form-vehiculo" className="mb-1 block text-xs font-semibold text-gray-600">Vehiculo</label>
+            <input id="admin-vehiculo-form-vehiculo" name="vehiculo" value={form.vehiculo} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Vehículo" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Patente</label>
-            <input name="patente" value={form.patente} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 uppercase" placeholder="Patente" />
+            <label htmlFor="admin-vehiculo-form-patente" className="mb-1 block text-xs font-semibold text-gray-600">Patente</label>
+            <input id="admin-vehiculo-form-patente" name="patente" value={form.patente} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 uppercase" placeholder="Patente" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
-            <input name="modelo" value={form.modelo} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Modelo" />
+            <label htmlFor="admin-vehiculo-form-modelo" className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
+            <input id="admin-vehiculo-form-modelo" name="modelo" value={form.modelo} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Modelo" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Numero de poliza</label>
-            <input name="numeroPoliza" value={form.numeroPoliza} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Número de póliza" />
+            <label htmlFor="admin-vehiculo-form-numeroPoliza" className="mb-1 block text-xs font-semibold text-gray-600">Numero de poliza</label>
+            <input id="admin-vehiculo-form-numeroPoliza" name="numeroPoliza" value={form.numeroPoliza} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Número de póliza" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Motor</label>
-            <input name="motor" value={form.motor} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Motor" />
+            <label htmlFor="admin-vehiculo-form-motor" className="mb-1 block text-xs font-semibold text-gray-600">Motor</label>
+            <input id="admin-vehiculo-form-motor" name="motor" value={form.motor} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Motor" />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Chasis</label>
-            <input name="chasis" value={form.chasis} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Chasis" />
+            <label htmlFor="admin-vehiculo-form-chasis" className="mb-1 block text-xs font-semibold text-gray-600">Chasis</label>
+            <input id="admin-vehiculo-form-chasis" name="chasis" value={form.chasis} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Chasis" />
           </div>
 
           <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo de cobertura</label>
-            <input name="tipoCobertura" value={form.tipoCobertura} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Tipo de cobertura" />
+            <label htmlFor="admin-vehiculo-form-tipoCobertura" className="mb-1 block text-xs font-semibold text-gray-600">Tipo de cobertura</label>
+            <input id="admin-vehiculo-form-tipoCobertura" name="tipoCobertura" value={form.tipoCobertura} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3" placeholder="Tipo de cobertura" />
           </div>
         </div>
           </div>
@@ -353,8 +354,8 @@ export default function AdminVehiculoForm() {
 
           <div className="grid gap-3 md:grid-cols-4">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Seguro</label>
-            <SearchableSelect name="seguroId" value={form.seguroId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+            <label htmlFor="admin-vehiculo-form-seguroId" className="mb-1 block text-xs font-semibold text-gray-600">Seguro</label>
+            <SearchableSelect id="admin-vehiculo-form-seguroId" name="seguroId" value={form.seguroId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
               <option value="">Seleccionar seguro</option>
               {seguros.map((seguro) => (
                 <option key={seguro.id} value={String(seguro.id)}>{seguro.nombre}</option>
@@ -363,8 +364,8 @@ export default function AdminVehiculoForm() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo de maquina</label>
-            <SearchableSelect name="tipoMaquinaId" value={form.tipoMaquinaId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+            <label htmlFor="admin-vehiculo-form-tipoMaquinaId" className="mb-1 block text-xs font-semibold text-gray-600">Tipo de maquina</label>
+            <SearchableSelect id="admin-vehiculo-form-tipoMaquinaId" name="tipoMaquinaId" value={form.tipoMaquinaId} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
               <option value="">Tipo de maquina (default VEHICULO)</option>
               {tiposMaquina.map((tipo) => (
                 <option key={tipo.id} value={String(tipo.id)}>{tipo.nombre}</option>
@@ -373,8 +374,8 @@ export default function AdminVehiculoForm() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
-            <SearchableSelect name="estado" value={form.estado} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
+            <label htmlFor="admin-vehiculo-form-estado" className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
+            <SearchableSelect id="admin-vehiculo-form-estado" name="estado" value={form.estado} disabled={isReadOnly} onChange={handleChange} className="w-full rounded-xl border p-3 bg-white">
               {ESTADOS.map((estado) => (
                 <option key={estado} value={estado}>{estado}</option>
               ))}
@@ -382,8 +383,8 @@ export default function AdminVehiculoForm() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Tarjeta verde</label>
-            <SearchableSelect
+            <label htmlFor="admin-vehiculo-form-tarjeta-verde" className="mb-1 block text-xs font-semibold text-gray-600">Tarjeta verde</label>
+            <SearchableSelect id="admin-vehiculo-form-tarjeta-verde"
               value={form.tarjetaVerde ? "si" : "no"}
               disabled={isReadOnly}
               onChange={(e) => handleBooleanChange("tarjetaVerde", e.target.value === "si")}
@@ -396,8 +397,8 @@ export default function AdminVehiculoForm() {
           </div>
 
           <div className="mt-3">
-            <label className="mb-1 block text-xs font-semibold text-gray-600">Plazo de amortizacion</label>
-            <input
+            <label htmlFor="admin-vehiculo-form-plazo-de-amortizacion" className="mb-1 block text-xs font-semibold text-gray-600">Plazo de amortizacion</label>
+            <input id="admin-vehiculo-form-plazo-de-amortizacion"
               value={
                 tipoSeleccionado?.plazoAmortizacion?.meses != null
                   ? `${tipoSeleccionado.plazoAmortizacion.meses} meses`
@@ -460,7 +461,7 @@ export default function AdminVehiculoForm() {
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
               <p><b>Asignado a:</b> {usuarioActual.nombre || usuarioActual.username}</p>
               <p><b>Usuario:</b> @{usuarioActual.username}</p>
-              <p><b>Vto. carnet:</b> {usuarioActual.vtoCarnetConductor ? new Date(usuarioActual.vtoCarnetConductor).toLocaleDateString("es-AR") : "-"}</p>
+              <p><b>Vto. carnet:</b> {formatDateOnly(usuarioActual.vtoCarnetConductor)}</p>
             </div>
           ) : (
             <p className="text-sm text-gray-500">El vehículo no tiene conductor asignado.</p>

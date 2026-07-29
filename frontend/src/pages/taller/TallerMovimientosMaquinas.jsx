@@ -152,10 +152,10 @@ export default function TallerMovimientosMaquinas() {
 
         <div className="mb-3 grid gap-2 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="taller-movimientos-maquinas-buscar" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Buscar
             </label>
-            <input
+            <input id="taller-movimientos-maquinas-buscar"
               className="w-full rounded-xl border border-gray-200 bg-white p-2 text-sm"
               placeholder="Buscar maquinas..."
               value={search}
@@ -163,10 +163,10 @@ export default function TallerMovimientosMaquinas() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="taller-movimientos-maquinas-estado" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <SearchableSelect className="w-full rounded-xl border border-gray-200 bg-white p-2 text-sm" value={estado} onChange={(event) => setEstado(event.target.value)}>
+            <SearchableSelect id="taller-movimientos-maquinas-estado" className="w-full rounded-xl border border-gray-200 bg-white p-2 text-sm" value={estado} onChange={(event) => setEstado(event.target.value)}>
               {ESTADOS.map((item) => (
                 <option key={item || "all"} value={item}>{item || "todos"}</option>
               ))}

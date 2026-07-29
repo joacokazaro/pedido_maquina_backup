@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
+import { formatDateTime } from "../utils/date";
 
 export default function AdminEventualesPanel() {
 
@@ -102,7 +103,7 @@ export default function AdminEventualesPanel() {
                       Fecha de última modificación:{" "}
                       <span className="font-medium text-gray-700">
                         {eventual.ultimaModificacion
-                          ? new Date(eventual.ultimaModificacion).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })
+                          ? formatDateTime(eventual.ultimaModificacion)
                           : "-"}
                       </span>
                     </p>

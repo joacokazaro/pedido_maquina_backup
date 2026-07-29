@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { API_BASE } from "../../services/apiBase";
 import { useAuth } from "../../context/AuthContext";
 import { buildActorHeaders } from "../../utils/authHeaders";
+import { formatDateTime } from "../../utils/date";
 
 export default function TallerVerMaquinas() {
   const { user } = useAuth();
@@ -102,7 +103,7 @@ export default function TallerVerMaquinas() {
             <p><b>{item.id}</b> · {item.tipo} · {item.modelo || "-"}</p>
             <p className="text-gray-600">Serie: {item.serie || "-"}</p>
             <p className="text-gray-600">Servicio: {item.servicio?.nombre || "-"}</p>
-            <p className="text-gray-600">Ingreso a taller: {item.ingresoTallerAt ? new Date(item.ingresoTallerAt).toLocaleString("es-AR") : "-"}</p>
+            <p className="text-gray-600">Ingreso a taller: {formatDateTime(item.ingresoTallerAt)}</p>
           </div>
         ))}
         {!filtradas.length ? <div className="rounded-xl border bg-white p-3 text-sm text-gray-500">No hay maquinas en taller.</div> : null}

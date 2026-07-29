@@ -74,8 +74,8 @@ export default function ConfirmModal({
 
         {requireComment && (
           <div className="mb-4">
-            <label className="block text-sm text-gray-600 mb-1">Comentario obligatorio</label>
-            <textarea
+            <label htmlFor="confirm-modal-comentario-obligatorio" className="block text-sm text-gray-600 mb-1">Comentario obligatorio</label>
+            <textarea id="confirm-modal-comentario-obligatorio"
               className="w-full p-2 border rounded-lg"
               rows={3}
               placeholder={commentPlaceholder}

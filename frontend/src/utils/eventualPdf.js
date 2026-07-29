@@ -416,6 +416,29 @@ export function downloadEventualResumenPdf(eventual) {
     cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;
   }
 
+  const insumosExtras = Array.isArray(eventual?.insumosExtras) ? eventual.insumosExtras : [];
+  if (insumosExtras.length > 0) {
+    autoTable(doc, {
+      startY: cursorY,
+      margin: { left: 12, right: 12 },
+      tableWidth: 186,
+      styles: { font: "helvetica", fontSize: 8.7, cellPadding: 1.8 },
+      headStyles: { fillColor: [240, 240, 240], textColor: [31, 41, 55] },
+      head: [["Insumo extra (carga manual)", "Cantidad", "Unidad"]],
+      body: insumosExtras.map((insumo) => [
+        safeText(getTrabajoLabel(insumo)),
+        String(insumo?.cantidad ?? "-"),
+        safeText(insumo?.unidadLabel || insumo?.unidadMedida, "-"),
+      ]),
+      columnStyles: {
+        0: { cellWidth: 120, fontStyle: "bold" },
+        1: { cellWidth: 30, halign: "right" },
+        2: { cellWidth: 36 },
+      },
+    });
+    cursorY = (doc.lastAutoTable?.finalY || cursorY) + 8;
+  }
+
   drawSectionTitle(doc, "7. OBSERVACIONES REGISTRADAS", cursorY);
   cursorY += 10;
 

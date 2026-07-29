@@ -113,10 +113,10 @@ export default function DepositoServicios() {
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="deposito-servicios-maquinas" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Máquinas
             </label>
-            <SearchableSelect
+            <SearchableSelect id="deposito-servicios-maquinas"
               value={filtroMaquinas}
               onChange={(e) => setFiltroMaquinas(e.target.value)}
               className="w-full border rounded-lg p-2 text-sm"
@@ -128,10 +128,10 @@ export default function DepositoServicios() {
           </div>
 
           <div className="flex-1">
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="deposito-servicios-orden" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Orden
             </label>
-            <SearchableSelect
+            <SearchableSelect id="deposito-servicios-orden"
               value={orden}
               onChange={(e) => setOrden(e.target.value)}
               className="w-full border rounded-lg p-2 text-sm"

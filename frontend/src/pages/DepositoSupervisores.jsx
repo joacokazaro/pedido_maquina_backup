@@ -2,27 +2,7 @@ import { useEffect, useState } from "react";
 import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import SearchableSelect from "../components/SearchableSelect";
-
-function estadoBadgeClass(estado) {
-  const base = "inline-flex rounded-full px-2 py-1 text-[10px] font-semibold uppercase";
-
-  switch (estado) {
-    case "disponible":
-      return `${base} bg-green-100 text-green-700`;
-    case "asignada":
-      return `${base} bg-blue-100 text-blue-700`;
-    case "no_devuelta":
-      return `${base} bg-red-100 text-red-700`;
-    case "fuera_servicio":
-      return `${base} bg-orange-100 text-orange-700`;
-    case "taller":
-      return `${base} bg-yellow-100 text-yellow-700`;
-    case "baja":
-      return `${base} bg-gray-200 text-gray-600`;
-    default:
-      return `${base} bg-gray-100 text-gray-600`;
-  }
-}
+import { EstadoMaquinaBadge } from "../utils/estadoMaquina";
 
 function MaquinaCard({ maquina, temporal = false }) {
   const esFaltanteCerrado = temporal && Boolean(maquina?.faltanteConfirmado || maquina?.pedido?.conFaltantes);
@@ -41,7 +21,7 @@ function MaquinaCard({ maquina, temporal = false }) {
           </p>
         </div>
 
-        <span className={estadoBadgeClass(maquina.estado)}>{maquina.estado}</span>
+        <EstadoMaquinaBadge estado={maquina.estado} className="inline-flex" />
       </div>
 
       {esFaltanteCerrado && (
@@ -193,9 +173,9 @@ export default function DepositoSupervisores() {
       </header>
 
       <div className="mb-4 rounded-2xl bg-white p-4 shadow">
-        <label className="mb-2 block text-sm font-medium text-gray-700">Supervisor</label>
+        <label htmlFor="deposito-supervisores-supervisor" className="mb-2 block text-sm font-medium text-gray-700">Supervisor</label>
 
-        <SearchableSelect
+        <SearchableSelect id="deposito-supervisores-supervisor"
           className="w-full rounded-xl border border-gray-300 bg-white p-3 text-sm"
           value={supervisorId}
           onChange={(e) => setSupervisorId(e.target.value)}

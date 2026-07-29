@@ -1,3 +1,42 @@
+import { formatDateTime } from "../utils/date";
+
+/**
+ * Texto legible de cada acción del historial. Antes se mostraba el valor crudo
+ * de la base con los guiones bajos reemplazados por espacios
+ * ("DEVOLUCION CONFIRMADA DIRECTA"), que es justamente la pantalla donde el
+ * encargado necesita entender de un vistazo qué pasó con el pedido.
+ *
+ * Al agregar una acción nueva en el backend, sumarla acá: el default degrada
+ * al formato viejo, así que no se rompe nada, pero queda ilegible.
+ */
+const ETIQUETAS_ACCION = {
+  CREADO: "Pedido creado",
+  MAQUINAS_ASIGNADAS: "Máquinas asignadas",
+  ESTADO_ACTUALIZADO: "Estado actualizado",
+  ENTREGADO: "Entregado al supervisor",
+  DEVOLUCION_REGISTRADA: "El supervisor registró la devolución",
+  DEVOLUCION_CONFIRMADA: "Depósito confirmó el ingreso",
+  DEVOLUCION_CONFIRMADA_DIRECTA: "Depósito registró la devolución directa",
+  FALTANTES_DECLARADOS: "Faltantes declarados",
+  CANCELACION_SOLICITADA: "Cancelación solicitada",
+  ADMIN_CAMBIO_ESTADO: "Un administrador cambió el estado",
+  ADMIN_EDICION_PEDIDO: "Un administrador editó el pedido",
+  PEDIDO_COMPLEMENTARIO_CREADO: "Pedido complementario creado",
+  PEDIDO_COMPLEMENTARIO_DESVINCULADO: "Pedido complementario desvinculado",
+  DESVINCULADO_DE_EVENTUAL: "Desvinculado del eventual",
+};
+
+function formatAccion(accion) {
+  const clave = String(accion || "").toUpperCase().trim();
+  if (!clave) return "—";
+  if (ETIQUETAS_ACCION[clave]) return ETIQUETAS_ACCION[clave];
+
+  return clave
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, (letra) => letra.toUpperCase());
+}
+
 export default function HistorialPedido({ historial }) {
   if (!historial || historial.length === 0) return null;
 
@@ -32,9 +71,9 @@ export default function HistorialPedido({ historial }) {
               <div className="flex-1">
                 <div className="flex items-baseline justify-between">
                   <p className="font-semibold text-sm">
-                    {String(h.accion || "").replaceAll("_", " ")}
+                    {formatAccion(h.accion)}
                   </p>
-                  <p className="text-xs text-gray-500">{new Date(h.fecha).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">{formatDateTime(h.fecha)}</p>
                 </div>
 
                 <p className="text-xs text-gray-500 mb-2">Por: <span className="font-medium text-gray-700">{h.usuario || '—'}</span></p>

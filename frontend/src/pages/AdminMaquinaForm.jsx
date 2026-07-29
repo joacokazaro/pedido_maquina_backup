@@ -379,9 +379,9 @@ export default function AdminMaquinaForm() {
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Código (id)</label>
+              <label htmlFor="admin-maquina-form-id" className="mb-1 block text-xs font-semibold text-gray-600">Código (id)</label>
               <input
-                name="id"
+                id="admin-maquina-form-id" name="id"
                 value={form.id}
                 onChange={handleChange}
                 disabled={esEdicion || isReadOnly}
@@ -390,9 +390,9 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
+              <label htmlFor="admin-maquina-form-tipo" className="mb-1 block text-xs font-semibold text-gray-600">Tipo</label>
               <SearchableSelect
-                name="tipo"
+                id="admin-maquina-form-tipo" name="tipo"
                 value={form.tipo}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -406,13 +406,13 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
-              <input name="modelo" value={form.modelo} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
+              <label htmlFor="admin-maquina-form-modelo" className="mb-1 block text-xs font-semibold text-gray-600">Modelo</label>
+              <input id="admin-maquina-form-modelo" name="modelo" value={form.modelo} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Serie</label>
-              <input name="serie" value={form.serie} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
+              <label htmlFor="admin-maquina-form-serie" className="mb-1 block text-xs font-semibold text-gray-600">Serie</label>
+              <input id="admin-maquina-form-serie" name="serie" value={form.serie} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border" />
             </div>
           </div>
         </section>
@@ -422,8 +422,8 @@ export default function AdminMaquinaForm() {
 
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio</label>
-              <SearchableSelect name="servicioId" value={form.servicioId} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
+              <label htmlFor="admin-maquina-form-servicioId" className="mb-1 block text-xs font-semibold text-gray-600">Servicio</label>
+              <SearchableSelect id="admin-maquina-form-servicioId" name="servicioId" value={form.servicioId} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
                 <option value="">— Seleccionar servicio —</option>
                 {servicios.map(s => (
                   <option key={s.id} value={s.id}>{s.nombre}</option>
@@ -444,16 +444,16 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
-              <SearchableSelect name="estado" value={form.estado} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
+              <label htmlFor="admin-maquina-form-estado" className="mb-1 block text-xs font-semibold text-gray-600">Estado</label>
+              <SearchableSelect id="admin-maquina-form-estado" name="estado" value={form.estado} onChange={handleChange} disabled={isReadOnly} className="w-full p-2 rounded-xl border">
                 {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
               </SearchableSelect>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Servicio para amortización</label>
+              <label htmlFor="admin-maquina-form-servicioAmortizacionId" className="mb-1 block text-xs font-semibold text-gray-600">Servicio para amortización</label>
               <SearchableSelect
-                name="servicioAmortizacionId"
+                id="admin-maquina-form-servicioAmortizacionId" name="servicioAmortizacionId"
                 value={form.servicioAmortizacionId}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -514,10 +514,10 @@ export default function AdminMaquinaForm() {
 
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Fecha de compra</label>
+              <label htmlFor="admin-maquina-form-fechaCompra" className="mb-1 block text-xs font-semibold text-gray-600">Fecha de compra</label>
               <input
                 type="date"
-                name="fechaCompra"
+                id="admin-maquina-form-fechaCompra" name="fechaCompra"
                 value={form.fechaCompra}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -526,9 +526,9 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Empresa</label>
+              <label htmlFor="admin-maquina-form-empresa" className="mb-1 block text-xs font-semibold text-gray-600">Empresa</label>
               <SearchableSelect
-                name="empresa"
+                id="admin-maquina-form-empresa" name="empresa"
                 value={form.empresa}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -542,9 +542,9 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Proveedor / N° factura</label>
+              <label htmlFor="admin-maquina-form-proveedorFactura" className="mb-1 block text-xs font-semibold text-gray-600">Proveedor / N° factura</label>
               <input
-                name="proveedorFactura"
+                id="admin-maquina-form-proveedorFactura" name="proveedorFactura"
                 value={form.proveedorFactura}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -553,12 +553,12 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor compra $ARS:</label>
+              <label htmlFor="admin-maquina-form-valorCompra" className="mb-1 block text-xs font-semibold text-gray-600">Valor compra $ARS:</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
-                name="valorCompra"
+                id="admin-maquina-form-valorCompra" name="valorCompra"
                 value={form.valorCompra}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -597,9 +597,9 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Antigüedad (años)</label>
+              <label htmlFor="admin-maquina-form-antiguedad" className="mb-1 block text-xs font-semibold text-gray-600">Antigüedad (años)</label>
               <input
-                name="antiguedad"
+                id="admin-maquina-form-antiguedad" name="antiguedad"
                 value={form.anio === "" ? "" : Math.max(new Date().getFullYear() - Number(form.anio), 0)}
                 disabled
                 className="w-full p-2 rounded-xl border bg-gray-100"
@@ -607,12 +607,12 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor usada (USD)</label>
+              <label htmlFor="admin-maquina-form-valorUsadaDolares" className="mb-1 block text-xs font-semibold text-gray-600">Valor usada (USD)</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
-                name="valorUsadaDolares"
+                id="admin-maquina-form-valorUsadaDolares" name="valorUsadaDolares"
                 value={form.valorUsadaDolares}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -621,12 +621,12 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta usada (pesos)</label>
+              <label htmlFor="admin-maquina-form-valorUsadaPesos" className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta usada (pesos)</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
-                name="valorUsadaPesos"
+                id="admin-maquina-form-valorUsadaPesos" name="valorUsadaPesos"
                 value={form.valorUsadaPesos}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -635,12 +635,12 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta nueva (USD)</label>
+              <label htmlFor="admin-maquina-form-valorNuevaDolares" className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta nueva (USD)</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
-                name="valorNuevaDolares"
+                id="admin-maquina-form-valorNuevaDolares" name="valorNuevaDolares"
                 value={form.valorNuevaDolares}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -649,12 +649,12 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta nueva (pesos)</label>
+              <label htmlFor="admin-maquina-form-valorNuevaPesos" className="mb-1 block text-xs font-semibold text-gray-600">Valor herramienta nueva (pesos)</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
-                name="valorNuevaPesos"
+                id="admin-maquina-form-valorNuevaPesos" name="valorNuevaPesos"
                 value={form.valorNuevaPesos}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -663,9 +663,9 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Origen info</label>
+              <label htmlFor="admin-maquina-form-origenInfo" className="mb-1 block text-xs font-semibold text-gray-600">Origen info</label>
               <input
-                name="origenInfo"
+                id="admin-maquina-form-origenInfo" name="origenInfo"
                 value={form.origenInfo}
                 onChange={handleChange}
                 disabled={isReadOnly}
@@ -674,9 +674,9 @@ export default function AdminMaquinaForm() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-semibold text-gray-600">Comentarios</label>
+              <label htmlFor="admin-maquina-form-comentarios" className="mb-1 block text-xs font-semibold text-gray-600">Comentarios</label>
               <textarea
-                name="comentarios"
+                id="admin-maquina-form-comentarios" name="comentarios"
                 value={form.comentarios}
                 onChange={handleChange}
                 disabled={isReadOnly}

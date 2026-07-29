@@ -3,10 +3,9 @@ import { useParams } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 
-function formatDate(value) {
-  if (!value) return "-";
-  return new Date(value).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
-}
+import { formatDateTime } from "../utils/date";
+
+const formatDate = formatDateTime;
 
 export default function AdminVehiculoHistorial() {
   const { id } = useParams();

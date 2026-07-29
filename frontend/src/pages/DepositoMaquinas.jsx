@@ -6,6 +6,7 @@ import { API_BASE } from "../services/apiBase";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import SearchableSelect from "../components/SearchableSelect";
+import { EstadoMaquinaBadge } from "../utils/estadoMaquina";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -144,10 +145,10 @@ export default function DepositoMaquinas() {
 
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="deposito-maquinas-tipo" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Tipo
             </label>
-            <SearchableSelect
+            <SearchableSelect id="deposito-maquinas-tipo"
               className="w-full p-2 rounded-xl border text-xs"
               value={tipoFiltro}
               onChange={(e) => setTipoFiltro(e.target.value)}
@@ -160,10 +161,10 @@ export default function DepositoMaquinas() {
           </div>
 
           <div className="flex-1">
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="deposito-maquinas-estado" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <SearchableSelect
+            <SearchableSelect id="deposito-maquinas-estado"
               className="w-full p-2 rounded-xl border text-xs"
               value={estadoFiltro}
               onChange={(e) => setEstadoFiltro(e.target.value)}
@@ -188,9 +189,7 @@ export default function DepositoMaquinas() {
                 <p className="text-xs text-gray-500">Código: <b>{m.id}</b></p>
               </div>
 
-              <span className={estadoBadgeClass(m.estadoVisible)}>
-                {m.estadoVisible}
-              </span>
+              <EstadoMaquinaBadge estado={m.estadoVisible} className="h-fit" />
             </div>
 
             {m.modelo && (
@@ -265,15 +264,3 @@ export default function DepositoMaquinas() {
   );
 }
 
-function estadoBadgeClass(estado) {
-  const base = "px-2 py-1 rounded-full text-[10px] font-semibold uppercase h-fit";
-  switch (estado) {
-    case "disponible": return `${base} bg-green-100 text-green-700`;
-    case "asignada": return `${base} bg-blue-100 text-blue-700`;
-    case "no_devuelta": return `${base} bg-red-100 text-red-700`;
-    case "fuera_servicio": return `${base} bg-orange-100 text-orange-700`;
-    case "taller": return `${base} bg-yellow-100 text-yellow-700`;
-    case "baja": return `${base} bg-gray-200 text-gray-500`;
-    default: return `${base} bg-gray-100 text-gray-600`;
-  }
-}

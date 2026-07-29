@@ -303,10 +303,10 @@ function pedidoTieneMaquina(pedido, texto) {
         />
 
         <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <label htmlFor="admin-pedidos-estado" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Estado
           </label>
-          <SearchableSelect
+          <SearchableSelect id="admin-pedidos-estado"
             className="w-full p-3 rounded-xl border border-gray-300 bg-white"
             value={estadoFiltro}
             onChange={e => setEstadoFiltro(e.target.value)}

@@ -827,9 +827,10 @@ En **Eventuales**, el Administrador puede:
 7. Registrar vehículos utilizados.
 8. Registrar trabajos realizados.
 9. Registrar servicios extras subcontratados.
-10. Registrar observaciones posteriores.
-11. Eliminar un eventual mediante baja lógica.
-12. Descargar PDF resumen cuando el eventual está finalizado.
+10. Registrar insumos extra consumidos.
+11. Registrar observaciones posteriores.
+12. Eliminar un eventual mediante baja lógica.
+13. Descargar PDF resumen cuando el eventual está finalizado.
 
 Al crear un eventual se cargan los datos base:
 
@@ -846,7 +847,10 @@ Al completar datos o finalizar se pueden cargar:
 - Vehículos utilizados.
 - Trabajos realizados.
 - Servicios extras subcontratados, con precio de la subcontratación opcional en pesos ($ARS).
+- Insumos extra, con cantidad y unidad de medida.
 - Observaciones posteriores.
+
+En la sección **Insumos** de "Completar datos de eventual", además de los insumos que se importan de la plataforma de insumos, Administrador y Coordinador pueden cargar a mano los **insumos extra** consumidos: nafta preparada, nafta pura, bolsas, tanza, aceite para cadena de motosierra, gasoil premium, gasoil común, herbicida y **Otro** (con descripción libre obligatoria). Cada insumo lleva una cantidad y una unidad de medida: litros, unidades, metros o centímetros cúbicos. No llevan precio y no se suman al total en pesos de los insumos importados. A diferencia de la importación, se pueden cargar con el eventual en cualquier estado y se guardan con el botón **Guardar** del formulario, junto con el resto de los datos.
 
 Con fecha de inicio y fecha de fin cargadas, el botón **Importar horas de Browix** trae del sistema de marcación el total de horas fichadas cuya ubicación coincide exactamente con el nombre del eventual, dentro de ese rango de fechas. Solo se cuentan los días con jornada asignada: quien figura en la planificación con franco rotativo (ROT), licencia (ENF) o sin turno cargado no suma horas ni cuenta como persona del eventual. El resultado (total de horas, cantidad de fichajes encontrados y fecha de importación) queda guardado en el eventual y se puede reimportar en cualquier momento, pisando el valor anterior.
 
@@ -864,6 +868,7 @@ En el detalle de un eventual se visualiza:
 - Vehículos utilizados.
 - Trabajos realizados con cantidad y unidad.
 - Servicios extras subcontratados, con su precio en pesos ($ARS) si fue cargado.
+- Insumos extra cargados a mano, con cantidad y unidad.
 - Horas importadas de Browix, si se importaron.
 - Observaciones previas.
 - Observaciones posteriores.

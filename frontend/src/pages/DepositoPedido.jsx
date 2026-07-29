@@ -125,8 +125,8 @@ export default function DepositoPedido() {
 
       <PedidoResumen pedido={pedido} />
       <div className="mb-4 bg-white p-3 rounded-xl border">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Observación al entregar (opcional)</label>
-        <textarea
+        <label htmlFor="deposito-pedido-observacion-al-entregar-opcional" className="block text-sm font-medium text-gray-700 mb-1">Observación al entregar (opcional)</label>
+        <textarea id="deposito-pedido-observacion-al-entregar-opcional"
           className="w-full p-2 border rounded-lg"
           rows={2}
           value={observacion}

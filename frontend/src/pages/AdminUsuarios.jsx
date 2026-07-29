@@ -105,10 +105,10 @@ export default function AdminUsuarios() {
 
       {/* FILTRO ROL */}
       <div className="mb-4">
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+        <label htmlFor="admin-usuarios-rol" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
           Rol
         </label>
-        <SearchableSelect
+        <SearchableSelect id="admin-usuarios-rol"
           className="w-full p-3 border rounded-xl bg-white"
           value={rol}
           onChange={(e) => setRol(e.target.value)}

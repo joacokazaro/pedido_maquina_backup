@@ -29,8 +29,7 @@ export default function SupervisorMisPedidos() {
       try {
         setLoading(true);
 
-        const url = `${API_BASE}
-/pedidos/supervisor/${encodeURIComponent(
+        const url = `${API_BASE}/pedidos/supervisor/${encodeURIComponent(
           user.username
         )}`;
 

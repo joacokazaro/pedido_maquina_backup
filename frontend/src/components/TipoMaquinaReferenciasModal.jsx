@@ -371,12 +371,12 @@ export default function TipoMaquinaReferenciasModal({
 
         <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-5 lg:grid-cols-[360px_1fr]">
           <aside className="flex min-h-0 flex-col rounded-2xl border border-gray-200 bg-slate-50 p-4">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <label htmlFor="tipo-maquina-referencias-modal-tipo-de-maquina" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Tipo de máquina
             </label>
 
             {mode === "upload" ? (
-              <SearchableSelect
+              <SearchableSelect id="tipo-maquina-referencias-modal-tipo-de-maquina"
                 className="mb-3 rounded-xl border border-gray-200 bg-white p-3 text-sm"
                 value={selectedTipoId}
                 onChange={(e) => setSelectedTipoId(e.target.value)}

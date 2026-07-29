@@ -91,10 +91,10 @@ export default function AdminEventualesHistorial() {
         />
         <div className="grid gap-2 md:grid-cols-4">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-eventuales-historial-estado" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Estado
             </label>
-            <SearchableSelect className="w-full rounded-xl border p-2 text-sm" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
+            <SearchableSelect id="admin-eventuales-historial-estado" className="w-full rounded-xl border p-2 text-sm" value={estadoFiltro} onChange={(event) => setEstadoFiltro(event.target.value)}>
               <option value="">Todos los estados</option>
               <option value="activo">Activo</option>
               <option value="finalizado">Finalizado</option>
@@ -103,10 +103,10 @@ export default function AdminEventualesHistorial() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            <label htmlFor="admin-eventuales-historial-supervisor" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Supervisor
             </label>
-            <SearchableSelect className="w-full rounded-xl border p-2 text-sm" value={supervisorFiltro} onChange={(event) => setSupervisorFiltro(event.target.value)}>
+            <SearchableSelect id="admin-eventuales-historial-supervisor" className="w-full rounded-xl border p-2 text-sm" value={supervisorFiltro} onChange={(event) => setSupervisorFiltro(event.target.value)}>
               <option value="">Todos los supervisores</option>
               {supervisores.map((supervisor) => (
                 <option key={supervisor.id} value={String(supervisor.id)}>
