@@ -154,6 +154,7 @@ Módulo dedicado para el rol Taller (visible en lectura para Admin, Coordinador,
 - **Importación de insumos** desde `insumos.kazaro.com.ar`, matcheando por nombre de servicio, sin filtro de fecha
 - Carga manual de horas de supervisor
 - **Pedidos complementarios**: el supervisor asignado al eventual (cualquier rol de `ROLES_PEDIDO_TITULAR`) puede dispararlos desde `/supervisor/pedido/nuevo` o desde el detalle del eventual; admin y coordinador pueden dispararlos como backoffice a nombre del supervisor asignado. El pedido usa (o crea) un `Servicio` homónimo al eventual y se lo autoasigna al supervisor
+- **Desvincular un pedido complementario** (`DELETE /api/admin/eventuales/:id/pedidos/:pedidoId`, desde `/admin/eventuales/:id/completar`): saca el pedido del eventual sin borrarlo —sigue su circuito normal—, de modo que sus máquinas dejan de sumarse a las utilizadas y deja de fijar al supervisor titular. Es la forma de deshacer un disparo equivocado sin borrar el pedido, que rompería `getNextPedidoCode()`. Los pedidos `CANCELADO` tampoco fijan al supervisor (`contarPedidosQueFijanSupervisor`)
 - **Carga de componentes desde la pantalla del supervisor** (`PUT /api/eventuales/:id/componentes`): exclusiva del `supervisor_limpieza` sobre eventuales propios; el resto lo ve en modo lectura
 
 ### Servicios
@@ -321,6 +322,7 @@ Todo cuelga de `/api`. Los routers admin se montan como varios routers sobre el 
 - `GET /api/admin/eventuales/componentes/catalogo`
 - `POST /api/admin/eventuales/:id/importar-horas-browix` · `POST /api/admin/eventuales/:id/importar-insumos`
 - `PUT /api/admin/eventuales/:id/horas-supervisor`
+- `DELETE /api/admin/eventuales/:id/pedidos/:pedidoId` (desvincula un pedido complementario; admin y coordinador)
 
 ### Seguros
 - `GET|POST /api/admin/seguros` · `PUT|DELETE /api/admin/seguros/:id`

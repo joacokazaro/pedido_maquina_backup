@@ -145,6 +145,7 @@ function formatActionLabel(action) {
     ADMIN_OBSERVACION_POSTERIOR: "Observacion posterior del admin",
     COORDINADOR_OBSERVACION_POSTERIOR: "Observacion posterior del coordinador",
     PEDIDO_COMPLEMENTARIO_CREADO: "Pedido complementario creado",
+    PEDIDO_COMPLEMENTARIO_DESVINCULADO: "Pedido complementario desvinculado",
   };
   const normalized = String(action || "").trim();
   return labels[normalized] || normalized.replaceAll("_", " ");

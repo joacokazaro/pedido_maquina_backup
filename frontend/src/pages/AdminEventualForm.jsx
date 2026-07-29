@@ -100,6 +100,10 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   // Filas guardadas en el eventual ({ tipo, cantidad, maquinaIds }) y selección puntual de máquinas
   const [maquinasRows, setMaquinasRows] = useState([]);
   const [maquinasSeleccionadas, setMaquinasSeleccionadas] = useState([]);
+  // Una vez que el usuario confirma una selección, ésa manda aunque quede vacía: sin este
+  // flag, "no seleccioné ninguna" era indistinguible de "todavía no toqué la selección" y
+  // el resumen volvía a las filas guardadas, haciendo imposible vaciar la lista.
+  const [seleccionMaquinasTocada, setSeleccionMaquinasTocada] = useState(false);
   const [vehiculosRows, setVehiculosRows] = useState([emptyVehiculoRow()]);
   const [legacyComponentes, setLegacyComponentes] = useState(null);
 
@@ -127,6 +131,9 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const [pedidoCreando, setPedidoCreando] = useState(false);
   const [pedidoError, setPedidoError] = useState("");
   const [pedidoExito, setPedidoExito] = useState("");
+  const [pedidoADesvincular, setPedidoADesvincular] = useState(null);
+  const [desvinculando, setDesvinculando] = useState(false);
+  const [desvincularError, setDesvincularError] = useState("");
 
   const [trabajosRealizados, setTrabajosRealizados] = useState([]);
   const [serviciosExtrasSubcontratados, setServiciosExtrasSubcontratados] = useState([]);
@@ -323,7 +330,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
 
   // Resumen "Tipo de máquina: cantidad" (conservando qué máquinas se eligieron)
   const resumenMaquinas = useMemo(() => {
-    if (maquinasSeleccionadas.length > 0) {
+    if (seleccionMaquinasTocada || maquinasSeleccionadas.length > 0) {
       const grupos = new Map();
       for (const maquina of maquinasSeleccionadas) {
         const key = maquina.tipo || "Sin tipo";
@@ -340,7 +347,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       cantidad: row.cantidad,
       maquinaIds: Array.isArray(row.maquinaIds) ? row.maquinaIds : [],
     }));
-  }, [maquinasSeleccionadas, maquinasRows]);
+  }, [seleccionMaquinasTocada, maquinasSeleccionadas, maquinasRows]);
 
   const maquinasModalGrupos = useMemo(() => {
     const term = busquedaMaquina.trim().toLowerCase();
@@ -379,6 +386,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       // Las máquinas seleccionadas pertenecen al supervisor anterior
       setMaquinasSeleccionadas([]);
       setMaquinasRows([]);
+      setSeleccionMaquinasTocada(false);
       prefillVehiculosRef.current = Boolean(value);
     }
   }
@@ -416,6 +424,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         .filter((maquina) => seleccionTemp.has(maquina.id))
         .map((maquina) => ({ id: maquina.id, tipo: maquina.tipo }))
     );
+    setSeleccionMaquinasTocada(true);
     setSelectorOpen(false);
   }
 
@@ -430,8 +439,9 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   // de manera dinámica (igual que sus máquinas y vehículos).
   const puedeCrearPedido = isEdit && Boolean(form.supervisorId);
 
-  // Con pedidos complementarios disparados, el supervisor queda fijado
-  const supervisorBloqueado = pedidosComplementarios.length > 0;
+  // Con pedidos complementarios disparados, el supervisor queda fijado. Los cancelados no
+  // cuentan (espejo de contarPedidosQueFijanSupervisor en el backend).
+  const supervisorBloqueado = pedidosComplementarios.some((pedido) => pedido.estado !== "CANCELADO");
 
   function abrirPedidoModal() {
     setPedidoCantidades(
@@ -545,6 +555,39 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       setPedidoError(pedidoCrearError.message || "Error creando el pedido complementario");
     } finally {
       setPedidoCreando(false);
+    }
+  }
+
+  // Desvincula el pedido del eventual sin tocar el pedido: deja de sumar sus máquinas y
+  // de fijar al supervisor titular, pero sigue su circuito normal.
+  async function desvincularPedido() {
+    if (!pedidoADesvincular) return;
+
+    try {
+      setDesvinculando(true);
+      setDesvincularError("");
+
+      const res = await fetch(
+        `${API_BASE}/admin/eventuales/${encodeURIComponent(id)}/pedidos/${encodeURIComponent(pedidoADesvincular.id)}`,
+        { method: "DELETE", headers: { "Content-Type": "application/json", ...buildActorHeaders(user) } }
+      );
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo desvincular el pedido del eventual");
+      }
+
+      setPedidosComplementarios(Array.isArray(data.pedidosComplementarios) ? data.pedidosComplementarios : []);
+      setMaquinasDePedidos(Array.isArray(data.maquinasDePedidos) ? data.maquinasDePedidos : []);
+      setPedidoExito(
+        `Pedido ${pedidoADesvincular.id} desvinculado del eventual. El pedido sigue su circuito normal.`
+      );
+      setPedidoADesvincular(null);
+    } catch (desvincularErr) {
+      console.error(desvincularErr);
+      setDesvincularError(desvincularErr.message || "Error desvinculando el pedido");
+    } finally {
+      setDesvinculando(false);
     }
   }
 
@@ -1073,6 +1116,17 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         {pedidosComplementarios.length > 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white p-3">
             <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Pedidos complementarios del eventual</p>
+            <p className="mt-0.5 text-[11px] text-slate-400">
+              Desvincular saca el pedido del eventual (deja de sumar sus máquinas y de fijar al supervisor);
+              el pedido sigue su circuito normal.
+            </p>
+
+            {desvincularError ? (
+              <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">
+                {desvincularError}
+              </div>
+            ) : null}
+
             <div className="mt-2 space-y-2">
               {pedidosComplementarios.map((pedido) => (
                 <div key={pedido.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
@@ -1082,11 +1136,23 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                       {pedido.estado.replaceAll("_", " ")}
                     </span>
                   </div>
-                  <span className="text-xs text-slate-500">
-                    {pedido.maquinas.length > 0
-                      ? `${pedido.maquinas.length} máquina${pedido.maquinas.length === 1 ? "" : "s"} asignada${pedido.maquinas.length === 1 ? "" : "s"}`
-                      : "Sin máquinas asignadas aún"}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-500">
+                      {pedido.maquinas.length > 0
+                        ? `${pedido.maquinas.length} máquina${pedido.maquinas.length === 1 ? "" : "s"} asignada${pedido.maquinas.length === 1 ? "" : "s"}`
+                        : "Sin máquinas asignadas aún"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDesvincularError("");
+                        setPedidoADesvincular(pedido);
+                      }}
+                      className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                    >
+                      Desvincular
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1959,6 +2025,23 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         </div>,
         document.body
       ) : null}
+
+      <ConfirmModal
+        open={Boolean(pedidoADesvincular)}
+        title="Desvincular pedido del eventual"
+        message={
+          pedidoADesvincular
+            ? `El pedido ${pedidoADesvincular.id} dejará de pertenecer a este eventual: sus máquinas ya no se suman a las utilizadas y deja de fijar al supervisor asignado. El pedido no se elimina y sigue su circuito normal.`
+            : ""
+        }
+        onCancel={() => {
+          if (!desvinculando) setPedidoADesvincular(null);
+        }}
+        onConfirm={desvincularPedido}
+        confirmLabel={desvinculando ? "Desvinculando..." : "Desvincular pedido"}
+        cancelLabel="Cancelar"
+        tone="danger"
+      />
 
       <ConfirmModal
         open={confirmOpen}

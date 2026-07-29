@@ -406,6 +406,15 @@ export async function listEventuales(filters = {}) {
 
 const ESTADOS_PEDIDO_TERMINADOS = ["CERRADO", "CANCELADO"];
 
+// Pedidos que "atan" el eventual a su supervisor titular. Un pedido CANCELADO ya no
+// existe operativamente, así que no debe seguir fijando al supervisor: si contara,
+// un pedido disparado por error dejaría el campo bloqueado para siempre.
+export function contarPedidosQueFijanSupervisor(eventualId) {
+  return prisma.pedido.count({
+    where: { eventualId: Number(eventualId), estado: { not: "CANCELADO" } },
+  });
+}
+
 export async function getEventualDetail(eventualId) {
   const eventual = await prisma.eventual.findUnique({
     where: { id: Number(eventualId) },
@@ -588,9 +597,7 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
 
   // Con pedidos complementarios disparados, el supervisor queda fijado
   if (existing) {
-    const pedidosVinculados = await prisma.pedido.count({
-      where: { eventualId: Number(eventualId) },
-    });
+    const pedidosVinculados = await contarPedidosQueFijanSupervisor(eventualId);
     if (pedidosVinculados > 0 && (data.supervisorId ?? null) !== (existing.supervisorId ?? null)) {
       throw buildError(
         "No se puede modificar el supervisor: el eventual ya tiene pedidos complementarios disparados",
@@ -782,6 +789,61 @@ export async function deleteEventual(eventualId, actorUsername) {
   });
 
   return true;
+}
+
+// Desvincula un pedido complementario del eventual sin tocar el pedido en sí: sigue su
+// circuito normal (preparación, entrega, devolución), pero deja de contar como pedido del
+// eventual —máquinas utilizadas, listado y bloqueo del supervisor titular—. Es la única
+// forma de deshacer un disparo equivocado: borrar el pedido rompería getNextPedidoCode().
+export async function desvincularPedidoDeEventual({ eventualId, pedidoId, actorId, actorNombre }) {
+  const eventual = await prisma.eventual.findUnique({
+    where: { id: Number(eventualId) },
+    select: { id: true, nombre: true },
+  });
+  if (!eventual) {
+    throw buildError("Eventual no encontrado", 404);
+  }
+
+  const pedido = await prisma.pedido.findUnique({
+    where: { id: String(pedidoId) },
+    select: { id: true, estado: true, eventualId: true },
+  });
+  if (!pedido || pedido.eventualId !== eventual.id) {
+    throw buildError("El pedido no pertenece a este eventual", 404);
+  }
+
+  await prisma.$transaction([
+    prisma.pedido.update({
+      where: { id: pedido.id },
+      data: { eventualId: null },
+    }),
+    prisma.historialEventual.create({
+      data: {
+        eventualId: eventual.id,
+        accion: "PEDIDO_COMPLEMENTARIO_DESVINCULADO",
+        detalle: JSON.stringify({
+          pedidoId: pedido.id,
+          estadoPedido: pedido.estado,
+          desvinculadoPor: actorNombre || null,
+        }),
+        usuarioId: actorId,
+      },
+    }),
+    prisma.historialPedido.create({
+      data: {
+        pedidoId: pedido.id,
+        accion: "DESVINCULADO_DE_EVENTUAL",
+        detalle: JSON.stringify({
+          eventualId: eventual.id,
+          eventual: eventual.nombre,
+          desvinculadoPor: actorNombre || null,
+        }),
+        usuarioId: actorId,
+      },
+    }),
+  ]);
+
+  return getEventualDetail(eventual.id);
 }
 
 // Solo el supervisor_limpieza puede cargar las máquinas y vehículos utilizados de un

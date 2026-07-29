@@ -15,6 +15,7 @@ import {
   userHasAnyRole,
   ROLES_PEDIDO_TITULAR,
 } from "../services/roles.service.js";
+import { contarPedidosQueFijanSupervisor } from "../services/eventuales.service.js";
 
 /* ========================================================
    HELPERS
@@ -257,9 +258,7 @@ export async function crearPedido(req, res) {
       }
 
       // Con pedidos ya disparados, el supervisor del eventual queda fijado
-      const pedidosPrevios = await prisma.pedido.count({
-        where: { eventualId: eventual.id },
-      });
+      const pedidosPrevios = await contarPedidosQueFijanSupervisor(eventual.id);
       if (pedidosPrevios > 0 && eventual.supervisorId && eventual.supervisorId !== supervisor.id) {
         return res.status(400).json({
           error: "El supervisor del eventual quedó fijado por los pedidos complementarios ya disparados",

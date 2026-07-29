@@ -4,6 +4,7 @@ import {
   adminGetComponentesCatalogo,
   adminCreateEventual,
   adminDeleteEventual,
+  adminDesvincularPedidoComplementario,
   adminGetEventual,
   adminImportarHorasBrowix,
   adminImportarInsumos,
@@ -22,6 +23,7 @@ router.put("/eventuales/:id", adminUpdateEventual);
 router.post("/eventuales/:id/importar-horas-browix", adminImportarHorasBrowix);
 router.post("/eventuales/:id/importar-insumos", adminImportarInsumos);
 router.put("/eventuales/:id/horas-supervisor", adminActualizarHorasSupervisor);
+router.delete("/eventuales/:id/pedidos/:pedidoId", adminDesvincularPedidoComplementario);
 router.delete("/eventuales/:id", adminDeleteEventual);
 
 export default router;
