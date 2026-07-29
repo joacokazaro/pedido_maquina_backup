@@ -21,6 +21,11 @@ function estiloEstadoPedido(estado) {
 
 const ESTADOS = ["activo", "finalizado", "cancelado"];
 
+// Pedidos propios cuyas máquinas se ofrecen como "temporales" del supervisor en el selector.
+// PREPARADO todavía no salió del depósito, pero ya está reservado para el supervisor y se
+// suele usar en el eventual antes de que quede registrada la entrega.
+const ESTADOS_PEDIDO_MAQUINAS_TEMPORALES = ["ENTREGADO", "PREPARADO"];
+
 const TIPOS_TRABAJO = [
   { value: "PODA_MENOR_2M", label: "Poda < 2mtrs" },
   { value: "PODA_ALTURA", label: "Poda en altura" },
@@ -285,17 +290,28 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
 
         const maquinasFijas = Array.isArray(maquinasData?.maquinasFijas) ? maquinasData.maquinasFijas : [];
         const idsFijas = new Set(maquinasFijas.map((maquina) => maquina.id));
-        // Máquinas temporales vigentes: pedidos propios ya entregados (al depósito o préstamos
-        // de otro supervisor). El supervisor dispone de ellas hasta la devolución.
+        // Máquinas temporales vigentes: pedidos propios ya entregados o preparados (al depósito o
+        // préstamos de otro supervisor). El supervisor dispone de ellas hasta la devolución.
         const maquinasPrestadas = (Array.isArray(maquinasData?.maquinasTemporales) ? maquinasData.maquinasTemporales : [])
           .filter(
             (maquina) =>
               maquina?.pedido?.tipo === "PEDIDO" &&
-              maquina?.pedido?.estado === "ENTREGADO" &&
+              ESTADOS_PEDIDO_MAQUINAS_TEMPORALES.includes(maquina?.pedido?.estado) &&
               !idsFijas.has(maquina.id)
           )
           .map((maquina) => ({ ...maquina, esPrestamo: true }));
-        setSupervisorMaquinas([...maquinasFijas, ...maquinasPrestadas]);
+
+        // Una misma máquina puede venir en más de un pedido vigente (p. ej. preparada en uno y
+        // entregada en otro): se queda la primera aparición para no duplicarla en el listado.
+        const temporalesUnicas = [];
+        const idsTemporales = new Set();
+        for (const maquina of maquinasPrestadas) {
+          if (idsTemporales.has(maquina.id)) continue;
+          idsTemporales.add(maquina.id);
+          temporalesUnicas.push(maquina);
+        }
+
+        setSupervisorMaquinas([...maquinasFijas, ...temporalesUnicas]);
 
         const vehiculosSupervisor = Array.isArray(vehiculosData?.vehiculos) ? vehiculosData.vehiculos : [];
         setSupervisorVehiculos(vehiculosSupervisor);
@@ -1064,7 +1080,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                     {grupo.maquinaIds.map((maquinaId) => (
                       <span
                         key={maquinaId}
-                        title={prestamoIds.has(maquinaId) ? "Asignada temporalmente por un préstamo o pedido vigente" : undefined}
+                        title={prestamoIds.has(maquinaId) ? "Asignada temporalmente por un préstamo o pedido vigente (entregado o preparado)" : undefined}
                         className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                           prestamoIds.has(maquinaId)
                             ? "bg-amber-100 text-amber-700"
@@ -1891,7 +1907,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               {prestamoIds.size > 0 ? (
                 <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700">
                   <span className="h-2.5 w-2.5 flex-none rounded-full border border-amber-400 bg-amber-100" />
-                  Las máquinas en amarillo las tiene temporalmente por un préstamo o pedido vigente.
+                  Las máquinas en amarillo las tiene temporalmente por un préstamo o pedido vigente
+                  (entregado o ya preparado en el depósito).
                 </p>
               ) : null}
             </div>
@@ -1988,6 +2005,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                                     return "Pedido al depósito";
                                   })()}
                                   {maquina.pedido?.id ? ` · ${maquina.pedido.id}` : ""}
+                                  {maquina.pedido?.estado === "PREPARADO" ? " · Preparado, sin entregar" : ""}
                                 </p>
                               ) : null}
                             </button>
