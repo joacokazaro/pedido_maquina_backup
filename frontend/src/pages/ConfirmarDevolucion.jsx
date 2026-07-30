@@ -144,7 +144,9 @@ export default function ConfirmarDevolucion() {
             ? "Estás registrando una devolución directa desde depósito sin que el supervisor la haya cargado previamente."
             : pedido.estado === "CERRADO"
               ? "Estás registrando una devolución pendiente sobre un pedido cerrado con faltantes."
-            : "Estás cerrando desde depósito una devolución que quedó pendiente después de un registro parcial del supervisor."}
+              : pedido.estado === "PENDIENTE_CONFIRMACION"
+                ? "Revisá y confirmá la devolución que registró el supervisor."
+                : "Estás cerrando desde depósito una devolución que quedó pendiente después de un registro parcial del supervisor."}
         </p>
       )}
 

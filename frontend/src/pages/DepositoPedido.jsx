@@ -102,9 +102,13 @@ export default function DepositoPedido() {
   const etiquetaDevolucionDirecta =
     pedido.estado === "ENTREGADO"
       ? "Registrar devolución directa"
-      : pedido.estado === "CERRADO"
-        ? "Registrar devolución directa (cerrado con faltantes)"
-        : "Registrar devolución directa / cierre pendiente";
+      : pedido.estado === "PENDIENTE_CONFIRMACION"
+        ? "Confirmar devolución"
+        : pedido.estado === "PENDIENTE_CONFIRMACION_FALTANTES"
+          ? "Confirmar devolución (faltantes pendientes)"
+          : pedido.estado === "CERRADO"
+            ? "Registrar devolución directa (cerrado con faltantes)"
+            : "Registrar devolución directa / cierre pendiente";
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
