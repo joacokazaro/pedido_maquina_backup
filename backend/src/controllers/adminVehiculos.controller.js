@@ -5,40 +5,10 @@ import {
   canonicalEstadoVehiculo,
   normalizeEstadoVehiculo as normalizeEstadoVehiculoCanon,
 } from "../services/inventarioEstados.service.js";
-
-function computeFaltantesFinalesFromHistorial(historial) {
-  if (!Array.isArray(historial) || historial.length === 0) return [];
-
-  const faltantes = new Set();
-  const devueltas = new Set();
-
-  for (const h of historial) {
-    if (!h || !h.detalle) continue;
-    let d = null;
-    try {
-      d = typeof h.detalle === "string" ? JSON.parse(h.detalle) : h.detalle;
-    } catch (e) {
-      d = null;
-    }
-    const f = d?.faltantes || d?.faltantesConfirmados || [];
-    const dv = [].concat(d?.devueltas || [], d?.devueltasConfirmadas || [], d?.devueltasDeclaradas || []);
-
-    if (Array.isArray(f)) {
-      for (const id of f) if (id) faltantes.add(String(id));
-    }
-
-    if (Array.isArray(dv)) {
-      for (const id of dv) if (id) devueltas.add(String(id));
-    }
-  }
-
-  // quitar devueltas
-  for (const id of devueltas) {
-    if (faltantes.has(id)) faltantes.delete(id);
-  }
-
-  return Array.from(faltantes);
-}
+import {
+  computeFaltantesFinalesFromHistorial,
+  getDevueltasConfirmadasFromHistorial,
+} from "../services/devolucionHistorial.service.js";
 
 function normalizeString(value) {
   if (value === null || value === undefined) return "";
@@ -198,7 +168,16 @@ function mapVehiculo(vehiculo) {
   const asignacionActual = (vehiculo.historialAsignaciones || []).find((item) => !item.fechaHasta) || null;
   const asignacionPedido = (vehiculo.asignacionesPedido || [])[0] || null;
 
-  const pedidoActivo = asignacionPedido?.pedido
+  // Devolución hecha de a tandas: si depósito ya confirmó la devolución de
+  // este vehículo puntual, no lo mostramos como asignado aunque el pedido
+  // siga abierto por otros ítems todavía faltantes (Vehiculo.estado no se
+  // toca en confirmarDevolucion, así que este es el único chequeo a nivel
+  // vehículo disponible).
+  const yaDevuelto =
+    asignacionPedido?.pedido &&
+    getDevueltasConfirmadasFromHistorial(asignacionPedido.pedido.historial || []).has(String(vehiculo.id));
+
+  const pedidoActivo = asignacionPedido?.pedido && !yaDevuelto
     ? {
         id: asignacionPedido.pedido.id,
         estado: asignacionPedido.pedido.estado,
@@ -450,9 +429,10 @@ export async function adminGetVehiculos(req, res) {
               include: {
                 supervisor: { select: { username: true, nombre: true } },
                 historial: {
-                  where: { accion: "DEVOLUCION_CONFIRMADA" },
-                  orderBy: { fecha: "desc" },
-                  take: 1,
+                  where: {
+                    accion: { in: ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"] },
+                  },
+                  orderBy: { fecha: "asc" },
                 },
               },
             },

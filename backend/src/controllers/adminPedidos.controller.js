@@ -1,6 +1,10 @@
 import prisma from "../db/prisma.js";
 import { crearNotificacionesParaUsuarios } from "../services/notificaciones.service.js";
 import { userHasRole } from "../services/roles.service.js";
+import {
+  computeFaltantesFinalesFromHistorial,
+  getDevueltasConfirmadasFromHistorial,
+} from "../services/devolucionHistorial.service.js";
 
 /* ========================================================
    CONSTANTES Y HELPERS
@@ -34,44 +38,6 @@ function safeParse(detalle) {
   } catch {
     return null;
   }
-}
-
-function computeFaltantesFinalesFromHistorial(historial) {
-  if (!Array.isArray(historial) || historial.length === 0) return [];
-
-  const faltantes = new Set();
-  const devueltas = new Set();
-
-  for (const h of historial) {
-    if (!h || !h.detalle) continue;
-    const d = typeof h.detalle === "string" ? safeParse(h.detalle) : h.detalle;
-    if (!d) continue;
-
-    const faltantesDetalle = d?.faltantes || d?.faltantesConfirmados || [];
-    const devueltasDetalle = [].concat(
-      d?.devueltas || [],
-      d?.devueltasConfirmadas || [],
-      d?.devueltasDeclaradas || []
-    );
-
-    if (Array.isArray(faltantesDetalle)) {
-      for (const id of faltantesDetalle) {
-        if (id) faltantes.add(String(id));
-      }
-    }
-
-    if (Array.isArray(devueltasDetalle)) {
-      for (const id of devueltasDetalle) {
-        if (id) devueltas.add(String(id));
-      }
-    }
-  }
-
-  for (const id of devueltas) {
-    if (faltantes.has(id)) faltantes.delete(id);
-  }
-
-  return Array.from(faltantes);
 }
 
 /* ========================================================
@@ -359,12 +325,34 @@ export async function adminUpdatePedido(req, res) {
               },
             },
           },
-          select: { vehiculoId: true, pedidoId: true },
+          select: {
+            vehiculoId: true,
+            pedidoId: true,
+            pedido: {
+              select: {
+                historial: {
+                  where: {
+                    accion: { in: ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"] },
+                  },
+                  orderBy: { fecha: "asc" },
+                },
+              },
+            },
+          },
         });
 
-        if (asignacionesActivasVeh.length > 0) {
+        // Chequeo a nivel vehículo, no a nivel pedido: el pedido dueño puede
+        // seguir abierto por otros ítems todavía faltantes aunque este
+        // vehículo puntual ya haya sido confirmado devuelto por depósito
+        // (Vehiculo.estado no se toca en confirmarDevolucion, así que la
+        // única señal confiable es el historial de devolución).
+        const vehiculosRealmenteAsignados = asignacionesActivasVeh.filter(
+          (item) => !getDevueltasConfirmadasFromHistorial(item.pedido.historial || []).has(String(item.vehiculoId))
+        );
+
+        if (vehiculosRealmenteAsignados.length > 0) {
           return res.status(409).json({
-            error: `Los siguientes vehículos ya están asignados a otro pedido: ${asignacionesActivasVeh
+            error: `Los siguientes vehículos ya están asignados a otro pedido: ${vehiculosRealmenteAsignados
               .map((item) => item.vehiculoId)
               .join(", ")}`,
           });
@@ -375,27 +363,6 @@ export async function adminUpdatePedido(req, res) {
       if (noDisponibles.length > 0) {
         return res.status(409).json({
           error: `Las siguientes máquinas no están libres: ${noDisponibles.map((maquina) => maquina.id).join(", ")}`,
-        });
-      }
-
-      const asignacionesActivas = await prisma.pedidoMaquina.findMany({
-        where: {
-          maquinaId: { in: maquinasAgregar },
-          pedidoId: { not: id },
-          pedido: {
-            estado: {
-              notIn: ["CERRADO", "CANCELADO"],
-            },
-          },
-        },
-        select: { maquinaId: true, pedidoId: true },
-      });
-
-      if (asignacionesActivas.length > 0) {
-        return res.status(409).json({
-          error: `Las siguientes máquinas ya están asignadas a otro pedido: ${asignacionesActivas
-            .map((item) => item.maquinaId)
-            .join(", ")}`,
         });
       }
     }

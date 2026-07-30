@@ -12,12 +12,11 @@ import {
   getReferenciaSignedUrl,
   uploadReferenciaToS3,
 } from "../services/s3Referencias.service.js";
+import { getAsignacionActivaPorMaquina } from "../services/asignacionesPedido.service.js";
 
 /* ========================================================
    CONSTANTES
 ======================================================== */
-const ESTADO_PEDIDO_CERRADO = "CERRADO";
-
 const EMPRESAS_VALIDAS = ["Pulizia", "Pazar"];
 
 const ESTADO_AMORTIZACION = {
@@ -1689,107 +1688,10 @@ export async function adminGetMaquinas(req, res) {
       orderBy: [{ tipo: "asc" }, { id: "asc" }],
     });
 
-    const maquinasIds = maquinas.map((m) => m.id);
-
-    const asignacionesActivas = maquinasIds.length
-      ? await prisma.pedidoMaquina.findMany({
-          where: {
-            maquinaId: { in: maquinasIds },
-            pedido: {
-              estado: {
-                notIn: ["CERRADO", "CANCELADO"],
-              },
-            },
-          },
-          include: {
-            pedido: {
-              select: {
-                id: true,
-                estado: true,
-                createdAt: true,
-                destino: true,
-                servicio: {
-                  select: { id: true, nombre: true },
-                },
-              },
-            },
-          },
-          orderBy: {
-            pedido: {
-              createdAt: "desc",
-            },
-          },
-        })
-      : [];
-
-    const maquinasNoDevueltasIds = maquinas
-      .filter((m) => canonicalEstadoMaquina(m.estado) === "no_devuelta")
-      .map((m) => m.id);
-
-    const asignacionesHistoricasNoDevueltas = maquinasNoDevueltasIds.length
-      ? await prisma.pedidoMaquina.findMany({
-          where: {
-            maquinaId: { in: maquinasNoDevueltasIds },
-          },
-          include: {
-            pedido: {
-              select: {
-                id: true,
-                estado: true,
-                createdAt: true,
-                destino: true,
-                servicio: {
-                  select: { id: true, nombre: true },
-                },
-              },
-            },
-          },
-          orderBy: {
-            pedido: {
-              createdAt: "desc",
-            },
-          },
-        })
-      : [];
-
-    const asignacionPorMaquina = new Map();
-    for (const a of asignacionesActivas) {
-      if (!asignacionPorMaquina.has(a.maquinaId)) {
-        asignacionPorMaquina.set(a.maquinaId, {
-          pedidoId: a.pedido.id,
-          estadoPedido: a.pedido.estado,
-          destino: a.pedido.destino,
-          servicio: a.pedido.servicio,
-        });
-      }
-    }
-
-    const asignacionHistoricaPorMaquina = new Map();
-    for (const a of asignacionesHistoricasNoDevueltas) {
-      if (!asignacionHistoricaPorMaquina.has(a.maquinaId)) {
-        asignacionHistoricaPorMaquina.set(a.maquinaId, {
-          pedidoId: a.pedido.id,
-          estadoPedido: a.pedido.estado,
-          destino: a.pedido.destino,
-          servicio: a.pedido.servicio,
-        });
-      }
-    }
+    const asignacionPorMaquina = await getAsignacionActivaPorMaquina(maquinas);
 
     const result = maquinas.map((m) => {
       const estadoCanonico = canonicalEstadoMaquina(m.estado);
-
-      // El pedido puede seguir "abierto" por otras máquinas faltantes aunque
-      // esta ya haya sido confirmada como devuelta (estado ya vuelto a
-      // "disponible"). El chequeo tiene que ser por máquina, no por pedido:
-      // solo confiamos en la asignación activa si el estado propio de la
-      // máquina todavía indica que sigue afuera.
-      const asignacion =
-        estadoCanonico === "asignada"
-          ? asignacionPorMaquina.get(m.id) || null
-          : estadoCanonico === "no_devuelta"
-            ? asignacionPorMaquina.get(m.id) || asignacionHistoricaPorMaquina.get(m.id) || null
-            : null;
 
       return {
         ...m,
@@ -1800,7 +1702,7 @@ export async function adminGetMaquinas(req, res) {
           : ESTADO_AMORTIZACION.SIN_DATOS,
         estadoAmortizacionLabel: toEstadoAmortizacionLabel(m.estadoAmortizacion),
         estado: estadoCanonico,
-        asignacion,
+        asignacion: asignacionPorMaquina.get(m.id) || null,
       };
     });
 
@@ -1854,41 +1756,11 @@ export async function adminGetMaquinaById(req, res) {
 
     const tipoMaquinaNombre = maquina.tipoMaquina?.nombre || maquina.tipo;
 
-    // 🔑 Pedido actual (no cerrado) más reciente
-    const pedidoActual = await prisma.pedido.findFirst({
-      where: {
-        estado: { notIn: [ESTADO_PEDIDO_CERRADO, "CANCELADO"] },
-        asignadas: {
-          some: { maquinaId: id },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        estado: true,
-        servicio: {
-          select: { nombre: true },
-        },
-      },
-    });
-
-    const pedidoHistoricoNoDevuelto = !pedidoActual && canonicalEstadoMaquina(maquina.estado) === "no_devuelta"
-      ? await prisma.pedido.findFirst({
-          where: {
-            asignadas: {
-              some: { maquinaId: id },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            estado: true,
-            servicio: {
-              select: { nombre: true },
-            },
-          },
-        })
-      : null;
+    // Chequeo a nivel máquina, no a nivel pedido: ver getAsignacionActivaPorMaquina.
+    const asignacionPorMaquina = await getAsignacionActivaPorMaquina([
+      { id: maquina.id, estado: maquina.estado },
+    ]);
+    const asignacionActiva = asignacionPorMaquina.get(maquina.id) || null;
 
     res.json({
       ...maquina,
@@ -1906,11 +1778,11 @@ export async function adminGetMaquinaById(req, res) {
         : ESTADO_AMORTIZACION.SIN_DATOS,
       estadoAmortizacionLabel: toEstadoAmortizacionLabel(maquina.estadoAmortizacion),
       estado: canonicalEstadoMaquina(maquina.estado),
-      asignacion: pedidoActual || pedidoHistoricoNoDevuelto
+      asignacion: asignacionActiva
         ? {
-            pedidoId: (pedidoActual || pedidoHistoricoNoDevuelto).id,
-            servicio: (pedidoActual || pedidoHistoricoNoDevuelto).servicio?.nombre ?? null,
-            estadoPedido: (pedidoActual || pedidoHistoricoNoDevuelto).estado,
+            pedidoId: asignacionActiva.pedidoId,
+            servicio: asignacionActiva.servicio?.nombre ?? null,
+            estadoPedido: asignacionActiva.estadoPedido,
           }
         : null,
     });
@@ -2424,42 +2296,14 @@ export async function adminMoverMaquinasMasivo(req, res) {
       return res.status(404).json({ error: "Servicio destino no encontrado" });
     }
 
-    const [maquinas, asignacionesActivas] = await Promise.all([
-      prisma.maquina.findMany({
-        where: { id: { in: ids } },
-        include: {
-          servicio: {
-            select: { id: true, nombre: true },
-          },
+    const maquinas = await prisma.maquina.findMany({
+      where: { id: { in: ids } },
+      include: {
+        servicio: {
+          select: { id: true, nombre: true },
         },
-      }),
-      prisma.pedidoMaquina.findMany({
-        where: {
-          maquinaId: { in: ids },
-          pedido: {
-            estado: {
-              notIn: ["CERRADO", "CANCELADO"],
-            },
-          },
-        },
-        include: {
-          pedido: {
-            select: {
-              id: true,
-              estado: true,
-              servicio: {
-                select: { id: true, nombre: true },
-              },
-            },
-          },
-        },
-        orderBy: {
-          pedido: {
-            createdAt: "desc",
-          },
-        },
-      }),
-    ]);
+      },
+    });
 
     const maquinasById = new Map(maquinas.map((m) => [m.id, m]));
     const inexistentes = ids.filter((id) => !maquinasById.has(id));
@@ -2471,15 +2315,11 @@ export async function adminMoverMaquinasMasivo(req, res) {
       });
     }
 
-    const asignacionActivaByMaquina = new Map();
-    for (const a of asignacionesActivas) {
-      if (!asignacionActivaByMaquina.has(a.maquinaId)) {
-        asignacionActivaByMaquina.set(a.maquinaId, a);
-      }
-    }
+    // Chequeo a nivel máquina, no a nivel pedido: ver getAsignacionActivaPorMaquina.
+    const asignacionActivaByMaquina = await getAsignacionActivaPorMaquina(maquinas);
 
     const conPedidoActivo = ids
-      .filter((id) => asignacionActivaByMaquina.has(id))
+      .filter((id) => asignacionActivaByMaquina.get(id))
       .map((id) => {
         const maquina = maquinasById.get(id);
         const asignacion = asignacionActivaByMaquina.get(id);
@@ -2487,9 +2327,9 @@ export async function adminMoverMaquinasMasivo(req, res) {
           id,
           tipo: maquina?.tipo || null,
           modelo: maquina?.modelo || null,
-          pedidoId: asignacion.pedido.id,
-          estadoPedido: asignacion.pedido.estado,
-          servicioPedido: asignacion.pedido.servicio?.nombre || null,
+          pedidoId: asignacion.pedidoId,
+          estadoPedido: asignacion.estadoPedido,
+          servicioPedido: asignacion.servicio?.nombre || null,
         };
       });
 
@@ -2544,6 +2384,7 @@ export async function adminMoverMaquinasMasivo(req, res) {
         select: {
           id: true,
           servicioId: true,
+          estado: true,
         },
       });
 
@@ -2551,19 +2392,9 @@ export async function adminMoverMaquinasMasivo(req, res) {
         throw new Error("La selección cambió durante el proceso. Reintentá.");
       }
 
-      const activasTx = await tx.pedidoMaquina.findMany({
-        where: {
-          maquinaId: { in: ids },
-          pedido: {
-            estado: {
-              notIn: ["CERRADO", "CANCELADO"],
-            },
-          },
-        },
-        select: {
-          maquinaId: true,
-        },
-      });
+      // Chequeo a nivel máquina, no a nivel pedido: ver getAsignacionActivaPorMaquina.
+      const asignacionActivaTx = await getAsignacionActivaPorMaquina(maquinasTx, { client: tx });
+      const activasTx = maquinasTx.filter((m) => asignacionActivaTx.get(m.id));
 
       if (activasTx.length > 0 && !confirmarConActivos) {
         throw new Error("Estas máquinas tienen pedidos activos sin confirmar.");
@@ -2739,45 +2570,7 @@ export async function adminExportMaquinas(req, res) {
       orderBy: [{ tipo: "asc" }, { id: "asc" }],
     });
 
-    const maquinasIds = maquinas.map((maquina) => maquina.id);
-
-    const asignacionesActivas = maquinasIds.length
-      ? await prisma.pedidoMaquina.findMany({
-          where: {
-            maquinaId: { in: maquinasIds },
-            pedido: {
-              estado: {
-                notIn: ["CERRADO", "CANCELADO"],
-              },
-            },
-          },
-          include: {
-            pedido: {
-              select: {
-                id: true,
-                estado: true,
-                destino: true,
-                createdAt: true,
-                servicio: {
-                  select: { id: true, nombre: true },
-                },
-              },
-            },
-          },
-          orderBy: {
-            pedido: {
-              createdAt: "desc",
-            },
-          },
-        })
-      : [];
-
-    const asignacionPorMaquina = new Map();
-    for (const asignacion of asignacionesActivas) {
-      if (!asignacionPorMaquina.has(asignacion.maquinaId)) {
-        asignacionPorMaquina.set(asignacion.maquinaId, asignacion.pedido);
-      }
-    }
+    const asignacionPorMaquina = await getAsignacionActivaPorMaquina(maquinas);
 
     const rows = [[
       "Codigo",
@@ -2808,7 +2601,7 @@ export async function adminExportMaquinas(req, res) {
     ]];
 
     for (const maquina of maquinas) {
-      const asignacion = asignacionPorMaquina.get(maquina.id);
+      const asignacion = asignacionPorMaquina.get(maquina.id) || null;
 
       rows.push([
         maquina.id,
@@ -2832,8 +2625,8 @@ export async function adminExportMaquinas(req, res) {
         maquina.origenInfo ?? "",
         maquina.servicioAmortizacion?.nombre ?? "",
         maquina.comentarios ?? "",
-        asignacion?.id ?? "",
-        asignacion?.estado ?? "",
+        asignacion?.pedidoId ?? "",
+        asignacion?.estadoPedido ?? "",
         asignacion?.destino ?? "",
         asignacion?.servicio?.nombre ?? "",
       ]);

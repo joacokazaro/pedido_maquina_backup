@@ -1,5 +1,6 @@
 import prisma from "../db/prisma.js";
 import ExcelJS from "exceljs";
+import { getAsignacionActivaPorMaquina } from "../services/asignacionesPedido.service.js";
 
 /* ========================================================
    HELPERS
@@ -122,50 +123,7 @@ export async function adminGetServicioById(req, res) {
       return res.status(404).json({ error: "Servicio no encontrado" });
     }
 
-    const maquinasIds = servicio.maquinas.map((m) => m.id);
-
-    const asignacionesActivas = maquinasIds.length
-      ? await prisma.pedidoMaquina.findMany({
-          where: {
-            maquinaId: { in: maquinasIds },
-            pedido: {
-              estado: {
-                notIn: ["CERRADO", "CANCELADO"],
-              },
-            },
-          },
-          include: {
-            pedido: {
-              select: {
-                id: true,
-                estado: true,
-                createdAt: true,
-                destino: true,
-                servicio: {
-                  select: { id: true, nombre: true },
-                },
-              },
-            },
-          },
-          orderBy: {
-            pedido: {
-              createdAt: "desc",
-            },
-          },
-        })
-      : [];
-
-    const asignacionPorMaquina = new Map();
-    for (const asignacion of asignacionesActivas) {
-      if (!asignacionPorMaquina.has(asignacion.maquinaId)) {
-        asignacionPorMaquina.set(asignacion.maquinaId, {
-          pedidoId: asignacion.pedido.id,
-          estadoPedido: asignacion.pedido.estado,
-          destino: asignacion.pedido.destino,
-          servicio: asignacion.pedido.servicio,
-        });
-      }
-    }
+    const asignacionPorMaquina = await getAsignacionActivaPorMaquina(servicio.maquinas);
 
     res.json({
       ...servicio,
