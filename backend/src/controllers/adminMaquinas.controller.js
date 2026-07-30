@@ -1776,21 +1776,33 @@ export async function adminGetMaquinas(req, res) {
       }
     }
 
-    const result = maquinas.map((m) => ({
-      ...m,
-      tipo: m.tipoMaquina?.nombre || m.tipo,
-      amortizacion: resolveAmortizacionByTipo(m.tipoMaquina),
-      estadoAmortizacion: ESTADOS_AMORTIZACION_VALIDOS.has(m.estadoAmortizacion)
-        ? m.estadoAmortizacion
-        : ESTADO_AMORTIZACION.SIN_DATOS,
-      estadoAmortizacionLabel: toEstadoAmortizacionLabel(m.estadoAmortizacion),
-      estado: canonicalEstadoMaquina(m.estado),
-      asignacion:
-        asignacionPorMaquina.get(m.id) ||
-        (canonicalEstadoMaquina(m.estado) === "no_devuelta"
-          ? asignacionHistoricaPorMaquina.get(m.id) || null
-          : null),
-    }));
+    const result = maquinas.map((m) => {
+      const estadoCanonico = canonicalEstadoMaquina(m.estado);
+
+      // El pedido puede seguir "abierto" por otras máquinas faltantes aunque
+      // esta ya haya sido confirmada como devuelta (estado ya vuelto a
+      // "disponible"). El chequeo tiene que ser por máquina, no por pedido:
+      // solo confiamos en la asignación activa si el estado propio de la
+      // máquina todavía indica que sigue afuera.
+      const asignacion =
+        estadoCanonico === "asignada"
+          ? asignacionPorMaquina.get(m.id) || null
+          : estadoCanonico === "no_devuelta"
+            ? asignacionPorMaquina.get(m.id) || asignacionHistoricaPorMaquina.get(m.id) || null
+            : null;
+
+      return {
+        ...m,
+        tipo: m.tipoMaquina?.nombre || m.tipo,
+        amortizacion: resolveAmortizacionByTipo(m.tipoMaquina),
+        estadoAmortizacion: ESTADOS_AMORTIZACION_VALIDOS.has(m.estadoAmortizacion)
+          ? m.estadoAmortizacion
+          : ESTADO_AMORTIZACION.SIN_DATOS,
+        estadoAmortizacionLabel: toEstadoAmortizacionLabel(m.estadoAmortizacion),
+        estado: estadoCanonico,
+        asignacion,
+      };
+    });
 
     res.json(result);
   } catch (e) {
