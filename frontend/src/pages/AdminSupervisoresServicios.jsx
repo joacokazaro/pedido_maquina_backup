@@ -60,7 +60,10 @@ export default function AdminSupervisoresServicios() {
         const data1 = r1.ok ? await r1.json() : [];
         const data2 = r2.ok ? await r2.json() : [];
         setSupervisores(Array.isArray(data1) ? data1 : []);
-        setServicios(Array.isArray(data2) ? data2 : []);
+        // /admin/servicios trae también los inactivos (los necesita la
+        // pantalla de ABM de servicios). Acá no son asignables: el backend
+        // rechaza con 400 si se intenta guardar uno inactivo.
+        setServicios(Array.isArray(data2) ? data2.filter((s) => s.activo) : []);
       } catch {
         showToast("err", "Error cargando datos");
       } finally {
