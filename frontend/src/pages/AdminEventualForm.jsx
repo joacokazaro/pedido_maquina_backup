@@ -144,6 +144,13 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [seleccionTemp, setSeleccionTemp] = useState(() => new Set());
   const [busquedaMaquina, setBusquedaMaquina] = useState("");
+  // Pestaña "Todas las máquinas": listado completo del inventario, para cuando todavía no se
+  // asignaron los servicios correspondientes al supervisor y sus máquinas no aparecen en la
+  // primera pestaña.
+  const [selectorTab, setSelectorTab] = useState("supervisor");
+  const [todasMaquinas, setTodasMaquinas] = useState([]);
+  const [todasMaquinasCargadas, setTodasMaquinasCargadas] = useState(false);
+  const [cargandoTodasMaquinas, setCargandoTodasMaquinas] = useState(false);
   const prefillVehiculosRef = useRef(false);
 
   // Pedidos complementarios disparados desde el eventual
@@ -364,6 +371,43 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     };
   }, [form.supervisorId, mostrarComponentes]);
 
+  // Listado completo de máquinas para la pestaña "Todas" del selector: se carga una sola vez,
+  // recién cuando el usuario entra a esa pestaña (evita pedirlo si nunca la usa).
+  useEffect(() => {
+    if (!selectorOpen || selectorTab !== "todas" || todasMaquinasCargadas) return undefined;
+
+    let cancelado = false;
+
+    async function loadTodasMaquinas() {
+      try {
+        setCargandoTodasMaquinas(true);
+        const res = await fetch(`${API_BASE}/maquinas`);
+        const data = res.ok ? await res.json() : [];
+        if (cancelado) return;
+
+        const maquinas = (Array.isArray(data) ? data : [])
+          .filter((maquina) => maquina.estado !== "baja")
+          .map((maquina) => ({
+            ...maquina,
+            // El endpoint general devuelve `servicio` como string (nombre); acá se normaliza
+            // al mismo shape { id, nombre } que ya usa la pestaña del supervisor.
+            servicio: maquina.servicio ? { id: maquina.servicioId, nombre: maquina.servicio } : null,
+          }));
+        setTodasMaquinas(maquinas);
+        setTodasMaquinasCargadas(true);
+      } catch (todasError) {
+        console.error(todasError);
+      } finally {
+        if (!cancelado) setCargandoTodasMaquinas(false);
+      }
+    }
+
+    loadTodasMaquinas();
+    return () => {
+      cancelado = true;
+    };
+  }, [selectorOpen, selectorTab, todasMaquinasCargadas]);
+
   const vehiculosOptions = useMemo(() => {
     return vehiculosCatalogo.map((item) => ({
       value: item.id,
@@ -392,9 +436,19 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     }));
   }, [seleccionMaquinasTocada, maquinasSeleccionadas, maquinasRows]);
 
+  // Se necesita antes de acá (para las advertencias de la pestaña "Todas"); el resto de sus
+  // usos (pedido complementario) sigue más abajo sin cambios.
+  const supervisorAsignado = supervisores.find(
+    (supervisor) => String(supervisor.id) === String(form.supervisorId)
+  );
+
+  // Fuente de datos del selector según la pestaña activa: máquinas del supervisor (por
+  // servicios + préstamos/pedidos vigentes) o el inventario completo.
+  const maquinasSelectorFuente = selectorTab === "todas" ? todasMaquinas : supervisorMaquinas;
+
   const maquinasModalGrupos = useMemo(() => {
     const term = busquedaMaquina.trim().toLowerCase();
-    const filtradas = supervisorMaquinas.filter((maquina) => {
+    const filtradas = maquinasSelectorFuente.filter((maquina) => {
       if (!term) return true;
       return [maquina.id, maquina.tipo, maquina.modelo, maquina.serie, maquina.servicio?.nombre]
         .some((valor) => String(valor || "").toLowerCase().includes(term));
@@ -407,12 +461,35 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       grupos.get(key).push(maquina);
     }
     return Array.from(grupos.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [supervisorMaquinas, busquedaMaquina]);
+  }, [maquinasSelectorFuente, busquedaMaquina]);
 
   const prestamoIds = useMemo(
     () => new Set(supervisorMaquinas.filter((maquina) => maquina.esPrestamo).map((maquina) => maquina.id)),
     [supervisorMaquinas]
   );
+
+  // Estados en los que la máquina no está físicamente disponible para usarse: se avisa igual
+  // (no se bloquea, puede ser un dato desactualizado) pero con más énfasis.
+  const ESTADOS_MAQUINA_NO_OPERATIVOS = {
+    taller: "En taller",
+    fuera_servicio: "Fuera de servicio",
+    no_devuelta: "No devuelta",
+  };
+
+  // Advertencia para la pestaña "Todas": distingue máquinas físicamente no disponibles o en
+  // uso activo por otro supervisor. Las que simplemente no son del servicio del supervisor
+  // pero están libres no se marcan (ya se ve su servicio actual en la tarjeta).
+  function getAdvertenciaMaquinaTodas(maquina) {
+    if (ESTADOS_MAQUINA_NO_OPERATIVOS[maquina.estado]) {
+      return { texto: ESTADOS_MAQUINA_NO_OPERATIVOS[maquina.estado], tono: "critico" };
+    }
+    const pedidoActivo = maquina.pedidoActivo;
+    if (pedidoActivo?.supervisor && pedidoActivo.supervisor !== supervisorAsignado?.username) {
+      const nombre = pedidoActivo.supervisorNombre || pedidoActivo.supervisor;
+      return { texto: `En uso por ${nombre}`, tono: "uso" };
+    }
+    return null;
+  }
 
   const estadoStyles = ESTADO_STYLES[form.estado] || {
     select: "border-slate-300 bg-slate-50 text-slate-800",
@@ -437,6 +514,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   function abrirSelectorMaquinas() {
     setSeleccionTemp(new Set(maquinasSeleccionadas.map((maquina) => maquina.id)));
     setBusquedaMaquina("");
+    setSelectorTab("supervisor");
     setSelectorOpen(true);
   }
 
@@ -462,9 +540,16 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   }
 
   function guardarSeleccionMaquinas() {
+    // La selección puede incluir máquinas elegidas en cualquiera de las dos pestañas: se
+    // combinan ambas fuentes para no perder las que solo aparecen en "Todas".
+    const maquinasPorId = new Map();
+    for (const maquina of todasMaquinas) maquinasPorId.set(maquina.id, maquina);
+    for (const maquina of supervisorMaquinas) maquinasPorId.set(maquina.id, maquina);
+
     setMaquinasSeleccionadas(
-      supervisorMaquinas
-        .filter((maquina) => seleccionTemp.has(maquina.id))
+      Array.from(seleccionTemp)
+        .map((maquinaId) => maquinasPorId.get(maquinaId))
+        .filter(Boolean)
         .map((maquina) => ({ id: maquina.id, tipo: maquina.tipo }))
     );
     setSeleccionMaquinasTocada(true);
@@ -474,9 +559,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   /* =========================
      PEDIDO COMPLEMENTARIO
   ========================== */
-  const supervisorAsignado = supervisores.find(
-    (supervisor) => String(supervisor.id) === String(form.supervisorId)
-  );
+  // (supervisorAsignado se define más arriba, junto al resto del estado del selector de máquinas)
 
   // El pedido se crea a nombre del supervisor seleccionado en el formulario,
   // de manera dinámica (igual que sus máquinas y vehículos).
@@ -1985,13 +2068,19 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Seleccionar máquinas</h3>
                 <p className="text-xs text-slate-500">
-                  Máquinas asociadas a los servicios de{" "}
-                  <b>
-                    {supervisores.find((s) => String(s.id) === String(form.supervisorId))?.nombre ||
-                      supervisores.find((s) => String(s.id) === String(form.supervisorId))?.username ||
-                      "supervisor"}
-                  </b>
-                  {prestamoIds.size > 0 ? " y máquinas que tiene temporalmente por préstamos o pedidos vigentes" : ""}
+                  {selectorTab === "todas" ? (
+                    <>
+                      Inventario completo, por si a{" "}
+                      <b>{supervisorAsignado?.nombre || supervisorAsignado?.username || "el supervisor"}</b> todavía
+                      no le asignaron los servicios correspondientes y no aparece en la otra pestaña.
+                    </>
+                  ) : (
+                    <>
+                      Máquinas asociadas a los servicios de{" "}
+                      <b>{supervisorAsignado?.nombre || supervisorAsignado?.username || "supervisor"}</b>
+                      {prestamoIds.size > 0 ? " y máquinas que tiene temporalmente por préstamos o pedidos vigentes" : ""}
+                    </>
+                  )}
                 </p>
               </div>
               <button
@@ -2006,6 +2095,31 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               </button>
             </div>
 
+            <div className="flex gap-1 border-b border-slate-100 px-5 pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectorTab("supervisor")}
+                className={`border-b-2 px-3 py-2 text-xs font-semibold transition ${
+                  selectorTab === "supervisor"
+                    ? "border-blue-600 text-blue-700"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Del supervisor
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectorTab("todas")}
+                className={`border-b-2 px-3 py-2 text-xs font-semibold transition ${
+                  selectorTab === "todas"
+                    ? "border-blue-600 text-blue-700"
+                    : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Todas las máquinas
+              </button>
+            </div>
+
             <div className="border-b border-slate-100 px-5 py-3">
               <input
                 value={busquedaMaquina}
@@ -2013,19 +2127,35 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 placeholder="Buscar por ID, tipo, modelo, serie o servicio..."
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
               />
-              {prestamoIds.size > 0 ? (
+              {selectorTab === "supervisor" && prestamoIds.size > 0 ? (
                 <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700">
                   <span className="h-2.5 w-2.5 flex-none rounded-full border border-amber-400 bg-amber-100" />
                   Las máquinas en amarillo las tiene temporalmente por un préstamo o pedido vigente
                   (entregado o ya preparado en el depósito).
                 </p>
               ) : null}
+              {selectorTab === "todas" ? (
+                <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium">
+                  <span className="inline-flex items-center gap-1.5 text-amber-700">
+                    <span className="h-2.5 w-2.5 flex-none rounded-full border border-amber-400 bg-amber-100" />
+                    En uso por otro supervisor
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-rose-700">
+                    <span className="h-2.5 w-2.5 flex-none rounded-full border border-rose-400 bg-rose-100" />
+                    No disponible (taller, fuera de servicio o no devuelta)
+                  </span>
+                </p>
+              ) : null}
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-              {supervisorMaquinas.length === 0 ? (
+              {selectorTab === "todas" && cargandoTodasMaquinas ? (
+                <p className="py-8 text-center text-sm text-slate-500">Cargando inventario completo...</p>
+              ) : maquinasSelectorFuente.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-500">
-                  El supervisor no tiene máquinas asociadas a sus servicios ni máquinas temporales vigentes.
+                  {selectorTab === "todas"
+                    ? "No se encontraron máquinas en el inventario."
+                    : "El supervisor no tiene máquinas asociadas a sus servicios ni máquinas temporales vigentes."}
                 </p>
               ) : maquinasModalGrupos.length === 0 ? (
                 <p className="py-8 text-center text-sm text-slate-500">
@@ -2055,7 +2185,19 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         {maquinasGrupo.map((maquina) => {
                           const seleccionada = seleccionTemp.has(maquina.id);
-                          const esPrestamo = Boolean(maquina.esPrestamo);
+                          // Pestaña "Del supervisor": badge de préstamo/temporal (esPrestamo). Pestaña
+                          // "Todas": badge de advertencia (no operativa o en uso por otro supervisor).
+                          const badge =
+                            selectorTab === "todas"
+                              ? getAdvertenciaMaquinaTodas(maquina)
+                              : maquina.esPrestamo
+                                ? {
+                                    texto: maquina.pedido?.destino === "SUPERVISOR" ? "Préstamo" : "Temporal",
+                                    tono: "prestamo",
+                                  }
+                                : null;
+                          const marcada = Boolean(badge);
+                          const esCritico = badge?.tono === "critico";
                           return (
                             <button
                               type="button"
@@ -2063,28 +2205,38 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                               onClick={() => toggleSeleccionMaquina(maquina.id)}
                               className={`rounded-xl border p-3 text-left transition ${
                                 seleccionada
-                                  ? esPrestamo
-                                    ? "border-amber-500 bg-amber-50 ring-1 ring-amber-500"
-                                    : "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
-                                  : esPrestamo
-                                    ? "border-amber-300 bg-amber-50/60 hover:border-amber-400 hover:bg-amber-50"
-                                    : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40"
+                                  ? esCritico
+                                    ? "border-rose-500 bg-rose-50 ring-1 ring-rose-500"
+                                    : marcada
+                                      ? "border-amber-500 bg-amber-50 ring-1 ring-amber-500"
+                                      : "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                                  : esCritico
+                                    ? "border-rose-300 bg-rose-50/60 hover:border-rose-400 hover:bg-rose-50"
+                                    : marcada
+                                      ? "border-amber-300 bg-amber-50/60 hover:border-amber-400 hover:bg-amber-50"
+                                      : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/40"
                               }`}
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-sm font-semibold text-slate-900">{maquina.id}</span>
                                 <span className="flex items-center gap-1.5">
-                                  {esPrestamo ? (
-                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
-                                      {maquina.pedido?.destino === "SUPERVISOR" ? "Préstamo" : "Temporal"}
+                                  {badge ? (
+                                    <span
+                                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                        esCritico ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+                                      }`}
+                                    >
+                                      {badge.texto}
                                     </span>
                                   ) : null}
                                   <span
                                     className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border transition ${
                                       seleccionada
-                                        ? esPrestamo
-                                          ? "border-amber-600 bg-amber-600 text-white"
-                                          : "border-blue-600 bg-blue-600 text-white"
+                                        ? esCritico
+                                          ? "border-rose-600 bg-rose-600 text-white"
+                                          : marcada
+                                            ? "border-amber-600 bg-amber-600 text-white"
+                                            : "border-blue-600 bg-blue-600 text-white"
                                         : "border-slate-300 bg-white text-transparent"
                                     }`}
                                   >
@@ -2101,7 +2253,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                               <p className="mt-0.5 text-[11px] text-slate-400">
                                 {maquina.servicio?.nombre || "Sin servicio"} · {maquina.estado}
                               </p>
-                              {esPrestamo ? (
+                              {selectorTab === "supervisor" && maquina.esPrestamo ? (
                                 <p className="mt-0.5 text-[11px] font-medium text-amber-600">
                                   {(() => {
                                     if (maquina.pedido?.destino === "SUPERVISOR") {
@@ -2115,6 +2267,12 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                                   })()}
                                   {maquina.pedido?.id ? ` · ${maquina.pedido.id}` : ""}
                                   {maquina.pedido?.estado === "PREPARADO" ? " · Preparado, sin entregar" : ""}
+                                </p>
+                              ) : null}
+                              {selectorTab === "todas" && badge?.tono === "uso" ? (
+                                <p className="mt-0.5 text-[11px] font-medium text-amber-600">
+                                  {maquina.pedidoActivo?.id ? `Pedido ${maquina.pedidoActivo.id}` : "Pedido vigente"}
+                                  {maquina.pedidoActivo?.estado ? ` · ${maquina.pedidoActivo.estado}` : ""}
                                 </p>
                               ) : null}
                             </button>
