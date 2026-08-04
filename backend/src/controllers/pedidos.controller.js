@@ -1050,12 +1050,42 @@ export async function confirmarDevolucion(req, res) {
     const faltantesMaquinas = faltantes.filter((id) => asignadasMaquinasIds.includes(id));
     const faltantesVehiculos = faltantes.filter((id) => asignadasVehiculosIds.includes(id));
 
-    await prisma.$transaction(async tx => {
-      if (devueltasMaquinas.length)
-        await tx.maquina.updateMany({ where: { id: { in: devueltasMaquinas } }, data: { estado: "disponible" } });
+    // Guardrail: una máquina puede circular por muchos pedidos a lo largo
+    // del tiempo. Si este pedido no es la asignación más reciente de una
+    // máquina (por ejemplo, se está cerrando un faltante pendiente de un
+    // pedido viejo pero la máquina ya volvió y salió de nuevo en un pedido
+    // posterior), no hay que pisar su `estado` real con este dato viejo —
+    // solo dejar constancia en el historial de este pedido y avisar.
+    const maquinaIdsAConfirmar = Array.from(new Set([...devueltasMaquinas, ...faltantesMaquinas]));
+    const pedidoMasRecientePorMaquina = new Map();
+    if (maquinaIdsAConfirmar.length) {
+      const asignacionesTodas = await prisma.pedidoMaquina.findMany({
+        where: { maquinaId: { in: maquinaIdsAConfirmar } },
+        include: { pedido: { select: { id: true, createdAt: true } } },
+      });
+      for (const a of asignacionesTodas) {
+        const actual = pedidoMasRecientePorMaquina.get(a.maquinaId);
+        if (!actual || a.pedido.createdAt > actual.createdAt) {
+          pedidoMasRecientePorMaquina.set(a.maquinaId, a.pedido);
+        }
+      }
+    }
+    const esLaAsignacionVigente = (maquinaId) =>
+      (pedidoMasRecientePorMaquina.get(maquinaId)?.id ?? id) === id;
 
-      if (faltantesMaquinas.length)
-        await tx.maquina.updateMany({ where: { id: { in: faltantesMaquinas } }, data: { estado: "no_devuelta" } });
+    const maquinasSuperadas = maquinaIdsAConfirmar
+      .filter((mid) => !esLaAsignacionVigente(mid))
+      .map((mid) => ({ maquinaId: mid, pedidoVigente: pedidoMasRecientePorMaquina.get(mid)?.id }));
+
+    const devueltasMaquinasVigentes = devueltasMaquinas.filter(esLaAsignacionVigente);
+    const faltantesMaquinasVigentes = faltantesMaquinas.filter(esLaAsignacionVigente);
+
+    await prisma.$transaction(async tx => {
+      if (devueltasMaquinasVigentes.length)
+        await tx.maquina.updateMany({ where: { id: { in: devueltasMaquinasVigentes } }, data: { estado: "disponible" } });
+
+      if (faltantesMaquinasVigentes.length)
+        await tx.maquina.updateMany({ where: { id: { in: faltantesMaquinasVigentes } }, data: { estado: "no_devuelta" } });
 
       // No modificamos `vehiculo.estado` al confirmar devoluciones; la
       // información de devolución/pendientes queda en el `Pedido` y en
@@ -1085,6 +1115,13 @@ export async function confirmarDevolucion(req, res) {
                 ? { cierreFaltantesPendientesDeposito: true }
                 : {}),
               ...(observacion ? { observacion } : {}),
+              ...(maquinasSuperadas.length
+                ? {
+                    maquinasSuperadas,
+                    notaMaquinasSuperadas:
+                      "Estas máquinas ya circularon en un pedido más nuevo; no se modificó su estado real (Maquina.estado) para no pisar información más actual.",
+                  }
+                : {}),
             }),
           },
         },
@@ -1132,6 +1169,7 @@ export async function confirmarDevolucion(req, res) {
     res.json({
       message: "Devolución confirmada",
       pedido: mapPedidoParaFront(pedido),
+      ...(maquinasSuperadas.length ? { maquinasSuperadas } : {}),
     });
     try {
       emitPedidoEvent(req, "pedido:updated", mapPedidoParaFront(pedido));

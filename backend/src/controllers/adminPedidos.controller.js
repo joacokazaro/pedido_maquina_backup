@@ -5,6 +5,7 @@ import {
   computeFaltantesFinalesFromHistorial,
   getDevueltasConfirmadasFromHistorial,
 } from "../services/devolucionHistorial.service.js";
+import { getAsignacionActivaPorMaquina } from "../services/asignacionesPedido.service.js";
 
 /* ========================================================
    CONSTANTES Y HELPERS
@@ -88,17 +89,44 @@ export async function adminListPedidos(req, res) {
     /* =========================
        3) Mapear + detectar faltantes
     ========================= */
-    let resultado = pedidos.map((p) => {
+    const faltantesConfirmadosPorPedido = new Map();
+    for (const p of pedidos) {
       const ultimaConfirm = p.historial?.[0];
       const detalle = safeParse(ultimaConfirm?.detalle);
+      const faltantesConfirmados = Array.isArray(detalle?.faltantesConfirmados)
+        ? detalle.faltantesConfirmados
+        : [];
+      if (p.estado === "CERRADO" && faltantesConfirmados.length > 0) {
+        faltantesConfirmadosPorPedido.set(p.id, faltantesConfirmados);
+      }
+    }
 
-      const faltantesConfirmados =
-        detalle?.faltantesConfirmados || [];
+    // El historial es una foto del momento en que se confirmó la
+    // devolución: si la máquina circuló después por otro pedido o volvió
+    // por otra vía (taller, edición admin), esa foto queda vieja. Por eso
+    // el "con faltantes" se valida contra el estado real de la máquina y
+    // contra cuál es, hoy, su pedido vigente (mismo criterio que usa
+    // adminMaquinas para "Pedido Activo") en vez de confiar ciegamente en
+    // el detalle guardado en el historial.
+    const maquinaIdsCandidatas = Array.from(
+      new Set(Array.from(faltantesConfirmadosPorPedido.values()).flat())
+    );
+    const maquinasCandidatas = maquinaIdsCandidatas.length
+      ? await prisma.maquina.findMany({
+          where: { id: { in: maquinaIdsCandidatas } },
+          select: { id: true, estado: true },
+        })
+      : [];
+    const asignacionPorMaquina = await getAsignacionActivaPorMaquina(maquinasCandidatas);
+    const estadoPorMaquina = new Map(maquinasCandidatas.map((m) => [m.id, m.estado]));
 
-      const conFaltantes =
-        p.estado === "CERRADO" &&
-        Array.isArray(faltantesConfirmados) &&
-        faltantesConfirmados.length > 0;
+    let resultado = pedidos.map((p) => {
+      const faltantesConfirmados = faltantesConfirmadosPorPedido.get(p.id) || [];
+
+      const conFaltantes = faltantesConfirmados.some((maquinaId) => {
+        if (estadoPorMaquina.get(maquinaId) !== "no_devuelta") return false;
+        return asignacionPorMaquina.get(maquinaId)?.pedidoId === p.id;
+      });
 
       return {
         ...p,
