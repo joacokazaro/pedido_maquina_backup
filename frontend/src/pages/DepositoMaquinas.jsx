@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
@@ -21,6 +21,7 @@ const ESTADOS = [
 export default function DepositoMaquinas() {
 
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [allMaquinas, setAllMaquinas] = useState([]);
   const [serviciosUsuario, setServiciosUsuario] = useState([]);
@@ -133,6 +134,13 @@ export default function DepositoMaquinas() {
             Todas las máquinas. Los préstamos activos solo se marcan para las de tus servicios.
           </p>
         </div>
+
+        <a
+          href={`${API_BASE}/admin/maquinas/export`}
+          className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-200"
+        >
+          Exportar Excel
+        </a>
       </header>
 
       <div className="bg-white rounded-2xl shadow p-3 mb-4 space-y-3">
@@ -181,7 +189,16 @@ export default function DepositoMaquinas() {
         {paginacion.visibles.map((m) => (
           <div
             key={m.id}
-            className="bg-white rounded-2xl shadow px-4 py-3"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(`/admin/maquinas/${encodeURIComponent(m.id)}`)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                navigate(`/admin/maquinas/${encodeURIComponent(m.id)}`);
+              }
+            }}
+            className="w-full cursor-pointer text-left bg-white rounded-2xl shadow px-4 py-3"
           >
             <div className="flex justify-between gap-3">
               <div>
@@ -211,6 +228,7 @@ export default function DepositoMaquinas() {
                         Pedido no devuelto: {m.asignacionVisible.pedidoId ? (
                           <Link
                             to={`/deposito/pedido/${encodeURIComponent(m.asignacionVisible.pedidoId)}`}
+                            onClick={(event) => event.stopPropagation()}
                             className="font-semibold text-red-600 underline underline-offset-2 hover:text-red-800"
                           >
                             {m.asignacionVisible.pedidoId}
@@ -225,6 +243,7 @@ export default function DepositoMaquinas() {
                         {m.asignacionVisible.pedidoId ? (
                           <Link
                             to={`/deposito/pedido/${encodeURIComponent(m.asignacionVisible.pedidoId)}`}
+                            onClick={(event) => event.stopPropagation()}
                             className="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-800"
                           >
                             {m.asignacionVisible.pedidoId}

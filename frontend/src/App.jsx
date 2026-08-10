@@ -466,7 +466,7 @@ function App() {
 
       <Route
         path="/admin/maquinas/:id/pedidos-historicos"
-        element={renderReadOnlyModulesPage(<AdminMaquinaHistorial />)}
+        element={renderInventarioTallerPage(<AdminMaquinaHistorial />)}
       />
 
       <Route

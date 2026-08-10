@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
+import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import EventualBadge from "../components/EventualBadge";
 import { formatDateOnly, formatDateTime } from "../utils/date";
@@ -24,6 +25,7 @@ function formatMoneda(valor, currency) {
 export default function AdminMaquinaHistorial() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
 
   const [maquina, setMaquina] = useState(null);
   const [pedidos, setPedidos] = useState([]);
@@ -194,7 +196,13 @@ export default function AdminMaquinaHistorial() {
 
                       <button
                         type="button"
-                        onClick={() => navigate(`/admin/pedido/${encodeURIComponent(pedido.id)}`)}
+                        onClick={() =>
+                          navigate(
+                            hasRole("DEPOSITO")
+                              ? `/deposito/pedido/${encodeURIComponent(pedido.id)}`
+                              : `/admin/pedido/${encodeURIComponent(pedido.id)}`
+                          )
+                        }
                         className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white"
                       >
                         Ver pedido
