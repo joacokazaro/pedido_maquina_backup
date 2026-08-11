@@ -7,6 +7,7 @@ const PEDIDO_SELECT_ASIGNACION = {
   createdAt: true,
   destino: true,
   servicio: { select: { id: true, nombre: true } },
+  supervisor: { select: { id: true, nombre: true, username: true } },
 };
 
 function mapAsignacion(pedidoMaquina) {
@@ -15,6 +16,8 @@ function mapAsignacion(pedidoMaquina) {
     estadoPedido: pedidoMaquina.pedido.estado,
     destino: pedidoMaquina.pedido.destino,
     servicio: pedidoMaquina.pedido.servicio,
+    supervisor: pedidoMaquina.pedido.supervisor,
+    createdAt: pedidoMaquina.pedido.createdAt,
   };
 }
 

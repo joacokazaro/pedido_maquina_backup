@@ -2555,7 +2555,14 @@ export async function adminExportMaquinas(req, res) {
     const maquinas = await prisma.maquina.findMany({
       include: {
         servicio: {
-          select: { id: true, nombre: true },
+          select: {
+            id: true,
+            nombre: true,
+            supervisores: {
+              where: { usuario: { activo: true } },
+              select: { usuario: { select: { nombre: true, username: true } } },
+            },
+          },
         },
         servicioAmortizacion: {
           select: { id: true, nombre: true },
@@ -2598,10 +2605,18 @@ export async function adminExportMaquinas(req, res) {
       "Estado Pedido Activo",
       "Destino Pedido Activo",
       "Servicio Prestamo",
+      "Titular",
+      "Solicitante",
+      "Fecha del pedido",
     ]];
 
     for (const maquina of maquinas) {
       const asignacion = asignacionPorMaquina.get(maquina.id) || null;
+      const titular = (maquina.servicio?.supervisores || [])
+        .map((s) => s.usuario?.nombre || s.usuario?.username)
+        .filter(Boolean)
+        .join(", ");
+      const solicitante = asignacion?.supervisor?.nombre || asignacion?.supervisor?.username || "";
 
       rows.push([
         maquina.id,
@@ -2629,6 +2644,9 @@ export async function adminExportMaquinas(req, res) {
         asignacion?.estadoPedido ?? "",
         asignacion?.destino ?? "",
         asignacion?.servicio?.nombre ?? "",
+        titular,
+        solicitante,
+        asignacion?.createdAt ? asignacion.createdAt.toISOString().slice(0, 10) : "",
       ]);
     }
 
