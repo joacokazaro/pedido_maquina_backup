@@ -38,8 +38,19 @@ async function handleHistorial(req, res, tipo) {
   if (!actor) return;
 
   try {
-    const limit = Math.min(Number(req.query.limit) || 100, 300);
-    const historial = await getHistorialTaller(tipo, limit);
+    const { accion, usuarioId, maquinaId, vehiculoId, servicioId, tipo: tipoMaquina, empresa, desde, hasta, limit } = req.query;
+    const historial = await getHistorialTaller(tipo, {
+      accion,
+      usuarioId,
+      maquinaId,
+      vehiculoId,
+      servicioId,
+      tipoMaquina,
+      empresa,
+      desde,
+      hasta,
+      limit,
+    });
     res.json(historial);
   } catch (error) {
     console.error("handleHistorialTaller:", error);

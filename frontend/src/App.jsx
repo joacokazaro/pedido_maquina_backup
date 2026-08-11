@@ -14,6 +14,8 @@ import TallerMovimientosMaquinas from "./pages/taller/TallerMovimientosMaquinas"
 import TallerMovimientosVehiculos from "./pages/taller/TallerMovimientosVehiculos";
 import TallerVerMaquinas from "./pages/taller/TallerVerMaquinas";
 import TallerVerVehiculos from "./pages/taller/TallerVerVehiculos";
+import TallerHistorialMaquinas from "./pages/taller/TallerHistorialMaquinas";
+import TallerHistorialVehiculos from "./pages/taller/TallerHistorialVehiculos";
 import TallerRegistrarHome from "./pages/taller/TallerRegistrarHome";
 import TallerVerHome from "./pages/taller/TallerVerHome";
 
@@ -512,6 +514,16 @@ function App() {
       <Route
         path="/admin/taller/ver/vehiculos"
         element={renderInventarioTallerPage(<TallerVerVehiculos />)}
+      />
+
+      <Route
+        path="/admin/taller/ver/historial/maquinas"
+        element={renderInventarioTallerPage(<TallerHistorialMaquinas />)}
+      />
+
+      <Route
+        path="/admin/taller/ver/historial/vehiculos"
+        element={renderInventarioTallerPage(<TallerHistorialVehiculos />)}
       />
 
       <Route path="/admin/taller/movimientos/maquinas" element={<Navigate to="/admin/taller/registrar/maquinas" replace />} />

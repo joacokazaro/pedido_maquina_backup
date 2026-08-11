@@ -97,9 +97,58 @@ export async function aplicarMovimientoTaller({ tipo, ids, accion, observacion, 
   };
 }
 
-export async function getHistorialTaller(tipo, limit = 100) {
+function parseFechaFiltro(value, finDeDia = false) {
+  if (!value) return null;
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(String(value).trim())
+    ? new Date(`${value}T${finDeDia ? "23:59:59.999" : "00:00:00.000"}`)
+    : new Date(value);
+  return Number.isNaN(base.getTime()) ? null : base;
+}
+
+export async function getHistorialTaller(tipo, filtros = {}) {
+  const {
+    limit = 300,
+    accion,
+    usuarioId,
+    maquinaId,
+    vehiculoId,
+    servicioId,
+    tipoMaquina,
+    empresa,
+    desde,
+    hasta,
+  } = filtros;
+
+  const where = { tipo };
+
+  if (TALLER_ACCIONES_VALIDAS.includes(accion)) where.accion = accion;
+  if (usuarioId) where.usuarioId = Number(usuarioId);
+
+  if (tipo === TALLER_TIPO_MAQUINA) {
+    if (maquinaId) where.maquinaId = String(maquinaId);
+    if (servicioId || tipoMaquina) {
+      where.maquina = {
+        ...(servicioId ? { servicioId: Number(servicioId) } : {}),
+        ...(tipoMaquina ? { tipo: String(tipoMaquina) } : {}),
+      };
+    }
+  }
+
+  if (tipo === TALLER_TIPO_VEHICULO) {
+    if (vehiculoId) where.vehiculoId = String(vehiculoId);
+    if (empresa) where.vehiculo = { empresa: String(empresa) };
+  }
+
+  const desdeDate = parseFechaFiltro(desde, false);
+  const hastaDate = parseFechaFiltro(hasta, true);
+  if (desdeDate || hastaDate) {
+    where.createdAt = {};
+    if (desdeDate) where.createdAt.gte = desdeDate;
+    if (hastaDate) where.createdAt.lte = hastaDate;
+  }
+
   return prisma.tallerMovimiento.findMany({
-    where: { tipo },
+    where,
     include: {
       usuario: {
         select: { id: true, username: true, nombre: true, rol: true },
@@ -112,6 +161,6 @@ export async function getHistorialTaller(tipo, limit = 100) {
         : false,
     },
     orderBy: { createdAt: "desc" },
-    take: limit,
+    take: Math.min(Number(limit) || 300, 1000),
   });
 }

@@ -13,6 +13,18 @@ const ITEMS = [
     to: "/admin/taller/ver/vehiculos",
     icon: "🚗",
   },
+  {
+    title: "Historial de Taller - Maquinas",
+    description: "Ver todos los ingresos y egresos registrados, con usuario, fecha y filtros.",
+    to: "/admin/taller/ver/historial/maquinas",
+    icon: "📋",
+  },
+  {
+    title: "Historial de Taller - Vehiculos",
+    description: "Ver todos los ingresos y egresos registrados, con usuario, fecha y filtros.",
+    to: "/admin/taller/ver/historial/vehiculos",
+    icon: "📋",
+  },
 ];
 
 export default function TallerVerHome() {
