@@ -25,6 +25,7 @@ import tallerRoutes from "./routes/taller.routes.js";
 import serviciosRoutes from "./routes/servicios.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import eventualesRoutes from "./routes/eventuales.routes.js";
+import externalRoutes from "./routes/external.routes.js";
 import { iniciarMonitorPrestamosProlongados } from "./services/notificaciones.service.js";
 
 const app = express();
@@ -94,6 +95,9 @@ api.use("/pedidos", pedidosRoutes);
 api.use("/servicios", serviciosRoutes);
 api.use("/notificaciones", notificacionesRoutes);
 api.use("/eventuales", eventualesRoutes);
+
+// EXTERNO (autenticación por API key, sin x-auth-username)
+api.use("/external", externalRoutes);
 
 // SUPERVISORES (API NORMAL)
 api.use("/supervisores", adminSupervisoresRoutes);

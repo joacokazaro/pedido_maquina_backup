@@ -13,6 +13,11 @@ import {
   uploadReferenciaToS3,
 } from "../services/s3Referencias.service.js";
 import { getAsignacionActivaPorMaquina } from "../services/asignacionesPedido.service.js";
+import {
+  getMaquinasParaExport,
+  buildMaquinaExportRecord,
+  MAQUINA_EXPORT_FIELDS,
+} from "../services/maquinasExport.service.js";
 
 /* ========================================================
    CONSTANTES
@@ -2552,102 +2557,14 @@ export async function adminResumenStock(req, res) {
 ======================================================== */
 export async function adminExportMaquinas(req, res) {
   try {
-    const maquinas = await prisma.maquina.findMany({
-      include: {
-        servicio: {
-          select: {
-            id: true,
-            nombre: true,
-            supervisores: {
-              where: { usuario: { activo: true } },
-              select: { usuario: { select: { nombre: true, username: true } } },
-            },
-          },
-        },
-        servicioAmortizacion: {
-          select: { id: true, nombre: true },
-        },
-        tipoMaquina: {
-          select: {
-            id: true,
-            nombre: true,
-          },
-        },
-      },
-      orderBy: [{ tipo: "asc" }, { id: "asc" }],
-    });
+    const { maquinas, asignacionPorMaquina } = await getMaquinasParaExport();
 
-    const asignacionPorMaquina = await getAsignacionActivaPorMaquina(maquinas);
-
-    const rows = [[
-      "Codigo",
-      "Tipo",
-      "Modelo",
-      "Serie",
-      "Estado",
-      "Servicio Original",
-      "Fecha compra",
-      "Proveedor/N factura",
-      "Valor compra",
-      "Empresa",
-      "Año",
-      "Amortización",
-      "Estado amortización",
-      "Antigüedad",
-      "Valor usada USD",
-      "Valor usada ARS",
-      "Valor nueva USD",
-      "Valor nueva ARS",
-      "Origen info",
-      "Servicio amortización",
-      "Comentarios",
-      "Pedido Activo",
-      "Estado Pedido Activo",
-      "Destino Pedido Activo",
-      "Servicio Prestamo",
-      "Titular",
-      "Solicitante",
-      "Fecha del pedido",
-    ]];
+    const rows = [MAQUINA_EXPORT_FIELDS.map(([, header]) => header)];
 
     for (const maquina of maquinas) {
       const asignacion = asignacionPorMaquina.get(maquina.id) || null;
-      const titular = (maquina.servicio?.supervisores || [])
-        .map((s) => s.usuario?.nombre || s.usuario?.username)
-        .filter(Boolean)
-        .join(", ");
-      const solicitante = asignacion?.supervisor?.nombre || asignacion?.supervisor?.username || "";
-
-      rows.push([
-        maquina.id,
-        maquina.tipo,
-        maquina.modelo,
-        maquina.serie,
-        maquina.estado,
-        maquina.servicio?.nombre ?? "",
-        maquina.fechaCompra ? maquina.fechaCompra.toISOString().slice(0, 10) : "",
-        maquina.proveedorFactura ?? "",
-        maquina.valorCompra ?? "",
-        maquina.empresa ?? "",
-        maquina.anio ?? "",
-        maquina.amortizacion ?? "",
-        toEstadoAmortizacionLabel(maquina.estadoAmortizacion),
-        maquina.antiguedad ?? "",
-        maquina.valorUsadaDolares ?? "",
-        maquina.valorUsadaPesos ?? "",
-        maquina.valorNuevaDolares ?? "",
-        maquina.valorNuevaPesos ?? "",
-        maquina.origenInfo ?? "",
-        maquina.servicioAmortizacion?.nombre ?? "",
-        maquina.comentarios ?? "",
-        asignacion?.pedidoId ?? "",
-        asignacion?.estadoPedido ?? "",
-        asignacion?.destino ?? "",
-        asignacion?.servicio?.nombre ?? "",
-        titular,
-        solicitante,
-        asignacion?.createdAt ? asignacion.createdAt.toISOString().slice(0, 10) : "",
-      ]);
+      const record = buildMaquinaExportRecord(maquina, asignacion);
+      rows.push(MAQUINA_EXPORT_FIELDS.map(([key]) => record[key]));
     }
 
     const workbook = new ExcelJS.Workbook();
