@@ -27,7 +27,7 @@ GET https://maquinas.kazaro.com.ar/api/external/maquinas
 |---|---|---|
 | `tipo` | string | Tipo de máquina, coincidencia exacta (ej. `APILADOR SEMIELECTRICO 1500 KG`). |
 | `estado` | string | Uno de: `disponible`, `asignada`, `no_devuelta`, `fuera_servicio`, `taller`, `baja`. Valor inválido → `400`. |
-| `servicioId` | integer | ID numérico del servicio. Valor no numérico → `400`. |
+| `servicioId` | string | **ID de Browix del servicio** (no el ID interno del sistema), ej. `?servicioId=K78`. No distingue mayúsculas/minúsculas. Si no matchea ningún servicio, devuelve `[]`. |
 
 Sin filtros, devuelve **todo** el parque de máquinas.
 
@@ -102,6 +102,6 @@ Cualquier campo vacío se devuelve como `""` (no `null`).
 | HTTP | Motivo |
 |---|---|
 | `401` | Falta el header `X-API-Key` o el valor no es válido. |
-| `400` | `estado` no es uno de los valores permitidos, o `servicioId` no es un entero. |
+| `400` | `estado` no es uno de los valores permitidos. |
 | `429` | Se superó el límite de 60 requests cada 15 minutos por IP. |
 | `500` | Error interno. |

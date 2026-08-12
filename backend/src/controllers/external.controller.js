@@ -22,11 +22,8 @@ export async function getMaquinasExternal(req, res) {
     }
 
     if (servicioId) {
-      const servicioIdNum = Number(servicioId);
-      if (!Number.isInteger(servicioIdNum)) {
-        return res.status(400).json({ error: "servicioId debe ser un número entero" });
-      }
-      where.servicioId = servicioIdNum;
+      const idBrowix = String(servicioId).trim().toUpperCase();
+      where.servicio = { idBrowix };
     }
 
     const { maquinas, asignacionPorMaquina } = await getMaquinasParaExport({ where });
