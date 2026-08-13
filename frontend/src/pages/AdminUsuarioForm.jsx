@@ -9,6 +9,7 @@ const ROLE_OPTIONS = [
   { value: "ADMIN", label: ROLE_LABELS.ADMIN },
   { value: "ENCARGADO_EV", label: ROLE_LABELS.ENCARGADO_EV },
   { value: "SUPERVISOR_LIMPIEZA", label: ROLE_LABELS.SUPERVISOR_LIMPIEZA },
+  { value: "SUPERVISOR_EV", label: ROLE_LABELS.SUPERVISOR_EV },
   { value: "DEPOSITO", label: ROLE_LABELS.DEPOSITO },
   { value: "COORDINADOR", label: ROLE_LABELS.COORDINADOR },
   { value: "CONSULTOR", label: ROLE_LABELS.CONSULTOR },

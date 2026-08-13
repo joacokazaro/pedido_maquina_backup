@@ -18,15 +18,19 @@ export default function SupervisorEventualDetalle() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Rol: cualquier titular (ambos supervisores y el coordinador) puede disparar pedidos
-  // para su eventual, pero SOLO el supervisor_limpieza puede cargar los componentes
-  // (máquinas y vehículos utilizados). Para el resto esos bloques son de lectura.
+  // Rol: cualquier titular (ambos supervisores, el coordinador y el supervisor_ev)
+  // puede disparar pedidos, pero SOLO el supervisor_limpieza (sobre su eventual
+  // asignado) o el supervisor_ev (sobre cualquier eventual) pueden cargar los
+  // componentes (máquinas y vehículos utilizados). Para el resto esos bloques son
+  // de lectura.
   const rolesUpper = Array.isArray(user?.roles)
     ? user.roles.map((r) => String(r || "").toUpperCase())
     : [];
   const rolPrimario = String(user?.rol || "").toUpperCase();
   const esSupervisorLimpieza =
     rolesUpper.includes("SUPERVISOR_LIMPIEZA") || rolPrimario === "SUPERVISOR_LIMPIEZA";
+  const esSupervisorEv =
+    rolesUpper.includes("SUPERVISOR_EV") || rolPrimario === "SUPERVISOR_EV";
   const esTitular = ROLES_PEDIDO_TITULAR.some(
     (r) => rolesUpper.includes(r) || rolPrimario === r
   );
@@ -106,16 +110,21 @@ export default function SupervisorEventualDetalle() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user?.username]);
 
-  // Recursos del supervisor (solo si puede editar)
+  // Recursos del supervisor (solo si puede editar). El supervisor_limpieza carga desde
+  // las máquinas/vehículos del supervisor asignado al eventual (siempre es él mismo,
+  // porque solo puede actuar sobre eventuales propios); el supervisor_ev, al actuar
+  // sobre eventuales ajenos, carga desde SUS PROPIAS máquinas/vehículos (user.id).
+  const recursosSupervisorId = esSupervisorEv ? user?.id || null : supervisorId;
+
   useEffect(() => {
-    if (!esSupervisorLimpieza || !supervisorId) return;
+    if (!(esSupervisorLimpieza || esSupervisorEv) || !recursosSupervisorId) return;
 
     let cancelado = false;
     async function loadRecursos() {
       try {
         const [maqRes, vehRes] = await Promise.all([
-          fetch(`${API_BASE}/supervisores/${encodeURIComponent(supervisorId)}/maquinas`),
-          fetch(`${API_BASE}/supervisores/${encodeURIComponent(supervisorId)}/vehiculos`),
+          fetch(`${API_BASE}/supervisores/${encodeURIComponent(recursosSupervisorId)}/maquinas`),
+          fetch(`${API_BASE}/supervisores/${encodeURIComponent(recursosSupervisorId)}/vehiculos`),
         ]);
         const maqData = maqRes.ok ? await maqRes.json() : null;
         const vehData = vehRes.ok ? await vehRes.json() : null;
@@ -141,7 +150,7 @@ export default function SupervisorEventualDetalle() {
     return () => {
       cancelado = true;
     };
-  }, [esSupervisorLimpieza, supervisorId]);
+  }, [esSupervisorLimpieza, esSupervisorEv, recursosSupervisorId]);
 
   // Tipos para "Otro" y supervisores destino (para pedidos)
   useEffect(() => {
@@ -404,9 +413,11 @@ export default function SupervisorEventualDetalle() {
     ? eventual.pedidosComplementarios
     : [];
   const isActivo = String(eventual.estado || "").toLowerCase() === "activo";
-  // Cargar máquinas/vehículos utilizados: exclusivo del supervisor_limpieza.
-  const puedeCargarComponentes = esSupervisorLimpieza && isActivo;
-  // Disparar un pedido para el eventual: cualquier rol titular asignado a él.
+  // Cargar máquinas/vehículos utilizados: supervisor_limpieza (sobre su eventual) o
+  // supervisor_ev (sobre cualquier eventual).
+  const puedeCargarComponentes = (esSupervisorLimpieza || esSupervisorEv) && isActivo;
+  // Disparar un pedido para el eventual: cualquier rol titular (asignado a él, o
+  // cualquier eventual si es supervisor_ev).
   const puedePedir = esTitular && isActivo;
 
   const observacionesPosteriores = (Array.isArray(eventual.historial) ? eventual.historial : [])

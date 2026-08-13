@@ -6,19 +6,26 @@ export const ROLES_VALIDOS = [
   "deposito",
   "encargado_ev",
   "supervisor_limpieza",
+  "supervisor_ev",
 ];
 
 // Roles "supervisores": comparten todas las funcionalidades del ex-rol "supervisor".
 // "encargado_ev" es el rename directo; "supervisor_limpieza" hereda todo y además puede
 // cargar las máquinas y vehículos utilizados de un eventual asignado a él (única
 // diferencia, gestionada en updateEventualComponentesBySupervisor).
+// "supervisor_ev" NO integra este grupo a propósito: no es "el" supervisor asignado de
+// UN eventual, sino un rol transversal que opera sobre TODOS (ver ROLES_PEDIDO_TITULAR).
 export const ROLES_SUPERVISION = ["encargado_ev", "supervisor_limpieza"];
 
 // Roles que pueden ser TITULARES de un pedido (reciben las máquinas a su nombre) y ser
 // asignados como supervisor de un eventual: los de supervisión y el coordinador, que
 // además de su rol de backoffice opera como "un supervisor más".
 // Cualquiera de ellos puede crear pedidos para los eventuales asignados a él.
-export const ROLES_PEDIDO_TITULAR = [...ROLES_SUPERVISION, "coordinador"];
+// "supervisor_ev" se suma acá (y no a ROLES_SUPERVISION) para heredar toda la plomería
+// de titular de pedido, pero con permisos ampliados a CUALQUIER eventual: los bypasses
+// puntuales de "eventual asignado a mí" viven en eventuales.service.js y
+// pedidos.controller.js (crearPedido), no en este grupo.
+export const ROLES_PEDIDO_TITULAR = [...ROLES_SUPERVISION, "coordinador", "supervisor_ev"];
 
 // Etiquetas legibles (espejo de frontend/src/constants/roles.js) para exportaciones y PDFs.
 export const ROLE_LABELS = {
@@ -29,6 +36,7 @@ export const ROLE_LABELS = {
   deposito: "Depósito",
   encargado_ev: "Encargado EV",
   supervisor_limpieza: "Supervisor Limpieza",
+  supervisor_ev: "Supervisor Espacios Verdes",
 };
 
 export function roleLabel(role) {

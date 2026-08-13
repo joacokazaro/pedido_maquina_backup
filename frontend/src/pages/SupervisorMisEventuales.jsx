@@ -17,6 +17,13 @@ export default function SupervisorMisEventuales() {
   const [search, setSearch] = useState("");
   const [filtro, setFiltro] = useState("TODOS");
 
+  // supervisor_ev ve TODOS los eventuales del sistema, no solo los asignados a él.
+  const rolesUpper = Array.isArray(user?.roles)
+    ? user.roles.map((r) => String(r || "").toUpperCase())
+    : [];
+  const esSupervisorEv =
+    rolesUpper.includes("SUPERVISOR_EV") || String(user?.rol || "").toUpperCase() === "SUPERVISOR_EV";
+
   useEffect(() => {
     if (!user?.username) return;
 
@@ -53,8 +60,14 @@ export default function SupervisorMisEventuales() {
       <BotonVolver>Volver al panel</BotonVolver>
 
       <header className="mb-6 text-center">
-        <h1 className="text-3xl font-extrabold text-gray-800">Mis eventuales</h1>
-        <p className="mt-2 text-sm text-gray-600">Eventuales asignados a tu supervisión con detalle de componentes utilizados.</p>
+        <h1 className="text-3xl font-extrabold text-gray-800">
+          {esSupervisorEv ? "Eventuales" : "Mis eventuales"}
+        </h1>
+        <p className="mt-2 text-sm text-gray-600">
+          {esSupervisorEv
+            ? "Todos los eventuales activos del sistema, con detalle de componentes utilizados."
+            : "Eventuales asignados a tu supervisión con detalle de componentes utilizados."}
+        </p>
       </header>
 
       <div className="mx-auto mb-4 max-w-3xl rounded-2xl bg-white p-3 shadow space-y-3">

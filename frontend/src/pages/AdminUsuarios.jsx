@@ -117,6 +117,7 @@ export default function AdminUsuarios() {
           <option value="ADMIN">{ROLE_LABELS.ADMIN}</option>
           <option value="ENCARGADO_EV">{ROLE_LABELS.ENCARGADO_EV}</option>
           <option value="SUPERVISOR_LIMPIEZA">{ROLE_LABELS.SUPERVISOR_LIMPIEZA}</option>
+          <option value="SUPERVISOR_EV">{ROLE_LABELS.SUPERVISOR_EV}</option>
           <option value="DEPOSITO">{ROLE_LABELS.DEPOSITO}</option>
           <option value="COORDINADOR">{ROLE_LABELS.COORDINADOR}</option>
           <option value="CONSULTOR">{ROLE_LABELS.CONSULTOR}</option>

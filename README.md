@@ -19,7 +19,7 @@ Centralizar el proceso operativo de la flota evitando:
 ## 🧑‍💼 Roles del sistema
 
 Roles válidos (`backend/src/services/roles.service.js` → `ROLES_VALIDOS`):
-`admin`, `coordinador`, `consultor`, `taller`, `deposito`, `encargado_ev`, `supervisor_limpieza`.
+`admin`, `coordinador`, `consultor`, `taller`, `deposito`, `encargado_ev`, `supervisor_limpieza`, `supervisor_ev`.
 
 Un usuario puede tener **varios roles**: convive el campo legacy `Usuario.rol` (string) con la relación `roles` (`UsuarioRol`). La resolución está centralizada en `roles.service.js`.
 
@@ -28,7 +28,11 @@ Hay dos **agrupaciones de roles** que el código usa en lugar de nombrar roles s
 | Grupo | Roles | Qué habilita |
 |---|---|---|
 | `ROLES_SUPERVISION` | `encargado_ev`, `supervisor_limpieza` | Los dos roles de supervisión propiamente dichos |
-| `ROLES_PEDIDO_TITULAR` | `ROLES_SUPERVISION` + `coordinador` | Ser **titular** de un pedido (recibir las máquinas a su nombre), ser **supervisor asignado de un eventual** y crear pedidos para los eventuales propios |
+| `ROLES_PEDIDO_TITULAR` | `ROLES_SUPERVISION` + `coordinador` + `supervisor_ev` | Ser **titular** de un pedido (recibir las máquinas a su nombre), ser **supervisor asignado de un eventual** y crear pedidos para los eventuales propios |
+
+`supervisor_ev` integra `ROLES_PEDIDO_TITULAR` pero no `ROLES_SUPERVISION`: no es "el"
+supervisor asignado de un eventual, sino un rol transversal con permisos ampliados a
+todos los eventuales (ver sección propia más abajo).
 
 Los roles no se combinan libremente: `isAllowedRoleCombination` acepta un único rol, o el par `deposito` + `taller`. Nadie puede ser `encargado_ev` y `supervisor_limpieza` a la vez.
 
@@ -44,6 +48,14 @@ Rename directo del ex-rol `supervisor`; mantiene todas sus funcionalidades.
 
 ### 🧹 Supervisor Limpieza (`supervisor_limpieza`)
 Hereda **todo** lo del encargado EV y suma una única diferencia: es el único rol de supervisión que puede **cargar las máquinas y vehículos utilizados** de un eventual asignado a él (`updateEventualComponentesBySupervisor`). Para el encargado EV esos bloques son de solo lectura.
+
+### 🌳 Supervisor Espacios Verdes (`supervisor_ev`)
+Mismos permisos que `supervisor_limpieza` (crear pedidos para un eventual + cargar máquinas y vehículos utilizados), pero sobre **cualquier eventual del sistema**, no solo uno asignado a él — pensado para el supervisor de Espacios Verdes, que se hace cargo de máquinas y vehículos en eventuales que están activos casi todo el tiempo.
+
+- "Mis eventuales" (`/supervisor/eventuales`) le muestra **todos** los eventuales activos, sin filtro por asignación
+- Al cargar componentes utilizados, elige entre **sus propias** máquinas y vehículos asignados (no los del supervisor nominal del eventual)
+- Actuar sobre un eventual ajeno **no reasigna** `eventual.supervisorId`: el encargado_ev/supervisor_limpieza real (si lo hay) conserva la titularidad formal
+- No integra `ROLES_SUPERVISION` (no es "el" supervisor asignable de un eventual particular), pero sí `ROLES_PEDIDO_TITULAR`
 
 ### 🏭 Depósito
 - Visualizar y preparar pedidos pendientes

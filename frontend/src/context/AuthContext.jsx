@@ -155,7 +155,7 @@ export function AuthProvider({ children }) {
       navigate("/admin");
       return;
     }
-    if (hasAnyRole(normalized, ROLES_SUPERVISION)) {
+    if (hasAnyRole(normalized, ROLES_SUPERVISION) || hasRole(normalized, "SUPERVISOR_EV")) {
       navigate("/supervisor");
       return;
     }

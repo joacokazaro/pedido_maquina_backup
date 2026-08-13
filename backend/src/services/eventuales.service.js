@@ -245,7 +245,7 @@ function validateMaquinasUtilizadas(items) {
   return errors;
 }
 
-async function getActorByUsername(username) {
+export async function getActorByUsername(username) {
   const normalized = normalizeText(username);
   if (!normalized) return null;
 
@@ -925,6 +925,9 @@ export async function desvincularPedidoDeEventual({ eventualId, pedidoId, actorI
 // ⚠️ Esta es la ÚNICA diferencia de permisos entre supervisor_limpieza y encargado_ev:
 // el encargado ve estos datos en modo lectura. No ampliar el rol acá sin revisar
 // SupervisorEventualDetalle.jsx (`puedeCargarComponentes`).
+// supervisor_ev tiene el mismo permiso que supervisor_limpieza pero sobre CUALQUIER
+// eventual (no solo el asignado a él): es un rol transversal, no "el" supervisor del
+// eventual, por eso se lo excluye del chequeo de eventual.supervisorId más abajo.
 export async function updateEventualComponentesBySupervisor({
   eventualId,
   actorUsername,
@@ -932,8 +935,12 @@ export async function updateEventualComponentesBySupervisor({
   vehiculoIds,
 }) {
   const actor = await getActorByUsername(actorUsername);
-  if (!actor || !userHasRole(actor, "supervisor_limpieza")) {
-    throw buildError("Solo un Supervisor Limpieza puede cargar componentes", 403);
+  const esSupervisorEv = actor && userHasRole(actor, "supervisor_ev");
+  if (!actor || !(userHasRole(actor, "supervisor_limpieza") || esSupervisorEv)) {
+    throw buildError(
+      "Solo un Supervisor Limpieza o Supervisor Espacios Verdes puede cargar componentes",
+      403
+    );
   }
 
   const eventual = await prisma.eventual.findUnique({
@@ -942,7 +949,7 @@ export async function updateEventualComponentesBySupervisor({
   if (!eventual || !eventual.activo) {
     throw buildError("Eventual no encontrado", 404);
   }
-  if (eventual.supervisorId !== actor.id) {
+  if (!esSupervisorEv && eventual.supervisorId !== actor.id) {
     throw buildError("No sos el supervisor asignado a este eventual", 403);
   }
 
@@ -1014,7 +1021,7 @@ export async function addSupervisorObservation(eventualId, actorUsername, observ
     throw buildError("Eventual no encontrado", 404);
   }
 
-  if (eventual.supervisor?.username !== actor.username) {
+  if (!userHasRole(actor, "supervisor_ev") && eventual.supervisor?.username !== actor.username) {
     throw buildError("No autorizado para observar este eventual", 403);
   }
 

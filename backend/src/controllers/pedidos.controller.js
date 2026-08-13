@@ -224,6 +224,9 @@ export async function crearPedido(req, res) {
 
     let eventual = null;
     let servicio = null;
+    // supervisor_ev es transversal: puede pedir para CUALQUIER eventual, no solo el
+    // asignado a él, y su actividad no fija/reasigna el supervisor del eventual.
+    const esSupervisorEvGlobal = userHasRole(supervisor, "supervisor_ev");
 
     if (eventualId) {
       eventual = await prisma.eventual.findUnique({
@@ -250,7 +253,7 @@ export async function crearPedido(req, res) {
             error: "Tu rol no puede crear pedidos para un eventual",
           });
         }
-        if (eventual.supervisorId !== supervisor.id) {
+        if (!esSupervisorEvGlobal && eventual.supervisorId !== supervisor.id) {
           return res.status(403).json({
             error: "No sos el supervisor asignado a este eventual",
           });
@@ -258,11 +261,13 @@ export async function crearPedido(req, res) {
       }
 
       // Con pedidos ya disparados, el supervisor del eventual queda fijado
-      const pedidosPrevios = await contarPedidosQueFijanSupervisor(eventual.id);
-      if (pedidosPrevios > 0 && eventual.supervisorId && eventual.supervisorId !== supervisor.id) {
-        return res.status(400).json({
-          error: "El supervisor del eventual quedó fijado por los pedidos complementarios ya disparados",
-        });
+      if (!esSupervisorEvGlobal) {
+        const pedidosPrevios = await contarPedidosQueFijanSupervisor(eventual.id);
+        if (pedidosPrevios > 0 && eventual.supervisorId && eventual.supervisorId !== supervisor.id) {
+          return res.status(400).json({
+            error: "El supervisor del eventual quedó fijado por los pedidos complementarios ya disparados",
+          });
+        }
       }
 
       // El servicio del pedido es el eventual: se usa (o crea) un servicio homónimo
@@ -367,7 +372,9 @@ if (!asignacion) {
 
     if (eventual) {
       // El disparo del pedido fija al supervisor como responsable del eventual
-      if (eventual.supervisorId !== supervisor.id) {
+      // (salvo supervisor_ev, que opera sobre cualquier eventual sin volverse "el"
+      // supervisor asignado — ver esSupervisorEvGlobal más arriba).
+      if (!esSupervisorEvGlobal && eventual.supervisorId !== supervisor.id) {
         try {
           await prisma.eventual.update({
             where: { id: eventual.id },

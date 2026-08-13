@@ -1,9 +1,11 @@
 import {
   addSupervisorObservation,
+  getActorByUsername,
   getEventualDetail,
   listEventuales,
   updateEventualComponentesBySupervisor,
 } from "../services/eventuales.service.js";
+import { userHasRole } from "../services/roles.service.js";
 
 function handleError(res, error, fallbackMessage) {
   const status = error?.status || 500;
@@ -19,9 +21,13 @@ function handleError(res, error, fallbackMessage) {
 export async function getMisEventuales(req, res) {
   try {
     const username = String(req.params.username || "").trim();
+    const actor = await getActorByUsername(username);
+    // supervisor_ev es transversal: ve TODOS los eventuales, no solo los asignados a él.
+    const esSupervisorEv = actor && userHasRole(actor, "supervisor_ev");
+
     const eventuales = await listEventuales({
       ...req.query,
-      supervisorUsername: username,
+      ...(esSupervisorEv ? {} : { supervisorUsername: username }),
       activo: req.query?.activo ?? "true",
     });
     res.json(eventuales);
@@ -39,7 +45,11 @@ export async function getEventualSupervisor(req, res) {
 
     const username = String(req.query.username || "").trim();
     if (username && eventual.supervisor?.username !== username) {
-      return res.status(403).json({ error: "No autorizado" });
+      const actor = await getActorByUsername(username);
+      const esSupervisorEv = actor && userHasRole(actor, "supervisor_ev");
+      if (!esSupervisorEv) {
+        return res.status(403).json({ error: "No autorizado" });
+      }
     }
 
     res.json(eventual);
