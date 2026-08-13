@@ -9,6 +9,11 @@ import {
   computeFaltantesFinalesFromHistorial,
   getDevueltasConfirmadasFromHistorial,
 } from "../services/devolucionHistorial.service.js";
+import {
+  getVehiculosParaExport,
+  buildVehiculoExportRecord,
+  VEHICULO_EXPORT_FIELDS,
+} from "../services/vehiculosExport.service.js";
 
 function normalizeString(value) {
   if (value === null || value === undefined) return "";
@@ -60,19 +65,6 @@ function parseNullableDate(value) {
 
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function formatDateForSpreadsheet(value) {
-  if (!value) return "";
-
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-
-  return `${day}/${month}/${year}`;
 }
 
 function buildDateFieldPayload(rawDate, rawAplica, defaultAplica = true) {
@@ -1139,69 +1131,13 @@ export async function adminAsignarVehiculosMasivo(req, res) {
 
 export async function adminExportVehiculos(req, res) {
   try {
-    const vehiculos = await prisma.vehiculo.findMany({
-      include: {
-        seguro: true,
-        conductorActual: {
-          select: { username: true, nombre: true },
-        },
-      },
-      orderBy: [{ empresa: "asc" }, { vehiculo: "asc" }, { id: "asc" }],
+    const { vehiculos } = await getVehiculosParaExport();
+
+    const headers = VEHICULO_EXPORT_FIELDS.map(([, header]) => header);
+    const rows = vehiculos.map((item) => {
+      const record = buildVehiculoExportRecord(item);
+      return VEHICULO_EXPORT_FIELDS.map(([key]) => record[key]);
     });
-
-    const headers = [
-      "ID",
-      "EMPRESA",
-      "ESTADO",
-      "VEHICULO",
-      "PATENTE",
-      "MODELO",
-      "NUMERO_POLIZA",
-      "MOTOR",
-      "CHASIS",
-      "TIPO_COBERTURA",
-      "SEGURO",
-      "VTO_SEGURO",
-      "VTO_SEGURO_APLICA",
-      "VTO_MATAFUEGO",
-      "VTO_MATAFUEGO_APLICA",
-      "VTO_ITV",
-      "VTO_ITV_APLICA",
-      "OBLEA_GNC",
-      "OBLEA_GNC_APLICA",
-      "PRUEBA_HIDRAULICA_GNC",
-      "PRUEBA_HIDRAULICA_GNC_APLICA",
-      "TARJETA_VERDE",
-      "CONDUCTOR_USERNAME",
-      "CONDUCTOR_NOMBRE",
-    ];
-
-    const rows = vehiculos.map((item) => [
-      item.id,
-      item.empresa,
-      item.estado,
-      item.vehiculo,
-      item.patente,
-      item.modelo,
-      item.numeroPoliza || "",
-      item.motor,
-      item.chasis,
-      item.tipoCobertura,
-      item.seguro?.nombre || "",
-      formatDateForSpreadsheet(item.vtoSeguro),
-      item.vtoSeguroAplica ? "SI" : "NO",
-      formatDateForSpreadsheet(item.vtoMatafuego),
-      item.vtoMatafuegoAplica ? "SI" : "NO",
-      formatDateForSpreadsheet(item.vtoItv),
-      item.vtoItvAplica ? "SI" : "NO",
-      formatDateForSpreadsheet(item.obleaGnc),
-      item.obleaGncAplica ? "SI" : "NO",
-      formatDateForSpreadsheet(item.pruebaHidraulicaGnc),
-      item.pruebaHidraulicaGncAplica ? "SI" : "NO",
-      item.tarjetaVerde ? "TIENE" : "NO TIENE",
-      item.conductorActual?.username || "",
-      item.conductorActual?.nombre || "",
-    ]);
 
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Vehiculos");

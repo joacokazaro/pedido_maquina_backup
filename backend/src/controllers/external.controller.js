@@ -3,6 +3,17 @@ import {
   getMaquinasParaExport,
   buildMaquinaExportRecord,
 } from "../services/maquinasExport.service.js";
+import {
+  getVehiculosParaExport,
+  buildVehiculoExportRecord,
+} from "../services/vehiculosExport.service.js";
+
+function parseListParam(raw) {
+  return String(raw)
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
 
 export async function getMaquinasExternal(req, res) {
   try {
@@ -36,5 +47,32 @@ export async function getMaquinasExternal(req, res) {
   } catch (e) {
     console.error("getMaquinasExternal:", e);
     res.status(500).json({ error: "Error obteniendo máquinas" });
+  }
+}
+
+export async function getVehiculosExternal(req, res) {
+  try {
+    const { empresa, patente, conductorId } = req.query;
+    const where = {};
+
+    if (empresa) where.empresa = { in: parseListParam(empresa) };
+
+    if (patente) where.patente = { in: parseListParam(patente) };
+
+    if (conductorId) {
+      const ids = parseListParam(conductorId).map(Number);
+      if (ids.some((id) => !Number.isInteger(id))) {
+        return res.status(400).json({ error: "conductorId debe ser un entero o una lista de enteros separados por coma" });
+      }
+      where.conductorActualId = { in: ids };
+    }
+
+    const { vehiculos } = await getVehiculosParaExport({ where });
+    const data = vehiculos.map((vehiculo) => buildVehiculoExportRecord(vehiculo));
+
+    res.json(data);
+  } catch (e) {
+    console.error("getVehiculosExternal:", e);
+    res.status(500).json({ error: "Error obteniendo vehículos" });
   }
 }
