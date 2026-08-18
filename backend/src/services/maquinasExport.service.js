@@ -6,6 +6,7 @@ const MAQUINA_EXPORT_INCLUDE = {
     select: {
       id: true,
       nombre: true,
+      idBrowix: true,
       supervisores: {
         where: { usuario: { activo: true } },
         select: { usuario: { select: { nombre: true, username: true } } },
@@ -87,6 +88,7 @@ export function buildMaquinaExportRecord(maquina, asignacion) {
     serie: maquina.serie,
     estado: maquina.estado,
     servicioOriginal: maquina.servicio?.nombre ?? "",
+    servicioIdBrowix: maquina.servicio?.idBrowix ?? "",
     fechaCompra: maquina.fechaCompra ? maquina.fechaCompra.toISOString().slice(0, 10) : "",
     proveedorFactura: maquina.proveedorFactura ?? "",
     valorCompra: maquina.valorCompra ?? "",

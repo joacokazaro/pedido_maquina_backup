@@ -54,6 +54,7 @@ curl -H "X-API-Key: <TU_TOKEN_AQUI>" \
     "serie": "...",
     "estado": "asignada",
     "servicioOriginal": "APROSS",
+    "servicioIdBrowix": "K78",
     "fechaCompra": "2021-07-01",
     "proveedorFactura": "",
     "valorCompra": "",
@@ -89,6 +90,7 @@ curl -H "X-API-Key: <TU_TOKEN_AQUI>" \
 | `modelo`, `serie` | Datos del equipo. |
 | `estado` | `disponible` / `asignada` / `no_devuelta` / `fuera_servicio` / `taller` / `baja`. |
 | `servicioOriginal` | Servicio dueño de la máquina. |
+| `servicioIdBrowix` | ID de Browix del servicio dueño de la máquina (el mismo valor que se usa como filtro `servicioId`). Vacío si el servicio no tiene ID de Browix cargado. |
 | `fechaCompra`, `proveedorFactura`, `valorCompra`, `empresa`, `anio` | Datos de compra. |
 | `amortizacion`, `estadoAmortizacion`, `antiguedad` | Datos de amortización. |
 | `valorUsadaUSD` / `valorUsadaARS` / `valorNuevaUSD` / `valorNuevaARS` | Valuaciones. |
