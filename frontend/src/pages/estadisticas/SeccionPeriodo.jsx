@@ -4,12 +4,16 @@ import GroupedBarChart from "./components/GroupedBarChart";
 import CycleTimeChart from "./components/CycleTimeChart";
 import RankingTable from "./components/RankingTable";
 import PeriodoFilter from "./components/PeriodoFilter";
+import InfoTooltip from "./components/InfoTooltip";
 import { VIZ } from "./colors";
 
-function Panel({ title, children }) {
+function Panel({ title, info, children }) {
   return (
     <div className="rounded-2xl bg-white p-3 shadow">
-      <h3 className="mb-1 text-sm font-semibold text-gray-800">{title}</h3>
+      <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+        {title}
+        {info ? <InfoTooltip text={info} /> : null}
+      </h3>
       {children}
     </div>
   );
@@ -42,7 +46,10 @@ export default function SeccionPeriodo({ data, loading, error, rango, onRangoCha
             <LineTrendChart data={data.tendenciaCreacion} xKey="semana" series={[{ key: "cantidad", label: "Pedidos creados", color: VIZ.s1 }]} />
           </Panel>
 
-          <Panel title="Tiempo de ciclo por etapa (pedidos creados en el rango)">
+          <Panel
+            title="Tiempo de ciclo por etapa (pedidos creados en el rango)"
+            info="Mediana: la mitad de los pedidos de esa etapa tardaron menos que este valor, y la otra mitad más — es el tiempo 'típico'. P90: el 90% de los pedidos tardaron menos que este valor; sirve para ver los casos más lentos sin que un caso extremo aislado distorsione el número."
+          >
             <CycleTimeChart data={data.tiempoCicloPorEtapa} />
           </Panel>
 
