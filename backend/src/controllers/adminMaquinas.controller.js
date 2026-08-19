@@ -13,6 +13,7 @@ import {
   uploadReferenciaToS3,
 } from "../services/s3Referencias.service.js";
 import { getAsignacionActivaPorMaquina } from "../services/asignacionesPedido.service.js";
+import { computeResumenStockMaquinas } from "../services/maquinaStock.service.js";
 import {
   getMaquinasParaExport,
   buildMaquinaExportRecord,
@@ -2517,33 +2518,7 @@ export async function adminCambiarEstado(req, res) {
 export async function adminResumenStock(req, res) {
   try {
     const maquinas = await prisma.maquina.findMany();
-
-    const porEstado = {};
-    const porTipo = {};
-
-    for (const m of maquinas) {
-      const est = normalizeEstado(m.estado);
-
-      porEstado[est] = (porEstado[est] || 0) + 1;
-
-      const tipo = m.tipo || "SIN_TIPO";
-      if (!porTipo[tipo]) {
-        porTipo[tipo] = {
-          total: 0,
-          disponible: 0,
-          asignada: 0,
-          no_devuelta: 0,
-          fuera_servicio: 0,
-          taller: 0,
-          baja: 0,
-        };
-      }
-
-      porTipo[tipo].total += 1;
-      if (porTipo[tipo][est] !== undefined) {
-        porTipo[tipo][est] += 1;
-      }
-    }
+    const { porEstado, porTipo } = computeResumenStockMaquinas(maquinas);
 
     res.json({ porEstado, porTipo });
   } catch (e) {

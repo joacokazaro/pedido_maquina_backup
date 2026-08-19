@@ -335,6 +335,8 @@ model HistorialPedido {
   // Relaciones
   usuario Usuario @relation(fields: [usuarioId], references: [id])
   pedido  Pedido  @relation(fields: [pedidoId], references: [id])
+
+  @@index([pedidoId, fecha])
 }
 
 model Notificacion {

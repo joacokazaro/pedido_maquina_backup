@@ -16,6 +16,10 @@ const ESTADOS_PEDIDO = {
 // ✅ Lista válida derivada (no duplicada)
 const ESTADOS_PEDIDO_VALIDOS = Object.values(ESTADOS_PEDIDO);
 
+// Estados finales de un pedido: no se espera ningún movimiento más sobre él.
+// Usado para filtrar "pedidos abiertos" en estadísticas y avisos.
+const ESTADOS_PEDIDO_TERMINALES = [ESTADOS_PEDIDO.CERRADO, ESTADOS_PEDIDO.CANCELADO];
+
 /**
  * Normaliza cualquier string a un estado válido si existe
  * - "cerrado" → "CERRADO"
@@ -40,5 +44,6 @@ function normalizeEstadoPedido(raw) {
 export {
   ESTADOS_PEDIDO,
   ESTADOS_PEDIDO_VALIDOS,
+  ESTADOS_PEDIDO_TERMINALES,
   normalizeEstadoPedido
 };

@@ -10,6 +10,10 @@ const NAV_GROUPS_ADMIN = [
 		to: "/admin",
 	},
 	{
+		label: "Estadísticas",
+		to: "/admin/estadisticas",
+	},
+	{
 		label: "Inventario",
 		items: [
 			{ label: "Máquinas", to: "/admin/maquinas" },

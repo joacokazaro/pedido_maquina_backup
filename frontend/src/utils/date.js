@@ -76,3 +76,28 @@ export function toDateInputValue(value) {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+// Días transcurridos entre `from` y `to` (default ahora), redondeando hacia
+// abajo. Usa parseDateValue para que "YYYY-MM-DD" se interprete como
+// medianoche local, igual que el resto de este archivo.
+export function diffInDays(from, to = new Date()) {
+  const date = parseDateValue(from);
+  if (!date) return null;
+  return Math.floor((to.getTime() - date.getTime()) / 86400000);
+}
+
+// Rango { desde, hasta } en formato "YYYY-MM-DD" para el filtro de período
+// del panel de estadísticas.
+export function presetRange(kind) {
+  const hasta = new Date();
+  const desde = new Date(hasta);
+
+  if (kind === "mes-actual") {
+    desde.setDate(1);
+  } else {
+    const dias = { "7d": 7, "30d": 30, "90d": 90 }[kind] ?? 30;
+    desde.setDate(desde.getDate() - dias);
+  }
+
+  return { desde: toDateInputValue(desde), hasta: toDateInputValue(hasta) };
+}

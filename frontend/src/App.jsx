@@ -51,6 +51,7 @@ import ConfirmarDevolucion from "./pages/ConfirmarDevolucion";
 // ADMIN
 // =============================
 import AdminHome from "./pages/AdminHome";
+import AdminEstadisticas from "./pages/estadisticas/AdminEstadisticas";
 import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminUsuarioForm from "./pages/AdminUsuarioForm";
 import AdminPedidos from "./pages/AdminPedidos";
@@ -419,6 +420,11 @@ function App() {
       <Route
         path="/admin/usuarios"
         element={renderAdminOnlyPage(<AdminUsuarios />)}
+      />
+
+      <Route
+        path="/admin/estadisticas"
+        element={renderAdminOnlyPage(<AdminEstadisticas />)}
       />
 
       <Route
