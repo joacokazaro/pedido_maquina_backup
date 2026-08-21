@@ -1640,6 +1640,233 @@ export async function adminRecalcularEstadoAmortizacionByMaquina(req, res) {
 }
 
 /* ========================================================
+   COSTOS POR SERVICIO (calculo compartido por el GET y el export)
+======================================================== */
+const MOTIVO_NO_CALCULABLE_LABEL = {
+  SIN_VALOR_COMPRA: "Sin valor de compra cargado",
+  SIN_DATOS: "Datos incompletos (falta fecha de compra o plazo del tipo)",
+};
+
+async function computeCostosPorServicio() {
+  const [servicios, maquinas] = await Promise.all([
+    prisma.servicio.findMany({
+      orderBy: { nombre: "asc" },
+    }),
+    prisma.maquina.findMany({
+      include: {
+        servicio: {
+          select: { id: true, nombre: true },
+        },
+        tipoMaquina: {
+          select: {
+            id: true,
+            nombre: true,
+            plazoAmortizacion: {
+              select: { id: true, nombre: true, meses: true },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const now = new Date();
+  const grupos = new Map();
+
+  function getGrupo(servicioId, nombre) {
+    const key = servicioId == null ? "SIN_SERVICIO" : String(servicioId);
+    if (!grupos.has(key)) {
+      grupos.set(key, { servicioId: servicioId ?? null, nombre, maquinas: [] });
+    }
+    return grupos.get(key);
+  }
+
+  servicios.forEach((s) => getGrupo(s.id, s.nombre));
+
+  maquinas.forEach((maquina) => {
+    // Las máquinas dadas de baja ya no están operativas: no suman costo
+    // aunque contablemente todavía figuren como no amortizadas.
+    if (canonicalEstadoMaquina(maquina.estado) === "baja") return;
+
+    const amortizacionMeses = resolveAmortizacionByTipo(maquina.tipoMaquina);
+    const estadoAmortizacion = calculateEstadoAmortizacion(maquina.fechaCompra, amortizacionMeses, now);
+
+    // Solo interesan las que todavía no terminaron de amortizarse (o las
+    // que no se puede determinar por falta de datos, ver más abajo).
+    if (estadoAmortizacion === ESTADO_AMORTIZACION.AMORTIZADA) return;
+
+    const grupo = getGrupo(maquina.servicioId, maquina.servicio?.nombre || "Sin servicio asignado");
+
+    const tieneDatosCompletos =
+      estadoAmortizacion === ESTADO_AMORTIZACION.NO_AMORTIZADA &&
+      Number.isFinite(maquina.valorCompra) &&
+      Number.isInteger(amortizacionMeses) &&
+      amortizacionMeses > 0;
+
+    const costoMensual = tieneDatosCompletos
+      ? Math.round((maquina.valorCompra / amortizacionMeses) * 100) / 100
+      : null;
+
+    const motivoNoCalculable = tieneDatosCompletos
+      ? null
+      : estadoAmortizacion === ESTADO_AMORTIZACION.SIN_DATOS
+        ? "SIN_DATOS"
+        : "SIN_VALOR_COMPRA";
+
+    grupo.maquinas.push({
+      id: maquina.id,
+      tipo: maquina.tipoMaquina?.nombre || maquina.tipo,
+      modelo: maquina.modelo,
+      serie: maquina.serie,
+      estadoAmortizacion,
+      estadoAmortizacionLabel: toEstadoAmortizacionLabel(estadoAmortizacion),
+      valorCompra: maquina.valorCompra,
+      plazoMeses: amortizacionMeses,
+      costoMensual,
+      motivoNoCalculable,
+    });
+  });
+
+  const resultado = Array.from(grupos.values())
+    .map((grupo) => {
+      const maquinasOrdenadas = [...grupo.maquinas].sort((a, b) => {
+        const porTipo = String(a.tipo || "").localeCompare(String(b.tipo || ""), "es", {
+          sensitivity: "base",
+          numeric: true,
+        });
+        if (porTipo !== 0) return porTipo;
+        return String(a.id || "").localeCompare(String(b.id || ""), "es", { numeric: true });
+      });
+
+      const costoTotalMensual = maquinasOrdenadas.reduce((acc, m) => acc + (m.costoMensual || 0), 0);
+
+      return {
+        servicioId: grupo.servicioId,
+        nombre: grupo.nombre,
+        costoTotalMensual: Math.round(costoTotalMensual * 100) / 100,
+        cantidadMaquinas: maquinasOrdenadas.length,
+        cantidadNoCalculable: maquinasOrdenadas.filter((m) => m.costoMensual === null).length,
+        maquinas: maquinasOrdenadas,
+      };
+    })
+    .sort((a, b) => {
+      if (b.costoTotalMensual !== a.costoTotalMensual) return b.costoTotalMensual - a.costoTotalMensual;
+      return String(a.nombre || "").localeCompare(String(b.nombre || ""), "es");
+    });
+
+  return {
+    generadoEn: now.toISOString(),
+    servicios: resultado,
+  };
+}
+
+/* ========================================================
+   GET /admin/maquinas/costos-por-servicio
+======================================================== */
+export async function adminGetCostosPorServicio(req, res) {
+  try {
+    const data = await computeCostosPorServicio();
+    res.json(data);
+  } catch (e) {
+    console.error("adminGetCostosPorServicio:", e);
+    res.status(500).json({ error: "Error calculando costos por servicio" });
+  }
+}
+
+/* ========================================================
+   GET /admin/maquinas/costos-por-servicio/export
+======================================================== */
+export async function adminExportCostosPorServicio(req, res) {
+  try {
+    const { servicios } = await computeCostosPorServicio();
+
+    const workbook = new ExcelJS.Workbook();
+
+    const resumenSheet = workbook.addWorksheet("Resumen por servicio");
+    resumenSheet.addRow([
+      "Servicio",
+      "Costo total mensual",
+      "Cantidad de maquinas",
+      "Cantidad sin datos para calcular",
+      "Maquinas incluidas en el calculo",
+      "Maquinas no incluidas (sin datos)",
+    ]);
+    servicios.forEach((s) => {
+      const etiquetaMaquina = (m) => `${m.tipo || "(sin tipo)"} (${m.id})`;
+      const incluidas = s.maquinas.filter((m) => m.costoMensual !== null).map(etiquetaMaquina).join("\n");
+      const noIncluidas = s.maquinas.filter((m) => m.costoMensual === null).map(etiquetaMaquina).join("\n");
+
+      const row = resumenSheet.addRow([
+        s.nombre,
+        s.costoTotalMensual,
+        s.cantidadMaquinas,
+        s.cantidadNoCalculable,
+        incluidas,
+        noIncluidas,
+      ]);
+      row.getCell(5).alignment = { wrapText: true, vertical: "top" };
+      row.getCell(6).alignment = { wrapText: true, vertical: "top" };
+    });
+    resumenSheet.getColumn(2).numFmt = "#,##0.00";
+
+    const detalleSheet = workbook.addWorksheet("Detalle por maquina");
+    detalleSheet.addRow([
+      "Servicio",
+      "Codigo maquina",
+      "Tipo",
+      "Modelo",
+      "Estado amortizacion",
+      "Valor de compra",
+      "Plazo (meses)",
+      "Costo mensual",
+      "Motivo no calculable",
+    ]);
+    servicios.forEach((s) => {
+      s.maquinas.forEach((m) => {
+        detalleSheet.addRow([
+          s.nombre,
+          m.id,
+          m.tipo,
+          m.modelo,
+          m.estadoAmortizacionLabel,
+          m.valorCompra,
+          m.plazoMeses,
+          m.costoMensual,
+          m.motivoNoCalculable ? MOTIVO_NO_CALCULABLE_LABEL[m.motivoNoCalculable] || m.motivoNoCalculable : "",
+        ]);
+      });
+    });
+    detalleSheet.getColumn(6).numFmt = "#,##0.00";
+    detalleSheet.getColumn(8).numFmt = "#,##0.00";
+
+    [resumenSheet, detalleSheet].forEach((sheet) => {
+      sheet.getRow(1).font = { bold: true };
+      sheet.columns.forEach((col) => {
+        col.width = 24;
+      });
+    });
+    resumenSheet.getColumn(5).width = 45;
+    resumenSheet.getColumn(6).width = 45;
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=costos_por_servicio_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
+
+    res.send(buffer);
+  } catch (e) {
+    console.error("adminExportCostosPorServicio:", e);
+    res.status(500).json({ error: "Error exportando costos por servicio" });
+  }
+}
+
+/* ========================================================
    GET /admin/maquinas
 ======================================================== */
 export async function adminGetMaquinas(req, res) {

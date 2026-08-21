@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
@@ -60,6 +60,7 @@ function isManualYearOverride(anio, fechaCompra) {
 export default function AdminMaquinaForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, hasRole } = useAuth();
   const esEdicion = Boolean(id);
   const isReadOnly = hasRole("COORDINADOR") || hasRole("CONSULTOR") || hasRole("TALLER") || hasRole("DEPOSITO");
@@ -343,7 +344,7 @@ export default function AdminMaquinaForm() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 pb-24">
       <header className="mb-4">
-        <BotonVolver />
+        <BotonVolver to={location.state?.from} />
         <h1 className="text-lg font-bold">
           {esEdicion ? "Editar máquina" : "Nueva máquina"}
         </h1>

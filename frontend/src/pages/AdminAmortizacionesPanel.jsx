@@ -311,14 +311,23 @@ export default function AdminAmortizacionesPanel() {
             Al abrir esta vista se recalcula amortización y se listan datos de detalle desde /admin/maquinas/:id.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={loadPanel}
-          className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-200"
-          disabled={loading}
-        >
-          {loading ? "Actualizando..." : "Actualizar panel"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/admin/maquinas/costos-por-servicio")}
+            className="inline-flex items-center justify-center rounded-lg border border-kazaro-blue/30 bg-kazaro-ice px-3 py-2 text-sm font-medium text-kazaro-blue transition hover:bg-kazaro-blue hover:text-white"
+          >
+            Costos por servicio
+          </button>
+          <button
+            type="button"
+            onClick={loadPanel}
+            className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-200"
+            disabled={loading}
+          >
+            {loading ? "Actualizando..." : "Actualizar panel"}
+          </button>
+        </div>
       </header>
 
       {error ? (

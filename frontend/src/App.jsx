@@ -57,6 +57,7 @@ import AdminUsuarioForm from "./pages/AdminUsuarioForm";
 import AdminPedidos from "./pages/AdminPedidos";
 import AdminMaquinas from "./pages/AdminMaquinas";
 import AdminAmortizacionesPanel from "./pages/AdminAmortizacionesPanel";
+import AdminCostosPorServicio from "./pages/AdminCostosPorServicio";
 import AdminMaquinaForm from "./pages/AdminMaquinaForm";
 import AdminMaquinaHistorial from "./pages/AdminMaquinaHistorial";
 import AdminTiposMaquina from "./pages/AdminTiposMaquina";
@@ -455,6 +456,11 @@ function App() {
       <Route
         path="/admin/maquinas/amortizaciones"
         element={renderReadOnlyModulesPage(<AdminAmortizacionesPanel />)}
+      />
+
+      <Route
+        path="/admin/maquinas/costos-por-servicio"
+        element={renderReadOnlyModulesPage(<AdminCostosPorServicio />)}
       />
 
       <Route

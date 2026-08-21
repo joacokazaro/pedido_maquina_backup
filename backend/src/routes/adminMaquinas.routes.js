@@ -29,6 +29,8 @@ import {
   adminDeletePlazoAmortizacion,
   adminRecalcularEstadoAmortizacion,
   adminRecalcularEstadoAmortizacionByMaquina,
+  adminGetCostosPorServicio,
+  adminExportCostosPorServicio,
   adminBackfillAnioMaquinas,
 } from "../controllers/adminMaquinas.controller.js";
 
@@ -75,6 +77,8 @@ router.delete("/maquinas/plazos-amortizacion/:plazoId", adminDeletePlazoAmortiza
 // AMORTIZACIÓN
 router.post("/maquinas/amortizacion/recalcular", adminRecalcularEstadoAmortizacion);
 router.post("/maquinas/:id/amortizacion/recalcular", adminRecalcularEstadoAmortizacionByMaquina);
+router.get("/maquinas/costos-por-servicio/export", adminExportCostosPorServicio);
+router.get("/maquinas/costos-por-servicio", adminGetCostosPorServicio);
 
 router.get("/maquinas", adminGetMaquinas);
 

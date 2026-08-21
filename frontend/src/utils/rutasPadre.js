@@ -53,6 +53,7 @@ const MAPA_PADRES = {
   // Máquinas
   "/admin/maquinas": "/admin",
   "/admin/maquinas/amortizaciones": "/admin/maquinas",
+  "/admin/maquinas/costos-por-servicio": "/admin/maquinas/amortizaciones",
   "/admin/maquinas/nueva": "/admin/maquinas",
   "/admin/maquinas/tipos": "/admin/maquinas",
   "/admin/plazos-amortizacion": "/admin/maquinas",
