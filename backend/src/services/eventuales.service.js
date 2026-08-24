@@ -13,6 +13,7 @@ import {
   getCategoriasPorLegajos,
 } from "./browix.service.js";
 import { resolverServiciosPorNombre, getPedidosInsumos } from "./insumos.service.js";
+import { normalizeTipoServicio, TIPO_ESPACIOS_VERDES } from "./tipoServicio.service.js";
 
 export const ESTADOS_EVENTUAL_VALIDOS = ["activo", "finalizado", "cancelado"];
 
@@ -352,6 +353,7 @@ function buildEventualSummary(eventual) {
   return {
     id: eventual.id,
     nombre: eventual.nombre,
+    tipo: eventual.tipo,
     estado: eventual.estado,
     fechaInicio: eventual.fechaInicio,
     fechaFin: eventual.fechaFin,
@@ -415,24 +417,38 @@ export async function getComponentesCatalogo() {
 }
 
 export async function listEventuales(filters = {}) {
-  const where = {};
+  const conditions = [];
   const search = normalizeText(filters.search);
   const estado = normalizeText(filters.estado).toLowerCase();
   const username = normalizeText(filters.supervisorUsername);
+  // Alcance ampliado: además de sus eventuales asignados, permite ver los de un tipo
+  // determinado (usado por encargado_ev para Espacios Verdes). Sin esto, se filtra
+  // estrictamente por supervisor asignado, como siempre.
+  const tipoAlcance = normalizeTipoServicio(filters.tipoAlcance);
 
-  if (filters.activo === "true") where.activo = true;
-  if (filters.activo === "false") where.activo = false;
-  if (filters.supervisorId) where.supervisorId = Number(filters.supervisorId);
-  if (estado && ESTADOS_EVENTUAL_VALIDOS.includes(estado)) where.estado = estado;
-  if (username) where.supervisor = { username };
-  if (search) {
-    where.OR = [
-      { nombre: { contains: search } },
-      { observaciones: { contains: search } },
-      { supervisor: { username: { contains: search } } },
-      { supervisor: { nombre: { contains: search } } },
-    ];
+  if (filters.activo === "true") conditions.push({ activo: true });
+  if (filters.activo === "false") conditions.push({ activo: false });
+  if (filters.supervisorId) conditions.push({ supervisorId: Number(filters.supervisorId) });
+  if (estado && ESTADOS_EVENTUAL_VALIDOS.includes(estado)) conditions.push({ estado });
+  if (username) {
+    conditions.push(
+      tipoAlcance
+        ? { OR: [{ supervisor: { username } }, { tipo: tipoAlcance }] }
+        : { supervisor: { username } }
+    );
   }
+  if (search) {
+    conditions.push({
+      OR: [
+        { nombre: { contains: search } },
+        { observaciones: { contains: search } },
+        { supervisor: { username: { contains: search } } },
+        { supervisor: { nombre: { contains: search } } },
+      ],
+    });
+  }
+
+  const where = conditions.length > 0 ? { AND: conditions } : {};
 
   const eventuales = await prisma.eventual.findMany({
     where,
@@ -560,6 +576,7 @@ function buildEventualPayload(payload) {
 
   return {
     nombre: normalizeText(payload.nombre),
+    tipo: normalizeTipoServicio(payload.tipo),
     supervisorId: payload.supervisorId ? Number(payload.supervisorId) : null,
     estado: normalizeEstadoEventual(payload.estado),
     fechaInicio: toDateOrNull(payload.fechaInicio),
@@ -584,6 +601,10 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
 
   if (!data.nombre) {
     throw buildError("El nombre del eventual es obligatorio", 400);
+  }
+
+  if (!data.tipo) {
+    throw buildError("Debe indicar el tipo del eventual (Limpieza o Espacios Verdes)", 400);
   }
 
   if (data.supervisorId !== null && (!Number.isInteger(data.supervisorId) || data.supervisorId <= 0)) {
@@ -703,6 +724,7 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
           where: { id: Number(eventualId) },
           data: {
             nombre: data.nombre,
+            tipo: data.tipo,
             supervisorId: data.supervisorId,
             estado: data.estado,
             fechaInicio: data.fechaInicio,
@@ -718,6 +740,7 @@ export async function saveEventual({ eventualId, payload, actorUsername }) {
       : await tx.eventual.create({
           data: {
             nombre: data.nombre,
+            tipo: data.tipo,
             supervisorId: data.supervisorId,
             estado: data.estado,
             fechaInicio: data.fechaInicio,

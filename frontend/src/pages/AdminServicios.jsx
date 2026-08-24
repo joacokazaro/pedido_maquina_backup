@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import SearchableSelect from "../components/SearchableSelect";
+import { TIPOS_SERVICIO, tipoServicioLabel } from "../constants/tipoServicio";
 
 export default function AdminServicios() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function AdminServicios() {
   // filtros
   const [search, setSearch] = useState("");
   const [filtroMaquinas, setFiltroMaquinas] = useState("TODOS");
+  const [filtroTipo, setFiltroTipo] = useState("TODOS");
   const [orden, setOrden] = useState("NOMBRE_ASC");
 
   // eliminar
@@ -96,6 +98,13 @@ export default function AdminServicios() {
       lista = lista.filter(s => s.maquinas === 0);
     }
 
+    // 🏷️ filtro por tipo
+    if (filtroTipo === "SIN_CLASIFICAR") {
+      lista = lista.filter(s => !s.tipo);
+    } else if (filtroTipo !== "TODOS") {
+      lista = lista.filter(s => s.tipo === filtroTipo);
+    }
+
     // ↕️ orden
     switch (orden) {
       case "NOMBRE_DESC":
@@ -112,10 +121,10 @@ export default function AdminServicios() {
     }
 
     return lista;
-  }, [servicios, search, filtroMaquinas, orden]);
+  }, [servicios, search, filtroMaquinas, filtroTipo, orden]);
 
   const paginacion = usePaginacion(serviciosFiltrados, {
-    reinicio: [search, filtroMaquinas, orden],
+    reinicio: [search, filtroMaquinas, filtroTipo, orden],
   });
 
   if (loading) {
@@ -179,6 +188,23 @@ export default function AdminServicios() {
           </div>
 
           <div className="flex-1">
+            <label htmlFor="admin-servicios-tipo" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Tipo
+            </label>
+            <SearchableSelect id="admin-servicios-tipo"
+              value={filtroTipo}
+              onChange={e => setFiltroTipo(e.target.value)}
+              className="w-full border rounded-lg p-2 text-sm"
+            >
+              <option value="TODOS">Todos</option>
+              {TIPOS_SERVICIO.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+              <option value="SIN_CLASIFICAR">Sin clasificar</option>
+            </SearchableSelect>
+          </div>
+
+          <div className="flex-1">
             <label htmlFor="admin-servicios-orden" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Orden
             </label>
@@ -220,6 +246,15 @@ export default function AdminServicios() {
                     {s.idBrowix}
                   </span>
                 ) : null}
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                    s.tipo
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-amber-100 text-amber-800"
+                  }`}
+                >
+                  {tipoServicioLabel(s.tipo)}
+                </span>
               </div>
               <div className="text-xs text-gray-600">
                 {s.maquinas} máquinas

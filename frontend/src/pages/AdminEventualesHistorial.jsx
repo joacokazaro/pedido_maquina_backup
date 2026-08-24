@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import SearchableSelect from "../components/SearchableSelect";
+import { TIPOS_SERVICIO, tipoServicioLabel } from "../constants/tipoServicio";
 
 export default function AdminEventualesHistorial() {
 
@@ -19,6 +20,7 @@ export default function AdminEventualesHistorial() {
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("");
   const [supervisorFiltro, setSupervisorFiltro] = useState("");
+  const [tipoFiltro, setTipoFiltro] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -49,6 +51,8 @@ export default function AdminEventualesHistorial() {
     return eventuales.filter((item) => {
       if (estadoFiltro && item.estado !== estadoFiltro) return false;
       if (supervisorFiltro && String(item.supervisor?.id || "") !== supervisorFiltro) return false;
+      if (tipoFiltro === "SIN_CLASIFICAR" && item.tipo) return false;
+      if (tipoFiltro && tipoFiltro !== "SIN_CLASIFICAR" && item.tipo !== tipoFiltro) return false;
       if (!query) return true;
 
       return [
@@ -60,10 +64,10 @@ export default function AdminEventualesHistorial() {
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(query));
     });
-  }, [eventuales, search, estadoFiltro, supervisorFiltro]);
+  }, [eventuales, search, estadoFiltro, supervisorFiltro, tipoFiltro]);
 
   const paginacion = usePaginacion(filtered, {
-    reinicio: [search, estadoFiltro, supervisorFiltro],
+    reinicio: [search, estadoFiltro, supervisorFiltro, tipoFiltro],
   });
 
   return (
@@ -117,6 +121,19 @@ export default function AdminEventualesHistorial() {
           </div>
 
           <div>
+            <label htmlFor="admin-eventuales-historial-tipo" className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Tipo
+            </label>
+            <SearchableSelect id="admin-eventuales-historial-tipo" className="w-full rounded-xl border p-2 text-sm" value={tipoFiltro} onChange={(event) => setTipoFiltro(event.target.value)}>
+              <option value="">Todos los tipos</option>
+              {TIPOS_SERVICIO.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+              <option value="SIN_CLASIFICAR">Sin clasificar</option>
+            </SearchableSelect>
+          </div>
+
+          <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
               Resultados
             </label>
@@ -152,6 +169,13 @@ export default function AdminEventualesHistorial() {
                     ) : null}
                     <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold uppercase text-slate-700">
                       {item.estado}
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase ${
+                        item.tipo ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {tipoServicioLabel(item.tipo)}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-gray-500">

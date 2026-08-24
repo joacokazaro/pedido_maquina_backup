@@ -47,6 +47,7 @@ model Servicio {
   id        Int       @id @default(autoincrement())
   nombre    String    @unique
   idBrowix  String?
+  tipo      String?
   activo    Boolean   @default(true)
   createdAt DateTime  @default(now())
 
@@ -220,6 +221,7 @@ model TallerMovimiento {
 model Eventual {
   id            Int                 @id @default(autoincrement())
   nombre        String              @unique
+  tipo          String?
   supervisorId  Int?
   estado        String              @default("activo")
   fechaInicio   DateTime?

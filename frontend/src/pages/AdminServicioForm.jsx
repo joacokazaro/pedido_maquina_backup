@@ -5,6 +5,7 @@ import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import SearchableSelect from "../components/SearchableSelect";
 import { EstadoMaquinaBadge } from "../utils/estadoMaquina";
+import { TIPOS_SERVICIO } from "../constants/tipoServicio";
 
 const ESTADOS = [
   { value: "", label: "Todos los estados" },
@@ -25,6 +26,7 @@ export default function AdminServicioForm() {
 
   const [nombre, setNombre] = useState("");
   const [idBrowix, setIdBrowix] = useState("");
+  const [tipoServicio, setTipoServicio] = useState("");
   const [maquinas, setMaquinas] = useState([]);
   const [loading, setLoading] = useState(esEdicion);
   const [saving, setSaving] = useState(false);
@@ -41,6 +43,7 @@ export default function AdminServicioForm() {
       .then(data => {
         setNombre(data.nombre || "");
         setIdBrowix(data.idBrowix || "");
+        setTipoServicio(data.tipo || "");
         setMaquinas(data.maquinas || []);
       })
       .catch(() => setError("Error cargando servicio"))
@@ -50,6 +53,12 @@ export default function AdminServicioForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (isReadOnly) return;
+
+    if (!tipoServicio) {
+      setError("Debe indicar el tipo del servicio (Limpieza o Espacios Verdes)");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
@@ -61,7 +70,7 @@ export default function AdminServicioForm() {
         {
           method: esEdicion ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ nombre, idBrowix }),
+          body: JSON.stringify({ nombre, idBrowix, tipo: tipoServicio }),
         }
       );
 
@@ -155,6 +164,23 @@ export default function AdminServicioForm() {
             placeholder="Ej: K12"
             className="w-full p-2 border rounded-xl"
           />
+        </div>
+
+        <div>
+          <label htmlFor="admin-servicio-form-tipo" className="block text-xs font-semibold mb-1">
+            Tipo
+          </label>
+          <SearchableSelect id="admin-servicio-form-tipo"
+            value={tipoServicio}
+            onChange={e => setTipoServicio(e.target.value)}
+            disabled={isReadOnly}
+            className="w-full p-2 border rounded-xl"
+          >
+            <option value="">Seleccionar tipo...</option>
+            {TIPOS_SERVICIO.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </SearchableSelect>
         </div>
 
         {!isReadOnly ? (

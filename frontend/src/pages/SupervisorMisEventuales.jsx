@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../services/apiBase";
 import { formatDateOnly } from "../utils/date";
 import FondoKazaro from "../components/FondoKazaro";
+import { tipoServicioLabel } from "../constants/tipoServicio";
 
 const FILTROS = ["TODOS", "activo", "finalizado", "cancelado"];
 
@@ -107,9 +108,14 @@ export default function SupervisorMisEventuales() {
                 </p>
                 {/* Observaciones y resumen de componentes se muestran en detalle e historial */}
               </div>
-              <span className={eventual.estado === "activo" ? "rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase text-emerald-700" : eventual.estado === "finalizado" ? "rounded-full bg-slate-200 px-2 py-1 text-[10px] font-semibold uppercase text-slate-700" : "rounded-full bg-rose-100 px-2 py-1 text-[10px] font-semibold uppercase text-rose-700"}>
-                {eventual.estado}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={eventual.estado === "activo" ? "rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold uppercase text-emerald-700" : eventual.estado === "finalizado" ? "rounded-full bg-slate-200 px-2 py-1 text-[10px] font-semibold uppercase text-slate-700" : "rounded-full bg-rose-100 px-2 py-1 text-[10px] font-semibold uppercase text-rose-700"}>
+                  {eventual.estado}
+                </span>
+                <span className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-semibold uppercase text-blue-700">
+                  {tipoServicioLabel(eventual.tipo)}
+                </span>
+              </div>
             </div>
           </Link>
         ))}

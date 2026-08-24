@@ -16,6 +16,7 @@ import {
   ROLES_PEDIDO_TITULAR,
 } from "../services/roles.service.js";
 import { contarPedidosQueFijanSupervisor } from "../services/eventuales.service.js";
+import { TIPO_ESPACIOS_VERDES } from "../services/tipoServicio.service.js";
 
 /* ========================================================
    HELPERS
@@ -227,6 +228,15 @@ export async function crearPedido(req, res) {
     // supervisor_ev es transversal: puede pedir para CUALQUIER eventual, no solo el
     // asignado a él, y su actividad no fija/reasigna el supervisor del eventual.
     const esSupervisorEvGlobal = userHasRole(supervisor, "supervisor_ev");
+    // encargado_ev/supervisor_ev pueden además pedir para cualquier servicio/eventual de
+    // tipo Espacios Verdes sin estar asignados explícitamente (a diferencia de
+    // supervisor_ev, encargado_ev SÍ queda fijado como titular si el eventual no tenía
+    // supervisor — ver el bloque de "fijar supervisor" más abajo, que sigue gateado solo
+    // por esSupervisorEvGlobal).
+    const esRolEspaciosVerdesTransversal = userHasAnyRole(supervisor, [
+      "encargado_ev",
+      "supervisor_ev",
+    ]);
 
     if (eventualId) {
       eventual = await prisma.eventual.findUnique({
@@ -235,12 +245,15 @@ export async function crearPedido(req, res) {
       if (!eventual || !eventual.activo)
         return res.status(404).json({ error: "Eventual no encontrado" });
 
+      const tieneAlcanceEventualPorTipo =
+        esRolEspaciosVerdesTransversal && eventual.tipo === TIPO_ESPACIOS_VERDES;
+
       // Autorización del pedido de eventual:
       // - El flujo de backoffice (admin/coordinador disparando el pedido complementario a
       //   nombre de OTRO usuario, el supervisor del eventual) sigue permitido tal cual.
       // - El auto-servicio (el titular pide para sí mismo) lo puede hacer cualquier rol
       //   titular —ambos roles de supervisión y el coordinador— y únicamente sobre un
-      //   eventual asignado a él.
+      //   eventual asignado a él (salvo alcance transversal por tipo, ver arriba).
       const actorEfectivo = actor || supervisor;
       const esAutoServicio = actorEfectivo.id === supervisor.id;
       const esBackoffice =
@@ -253,7 +266,11 @@ export async function crearPedido(req, res) {
             error: "Tu rol no puede crear pedidos para un eventual",
           });
         }
-        if (!esSupervisorEvGlobal && eventual.supervisorId !== supervisor.id) {
+        if (
+          !esSupervisorEvGlobal &&
+          !tieneAlcanceEventualPorTipo &&
+          eventual.supervisorId !== supervisor.id
+        ) {
           return res.status(403).json({
             error: "No sos el supervisor asignado a este eventual",
           });
@@ -270,11 +287,13 @@ export async function crearPedido(req, res) {
         }
       }
 
-      // El servicio del pedido es el eventual: se usa (o crea) un servicio homónimo
+      // El servicio del pedido es el eventual: se usa (o crea) un servicio homónimo.
+      // El tipo solo se copia del eventual al crearlo — si ya existía, no se pisa una
+      // reclasificación manual posterior.
       servicio = await prisma.servicio.upsert({
         where: { nombre: eventual.nombre },
         update: { activo: true },
-        create: { nombre: eventual.nombre, activo: true },
+        create: { nombre: eventual.nombre, activo: true, tipo: eventual.tipo },
       });
 
       // Aseguramos que el supervisor tenga asignado ese servicio para que el pedido
@@ -323,8 +342,31 @@ const asignacion = await prisma.usuarioServicio.findUnique({
 });
 
 if (!asignacion) {
-  return res.status(403).json({
-    error: "No tenés permisos para crear pedidos para ese servicio",
+  // encargado_ev/supervisor_ev pueden pedir para cualquier servicio Espacios Verdes sin
+  // asignación explícita — se las creamos al vuelo (mismo patrón que el upsert de la
+  // rama de eventual más arriba) para que el resto del sistema (máquinas fijas del
+  // supervisor, catálogo, etc.) quede consistente a partir de acá.
+  const tieneAlcanceServicioPorTipo =
+    esRolEspaciosVerdesTransversal && servicio.tipo === TIPO_ESPACIOS_VERDES;
+
+  if (!tieneAlcanceServicioPorTipo) {
+    return res.status(403).json({
+      error: "No tenés permisos para crear pedidos para ese servicio",
+    });
+  }
+
+  await prisma.usuarioServicio.upsert({
+    where: {
+      usuarioId_servicioId: {
+        usuarioId: supervisor.id,
+        servicioId: servicio.id,
+      },
+    },
+    update: {},
+    create: {
+      usuarioId: supervisor.id,
+      servicioId: servicio.id,
+    },
   });
 }
 
@@ -1281,18 +1323,25 @@ export async function getServiciosDeUsuario(req, res) {
 
     const user = await prisma.usuario.findUnique({
       where: { username },
+      include: { roles: true },
     });
 
     if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
 
-    const asignados = await prisma.usuarioServicio.findMany({
-      where: { usuarioId: user.id },
-      include: { servicio: true },
-      orderBy: { createdAt: "desc" },
-    });
+    // encargado_ev/supervisor_ev ven además, sin asignación explícita, los servicios de
+    // tipo Espacios Verdes (mismo alcance ampliado que en la creación del pedido).
+    const tieneAlcanceEv = userHasAnyRole(user, ["encargado_ev", "supervisor_ev"]);
 
-    // devolvemos el mismo formato que /servicios: [{id, nombre}]
-    const servicios = asignados.map((x) => x.servicio);
+    const servicios = await prisma.servicio.findMany({
+      where: {
+        activo: true,
+        OR: [
+          { supervisores: { some: { usuarioId: user.id } } },
+          ...(tieneAlcanceEv ? [{ tipo: TIPO_ESPACIOS_VERDES }] : []),
+        ],
+      },
+      orderBy: { nombre: "asc" },
+    });
 
     res.json(servicios);
   } catch (e) {

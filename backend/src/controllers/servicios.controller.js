@@ -13,6 +13,7 @@ export async function getServicios(req, res) {
       select: {
         id: true,
         nombre: true,
+        tipo: true,
       },
     });
 
@@ -43,6 +44,7 @@ export async function getServiciosCatalogo(req, res) {
       servicios.map((s) => ({
         id: s.id,
         nombre: s.nombre,
+        tipo: s.tipo,
         maquinas: s._count.maquinas,
       }))
     );
@@ -118,6 +120,7 @@ export async function getServiciosPorUsuario(req, res) {
       select: {
         id: true,
         nombre: true,
+        tipo: true,
       },
       orderBy: { nombre: "asc" },
     });

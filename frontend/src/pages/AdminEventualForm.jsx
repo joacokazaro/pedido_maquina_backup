@@ -9,6 +9,7 @@ import { formatDateTime, toDateInputValue } from "../utils/date";
 import { REQUEST_RESOURCE_TYPES } from "../constants/maquinas";
 import SearchableSelect from "../components/SearchableSelect";
 import { buildActorHeaders } from "../utils/authHeaders";
+import { TIPOS_SERVICIO } from "../constants/tipoServicio";
 
 const ESTILOS_ESTADO_PEDIDO = {
   CERRADO: "bg-slate-200 text-slate-700",
@@ -111,6 +112,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
 
   const [form, setForm] = useState({
     nombre: "",
+    tipo: "",
     supervisorId: "",
     estado: "activo",
     fechaInicio: "",
@@ -233,6 +235,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
 
           setForm({
             nombre: eventual.nombre || "",
+            tipo: eventual.tipo || "",
             supervisorId: eventual.supervisor?.id ? String(eventual.supervisor.id) : "",
             estado: eventual.estado || "activo",
             fechaInicio: toDateInputValue(eventual.fechaInicio),
@@ -902,6 +905,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     return {
       usuario: user?.username,
       nombre: form.nombre,
+      tipo: form.tipo,
       supervisorId: form.supervisorId ? Number(form.supervisorId) : null,
       estado: form.estado,
       fechaInicio: form.fechaInicio || null,
@@ -917,6 +921,12 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   }
 
   function requestSubmit() {
+    if (!form.tipo) {
+      setError("Tenés que indicar el tipo del eventual (Limpieza o Espacios Verdes).");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     const requiereSupervisor =
       isCoordinadorFinalizacion ||
       (mostrarCamposPosteriores && (resumenMaquinas.length > 0 || trabajosRealizados.length > 0));
@@ -1015,6 +1025,20 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               onChange={(event) => updateField("nombre", event.target.value)}
               disabled={isCoordinadorFinalizacion}
             />
+          </div>
+
+          <div>
+            <label htmlFor="admin-eventual-form-tipo" className="mb-1 block text-sm font-medium text-gray-700">Tipo</label>
+            <SearchableSelect id="admin-eventual-form-tipo"
+              className="w-full rounded-xl border p-3 text-sm"
+              value={form.tipo}
+              onChange={(event) => updateField("tipo", event.target.value)}
+            >
+              <option value="">Seleccionar tipo...</option>
+              {TIPOS_SERVICIO.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </SearchableSelect>
           </div>
 
           <div>

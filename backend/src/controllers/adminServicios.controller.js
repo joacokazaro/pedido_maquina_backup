@@ -1,6 +1,7 @@
 import prisma from "../db/prisma.js";
 import ExcelJS from "exceljs";
 import { getAsignacionActivaPorMaquina } from "../services/asignacionesPedido.service.js";
+import { normalizeTipoServicio } from "../services/tipoServicio.service.js";
 
 /* ========================================================
    HELPERS
@@ -90,6 +91,7 @@ export async function adminGetServicios(req, res) {
         id: s.id,
         nombre: s.nombre,
         idBrowix: s.idBrowix,
+        tipo: s.tipo,
         activo: s.activo,
         maquinas: s._count.maquinas,
       }))
@@ -145,9 +147,14 @@ export async function adminCreateServicio(req, res) {
   try {
     const nombre = normalizeNombre(req.body?.nombre);
     const idBrowix = normalizeIdBrowix(req.body?.idBrowix);
+    const tipo = normalizeTipoServicio(req.body?.tipo);
 
     if (!nombre) {
       return res.status(400).json({ error: "Nombre obligatorio" });
+    }
+
+    if (!tipo) {
+      return res.status(400).json({ error: "Debe indicar el tipo del servicio (Limpieza o Espacios Verdes)" });
     }
 
     const existe = await prisma.servicio.findUnique({
@@ -161,7 +168,7 @@ export async function adminCreateServicio(req, res) {
 
       const reactivado = await prisma.servicio.update({
         where: { id: existe.id },
-        data: { activo: true, idBrowix: idBrowix ?? existe.idBrowix },
+        data: { activo: true, idBrowix: idBrowix ?? existe.idBrowix, tipo },
       });
 
       return res.status(200).json({
@@ -171,7 +178,7 @@ export async function adminCreateServicio(req, res) {
     }
 
     const nuevo = await prisma.servicio.create({
-      data: { nombre, idBrowix },
+      data: { nombre, idBrowix, tipo },
     });
 
     res.status(201).json({
@@ -199,6 +206,11 @@ export async function adminUpdateServicio(req, res) {
       return res.status(400).json({ error: "Nombre obligatorio" });
     }
 
+    const tipo = normalizeTipoServicio(req.body?.tipo);
+    if (!tipo) {
+      return res.status(400).json({ error: "Debe indicar el tipo del servicio (Limpieza o Espacios Verdes)" });
+    }
+
     const existe = await prisma.servicio.findUnique({
       where: { id },
     });
@@ -208,7 +220,7 @@ export async function adminUpdateServicio(req, res) {
     }
 
     const idBrowixProvided = req.body?.idBrowix !== undefined;
-    const data = { nombre };
+    const data = { nombre, tipo };
     if (idBrowixProvided) data.idBrowix = normalizeIdBrowix(req.body.idBrowix);
 
     const actualizado = await prisma.servicio.update({
@@ -296,6 +308,7 @@ export async function adminExportServicios(req, res) {
       "ID",
       "NOMBRE",
       "ID_BROWIX",
+      "TIPO",
       "ACTIVO",
       "CANTIDAD_MAQUINAS",
       "CANTIDAD_SUPERVISORES",
@@ -306,6 +319,7 @@ export async function adminExportServicios(req, res) {
       s.id,
       s.nombre,
       s.idBrowix || "",
+      s.tipo || "",
       s.activo ? "SI" : "NO",
       s._count.maquinas,
       s._count.supervisores,
@@ -341,7 +355,7 @@ export async function adminDownloadServiciosTemplate(req, res) {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Servicios");
-    worksheet.addRow(["ID", "NOMBRE", "ID_BROWIX", "ACTIVO"]);
+    worksheet.addRow(["ID", "NOMBRE", "ID_BROWIX", "TIPO", "ACTIVO"]);
 
     const buffer = await workbook.xlsx.writeBuffer();
 
@@ -412,6 +426,7 @@ export async function adminImportServicios(req, res) {
       const nombreRaw = getImportValue(row, "NOMBRE");
       const idBrowixRaw = getImportValue(row, "ID_BROWIX", "IDBROWIX", "BROWIX");
       const activoRaw = getImportValue(row, "ACTIVO");
+      const tipoRaw = getImportValue(row, "TIPO");
 
       return {
         rowNumber: index + 2,
@@ -422,6 +437,9 @@ export async function adminImportServicios(req, res) {
         idBrowixProvided: hasImportValue(idBrowixRaw),
         activo: normalizeBoolean(activoRaw, true),
         activoProvided: hasImportValue(activoRaw),
+        tipo: normalizeTipoServicio(tipoRaw),
+        tipoRaw,
+        tipoProvided: hasImportValue(tipoRaw),
       };
     });
 
@@ -485,6 +503,10 @@ export async function adminImportServicios(req, res) {
           errores.push(`Fila ${item.rowNumber}: no se puede dar de baja el servicio ${item.id}, tiene máquinas asignadas`);
         }
       }
+
+      if (item.tipoProvided && !item.tipo) {
+        errores.push(`Fila ${item.rowNumber}: TIPO inválido "${item.tipoRaw}" (debe ser LIMPIEZA o ESPACIOS_VERDES)`);
+      }
     }
 
     if (errores.length > 0) {
@@ -499,6 +521,7 @@ export async function adminImportServicios(req, res) {
         if (item.nombreProvided) data.nombre = item.nombre;
         if (item.idBrowixProvided) data.idBrowix = item.idBrowix;
         if (item.activoProvided) data.activo = item.activo;
+        if (item.tipoProvided) data.tipo = item.tipo;
 
         if (Object.keys(data).length === 0) continue;
 

@@ -6,6 +6,7 @@ import {
   updateEventualComponentesBySupervisor,
 } from "../services/eventuales.service.js";
 import { userHasRole } from "../services/roles.service.js";
+import { TIPO_ESPACIOS_VERDES } from "../services/tipoServicio.service.js";
 
 function handleError(res, error, fallbackMessage) {
   const status = error?.status || 500;
@@ -24,10 +25,17 @@ export async function getMisEventuales(req, res) {
     const actor = await getActorByUsername(username);
     // supervisor_ev es transversal: ve TODOS los eventuales, no solo los asignados a él.
     const esSupervisorEv = actor && userHasRole(actor, "supervisor_ev");
+    // encargado_ev ve además, sin estar asignado, los eventuales de tipo Espacios Verdes.
+    const esEncargadoEv = actor && userHasRole(actor, "encargado_ev");
 
     const eventuales = await listEventuales({
       ...req.query,
-      ...(esSupervisorEv ? {} : { supervisorUsername: username }),
+      ...(esSupervisorEv
+        ? {}
+        : {
+            supervisorUsername: username,
+            ...(esEncargadoEv ? { tipoAlcance: TIPO_ESPACIOS_VERDES } : {}),
+          }),
       activo: req.query?.activo ?? "true",
     });
     res.json(eventuales);
@@ -47,7 +55,9 @@ export async function getEventualSupervisor(req, res) {
     if (username && eventual.supervisor?.username !== username) {
       const actor = await getActorByUsername(username);
       const esSupervisorEv = actor && userHasRole(actor, "supervisor_ev");
-      if (!esSupervisorEv) {
+      const esEncargadoEvDeTipo =
+        actor && userHasRole(actor, "encargado_ev") && eventual.tipo === TIPO_ESPACIOS_VERDES;
+      if (!esSupervisorEv && !esEncargadoEvDeTipo) {
         return res.status(403).json({ error: "No autorizado" });
       }
     }
