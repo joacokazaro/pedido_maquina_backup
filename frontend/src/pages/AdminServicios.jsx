@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import Paginacion from "../components/Paginacion";
 import { usePaginacion } from "../hooks/usePaginacion";
 import SearchableSelect from "../components/SearchableSelect";
-import { TIPOS_SERVICIO, tipoServicioLabel } from "../constants/tipoServicio";
+import { TIPOS_SERVICIO } from "../constants/tipoServicio";
 
 export default function AdminServicios() {
   const navigate = useNavigate();
@@ -246,15 +246,6 @@ export default function AdminServicios() {
                     {s.idBrowix}
                   </span>
                 ) : null}
-                <span
-                  className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                    s.tipo
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-amber-100 text-amber-800"
-                  }`}
-                >
-                  {tipoServicioLabel(s.tipo)}
-                </span>
               </div>
               <div className="text-xs text-gray-600">
                 {s.maquinas} máquinas
