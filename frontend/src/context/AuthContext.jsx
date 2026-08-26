@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { loginRequest } from "../services/api";
+import { loginRequest, loginRequest360 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { io as ioClient } from "socket.io-client";
 import { API_BASE } from "../services/apiBase";
@@ -131,10 +131,8 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  async function login(username, password) {
-    const data = await loginRequest(username, password);
-
-    const normalized = normalizeAuthUser(data.user);
+  function applySessionAndRedirect(rawUser) {
+    const normalized = normalizeAuthUser(rawUser);
     if (!normalized) throw new Error("Respuesta de login inválida");
     setUser(normalized);
     localStorage.setItem("authUser", JSON.stringify(normalized));
@@ -160,6 +158,16 @@ export function AuthProvider({ children }) {
       return;
     }
     navigate("/");
+  }
+
+  async function login(username, password) {
+    const data = await loginRequest(username, password);
+    applySessionAndRedirect(data.user);
+  }
+
+  async function loginCon360(token360) {
+    const data = await loginRequest360(token360);
+    applySessionAndRedirect(data.user);
   }
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -202,6 +210,7 @@ export function AuthProvider({ children }) {
         loading, // 👈 CLAVE
         socket,
         login,
+        loginCon360,
         logout,
         confirmLogout,
         hasRole: (role) => hasRole(user, role),

@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { waitForBackend } from "./services/waitForBackend";
 
 import Login from "./pages/Login";
+import Sso360Callback from "./pages/Sso360Callback";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ROLES_PEDIDO_TITULAR } from "./constants/roles";
 import ConsultorHome from "./pages/ConsultorHome";
@@ -214,6 +215,7 @@ function App() {
       <Routes>
       {/* LOGIN */}
       <Route path="/" element={<Login />} />
+      <Route path="/sso-360-callback" element={<Sso360Callback />} />
 
       {/* =============================
             SUPERVISOR (VISTAS PROPIAS)

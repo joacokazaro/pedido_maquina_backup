@@ -27,6 +27,8 @@ const SPARKS = [
   { left: "93%", top: "78%", size: 5, duration: 5.8, delay: 3.6 },
 ];
 
+const KAZARO_360_URL = "https://360.kazaro.com.ar";
+
 export default function Login() {
   const { login } = useAuth();
   const [username, setUsername] = useState("");
@@ -43,6 +45,11 @@ export default function Login() {
     } catch {
       setError("Usuario o contraseña incorrectos");
     }
+  }
+
+  function handleLoginCon360() {
+    const redirectUri = `${window.location.origin}/sso-360-callback`;
+    window.location.href = `${KAZARO_360_URL}/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
   }
 
   return (
@@ -282,6 +289,23 @@ export default function Login() {
                     Ingresar
                   </button>
                 </form>
+
+                <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-[#9aa9c2]">
+                  <span className="h-px flex-1 bg-[#d8e2ee]" />
+                  o
+                  <span className="h-px flex-1 bg-[#d8e2ee]" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleLoginCon360}
+                  className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-[#c9d6e6] bg-white px-4 text-sm font-bold text-[#16264b] transition hover:bg-[#edf4ff] focus:outline-none focus:ring-4 focus:ring-blue-200"
+                >
+                  <svg className="h-5 w-5 flex-none text-[#0c9ca6]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 3.5 19 6v5.2c0 4.4-2.8 7.9-7 9.3-4.2-1.4-7-4.9-7-9.3V6l7-2.5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                  </svg>
+                  Iniciar sesión con Kazaró 360
+                </button>
               </div>
             </div>
 

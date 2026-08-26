@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { login } from '../controllers/auth.controller.js';
+import { login, loginCon360 } from '../controllers/auth.controller.js';
 
 const router = Router();
 
@@ -13,5 +13,6 @@ const loginLimiter = rateLimit({
 });
 
 router.post('/login', loginLimiter, login);
+router.post('/login-360', loginLimiter, loginCon360);
 
 export default router;
