@@ -194,7 +194,15 @@ Al sumar producción hay que **filtrar por unidad antes de agregar**: un `SUM(ca
 ### Estadísticas
 - Panel `/admin/estadisticas`, **solo rol `admin`** (`estadisticas.service.js`)
 - Tres secciones: **tiempo real** (pedidos abiertos, stock de máquinas por estado y composición por tipo), **avisos** (pedidos estancados por umbral, vencimientos próximos) y **período** (agregados por rango de fechas, con helpers de zona horaria Argentina)
-- **No cubre eventuales**: ninguna métrica de producción, horas ni costos de eventuales está agregada hoy
+- **No cubre eventuales**: los indicadores de eventuales viven aparte, en "KPIs de Espacios Verdes" (ver debajo)
+
+### KPIs de Espacios Verdes
+- Pantalla `/admin/eventuales/kpis`, en carrusel, accesible desde una card del panel de eventuales. Roles `admin`, `coordinador` y `consultor` (`kpiEspaciosVerdes.service.js`)
+- Seis indicadores: **generales** (horas-hombre por categoría, volumen de operación por unidad, calidad de carga y cierres incompletos), **rendimiento de desmalezado**, **rendimiento de retiro de poda**, **consumo de combustible**, **dotación** y **parque de equipos**
+- Los tres rendimientos son tasas (producción ÷ horas-hombre) y se muestran con su media, su desvío estándar muestral y una campana con la banda ±1σ, con cada eventual apoyado sobre la curva
+- Se calcula **solo sobre eventuales finalizados**: los campos de cierre no existen antes. El denominador son las horas totales del eventual, así que los que registraron más de un tipo de trabajo quedan marcados como "mixto"
+- `UNIDAD_CANONICA_POR_TRABAJO` (en el service) pasa a código la convención de unidades por tipo de trabajo: filtra los trabajos cargados en otra unidad fuera de los rendimientos y alimenta el indicador de calidad de carga
+- **No mide costos**: sin tarifa por categoría ni monto facturado no hay forma de calcularlos
 
 ### Seguros
 - Alta y gestión de seguros de vehículos
@@ -354,6 +362,7 @@ Todo cuelga de `/api`. Los routers admin se montan como varios routers sobre el 
 - `POST /api/eventuales/:id/finalizar` — **stub**: devuelve `403` fijo, el supervisor ya no finaliza eventuales
 - `GET|POST /api/admin/eventuales` · `GET|PUT|DELETE /api/admin/eventuales/:id`
 - `GET /api/admin/eventuales/componentes/catalogo`
+- `GET /api/admin/eventuales/kpis/espacios-verdes` (KPIs de producción y productividad; `requireActor` con `admin`, `coordinador` y `consultor`)
 - `POST /api/admin/eventuales/:id/importar-horas-browix` · `POST /api/admin/eventuales/:id/importar-insumos`
 - `PUT /api/admin/eventuales/:id/horas-supervisor`
 - `DELETE /api/admin/eventuales/:id/pedidos/:pedidoId` (desvincula un pedido complementario; admin y coordinador)

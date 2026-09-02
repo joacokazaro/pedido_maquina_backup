@@ -848,6 +848,7 @@ En **Eventuales**, el Administrador puede:
 11. Registrar observaciones posteriores.
 12. Eliminar un eventual mediante baja lógica.
 13. Descargar PDF resumen cuando el eventual está finalizado.
+14. Consultar los KPIs de Espacios Verdes.
 
 Al crear un eventual se cargan los datos base:
 
@@ -925,6 +926,30 @@ En el detalle de un eventual se visualiza:
 La opción **Descargar PDF resumen** requiere dos condiciones: que el eventual esté **finalizado** y que **no queden pedidos complementarios sin cerrar**. Si alguna no se cumple, el botón queda deshabilitado y al pasar el mouse por encima indica el motivo, incluyendo el número de los pedidos pendientes.
 
 La opción **Eliminar eventual** realiza una baja lógica: el registro queda inactivo y se conserva en historial.
+
+#### KPIs de Espacios Verdes
+
+Desde el panel de eventuales, la card **KPI's Espacios Verdes** abre un tablero de indicadores en formato carrusel. Se pasa de un indicador al otro con las flechas de los costados, con las flechas ← → del teclado, deslizando en el celular o tocando el nombre del indicador. Está disponible para Administrador, Coordinador y Consultor, y es de solo lectura.
+
+Los seis indicadores son:
+
+1. **Generales**: horas-hombre por categoría, volumen producido separado por unidad, calidad de carga y cierres incompletos.
+2. **Desmalezado**: metros cuadrados por hora-hombre.
+3. **Retiro de poda**: metros cúbicos por hora-hombre.
+4. **Combustible**: litros por hora-hombre. Acá más es peor.
+5. **Dotación**: personas por día y duración de cada trabajo.
+6. **Parque de equipos**: qué maquinaria se usa más y en qué cantidades promedio.
+
+Cada indicador trae un bloque **Cómo se calcula** con la cuenta exacta y las salvedades que hay que tener en cuenta para leer el número.
+
+Los tres indicadores de rendimiento (desmalezado, retiro de poda y combustible) muestran además una **campana** con el promedio, el desvío estándar y la banda de ±1 desvío, que es el rango donde debería caer alrededor del 68% de los trabajos. Cada punto sobre la curva es un eventual real: los que quedan fuera de la banda son los que conviene ir a mirar. Lo interesante no es el promedio sino la dispersión: si el mejor trabajo rinde varias veces lo que el peor, ahí hay algo que explicar.
+
+Dos cosas a tener en cuenta al leerlos:
+
+- Solo se miden **eventuales finalizados**, porque los datos de cierre recién se completan al cerrarlos.
+- Las horas son las **horas totales del eventual**. Si un eventual registró más de un tipo de trabajo, su rendimiento queda subestimado y aparece marcado como **mixto**.
+
+El tablero **no muestra costos**. Para poder calcularlos faltan dos datos que hoy el sistema no tiene: el valor hora de cada categoría de personal y el monto facturado del trabajo.
 
 ## 9. Funcionalidades del rol Coordinador
 

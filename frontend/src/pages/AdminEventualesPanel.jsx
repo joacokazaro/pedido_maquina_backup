@@ -43,6 +43,12 @@ export default function AdminEventualesPanel() {
       to: "/admin/eventuales/nuevo",
       icon: "➕",
     }]),
+    {
+      title: "KPI's Espacios Verdes",
+      description: "Producción y productividad de los eventuales de Espacios Verdes: rendimientos, dotación y parque de equipos.",
+      to: "/admin/eventuales/kpis",
+      icon: "📈",
+    },
   ];
 
   return (

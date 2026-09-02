@@ -53,6 +53,7 @@ import ConfirmarDevolucion from "./pages/ConfirmarDevolucion";
 // =============================
 import AdminHome from "./pages/AdminHome";
 import AdminEstadisticas from "./pages/estadisticas/AdminEstadisticas";
+import AdminKpiEspaciosVerdes from "./pages/kpiEspaciosVerdes/AdminKpiEspaciosVerdes";
 import AdminUsuarios from "./pages/AdminUsuarios";
 import AdminUsuarioForm from "./pages/AdminUsuarioForm";
 import AdminPedidos from "./pages/AdminPedidos";
@@ -613,6 +614,12 @@ function App() {
       <Route
         path="/admin/eventuales/nuevo"
         element={renderAdminOnlyPage(<AdminEventualForm />)}
+      />
+
+      {/* Va antes de `/admin/eventuales/:id` para que "kpis" no se lea como un id. */}
+      <Route
+        path="/admin/eventuales/kpis"
+        element={renderReadOnlyModulesPage(<AdminKpiEspaciosVerdes />)}
       />
 
       <Route

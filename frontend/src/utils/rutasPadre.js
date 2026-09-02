@@ -78,6 +78,7 @@ const MAPA_PADRES = {
   "/admin/eventuales": "/admin",
   "/admin/eventuales/historial": "/admin/eventuales",
   "/admin/eventuales/nuevo": "/admin/eventuales",
+  "/admin/eventuales/kpis": "/admin/eventuales",
   "/admin/eventuales/:id": "/admin/eventuales",
   "/admin/eventuales/:id/completar": "/admin/eventuales/:id",
   "/admin/eventuales/:id/corregir": "/admin/eventuales/:id",

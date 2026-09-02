@@ -11,10 +11,12 @@ import {
   adminListEventuales,
   adminUpdateEventual,
 } from "../controllers/adminEventuales.controller.js";
+import { adminGetKpisEspaciosVerdes } from "../controllers/kpiEspaciosVerdes.controller.js";
 
 const router = Router();
 
 router.get("/eventuales/componentes/catalogo", adminGetComponentesCatalogo);
+router.get("/eventuales/kpis/espacios-verdes", adminGetKpisEspaciosVerdes);
 
 router.get("/eventuales", adminListEventuales);
 router.get("/eventuales/:id", adminGetEventual);
