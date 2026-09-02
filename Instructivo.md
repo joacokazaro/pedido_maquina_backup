@@ -142,7 +142,7 @@ Los roles activos contemplados por la aplicación son los siguientes:
 | Asignación de conductor | No | No | Sí | No | No | No |
 | Seguros | No | No | ABM | No | No | No |
 | Taller | No | No | Registrar y consultar | Consultar | Consultar | Registrar y consultar |
-| Eventuales | Mis eventuales y observaciones | No | Alta, corrección, baja lógica, PDF | Lectura y finalización | Lectura | No |
+| Eventuales | Mis eventuales, observaciones y pedidos; carga de máquinas y vehículos según el rol de supervisión | No | Alta, corrección, baja lógica, PDF | Completar datos, finalizar, importar horas e insumos, PDF | Lectura | No |
 | Servicios | No | Catálogo de lectura | ABM y baja lógica | No | Lectura | No |
 | Supervisores x Servicios | No | No | Edición | No | Lectura | No |
 | Usuarios | No | No | ABM, roles, activación y carnet | No | No | No |
@@ -302,16 +302,33 @@ En **Mis eventuales**, el Supervisor puede:
 3. Abrir el detalle del eventual.
 4. Consultar componentes utilizados, vehículos, trabajos, servicios extras, fechas, observaciones e historial.
 5. Agregar observaciones posteriores cuando el eventual está activo.
+6. Crear un pedido de máquinas para el eventual, cuando está activo.
 
 En el detalle se visualizan:
 
 - Máquinas utilizadas por tipo y cantidad.
 - Vehículos utilizados.
+- Tipo del eventual (Limpieza o Espacios Verdes).
 - Observaciones previas y posteriores.
 - Historial de cambios.
 - Datos legados de componentes cuando existan registros antiguos.
 
-Si el eventual ya no está activo, la pantalla permite consulta, pero no carga de nuevas observaciones.
+Si el eventual ya no está activo, la pantalla permite consulta, pero no carga de nuevas observaciones ni pedidos.
+
+#### Qué eventuales ve cada rol de supervisión
+
+- **Supervisor Limpieza** y **Encargado EV** ven los eventuales asignados a su supervisión.
+- **Encargado EV** ve además **todos los eventuales de tipo Espacios Verdes**, aunque no los tenga asignados. Si dispara un pedido para uno que no tenía supervisor, queda asignado como responsable de ese eventual.
+- **Supervisor Espacios Verdes** ve **todos los eventuales activos del sistema**, sin importar a quién estén asignados. La pantalla se titula "Eventuales" en lugar de "Mis eventuales". Trabajar sobre un eventual ajeno no lo convierte en su responsable: el supervisor asignado no cambia.
+
+#### Cargar máquinas y vehículos utilizados
+
+El botón **Cargar** de los bloques "Máquinas utilizadas" y "Vehículos utilizados" solo aparece para:
+
+- **Supervisor Limpieza**, sobre los eventuales asignados a él.
+- **Supervisor Espacios Verdes**, sobre cualquier eventual. En su caso el selector ofrece **sus propias** máquinas y vehículos, no los del supervisor asignado al eventual.
+
+Para el **Encargado EV** y el **Coordinador** esos bloques son de solo lectura; la carga se hace desde el backoffice, en "Completar datos de eventual".
 
 ## 7. Funcionalidades del rol Depósito
 
@@ -835,6 +852,7 @@ En **Eventuales**, el Administrador puede:
 Al crear un eventual se cargan los datos base:
 
 - Nombre.
+- **Tipo: Limpieza o Espacios Verdes. Es obligatorio**; el sistema no permite guardar el eventual sin indicarlo. Define el área a la que pertenece el trabajo y habilita que el Encargado EV vea los eventuales de Espacios Verdes que no tiene asignados.
 - Supervisor (opcional al crear; es obligatorio asignarlo para completar maquinaria utilizada y trabajos realizados).
 - Estado.
 - Fecha de inicio.
@@ -850,9 +868,37 @@ Al completar datos o finalizar se pueden cargar:
 - Insumos extra, con cantidad y unidad de medida.
 - Observaciones posteriores.
 
+#### Qué unidad usar en cada trabajo
+
+El formulario deja elegir cualquier unidad para cualquier trabajo, pero para que los datos sirvan después hay que respetar siempre la misma:
+
+| Trabajo | Unidad a usar |
+| --- | --- |
+| Desmalezado, Desmonte | **M2** (superficie trabajada) |
+| Retiro de poda | **M3** (volumen de material retirado, no la superficie) |
+| Poda en altura, Poda menor a 2m, Limpieza integral | **Unidad** (cantidad de árboles o de intervenciones) |
+
+Si un mismo trabajo se carga unas veces en metros cuadrados y otras en horas, esos registros quedan afuera de los informes de producción. Ante la duda, cargar la cantidad producida (metros, volumen o unidades), nunca las horas trabajadas: las horas se toman automáticamente de Browix.
+
 En la sección **Insumos** de "Completar datos de eventual", además de los insumos que se importan de la plataforma de insumos, Administrador y Coordinador pueden cargar a mano los **insumos extra** consumidos: nafta preparada, nafta pura, bolsas, tanza, aceite para cadena de motosierra, gasoil premium, gasoil común, herbicida y **Otro** (con descripción libre obligatoria). Cada insumo lleva una cantidad y una unidad de medida: litros, unidades, metros o centímetros cúbicos. No llevan precio y no se suman al total en pesos de los insumos importados. A diferencia de la importación, se pueden cargar con el eventual en cualquier estado y se guardan con el botón **Guardar** del formulario, junto con el resto de los datos.
 
 Con fecha de inicio y fecha de fin cargadas, el botón **Importar horas de Browix** trae del sistema de marcación el total de horas fichadas cuya ubicación coincide exactamente con el nombre del eventual, dentro de ese rango de fechas. Solo se cuentan los días con jornada asignada: quien figura en la planificación con franco rotativo (ROT), licencia (ENF) o sin turno cargado no suma horas ni cuenta como persona del eventual. El resultado (total de horas, cantidad de fichajes encontrados y fecha de importación) queda guardado en el eventual y se puede reimportar en cualquier momento, pisando el valor anterior.
+
+La importación puede demorar más de un minuto: el sistema de marcación limita la cantidad de consultas por minuto, así que las horas se piden de a una por grupo y por persona. Si falla, alcanza con volver a apretar el botón.
+
+#### Qué se habilita solo con el eventual finalizado
+
+Estas tres acciones aparecen deshabilitadas hasta que el eventual se marca como **finalizado** y se guarda ese cambio de estado:
+
+- **Importar horas de Browix** (además requiere fecha de inicio y fecha de fin).
+- **Importar insumos** de la plataforma de insumos.
+- **Guardar horas de supervisor**.
+
+Los **insumos extra**, en cambio, se pueden cargar en cualquier estado.
+
+Para poder marcar un eventual como finalizado hacen falta dos cosas: al menos **un trabajo realizado** cargado y la **fecha de finalización** completa.
+
+La importación de insumos busca en la plataforma de insumos un servicio con exactamente el mismo nombre que el eventual. Ese servicio existe solo si desde el eventual se disparó algún pedido complementario; si nunca se disparó ninguno, la importación no va a encontrar nada aunque se hayan pedido insumos.
 
 Estados de eventual:
 
@@ -863,6 +909,7 @@ Estados de eventual:
 En el detalle de un eventual se visualiza:
 
 - Supervisor responsable.
+- Tipo (Limpieza o Espacios Verdes).
 - Fechas de inicio y fin.
 - Componentes utilizados.
 - Vehículos utilizados.
@@ -875,7 +922,7 @@ En el detalle de un eventual se visualiza:
 - Historial de acciones.
 - Datos legados de componentes, si existen.
 
-La opción **Descargar PDF resumen** está disponible solo cuando el eventual está **finalizado**.
+La opción **Descargar PDF resumen** requiere dos condiciones: que el eventual esté **finalizado** y que **no queden pedidos complementarios sin cerrar**. Si alguna no se cumple, el botón queda deshabilitado y al pasar el mouse por encima indica el motivo, incluyendo el número de los pedidos pendientes.
 
 La opción **Eliminar eventual** realiza una baja lógica: el registro queda inactivo y se conserva en historial.
 
@@ -900,13 +947,17 @@ En general:
 
 ### 9.1 Finalizar eventual como Coordinador
 
-Cuando el sistema habilita la finalización de un eventual:
+La finalización se hace desde la misma pantalla que la carga de datos:
 
 1. Ingresar a **Eventuales**.
-2. Abrir el eventual.
-3. Seleccionar la acción de finalización.
-4. Completar estado, fecha fin, componentes, trabajos realizados, servicios extras y observaciones posteriores.
+2. Abrir el eventual y elegir **Completar datos de eventual**.
+3. Cargar los **trabajos realizados** (hace falta al menos uno) y la **fecha de finalización**.
+4. Cambiar el **Estado** a *finalizado*.
 5. Guardar.
+
+Si falta la fecha de fin o no hay ningún trabajo cargado, el sistema no permite guardar el eventual como finalizado y avisa cuál de los dos falta.
+
+Recién después de guardar el estado *finalizado* se habilitan, en la misma pantalla, la importación de horas de Browix, la importación de insumos y la carga de horas de supervisor.
 
 La finalización queda registrada en el historial del eventual.
 

@@ -45,6 +45,7 @@ Rename directo del ex-rol `supervisor`; mantiene todas sus funcionalidades.
 - Registrar devoluciones y agregar observaciones
 - Solicitar la cancelación de un pedido
 - Ver sus eventuales y registrar observaciones sobre ellos (no puede finalizarlos: eso pasó a Coordinador)
+- **Alcance por tipo**: además de los eventuales asignados a él, ve y puede pedir para cualquier eventual o servicio de tipo `ESPACIOS_VERDES` sin estar asignado. A diferencia de `supervisor_ev`, **sí** queda fijado como titular del eventual si este no tenía supervisor
 
 ### 🧹 Supervisor Limpieza (`supervisor_limpieza`)
 Hereda **todo** lo del encargado EV y suma una única diferencia: es el único rol de supervisión que puede **cargar las máquinas y vehículos utilizados** de un eventual asignado a él (`updateEventualComponentesBySupervisor`). Para el encargado EV esos bloques son de solo lectura.
@@ -160,21 +161,40 @@ Módulo dedicado para el rol Taller (visible en lectura para Admin, Coordinador,
 
 ### Eventuales
 - Estados `activo` / `finalizado` / `cancelado`, con baja lógica
+- **Tipo obligatorio** `LIMPIEZA` / `ESPACIOS_VERDES` (`Eventual.tipo`, catálogo en `src/services/tipoServicio.service.js`): clasifica el eventual por área y habilita el alcance por tipo de `encargado_ev`. `saveEventual` rechaza guardar sin tipo; el historial (`/admin/eventuales/historial`) filtra por él e incluye la opción "Sin clasificar"
 - Registro de componentes, vehículos, trabajos realizados y servicios extras subcontratados
-- Historial de acciones (`HistorialEventual`) y PDF al finalizar
+- Historial de acciones en la tabla `HistorialEventual` y PDF al finalizar (habilitado solo con el eventual finalizado y sin pedidos complementarios abiertos)
 - **Importación de horas desde Browix**: suma `minutos_teoricos_de_jornada` de los fichajes cuya `ubicacion` matchea exacto el nombre del eventual, entre `fechaInicio` y `fechaFin` (ambas obligatorias). El resultado pisa `Eventual.horasBrowix` en cada reimportación
 - **Importación de insumos** desde `insumos.kazaro.com.ar`, matcheando por nombre de servicio, sin filtro de fecha
 - **Insumos extra** (`Eventual.insumosExtras`): carga manual de consumos que no salen de la plataforma de insumos (nafta preparada/pura, bolsas, tanza, aceite de cadena, gasoil premium/común, herbicida y "Otro" con descripción libre) en litros, unidades, metros o centímetros cúbicos. Sin precio; se guardan junto al resto del eventual desde `/admin/eventuales/:id/completar` (admin y coordinador) y se pueden cargar en cualquier estado
 - Carga manual de horas de supervisor
 - **Pedidos complementarios**: el supervisor asignado al eventual (cualquier rol de `ROLES_PEDIDO_TITULAR`) puede dispararlos desde `/supervisor/pedido/nuevo` o desde el detalle del eventual; admin y coordinador pueden dispararlos como backoffice a nombre del supervisor asignado. El pedido usa (o crea) un `Servicio` homónimo al eventual y se lo autoasigna al supervisor
 - **Desvincular un pedido complementario** (`DELETE /api/admin/eventuales/:id/pedidos/:pedidoId`, desde `/admin/eventuales/:id/completar`): saca el pedido del eventual sin borrarlo —sigue su circuito normal—, de modo que sus máquinas dejan de sumarse a las utilizadas y deja de fijar al supervisor titular. Es la forma de deshacer un disparo equivocado sin borrar el pedido, que rompería `getNextPedidoCode()`. Los pedidos `CANCELADO` tampoco fijan al supervisor (`contarPedidosQueFijanSupervisor`)
-- **Carga de componentes desde la pantalla del supervisor** (`PUT /api/eventuales/:id/componentes`): exclusiva del `supervisor_limpieza` sobre eventuales propios; el resto lo ve en modo lectura
+- **Carga de componentes desde la pantalla del supervisor** (`PUT /api/eventuales/:id/componentes`): exclusiva del `supervisor_limpieza` sobre eventuales propios (y del `supervisor_ev` sobre cualquiera); el resto lo ve en modo lectura
+
+#### Unidades de medida de los trabajos
+
+`TIPOS_TRABAJO_VALIDOS` y `UNIDADES_MEDIDA_VALIDAS` son listas independientes: el formulario permite cualquier combinación y **nada en el código ata una unidad a un tipo de trabajo**. La unidad canónica es una convención:
+
+| Trabajo | Unidad |
+|---|---|
+| `DESMALEZADO`, `DESMONTE` | `M2` |
+| `RETIRO_PODA` | `M3` — volumen retirado, no superficie |
+| `PODA_ALTURA`, `PODA_MENOR_2M`, `LIMPIEZA_INTEGRAL` | `UNIDAD` |
+
+Al sumar producción hay que **filtrar por unidad antes de agregar**: un `SUM(cantidad)` sobre `trabajosRealizados` suma metros cuadrados con árboles podados. `CORTE_CESPED` y `DESMONTE` no tienen ningún uso registrado todavía.
 
 ### Servicios
 - Panel de gestión y catálogo read-only para depósito
 - Asignación de supervisores por servicio ("Supervisores x Servicios")
 - Importación/exportación Excel
 - Campo `idBrowix` para vincular con el sistema de marcación externo
+- Campo `tipo` (`LIMPIEZA` / `ESPACIOS_VERDES`), nullable: se hereda del eventual cuando `crearPedido` crea el servicio homónimo, y no se pisa si el servicio ya existía. Habilita el alcance por tipo de `encargado_ev` sobre servicios
+
+### Estadísticas
+- Panel `/admin/estadisticas`, **solo rol `admin`** (`estadisticas.service.js`)
+- Tres secciones: **tiempo real** (pedidos abiertos, stock de máquinas por estado y composición por tipo), **avisos** (pedidos estancados por umbral, vencimientos próximos) y **período** (agregados por rango de fechas, con helpers de zona horaria Argentina)
+- **No cubre eventuales**: ninguna métrica de producción, horas ni costos de eventuales está agregada hoy
 
 ### Seguros
 - Alta y gestión de seguros de vehículos
@@ -330,12 +350,19 @@ Todo cuelga de `/api`. Los routers admin se montan como varios routers sobre el 
 
 ### Eventuales
 - `GET /api/eventuales/mis/:username` · `GET /api/eventuales/:id`
-- `PUT /api/eventuales/:id/componentes` · `POST /api/eventuales/:id/observaciones` · `POST /api/eventuales/:id/finalizar`
+- `PUT /api/eventuales/:id/componentes` · `POST /api/eventuales/:id/observaciones`
+- `POST /api/eventuales/:id/finalizar` — **stub**: devuelve `403` fijo, el supervisor ya no finaliza eventuales
 - `GET|POST /api/admin/eventuales` · `GET|PUT|DELETE /api/admin/eventuales/:id`
 - `GET /api/admin/eventuales/componentes/catalogo`
 - `POST /api/admin/eventuales/:id/importar-horas-browix` · `POST /api/admin/eventuales/:id/importar-insumos`
 - `PUT /api/admin/eventuales/:id/horas-supervisor`
 - `DELETE /api/admin/eventuales/:id/pedidos/:pedidoId` (desvincula un pedido complementario; admin y coordinador)
+
+> **Deuda de autorización conocida:** de los endpoints de `/api/admin/eventuales`, solo las dos importaciones, `horas-supervisor` y la desvinculación llaman `requireActor` (admin y coordinador). El alta, la edición y la baja resuelven el actor desde `req.body.usuario` y **no validan rol**. En los del supervisor, `GET /api/eventuales/:id` solo comprueba autorización si viene el query param `username`.
+
+### Estadísticas
+- `GET /api/admin/estadisticas/tiempo-real` · `GET /api/admin/estadisticas/avisos` · `GET /api/admin/estadisticas/periodo`
+- Los tres con `requireActor` restringido a `admin`
 
 ### Seguros
 - `GET|POST /api/admin/seguros` · `PUT|DELETE /api/admin/seguros/:id`
@@ -374,7 +401,8 @@ Grupos de acceso definidos en `App.jsx`:
 - **Máquinas**: `/admin/maquinas` · `/admin/maquinas/nueva` · `/admin/maquinas/:id` · `/admin/maquinas/:id/pedidos-historicos` · `/admin/maquinas/tipos` · `/admin/maquinas/amortizaciones` · `/admin/plazos-amortizacion`
 - **Vehículos**: `/admin/vehiculos` · `/admin/vehiculos/nuevo` · `/admin/vehiculos/:id` · `/admin/vehiculos/:id/historial` · `/admin/vehiculos/asignaciones` · `/admin/vehiculos/importar`
 - **Taller**: `/admin/taller` · `/admin/taller/registrar` (`/maquinas`, `/vehiculos`) · `/admin/taller/ver` (`/maquinas`, `/vehiculos`)
-- **Eventuales**: `/admin/eventuales` · `/admin/eventuales/historial` · `/admin/eventuales/nuevo` · `/admin/eventuales/:id` · `/admin/eventuales/:id/completar` · `/admin/eventuales/:id/finalizar`
+- **Eventuales**: `/admin/eventuales` · `/admin/eventuales/historial` · `/admin/eventuales/nuevo` · `/admin/eventuales/:id` · `/admin/eventuales/:id/completar` (alias legado: `/corregir`). La ruta `/admin/eventuales/:id/finalizar` (solo `COORDINADOR`) sigue registrada pero **ninguna pantalla enlaza a ella**
+- **Estadísticas**: `/admin/estadisticas` (solo `ADMIN`)
 - **Servicios**: `/admin/servicios` · `/admin/servicios/nuevo` · `/admin/servicios/:id` · `/admin/servicios/importar` · `/admin/supervisores-servicios` · `/admin/supervisores`
 - **Otros**: `/admin/pedidos` · `/admin/pedido/:id` · `/admin/usuarios` (`/nuevo`, `/:username`) · `/admin/seguros`
 
