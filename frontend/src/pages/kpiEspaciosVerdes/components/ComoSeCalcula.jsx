@@ -7,7 +7,7 @@
  */
 export default function ComoSeCalcula({ formula, notas = [], fuente }) {
   return (
-    <section className="rounded-2xl border border-kazaro-ice bg-kazaro-mist/70 p-4 sm:p-5">
+    <section className="rounded-2xl border border-kazaro-ice bg-kazaro-mist/70 p-4 sm:p-6">
       <h4 className="flex items-center gap-2 font-display text-sm font-extrabold uppercase tracking-wide text-kazaro-deep">
         <svg className="h-4 w-4 text-kazaro-blue" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <rect x="4" y="3" width="16" height="18" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
@@ -32,7 +32,7 @@ export default function ComoSeCalcula({ formula, notas = [], fuente }) {
       ) : null}
 
       {fuente ? (
-        <p className="mt-3 border-t border-kazaro-ice pt-2 text-[11px] text-slate-500">
+        <p className="mt-3 border-t border-kazaro-ice pt-2.5 text-xs text-slate-500">
           <span className="font-semibold text-slate-600">Fuente del dato:</span> {fuente}
         </p>
       ) : null}

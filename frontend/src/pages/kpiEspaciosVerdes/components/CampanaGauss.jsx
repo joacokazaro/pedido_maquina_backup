@@ -31,12 +31,12 @@ function TooltipCampana({ active, payload, banda1, unidadRatio }) {
   const dentro = banda1 && punto.x >= banda1.desde && punto.x <= banda1.hasta;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
+    <div className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs shadow-lg">
       <p className="font-semibold text-kazaro-navy">
         {formatNumero(punto.x)} {unidadRatio}
       </p>
       {punto.info ? (
-        <p className="mt-1 max-w-[220px] font-medium text-slate-700">{punto.info.nombre}</p>
+        <p className="mt-1 max-w-[260px] font-medium text-slate-700">{punto.info.nombre}</p>
       ) : null}
       <p className="mt-1 text-slate-500">
         {dentro ? "Dentro de lo esperable (±1σ)" : "Fuera de lo habitual"}
@@ -57,7 +57,7 @@ function TooltipCampana({ active, payload, banda1, unidadRatio }) {
  * El eje Y es densidad de probabilidad, que no significa nada para quien lee
  * el tablero: va oculto a propósito. Lo que se lee es el eje X.
  */
-export default function CampanaGauss({ stats, bandas, muestras, unidadRatio, altura = 300 }) {
+export default function CampanaGauss({ stats, bandas, muestras, unidadRatio, altura = 270 }) {
   const { media, desvio } = stats;
 
   const { datos, dominio, banda1 } = useMemo(() => {
@@ -99,7 +99,7 @@ export default function CampanaGauss({ stats, bandas, muestras, unidadRatio, alt
 
   if (!datos.length) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 text-center text-sm text-slate-500">
+      <div className="flex h-44 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 text-center text-sm text-slate-500">
         Se necesitan al menos dos eventuales con este trabajo medido para poder calcular una
         distribución.
       </div>
@@ -109,7 +109,7 @@ export default function CampanaGauss({ stats, bandas, muestras, unidadRatio, alt
   return (
     <div>
       <ResponsiveContainer width="100%" height={altura}>
-        <ComposedChart data={datos} margin={{ top: 28, right: 16, bottom: 4, left: 8 }}>
+        <ComposedChart data={datos} margin={{ top: 32, right: 20, bottom: 4, left: 8 }}>
           <defs>
             <linearGradient id="gradCampana" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={VIZ.s1} stopOpacity={0.28} />
@@ -122,9 +122,9 @@ export default function CampanaGauss({ stats, bandas, muestras, unidadRatio, alt
             dataKey="x"
             domain={dominio}
             tickFormatter={(v) => formatNumero(v)}
-            tick={{ fontSize: 11, fill: "#64748b" }}
+            tick={{ fontSize: 12, fill: "#64748b" }}
             stroke="#cbd5e1"
-            label={{ value: unidadRatio, position: "insideBottomRight", offset: -2, fontSize: 11, fill: "#94a3b8" }}
+            label={{ value: unidadRatio, position: "insideBottomRight", offset: -2, fontSize: 12, fill: "#94a3b8" }}
           />
           {/* Densidad: se calcula para dibujar la curva pero no se muestra. */}
           <YAxis hide domain={[0, "dataMax"]} />
@@ -158,12 +158,12 @@ export default function CampanaGauss({ stats, bandas, muestras, unidadRatio, alt
             stroke={VIZ.s1}
             strokeWidth={2}
             strokeDasharray="5 4"
-            label={{ value: `media ${formatNumero(media)}`, position: "top", fontSize: 11, fill: VIZ.s1, fontWeight: 600 }}
+            label={{ value: `media ${formatNumero(media)}`, position: "top", fontSize: 12, fill: VIZ.s1, fontWeight: 600 }}
           />
           {banda1 ? (
             <>
-              <ReferenceLine x={banda1.desde} stroke="#94a3b8" strokeDasharray="2 3" label={{ value: "−1σ", position: "top", fontSize: 10, fill: "#94a3b8" }} />
-              <ReferenceLine x={banda1.hasta} stroke="#94a3b8" strokeDasharray="2 3" label={{ value: "+1σ", position: "top", fontSize: 10, fill: "#94a3b8" }} />
+              <ReferenceLine x={banda1.desde} stroke="#94a3b8" strokeDasharray="2 3" label={{ value: "−1σ", position: "top", fontSize: 11, fill: "#94a3b8" }} />
+              <ReferenceLine x={banda1.hasta} stroke="#94a3b8" strokeDasharray="2 3" label={{ value: "+1σ", position: "top", fontSize: 11, fill: "#94a3b8" }} />
             </>
           ) : null}
 
@@ -185,28 +185,28 @@ export default function CampanaGauss({ stats, bandas, muestras, unidadRatio, alt
 
       {/* Dos elementos visuales distintos: la identidad no puede quedar solo en
           el color, así que van nombrados acá. */}
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[11px] text-slate-500">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-0.5 w-4 rounded" style={{ background: VIZ.s1 }} />
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-slate-500">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-0.5 w-5 rounded" style={{ background: VIZ.s1 }} />
           Distribución esperada
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full ring-2 ring-white" style={{ background: VIZ.s2 }} />
+        <span className="inline-flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full ring-2 ring-white" style={{ background: VIZ.s2 }} />
           Cada eventual medido
         </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-4 rounded-sm" style={{ background: VIZ.s1, opacity: 0.18 }} />
+        <span className="inline-flex items-center gap-2">
+          <span className="h-3 w-5 rounded-sm" style={{ background: VIZ.s1, opacity: 0.18 }} />
           Banda ±1σ
         </span>
       </div>
 
       {/* Los mismos datos en tabla: la lectura no puede depender del gráfico. */}
-      <details className="mt-3 rounded-xl border border-slate-200 bg-slate-50/70">
-        <summary className="cursor-pointer px-4 py-2 text-xs font-semibold text-slate-600">
+      <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70">
+        <summary className="cursor-pointer px-4 py-2.5 text-xs font-semibold text-slate-600">
           Ver los {muestras.length} eventuales medidos
         </summary>
         <div className="overflow-x-auto px-4 pb-3">
-          <table className="w-full min-w-[520px] text-left text-xs">
+          <table className="w-full min-w-[560px] text-left text-xs">
             <thead className="text-slate-500">
               <tr>
                 <th className="py-1.5 pr-3 font-medium">Eventual</th>
@@ -224,7 +224,7 @@ export default function CampanaGauss({ stats, bandas, muestras, unidadRatio, alt
                       <span title={m.nombre}>{acortar(m.nombre, 34)}</span>
                       {m.mixto ? (
                         <span
-                          className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700"
+                          className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700"
                           title="Este eventual también registró otros trabajos, así que sus horas no son todas de este trabajo."
                         >
                           mixto

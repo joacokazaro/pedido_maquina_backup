@@ -54,7 +54,7 @@ export default function Carrusel({ slides }) {
   const actual = slides[indice];
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-[1600px]">
       {/* Acceso directo a cada KPI: con seis slides, ir de a una con las
           flechas es tedioso. */}
       <nav className="mb-4 flex flex-wrap items-center gap-1.5" aria-label="Indicadores">
@@ -64,7 +64,7 @@ export default function Carrusel({ slides }) {
             type="button"
             onClick={() => ir(i)}
             aria-current={i === indice ? "true" : undefined}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
               i === indice
                 ? "bg-gradient-to-r from-kazaro-blue to-kazaro-cyan text-white shadow-md shadow-kazaro-cyan/25"
                 : "bg-white text-slate-600 shadow-sm hover:bg-kazaro-ice hover:text-kazaro-deep"
@@ -82,9 +82,9 @@ export default function Carrusel({ slides }) {
           type="button"
           onClick={anterior}
           aria-label={`Indicador anterior: ${slides[(indice - 1 + total) % total].titulo}`}
-          className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full border border-slate-200 bg-white/95 p-2.5 text-kazaro-deep shadow-lg backdrop-blur transition hover:-translate-x-0.5 hover:border-kazaro-sky hover:text-kazaro-blue focus:outline-none focus:ring-2 focus:ring-kazaro-sky xl:-left-6"
+          className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full border border-slate-200 bg-white/95 p-3 text-kazaro-deep shadow-lg backdrop-blur transition hover:-translate-x-0.5 hover:border-kazaro-sky hover:text-kazaro-blue focus:outline-none focus:ring-2 focus:ring-kazaro-sky xl:-left-7"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
@@ -92,9 +92,9 @@ export default function Carrusel({ slides }) {
           type="button"
           onClick={siguiente}
           aria-label={`Indicador siguiente: ${slides[(indice + 1) % total].titulo}`}
-          className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full border border-slate-200 bg-white/95 p-2.5 text-kazaro-deep shadow-lg backdrop-blur transition hover:translate-x-0.5 hover:border-kazaro-sky hover:text-kazaro-blue focus:outline-none focus:ring-2 focus:ring-kazaro-sky xl:-right-6"
+          className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full border border-slate-200 bg-white/95 p-3 text-kazaro-deep shadow-lg backdrop-blur transition hover:translate-x-0.5 hover:border-kazaro-sky hover:text-kazaro-blue focus:outline-none focus:ring-2 focus:ring-kazaro-sky xl:-right-7"
         >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
@@ -123,16 +123,16 @@ export default function Carrusel({ slides }) {
                 // por tabulador, pero siguen montadas para que midan bien.
                 inert={i !== indice}
               >
-                <article className="h-full rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-7">
-                  <header className="mb-5 border-b border-slate-100 pb-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-kazaro-cyan">
+                <article className="h-full rounded-3xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-8">
+                  <header className="mb-6 border-b border-slate-100 pb-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-kazaro-cyan">
                       Indicador {i + 1} de {total}
                     </p>
-                    <h2 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-kazaro-navy sm:text-3xl">
+                    <h2 className="mt-1.5 font-display text-2xl font-extrabold tracking-tight text-kazaro-navy sm:text-3xl">
                       {slide.titulo}
                     </h2>
                     {slide.resumen ? (
-                      <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">{slide.resumen}</p>
+                      <p className="mt-2.5 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base">{slide.resumen}</p>
                     ) : null}
                   </header>
                   {slide.contenido}
@@ -159,7 +159,7 @@ export default function Carrusel({ slides }) {
         ))}
       </div>
 
-      <p className="mt-3 text-center text-[11px] text-slate-400">
+      <p className="mt-3 text-center text-xs text-slate-400">
         Navegá con las flechas ← → del teclado, deslizando, o tocando el nombre del indicador.
       </p>
       <p className="sr-only" aria-live="polite">

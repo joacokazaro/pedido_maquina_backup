@@ -11,10 +11,10 @@ export default function SlideParqueEquipos({ parqueEquipos }) {
 
   if (equipos.length === 0) {
     return (
-      <div className="space-y-5">
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-9 text-center">
           <p className="font-display text-lg font-bold text-slate-600">Todavía no hay equipos cargados</p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+          <p className="mx-auto mt-2 max-w-md text-xs text-slate-500">
             Ningún eventual finalizado tiene máquinas utilizadas registradas.
           </p>
         </div>
@@ -56,10 +56,10 @@ export default function SlideParqueEquipos({ parqueEquipos }) {
         />
       </div>
 
-      <div className="rounded-2xl border border-kazaro-ice bg-gradient-to-br from-kazaro-mist to-white p-4 sm:p-5">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-kazaro-cyan">La que más trabaja</p>
+      <div className="rounded-2xl border border-kazaro-ice bg-gradient-to-br from-kazaro-mist to-white p-4 sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-wide text-kazaro-cyan">La que más trabaja</p>
         <p className="mt-1 font-display text-2xl font-extrabold text-kazaro-navy sm:text-3xl">{masUsado.tipo}</p>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1.5 text-sm text-slate-600">
           Presente en <strong className="font-semibold text-kazaro-deep">{masUsado.eventuales} de {eventualesConEquipos}</strong>{" "}
           eventuales ({formatPorcentaje(masUsado.presencia)}), con{" "}
           <strong className="font-semibold text-kazaro-deep">{formatNumero(masUsado.promedioPorEventual)} unidades</strong> en
@@ -67,20 +67,20 @@ export default function SlideParqueEquipos({ parqueEquipos }) {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <h3 className="font-display text-base font-extrabold text-kazaro-navy">En cuántos trabajos aparece cada máquina</h3>
+      <section className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <h3 className="font-display text-lg font-extrabold text-kazaro-navy">En cuántos trabajos aparece cada máquina</h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
           La barra es la cantidad de eventuales donde se usó el tipo. La etiqueta agrega cuántas unidades
           se llevaron en promedio.
         </p>
-        <ResponsiveContainer width="100%" height={Math.max(160, datos.length * 38)}>
-          <BarChart data={datos} layout="vertical" margin={{ left: 4, right: angosto ? 34 : 130, top: 4, bottom: 4 }}>
+        <ResponsiveContainer width="100%" height={Math.max(160, datos.length * 40)}>
+          <BarChart data={datos} layout="vertical" margin={{ left: 4, right: angosto ? 40 : 150, top: 4, bottom: 4 }}>
             <XAxis type="number" hide allowDecimals={false} domain={[0, "dataMax"]} />
             <YAxis
               type="category"
               dataKey="etiqueta"
-              width={angosto ? 92 : 170}
-              tick={{ fontSize: angosto ? 10 : 11, fill: "#475569" }}
+              width={angosto ? 92 : 175}
+              tick={{ fontSize: angosto ? 11 : 12, fill: "#475569" }}
               stroke="#e2e8f0"
             />
             <Tooltip
@@ -90,7 +90,7 @@ export default function SlideParqueEquipos({ parqueEquipos }) {
                 const p = payload[0]?.payload;
                 if (!p) return null;
                 return (
-                  <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
+                  <div className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs shadow-lg">
                     <p className="font-semibold text-kazaro-navy">{p.tipo}</p>
                     <p className="mt-1 text-slate-600">
                       En {p.eventuales} de {eventualesConEquipos} eventuales ({formatPorcentaje(p.presencia)})
@@ -102,7 +102,7 @@ export default function SlideParqueEquipos({ parqueEquipos }) {
                 );
               }}
             />
-            <Bar dataKey="eventuales" radius={[0, 4, 4, 0]} barSize={18} isAnimationActive animationDuration={700}>
+            <Bar dataKey="eventuales" radius={[0, 4, 4, 0]} barSize={19} isAnimationActive animationDuration={700}>
               {datos.map((d) => (
                 <Cell key={d.tipo} fill={d.presencia >= 50 ? VIZ.s1 : VIZ.s3} />
               ))}
@@ -113,10 +113,10 @@ export default function SlideParqueEquipos({ parqueEquipos }) {
                 position="right"
                 content={({ x, y, width, height, value, index }) => (
                   <text
-                    x={Number(x) + Number(width) + 8}
+                    x={Number(x) + Number(width) + 10}
                     y={Number(y) + Number(height) / 2}
                     dominantBaseline="middle"
-                    style={{ fontSize: angosto ? 10 : 11, fill: "#475569", fontWeight: 600 }}
+                    style={{ fontSize: angosto ? 11 : 12, fill: "#475569", fontWeight: 600 }}
                   >
                     {angosto
                       ? value
@@ -129,8 +129,8 @@ export default function SlideParqueEquipos({ parqueEquipos }) {
         </ResponsiveContainer>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <h3 className="mb-3 font-display text-base font-extrabold text-kazaro-navy">Detalle del parque</h3>
+      <section className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <h3 className="mb-4 font-display text-lg font-extrabold text-kazaro-navy">Detalle del parque</h3>
         {/* min-w para que en pantallas angostas la tabla scrollee dentro de su
             caja en vez de comprimir las columnas hasta cortar los títulos. */}
         <div className="overflow-x-auto">

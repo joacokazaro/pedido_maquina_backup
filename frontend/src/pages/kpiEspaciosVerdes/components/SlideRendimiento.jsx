@@ -35,10 +35,10 @@ export default function SlideRendimiento({ bloque, sentido = "mas-es-mejor", for
 
   if (stats.n === 0) {
     return (
-      <div className="space-y-5">
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-9 text-center">
           <p className="font-display text-lg font-bold text-slate-600">Todavía no hay datos para medir esto</p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+          <p className="mx-auto mt-2 max-w-md text-xs text-slate-500">
             Hace falta al menos un eventual finalizado que tenga este trabajo cargado en su unidad
             correcta y las horas importadas.
           </p>
@@ -95,13 +95,13 @@ export default function SlideRendimiento({ bloque, sentido = "mas-es-mejor", for
         />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="font-display text-base font-extrabold text-kazaro-navy">
+      <div className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="font-display text-lg font-extrabold text-kazaro-navy">
             Distribución del rendimiento
           </h3>
           {banda1 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               El <strong className="font-semibold text-kazaro-deep">68%</strong> de los trabajos debería caer entre{" "}
               <strong className="font-semibold text-kazaro-deep">{formatRango(banda1.desde, banda1.hasta, unidadRatio)}</strong>
             </p>
@@ -135,20 +135,20 @@ export default function SlideRendimiento({ bloque, sentido = "mas-es-mejor", for
         ) : null}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <h3 className="font-display text-base font-extrabold text-kazaro-navy">Eventual por eventual</h3>
+      <div className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <h3 className="font-display text-lg font-extrabold text-kazaro-navy">Eventual por eventual</h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
           En azul los que están dentro de lo esperable. En color los que se apartan más de un desvío —
           {masEsMejor ? " verde si rindieron por encima, ámbar si quedaron por debajo." : " verde si consumieron menos, ámbar si consumieron de más."}
         </p>
-        <ResponsiveContainer width="100%" height={Math.max(150, ranking.length * 38)}>
-          <BarChart data={ranking} layout="vertical" margin={{ left: 4, right: angosto ? 44 : 56, top: 4, bottom: 4 }}>
+        <ResponsiveContainer width="100%" height={Math.max(155, ranking.length * 40)}>
+          <BarChart data={ranking} layout="vertical" margin={{ left: 4, right: angosto ? 52 : 66, top: 4, bottom: 4 }}>
             <XAxis type="number" hide domain={[0, "dataMax"]} />
             <YAxis
               type="category"
               dataKey="etiqueta"
-              width={angosto ? 92 : 170}
-              tick={{ fontSize: angosto ? 10 : 11, fill: "#475569" }}
+              width={angosto ? 92 : 175}
+              tick={{ fontSize: angosto ? 11 : 12, fill: "#475569" }}
               stroke="#e2e8f0"
             />
             <Tooltip
@@ -158,9 +158,9 @@ export default function SlideRendimiento({ bloque, sentido = "mas-es-mejor", for
                 `${formatNumero(item?.payload?.produccion)} ${unidadProduccion} en ${formatNumero(item?.payload?.horas)} hs`,
               ]}
               labelFormatter={(_l, payload) => payload?.[0]?.payload?.nombre || ""}
-              contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }}
+              contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 13 }}
             />
-            <Bar dataKey="valor" radius={[0, 4, 4, 0]} barSize={18} isAnimationActive animationDuration={700}>
+            <Bar dataKey="valor" radius={[0, 4, 4, 0]} barSize={19} isAnimationActive animationDuration={700}>
               {ranking.map((r) => (
                 <Cell key={r.id} fill={r.color} />
               ))}
@@ -168,7 +168,7 @@ export default function SlideRendimiento({ bloque, sentido = "mas-es-mejor", for
                 dataKey="valor"
                 position="right"
                 formatter={(v) => formatNumero(v)}
-                style={{ fontSize: 11, fill: "#475569", fontWeight: 600 }}
+                style={{ fontSize: 12, fill: "#475569", fontWeight: 600 }}
               />
             </Bar>
           </BarChart>

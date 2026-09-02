@@ -50,8 +50,8 @@ export default function Metrica({ valor, unidad, etiqueta, ayuda, tono = "navy",
   const hayDato = valor !== null && valor !== undefined && Number.isFinite(Number(valor));
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:border-kazaro-sky hover:shadow-md">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{etiqueta}</p>
+    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm transition hover:border-kazaro-sky hover:shadow-md">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{etiqueta}</p>
       <p
         className={`mt-1 font-display font-extrabold tabular-nums ${TONOS[tono] || TONOS.navy} ${
           tamano === "grande" ? "text-3xl sm:text-4xl" : "text-2xl"
@@ -60,7 +60,7 @@ export default function Metrica({ valor, unidad, etiqueta, ayuda, tono = "navy",
         {hayDato ? formatNumero(mostrado, decimales) : "—"}
         {unidad ? <span className="ml-1 text-sm font-bold text-slate-400">{unidad}</span> : null}
       </p>
-      {ayuda ? <p className="mt-1 text-[11px] leading-snug text-slate-500">{ayuda}</p> : null}
+      {ayuda ? <p className="mt-1 text-xs leading-snug text-slate-500">{ayuda}</p> : null}
     </div>
   );
 }

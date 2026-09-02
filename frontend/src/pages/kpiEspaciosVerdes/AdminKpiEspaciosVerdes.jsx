@@ -42,8 +42,8 @@ export default function AdminKpiEspaciosVerdes() {
     return (
       <div className="min-h-screen bg-gray-100 px-4 py-10">
         <BotonVolver>Volver al panel</BotonVolver>
-        <div className="mx-auto max-w-6xl animate-pulse space-y-4">
-          <div className="h-28 rounded-3xl bg-white/80" />
+        <div className="mx-auto max-w-[1600px] animate-pulse space-y-4">
+          <div className="h-32 rounded-3xl bg-white/80" />
           <div className="h-96 rounded-3xl bg-white/80" />
         </div>
       </div>
@@ -151,14 +151,14 @@ export default function AdminKpiEspaciosVerdes() {
     <div className="min-h-screen bg-gray-100 px-4 py-8">
       <BotonVolver>Volver al panel</BotonVolver>
 
-      <header className="mx-auto mb-6 max-w-6xl overflow-hidden rounded-3xl bg-gradient-to-br from-kazaro-navy via-kazaro-deep to-[#0a4a63] px-6 py-8 text-white shadow-xl sm:px-9 sm:py-10">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-kazaro-green">
+      <header className="mx-auto mb-7 max-w-[1600px] overflow-hidden rounded-3xl bg-gradient-to-br from-kazaro-navy via-kazaro-deep to-[#0a4a63] px-6 py-8 text-white shadow-xl sm:px-10 sm:py-11">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-kazaro-green">
           Servicios eventuales · Espacios Verdes
         </p>
-        <h1 className="mt-2 font-display text-3xl font-black tracking-tight sm:text-4xl">
+        <h1 className="mt-2 font-display text-3xl font-black tracking-tight sm:text-5xl">
           Indicadores de gestión
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-200">
+        <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-200 sm:text-lg">
           Producción y productividad de los eventuales de Espacios Verdes, sobre los datos que ya se
           cargan al cerrar cada trabajo. Todavía no hay indicadores de costo: falta la tarifa por
           categoría y el monto facturado.
@@ -171,9 +171,9 @@ export default function AdminKpiEspaciosVerdes() {
             { valor: alcance.enCurso, etiqueta: "En curso" },
             { valor: alcance.conHoras, etiqueta: "Con horas importadas" },
           ].map((s) => (
-            <div key={s.etiqueta} className="bg-kazaro-navy/60 px-4 py-3">
-              <p className="font-display text-2xl font-extrabold tabular-nums">{s.valor}</p>
-              <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+            <div key={s.etiqueta} className="bg-kazaro-navy/60 px-4 py-4">
+              <p className="font-display text-3xl font-extrabold tabular-nums">{s.valor}</p>
+              <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
                 {s.etiqueta}
               </p>
             </div>
@@ -183,7 +183,7 @@ export default function AdminKpiEspaciosVerdes() {
 
       <Carrusel slides={slides} />
 
-      <p className="mx-auto mt-8 max-w-6xl text-center text-[11px] text-slate-400">
+      <p className="mx-auto mt-8 max-w-[1600px] text-center text-xs text-slate-400">
         Calculado sobre {alcance.finalizados} eventual(es) finalizado(s) de {alcance.total} de Espacios
         Verdes.
       </p>

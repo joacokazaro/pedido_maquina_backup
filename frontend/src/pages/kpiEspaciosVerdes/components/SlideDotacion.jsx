@@ -24,10 +24,10 @@ export default function SlideDotacion({ dotacion }) {
 
   if (stats.n === 0) {
     return (
-      <div className="space-y-5">
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-9 text-center">
           <p className="font-display text-lg font-bold text-slate-600">Todavía no hay datos de dotación</p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+          <p className="mx-auto mt-2 max-w-md text-xs text-slate-500">
             Hace falta un eventual finalizado con fechas de inicio y fin cargadas y las horas importadas.
           </p>
         </div>
@@ -69,19 +69,19 @@ export default function SlideDotacion({ dotacion }) {
         />
       </div>
 
-      <section className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <h3 className="font-display text-base font-extrabold text-kazaro-navy">Cuadrilla por eventual</h3>
+      <section className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <h3 className="font-display text-lg font-extrabold text-kazaro-navy">Cuadrilla por eventual</h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
           Personas promedio por día de trabajo. La línea marca el promedio general de {formatNumero(stats.media)} pers./día.
         </p>
-        <ResponsiveContainer width="100%" height={Math.max(150, datos.length * 38)}>
-          <BarChart data={datos} layout="vertical" margin={{ left: 4, right: angosto ? 44 : 60, top: 4, bottom: 4 }}>
+        <ResponsiveContainer width="100%" height={Math.max(155, datos.length * 40)}>
+          <BarChart data={datos} layout="vertical" margin={{ left: 4, right: angosto ? 52 : 70, top: 4, bottom: 4 }}>
             <XAxis type="number" hide domain={[0, "dataMax"]} />
             <YAxis
               type="category"
               dataKey="etiqueta"
-              width={angosto ? 92 : 170}
-              tick={{ fontSize: angosto ? 10 : 11, fill: "#475569" }}
+              width={angosto ? 92 : 175}
+              tick={{ fontSize: angosto ? 11 : 12, fill: "#475569" }}
               stroke="#e2e8f0"
             />
             <Tooltip
@@ -91,10 +91,10 @@ export default function SlideDotacion({ dotacion }) {
                 `${item?.payload?.jornadas} jornadas en ${item?.payload?.dias} día(s)`,
               ]}
               labelFormatter={(_l, payload) => payload?.[0]?.payload?.nombre || ""}
-              contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }}
+              contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 13 }}
             />
             <ReferenceLine x={stats.media} stroke={VIZ.warning} strokeWidth={2} strokeDasharray="4 4" />
-            <Bar dataKey="dotacion" radius={[0, 4, 4, 0]} barSize={18} isAnimationActive animationDuration={700}>
+            <Bar dataKey="dotacion" radius={[0, 4, 4, 0]} barSize={19} isAnimationActive animationDuration={700}>
               {datos.map((d) => (
                 <Cell key={d.id} fill={d.dotacion >= stats.media ? VIZ.s1 : VIZ.s3} />
               ))}
@@ -102,43 +102,43 @@ export default function SlideDotacion({ dotacion }) {
                 dataKey="dotacion"
                 position="right"
                 formatter={(v) => formatNumero(v)}
-                style={{ fontSize: 11, fill: "#475569", fontWeight: 600 }}
+                style={{ fontSize: 12, fill: "#475569", fontWeight: 600 }}
               />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <h3 className="font-display text-base font-extrabold text-kazaro-navy">Cuadrilla contra duración</h3>
+      <section className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <h3 className="font-display text-lg font-extrabold text-kazaro-navy">Cuadrilla contra duración</h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
           Cada punto es un eventual: cuántos días duró y con cuánta gente por día se hizo. El tamaño del
           punto son las horas-hombre totales. Sirve para dimensionar la cuadrilla del próximo trabajo.
         </p>
         <ResponsiveContainer width="100%" height={280}>
-          <ScatterChart margin={{ top: 12, right: 20, bottom: 24, left: 4 }}>
+          <ScatterChart margin={{ top: 14, right: 20, bottom: 26, left: 6 }}>
             {/* El padding evita que una burbuja apoyada en el máximo del eje
                 quede cortada contra el borde del área de dibujo. */}
             <XAxis
               type="number"
               dataKey="dias"
               name="Días"
-              tick={{ fontSize: 11, fill: "#64748b" }}
+              tick={{ fontSize: 12, fill: "#64748b" }}
               stroke="#cbd5e1"
               allowDecimals={false}
               padding={{ left: 24, right: 24 }}
-              label={{ value: "días de duración", position: "insideBottom", offset: -14, fontSize: 11, fill: "#94a3b8" }}
+              label={{ value: "días de duración", position: "insideBottom", offset: -16, fontSize: 12, fill: "#94a3b8" }}
             />
             <YAxis
               type="number"
               dataKey="dotacion"
               name="Personas por día"
-              tick={{ fontSize: 11, fill: "#64748b" }}
+              tick={{ fontSize: 12, fill: "#64748b" }}
               stroke="#cbd5e1"
               padding={{ top: 20, bottom: 12 }}
-              label={{ value: "pers./día", angle: -90, position: "insideLeft", fontSize: 11, fill: "#94a3b8" }}
+              label={{ value: "pers./día", angle: -90, position: "insideLeft", fontSize: 12, fill: "#94a3b8" }}
             />
-            <ZAxis type="number" dataKey="horas" range={[70, 420]} name="Horas-hombre" />
+            <ZAxis type="number" dataKey="horas" range={[80, 480]} name="Horas-hombre" />
             <Tooltip
               cursor={{ strokeDasharray: "3 3", stroke: "#cbd5e1" }}
               content={({ active, payload }) => {
@@ -146,7 +146,7 @@ export default function SlideDotacion({ dotacion }) {
                 const p = payload[0]?.payload;
                 if (!p) return null;
                 return (
-                  <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
+                  <div className="rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs shadow-lg">
                     <p className="max-w-[220px] font-semibold text-kazaro-navy">{p.nombre}</p>
                     <p className="mt-1 text-slate-600">
                       {formatNumero(p.dotacion)} pers./día durante {p.dias} día(s)
@@ -163,8 +163,8 @@ export default function SlideDotacion({ dotacion }) {
         </ResponsiveContainer>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <h3 className="mb-3 font-display text-base font-extrabold text-kazaro-navy">Detalle</h3>
+      <section className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <h3 className="mb-4 font-display text-lg font-extrabold text-kazaro-navy">Detalle</h3>
         {/* min-w para que en pantallas angostas la tabla scrollee dentro de su
             caja en vez de comprimir las columnas hasta cortar los títulos. */}
         <div className="overflow-x-auto">

@@ -59,33 +59,33 @@ export default function SlideGenerales({ alcance, generales }) {
 
       {/* Volumen de operación, siempre separado por unidad: sumar m² con m³ o
           con árboles podados no significa nada. */}
-      <section className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <h3 className="font-display text-base font-extrabold text-kazaro-navy">Volumen de operación</h3>
+      <section className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <h3 className="font-display text-lg font-extrabold text-kazaro-navy">Volumen de operación</h3>
         <p className="mb-3 mt-1 text-xs text-slate-500">
           Cuánto se produjo en total. Cada unidad va por separado porque miden cosas distintas.
         </p>
         {volumen.length === 0 ? (
           <p className="text-sm text-slate-500">Todavía no hay trabajos cargados.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {volumen.map((v) => (
-              <div key={v.unidad} className="rounded-xl bg-gradient-to-br from-kazaro-mist to-white p-4 ring-1 ring-kazaro-ice">
+              <div key={v.unidad} className="rounded-xl bg-gradient-to-br from-kazaro-mist to-white p-5 ring-1 ring-kazaro-ice">
                 <p className="font-display text-2xl font-extrabold tabular-nums text-kazaro-deep">
                   {formatNumero(v.total, 0)}
                 </p>
                 <p className="text-sm font-semibold text-slate-600">{v.unidadLabel}</p>
-                <p className="mt-1 text-[11px] text-slate-500">{v.trabajos} trabajo(s)</p>
+                <p className="mt-1.5 text-sm text-slate-500">{v.trabajos} trabajo(s)</p>
               </div>
             ))}
           </div>
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 p-4 sm:p-5">
-        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="font-display text-base font-extrabold text-kazaro-navy">Horas-hombre por categoría</h3>
+      <section className="rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="font-display text-lg font-extrabold text-kazaro-navy">Horas-hombre por categoría</h3>
           {top2 > 0 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               Las dos primeras concentran{" "}
               <strong className="font-semibold text-kazaro-deep">{formatPorcentaje(top2)}</strong> de las horas
             </p>
@@ -101,13 +101,13 @@ export default function SlideGenerales({ alcance, generales }) {
         ) : (
           <>
             <ResponsiveContainer width="100%" height={Math.max(160, datosCategorias.length * 40)}>
-              <BarChart data={datosCategorias} layout="vertical" margin={{ left: 4, right: angosto ? 52 : 78, top: 4, bottom: 4 }}>
+              <BarChart data={datosCategorias} layout="vertical" margin={{ left: 4, right: angosto ? 60 : 90, top: 4, bottom: 4 }}>
                 <XAxis type="number" hide domain={[0, "dataMax"]} />
                 <YAxis
                   type="category"
                   dataKey="etiqueta"
-                  width={angosto ? 92 : 180}
-                  tick={{ fontSize: angosto ? 10 : 11, fill: "#475569" }}
+                  width={angosto ? 92 : 185}
+                  tick={{ fontSize: angosto ? 11 : 12, fill: "#475569" }}
                   stroke="#e2e8f0"
                 />
                 <Tooltip
@@ -116,7 +116,7 @@ export default function SlideGenerales({ alcance, generales }) {
                     `${formatNumero(valor, 1)} hs (${formatPorcentaje(item?.payload?.porcentaje)})`,
                     "Horas",
                   ]}
-                  contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }}
+                  contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 13 }}
                 />
                 <Bar dataKey="horas" radius={[0, 4, 4, 0]} barSize={20} isAnimationActive animationDuration={700}>
                   {datosCategorias.map((c) => (
@@ -129,13 +129,13 @@ export default function SlideGenerales({ alcance, generales }) {
                     dataKey="horas"
                     position="right"
                     formatter={(v) => `${formatNumero(v, 1)} hs`}
-                    style={{ fontSize: 11, fill: "#475569", fontWeight: 600 }}
+                    style={{ fontSize: 12, fill: "#475569", fontWeight: 600 }}
                   />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
 
-            <div className="mt-3 overflow-x-auto">
+            <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="text-slate-500">
                   <tr>
@@ -148,7 +148,7 @@ export default function SlideGenerales({ alcance, generales }) {
                   {datosCategorias.map((c) => (
                     <tr key={c.categoria} className="border-t border-slate-100">
                       <td className="py-1.5 pr-3">
-                        <span className="mr-2 inline-block h-2.5 w-2.5 rounded-sm align-middle" style={{ background: c.color }} />
+                        <span className="mr-2.5 inline-block h-3 w-3 rounded-sm align-middle" style={{ background: c.color }} />
                         {c.categoria}
                       </td>
                       <td className="py-1.5 pr-3 text-right font-semibold tabular-nums">{formatNumero(c.horas, 1)}</td>
