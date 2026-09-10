@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../db/prisma.js";
 import ExcelJS from "exceljs";
 import {
@@ -24,6 +25,15 @@ function normalizeString(v) {
   return typeof v === "string" ? v.trim() : null;
 }
 
+// legajo/dni: "" o ausente -> no tocar el dato existente (undefined);
+// string con contenido -> ese valor; explícitamente null -> lo borra.
+function normalizeCodigoField(value) {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const normalizado = String(value).trim();
+  return normalizado === "" ? null : normalizado;
+}
+
 function mapUsuarioResponse(u) {
   return {
     id: u.id,
@@ -32,8 +42,23 @@ function mapUsuarioResponse(u) {
     ...buildUserRoleResponse(u),
     activo: u.activo,
     vtoCarnetConductor: u.vtoCarnetConductor,
+    legajo: u.legajo ?? null,
+    dni: u.dni ?? null,
     createdAt: u.createdAt,
   };
+}
+
+// P2002 (unique constraint) para legajo/dni -> mensaje legible en vez del 500 genérico.
+function respondIfUniqueConflict(e, res) {
+  if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+    const campo = Array.isArray(e.meta?.target) ? e.meta.target[0] : e.meta?.target;
+    const etiquetas = { legajo: "legajo", dni: "DNI", username: "username", email: "email" };
+    res.status(409).json({
+      error: `Ya existe un usuario con ese ${etiquetas[campo] || campo || "dato"}`,
+    });
+    return true;
+  }
+  return false;
 }
 
 function parseRolesFromPayload(payload, fallbackRole = null) {
@@ -141,6 +166,8 @@ export async function adminExportUsuarios(req, res) {
         roles: { select: { rol: true } },
         activo: true,
         vtoCarnetConductor: true,
+        legajo: true,
+        dni: true,
         createdAt: true,
       },
       orderBy: { nombre: "asc" },
@@ -152,6 +179,8 @@ export async function adminExportUsuarios(req, res) {
       "ROL",
       "ROLES",
       "ESTADO",
+      "LEGAJO",
+      "DNI",
       "VTO CARNET CONDUCTOR",
       "FECHA DE ALTA",
     ];
@@ -164,6 +193,8 @@ export async function adminExportUsuarios(req, res) {
         roleLabel(derivePrimaryRole(roles, u.rol)),
         roles.map(roleLabel).join(" · "),
         u.activo ? "Activo" : "Inactivo",
+        u.legajo || "",
+        u.dni || "",
         formatDateForSpreadsheet(u.vtoCarnetConductor),
         formatDateForSpreadsheet(u.createdAt),
       ];
@@ -234,13 +265,15 @@ export async function adminGetUsuarioByUsername(req, res) {
 ===================================================== */
 export async function adminCreateUsuario(req, res) {
   try {
-    const { username, nombre, rol, roles, password, vtoCarnetConductor } = req.body || {};
+    const { username, nombre, rol, roles, password, vtoCarnetConductor, legajo, dni } = req.body || {};
 
     const usernameNorm = normalizeString(username);
     const nombreNorm = normalizeString(nombre);
     const rolesNorm = parseRolesFromPayload({ rol, roles });
     const passwordNorm = normalizeString(password);
     const vtoCarnetConductorDate = parseNullableDate(vtoCarnetConductor);
+    const legajoNorm = normalizeCodigoField(legajo);
+    const dniNorm = normalizeCodigoField(dni);
 
     if (!usernameNorm || rolesNorm.length === 0 || !passwordNorm) {
       return res.status(400).json({
@@ -278,6 +311,8 @@ export async function adminCreateUsuario(req, res) {
         rol: rolPrincipal,
         activo: true,
         vtoCarnetConductor: vtoCarnetConductorDate ?? null,
+        legajo: legajoNorm ?? null,
+        dni: dniNorm ?? null,
         roles: {
           create: rolesNorm.map((r) => ({ rol: r })),
         },
@@ -294,6 +329,7 @@ export async function adminCreateUsuario(req, res) {
       usuario: mapUsuarioResponse(nuevo),
     });
   } catch (e) {
+    if (respondIfUniqueConflict(e, res)) return;
     console.error("adminCreateUsuario:", e);
     res.status(500).json({ error: "Error creando usuario" });
   }
@@ -305,7 +341,7 @@ export async function adminCreateUsuario(req, res) {
 export async function adminUpdateUsuario(req, res) {
   try {
     const username = normalizeString(req.params.username);
-    const { nombre, rol, roles, password, activo, vtoCarnetConductor } = req.body || {};
+    const { nombre, rol, roles, password, activo, vtoCarnetConductor, legajo, dni } = req.body || {};
 
     if (!username) {
       return res.status(400).json({ error: "Username requerido" });
@@ -375,6 +411,12 @@ export async function adminUpdateUsuario(req, res) {
       data.vtoCarnetConductor = vtoCarnetConductorDate;
     }
 
+    const legajoNorm = normalizeCodigoField(legajo);
+    if (legajoNorm !== undefined) data.legajo = legajoNorm;
+
+    const dniNorm = normalizeCodigoField(dni);
+    if (dniNorm !== undefined) data.dni = dniNorm;
+
     const actualizado = await prisma.$transaction(async (tx) => {
       await tx.usuarioRol.deleteMany({ where: { usuarioId: usuario.id } });
 
@@ -400,6 +442,7 @@ export async function adminUpdateUsuario(req, res) {
       usuario: mapUsuarioResponse(actualizado),
     });
   } catch (e) {
+    if (respondIfUniqueConflict(e, res)) return;
     console.error("adminUpdateUsuario:", e);
     res.status(500).json({ error: "Error actualizando usuario" });
   }

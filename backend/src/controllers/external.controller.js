@@ -7,6 +7,10 @@ import {
   getVehiculosParaExport,
   buildVehiculoExportRecord,
 } from "../services/vehiculosExport.service.js";
+import {
+  crearServicioFijoExternal,
+  crearEventualExternal,
+} from "../services/externalAlta.service.js";
 
 function parseListParam(raw) {
   return String(raw)
@@ -74,5 +78,61 @@ export async function getVehiculosExternal(req, res) {
   } catch (e) {
     console.error("getVehiculosExternal:", e);
     res.status(500).json({ error: "Error obteniendo vehículos" });
+  }
+}
+
+/* ========================================================
+   POST /external/servicios
+   Alta de un servicio, fijo o eventual, disparada desde
+   Kazaró 360. El campo "tipo" ("FIJO" | "EVENTUAL") decide
+   sobre qué entidad impacta.
+======================================================== */
+export async function postServicioExternal(req, res) {
+  try {
+    const tipo = String(req.body?.tipo || "").trim().toUpperCase();
+
+    if (!["FIJO", "EVENTUAL"].includes(tipo)) {
+      return res.status(400).json({ error: 'El campo "tipo" debe ser "FIJO" o "EVENTUAL"' });
+    }
+
+    const { nombre, tipoServicio, idBrowix, fechaInicio, fechaFin, legajoSupervisor, dniSupervisor } =
+      req.body || {};
+
+    if (tipo === "FIJO") {
+      const { servicio, supervisor } = await crearServicioFijoExternal({
+        nombre,
+        tipoServicio,
+        idBrowix,
+        legajo: legajoSupervisor,
+        dni: dniSupervisor,
+      });
+
+      return res.status(201).json({
+        message: "Servicio creado correctamente",
+        servicio,
+        supervisor,
+      });
+    }
+
+    const { eventual, supervisor } = await crearEventualExternal({
+      nombre,
+      tipoServicio,
+      fechaInicio,
+      fechaFin,
+      legajo: legajoSupervisor,
+      dni: dniSupervisor,
+    });
+
+    return res.status(201).json({
+      message: "Eventual creado correctamente",
+      eventual,
+      supervisor,
+    });
+  } catch (e) {
+    if (e.status) {
+      return res.status(e.status).json({ error: e.message });
+    }
+    console.error("postServicioExternal:", e);
+    res.status(500).json({ error: "Error creando el servicio" });
   }
 }

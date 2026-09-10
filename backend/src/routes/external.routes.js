@@ -1,7 +1,11 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { apiKeyAuth } from "../middlewares/apiKeyAuth.js";
-import { getMaquinasExternal, getVehiculosExternal } from "../controllers/external.controller.js";
+import {
+  getMaquinasExternal,
+  getVehiculosExternal,
+  postServicioExternal,
+} from "../controllers/external.controller.js";
 
 const router = Router();
 
@@ -17,5 +21,6 @@ router.use(externalLimiter, apiKeyAuth);
 
 router.get("/maquinas", getMaquinasExternal);
 router.get("/vehiculos", getVehiculosExternal);
+router.post("/servicios", postServicioExternal);
 
 export default router;

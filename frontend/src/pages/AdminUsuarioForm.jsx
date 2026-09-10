@@ -30,6 +30,8 @@ export default function AdminUsuarioForm() {
     password: "",
     activo: true,
     vtoCarnetConductor: "",
+    legajo: "",
+    dni: "",
   });
 
   const [error, setError] = useState("");
@@ -52,6 +54,8 @@ export default function AdminUsuarioForm() {
         password: "",
         activo: data.activo !== false,
         vtoCarnetConductor: data.vtoCarnetConductor ? new Date(data.vtoCarnetConductor).toISOString().slice(0, 10) : "",
+        legajo: data.legajo || "",
+        dni: data.dni || "",
       });
     }
 
@@ -128,6 +132,8 @@ export default function AdminUsuarioForm() {
       rol: (form.roles?.[0] || "ENCARGADO_EV").toLowerCase(),
       activo: Boolean(form.activo),
       vtoCarnetConductor: form.vtoCarnetConductor || null,
+      legajo: form.legajo.trim() || null,
+      dni: form.dni.trim() || null,
     };
 
     if (!payload.roles.length) {
@@ -276,6 +282,37 @@ export default function AdminUsuarioForm() {
           }
         />
       </div>
+
+      {/* LEGAJO / DNI */}
+      <div className="mb-3 grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="admin-usuario-form-legajo" className="mb-1 block text-xs font-semibold text-gray-600">
+            Legajo
+          </label>
+          <input id="admin-usuario-form-legajo"
+            className="w-full p-3 border rounded-xl bg-white"
+            value={form.legajo}
+            onChange={(e) =>
+              setForm({ ...form, legajo: e.target.value })
+            }
+          />
+        </div>
+        <div>
+          <label htmlFor="admin-usuario-form-dni" className="mb-1 block text-xs font-semibold text-gray-600">
+            DNI
+          </label>
+          <input id="admin-usuario-form-dni"
+            className="w-full p-3 border rounded-xl bg-white"
+            value={form.dni}
+            onChange={(e) =>
+              setForm({ ...form, dni: e.target.value })
+            }
+          />
+        </div>
+      </div>
+      <p className="mb-3 -mt-2 text-xs text-gray-500">
+        Se usan para matchear al supervisor desde integraciones externas (Kazaró 360).
+      </p>
 
       <div className="mb-3">
         <label htmlFor="admin-usuario-form-vto-carnet-conductor" className="mb-1 block text-xs font-semibold text-gray-600">

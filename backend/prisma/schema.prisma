@@ -13,6 +13,8 @@ model Usuario {
   nombre            String?
   password          String?
   email             String?           @unique
+  legajo            String?           @unique
+  dni               String?           @unique
   rol               String
   activo            Boolean           @default(true)
   vtoCarnetConductor DateTime?
