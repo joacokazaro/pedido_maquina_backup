@@ -383,7 +383,8 @@ Todo cuelga de `/api`. Los routers admin se montan como varios routers sobre el 
 ### Integraciones externas
 Autenticadas con header `x-api-key` (`EXTERNAL_API_TOKENS`), sin relación con `x-auth-username`. Rate limit de 60 req/15min.
 - `GET /api/external/maquinas` · `GET /api/external/vehiculos`
-- `POST /api/external/servicios` — alta de `Servicio` (fijo) o `Eventual`, disparada desde Kazaró 360. `tipo: "FIJO" | "EVENTUAL"` decide la entidad; `legajoSupervisor`/`dniSupervisor` (opcionales) matchean contra `Usuario.legajo`/`Usuario.dni` dentro de `ROLES_PEDIDO_TITULAR` — si no matchean, el registro se crea igual sin supervisor. Solo creación: nombre repetido devuelve `409`. Ver `src/services/externalAlta.service.js`.
+- `POST /api/external/servicios` — alta de `Servicio` (fijo) o `Eventual`, disparada desde Kazaró 360. `tipo: "FIJO" | "EVENTUAL"` decide la entidad; `legajoSupervisor`/`dniSupervisor` (opcionales) matchean contra `Usuario.legajo`/`Usuario.dni` dentro de `ROLES_PEDIDO_TITULAR` — si no matchean, el registro se crea igual sin supervisor. Nombre repetido devuelve `409`. Ver `src/services/externalAlta.service.js`.
+- `PATCH /api/external/servicios/:id` — edición parcial e idempotente de lo dado de alta desde 360 (`:id` = id devuelto por el alta; `tipo` solo ubica el registro). Edita `nombre` (único entre servicios **y** eventuales), `tipoServicio`, supervisor y, solo en eventuales, `fechaInicio`/`fechaFin`. Renombrar un eventual renombra en la misma transacción su servicio homónimo de pedidos complementarios, y deja historial `EVENTUAL_EDITADO_KAZARO360`. Contrato completo en `docs/API_maquinas_externa.md`.
 
 ---
 

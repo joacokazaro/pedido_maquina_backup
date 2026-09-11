@@ -1,20 +1,20 @@
 # API externa de máquinas y vehículos — guía de consumo
 
-APIs para consultar el parque de máquinas y vehículos, y para dar de alta servicios (fijos o eventuales) desde un sistema externo. Pensadas para consumo externo (scripts, integraciones), no requieren cuenta de usuario en el sistema.
+APIs para consultar el parque de máquinas y vehículos, y para dar de alta y editar servicios (fijos o eventuales) desde un sistema externo. Pensadas para consumo externo (scripts, integraciones), no requieren cuenta de usuario en el sistema.
 
 ## Autenticación
 
-Todas las requests, a cualquiera de los dos endpoints, deben incluir el header `X-API-Key` con el token asignado:
+Todas las requests, a cualquiera de los endpoints, deben incluir el header `X-API-Key` con el token asignado:
 
 ```
 X-API-Key: <TU_TOKEN_AQUI>
 ```
 
-El token real **no está en este documento** — se entrega por separado, por un canal seguro. Pedirlo a Joaquín si no lo tenés. Es el mismo token para máquinas y para vehículos.
+El token real **no está en este documento** — se entrega por separado, por un canal seguro. Pedirlo a Joaquín si no lo tenés. Es el mismo token para todos los endpoints.
 
 - Sin header, o con un valor incorrecto → `401 Unauthorized`.
 - **El token es un secreto**: no lo pegues en repos públicos, chats no cifrados ni herramientas que lo indexen. Si se filtra, avisar para rotarlo (es una lista separada por comas en el servidor, se puede revocar sin afectar a otros consumidores).
-- Límite de **60 requests cada 15 minutos por IP**, compartido entre los tres endpoints (no es 60+60+60).
+- Límite de **60 requests cada 15 minutos por IP**, compartido entre todos los endpoints (no es 60 por endpoint).
 
 ---
 
@@ -186,13 +186,13 @@ Cualquier campo vacío se devuelve como `""` (no `null`).
 
 ## Servicios (alta)
 
-Único endpoint de escritura de esta API: da de alta un servicio, **fijo o eventual**, en el sistema de pedido de máquinas. Pensado para dispararse desde Kazaró 360 al crear un servicio ahí, así el alta se replica automáticamente acá.
+Da de alta un servicio, **fijo o eventual**, en el sistema de pedido de máquinas. Pensado para dispararse desde Kazaró 360 al crear un servicio ahí, así el alta se replica automáticamente acá.
 
 ```
 POST https://maquinas.kazaro.com.ar/api/external/servicios
 ```
 
-Es **solo de creación**: no permite editar un servicio/eventual ya existente. Si el `nombre` que mandás ya existe, devuelve `409` y no toca nada.
+Si el `nombre` que mandás ya existe, devuelve `409` y no toca nada. Para modificar un servicio/eventual ya creado usá el endpoint de [edición](#servicios-edición): guardá el `id` que devuelve el alta (`servicio.id` si es `FIJO`, `eventual.id` si es `EVENTUAL`), porque es lo que identifica al registro en la edición.
 
 ### Body — común a los dos tipos
 
@@ -284,12 +284,119 @@ Si no matcheó ningún supervisor, el bloque `supervisor` se ve así:
 
 ---
 
+## Servicios (edición)
+
+Modifica un servicio fijo o un eventual que ya existe. Pensado para dispararse desde Kazaró 360 cuando se edita un servicio ahí.
+
+```
+PATCH https://maquinas.kazaro.com.ar/api/external/servicios/:id
+```
+
+- `:id` es el id interno que devolvió el alta: `servicio.id` si es `FIJO`, `eventual.id` si es `EVENTUAL`.
+- **Solo se modifican los campos que vienen en el body.** Un campo ausente no se toca; no hace falta mandar el objeto completo.
+- **Es idempotente**: repetir el mismo PATCH es seguro. Si todo ya estaba igual responde `200` con `cambios: []` y no escribe nada.
+- `tipo` e `idBrowix` **no se editan** (ver tabla).
+
+### Body
+
+| Campo | Tipo | Obligatorio | Descripción |
+|---|---|---|---|
+| `tipo` | `"FIJO"` \| `"EVENTUAL"` | **Sí** | Solo sirve para ubicar el registro (servicios y eventuales tienen ids independientes: el servicio `4` y el eventual `4` son dos registros distintos). **No cambia el tipo.** Si el `id` no existe para ese `tipo` → `404`. |
+| `nombre` | string | No | Renombra. No puede quedar vacío. Tiene que ser único entre **servicios y eventuales** (sin contar al propio registro) → si otro ya lo usa, `409`. |
+| `tipoServicio` | `"LIMPIEZA"` \| `"ESPACIOS_VERDES"` | No | Reclasifica por área. |
+| `legajoSupervisor` | string | No | Supervisor nuevo, mismo match que el alta. |
+| `dniSupervisor` | string | No | Ídem por DNI. Si mandás los dos, se usa `legajoSupervisor`. |
+| `legajoSupervisorAnterior` | string | No | Solo `FIJO`: supervisor a desvincular (ver abajo). En un `EVENTUAL` se ignora. |
+| `dniSupervisorAnterior` | string | No | Ídem por DNI. Si mandás los dos, se usa el legajo. |
+| `fechaInicio` | string (`AAAA-MM-DD`) \| `null` | No | Solo `EVENTUAL`. `null` (o `""`) borra la fecha. En un `FIJO` → `400`. |
+| `fechaFin` | string (`AAAA-MM-DD`) \| `null` | No | Solo `EVENTUAL`. `null` (o `""`) borra la fecha. En un `FIJO` → `400`. |
+| `idBrowix` | string | No | **No se edita.** En un `FIJO` se acepta solo si es igual al actual (para que mandar el objeto completo no falle); si es distinto → `400`. En un `EVENTUAL` se ignora. |
+
+Validaciones de fechas (`EVENTUAL`): `fechaFin` no puede quedar antes que `fechaInicio` (tomando la que ya estaba cargada si mandás solo una), y a un eventual **finalizado** no se le puede borrar la `fechaFin`. Cualquiera de las dos → `400`.
+
+### Supervisor
+
+- **`EVENTUAL`** (un solo supervisor): el que matchea **reemplaza** al actual. Excepción: si el eventual ya tiene pedidos complementarios disparados, el supervisor quedó fijado por esos pedidos y **no se cambia** (misma regla que en la app); la respuesta lo informa con `motivo: "supervisor_fijado_por_pedidos"` y el resto de los campos del PATCH sí se aplican.
+- **`FIJO`** (puede tener varios supervisores): el que matchea **se agrega**, sin tocar a los demás supervisores cargados a mano en esta app. Si además mandás `legajoSupervisorAnterior` / `dniSupervisorAnterior` y ese usuario está vinculado al servicio, se lo desvincula. El anterior se busca sin filtrar por rol ni por activo, para poder desvincular a alguien que ya no es supervisor.
+- **Si el supervisor nuevo no matchea a nadie, no se toca ningún supervisor** (tampoco se desvincula al anterior) y la respuesta lo informa. No es un error: el resto del PATCH se aplica igual.
+- Si no mandás `legajoSupervisor` ni `dniSupervisor`, los supervisores no se tocan.
+
+### Ejemplos
+
+Renombrar un servicio fijo y cambiar su supervisor:
+
+```bash
+curl -X PATCH "https://maquinas.kazaro.com.ar/api/external/servicios/4" \
+  -H "X-API-Key: <TU_TOKEN_AQUI>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tipo": "FIJO",
+    "nombre": "Servicio Barrio X - Sector Norte",
+    "legajoSupervisor": "4600",
+    "legajoSupervisorAnterior": "4521"
+  }'
+```
+
+Mover las fechas de un eventual y borrar la fecha de fin:
+
+```bash
+curl -X PATCH "https://maquinas.kazaro.com.ar/api/external/servicios/18" \
+  -H "X-API-Key: <TU_TOKEN_AQUI>" \
+  -H "Content-Type: application/json" \
+  -d '{ "tipo": "EVENTUAL", "fechaInicio": "2026-09-20", "fechaFin": null }'
+```
+
+### Respuesta
+
+`200 OK`. Para `FIJO`:
+
+```json
+{
+  "message": "Servicio actualizado correctamente",
+  "servicio": {
+    "id": 4,
+    "nombre": "Servicio Barrio X - Sector Norte",
+    "idBrowix": "K99",
+    "tipo": "LIMPIEZA",
+    "activo": true,
+    "createdAt": "2026-09-10T17:26:24.882Z"
+  },
+  "cambios": ["nombre", "supervisor"],
+  "supervisor": { "matched": true, "aplicado": true, "usuarioId": 7, "username": "jperez" },
+  "supervisorAnterior": { "encontrado": true, "desvinculado": true, "username": "encargado.ev" }
+}
+```
+
+Para `EVENTUAL`, la clave es `"eventual"` en vez de `"servicio"`, con el objeto completo del eventual ya actualizado (misma forma que en el alta), y nunca trae `supervisorAnterior`.
+
+Si no cambió nada, `message` es `"Sin cambios"` y `cambios` es `[]`.
+
+| Campo | Descripción |
+|---|---|
+| `cambios` | Lista de campos que efectivamente cambiaron: `"nombre"`, `"tipoServicio"`, `"supervisor"`, `"fechaInicio"`, `"fechaFin"`. `[]` si todo ya estaba igual. |
+| `supervisor.matched` | Si `legajoSupervisor`/`dniSupervisor` matcheó a un supervisor activo. |
+| `supervisor.aplicado` | Si ese usuario queda como supervisor después del PATCH (haya cambiado algo o ya lo fuera). |
+| `supervisor.motivo` | Aparece cuando no se aplicó: `"sin_dato"` (no mandaste supervisor), `"no_encontrado"` (no matcheó a nadie), `"supervisor_fijado_por_pedidos"` (solo eventual: matcheó, pero el supervisor está fijado por pedidos complementarios). |
+| `supervisorAnterior` | Solo `FIJO` y solo si mandaste `legajoSupervisorAnterior`/`dniSupervisorAnterior`. `desvinculado: true` si se lo desvinculó. Si no, `motivo`: `"sin_supervisor_nuevo"` (el supervisor nuevo no matcheó, así que no se desvinculó a nadie), `"no_encontrado"` (no existe un usuario con ese legajo/DNI), `"es_el_supervisor_nuevo"` (anterior y nuevo son la misma persona), `"no_vinculado"` (existe, pero no estaba vinculado a este servicio). |
+
+### Qué pasa al renombrar
+
+Máquinas, pedidos, préstamos, amortización e historial de servicios apuntan al servicio por id, no por nombre: después de un renombre todo muestra el nombre nuevo, sin perder nada. En particular:
+
+- **Eventual con pedidos complementarios**: al disparar un pedido desde un eventual, el sistema crea un servicio con el mismo nombre del eventual y le cuelga los pedidos. Al renombrar el eventual, ese servicio se renombra en la misma operación, así los pedidos siguientes siguen cayendo en el mismo servicio.
+- **Importación de horas de Browix e insumos de un eventual**: esas integraciones buscan por el nombre exacto del eventual (la ubicación en Browix y el servicio en la plataforma de insumos). Si renombrás un eventual acá pero no allá, las reimportaciones siguientes no van a encontrar nada. Los datos que ya se habían importado se conservan.
+- **Importación de máquinas por Excel**: la columna de servicio se matchea por nombre al momento de importar, así que los Excel nuevos tienen que usar el nombre nuevo.
+- Los servicios fijos se vinculan con Browix por `idBrowix`, que no cambia con un renombre.
+
+---
+
 ## Errores
 
 | HTTP | Motivo |
 |---|---|
 | `401` | Falta el header `X-API-Key` o el valor no es válido. |
-| `400` | `estado` inválido (máquinas), `conductorId` no numérico (vehículos), o falta un campo obligatorio / `tipo` inválido (servicios). |
-| `409` | Solo en `POST /servicios`: ya existe un servicio o eventual con ese `nombre`. |
+| `400` | `estado` inválido (máquinas), `conductorId` no numérico (vehículos), falta un campo obligatorio / `tipo` inválido (alta de servicios), o en la edición: `id` no numérico, `tipo` faltante/inválido, `nombre` vacío, `tipoServicio` inválido, fecha inválida o fuera de orden, fechas en un `FIJO`, `idBrowix` distinto al actual. El mensaje indica el campo. |
+| `404` | Solo en `PATCH /servicios/:id`: no existe un registro con ese `id` para ese `tipo`. |
+| `409` | En `POST /servicios`: ya existe un servicio o eventual con ese `nombre`. En `PATCH /servicios/:id`: otro servicio o eventual ya usa el `nombre` nuevo. |
 | `429` | Se superó el límite de 60 requests cada 15 minutos por IP. |
 | `500` | Error interno. |

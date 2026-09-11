@@ -371,7 +371,7 @@ function buildEventualSummary(eventual) {
   };
 }
 
-function toDateOrNull(value) {
+export function toDateOrNull(value) {
   if (value === null || value === undefined || value === "") return null;
 
   if (typeof value === "string") {

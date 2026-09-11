@@ -10,6 +10,8 @@ import {
 import {
   crearServicioFijoExternal,
   crearEventualExternal,
+  editarServicioFijoExternal,
+  editarEventualExternal,
 } from "../services/externalAlta.service.js";
 
 function parseListParam(raw) {
@@ -134,5 +136,48 @@ export async function postServicioExternal(req, res) {
     }
     console.error("postServicioExternal:", e);
     res.status(500).json({ error: "Error creando el servicio" });
+  }
+}
+
+/* ========================================================
+   PATCH /external/servicios/:id
+   Edición de un servicio dado de alta desde Kazaró 360.
+   :id es el id interno que devolvió el alta; como Servicio
+   y Eventual tienen ids independientes, "tipo" solo sirve
+   para ubicar el registro (no se puede cambiar).
+======================================================== */
+export async function patchServicioExternal(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: "El id del servicio debe ser un entero positivo" });
+    }
+
+    const body = req.body && typeof req.body === "object" && !Array.isArray(req.body) ? req.body : {};
+    const tipo = String(body.tipo || "").trim().toUpperCase();
+
+    if (!["FIJO", "EVENTUAL"].includes(tipo)) {
+      return res.status(400).json({ error: 'El campo "tipo" debe ser "FIJO" o "EVENTUAL"' });
+    }
+
+    if (tipo === "FIJO") {
+      const resultado = await editarServicioFijoExternal(id, body);
+      return res.json({
+        message: resultado.cambios.length ? "Servicio actualizado correctamente" : "Sin cambios",
+        ...resultado,
+      });
+    }
+
+    const resultado = await editarEventualExternal(id, body);
+    return res.json({
+      message: resultado.cambios.length ? "Eventual actualizado correctamente" : "Sin cambios",
+      ...resultado,
+    });
+  } catch (e) {
+    if (e.status) {
+      return res.status(e.status).json({ error: e.message });
+    }
+    console.error("patchServicioExternal:", e);
+    res.status(500).json({ error: "Error actualizando el servicio" });
   }
 }

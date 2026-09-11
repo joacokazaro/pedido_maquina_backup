@@ -139,6 +139,7 @@ function formatActionLabel(action) {
   const labels = {
     EVENTUAL_CREADO: "Eventual creado",
     EVENTUAL_CORREGIDO: "Datos del eventual completados",
+    EVENTUAL_EDITADO_KAZARO360: "Eventual editado desde Kazaró 360",
     EVENTUAL_BAJA_LOGICA: "Eventual eliminado",
     SUPERVISOR_OBSERVACION: "Observacion del supervisor",
     SUPERVISOR_FINALIZO_EVENTUAL: "Supervisor finalizo eventual",
