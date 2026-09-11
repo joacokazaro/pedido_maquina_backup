@@ -1,6 +1,6 @@
 # API externa de máquinas y vehículos — guía de consumo
 
-APIs de solo lectura para consultar el parque de máquinas y vehículos. Pensadas para consumo externo (scripts, integraciones), no requieren cuenta de usuario en el sistema.
+APIs para consultar el parque de máquinas y vehículos, y para dar de alta servicios (fijos o eventuales) desde un sistema externo. Pensadas para consumo externo (scripts, integraciones), no requieren cuenta de usuario en el sistema.
 
 ## Autenticación
 
@@ -14,7 +14,7 @@ El token real **no está en este documento** — se entrega por separado, por un
 
 - Sin header, o con un valor incorrecto → `401 Unauthorized`.
 - **El token es un secreto**: no lo pegues en repos públicos, chats no cifrados ni herramientas que lo indexen. Si se filtra, avisar para rotarlo (es una lista separada por comas en el servidor, se puede revocar sin afectar a otros consumidores).
-- Límite de **60 requests cada 15 minutos por IP**, compartido entre ambos endpoints (no es 60+60).
+- Límite de **60 requests cada 15 minutos por IP**, compartido entre los tres endpoints (no es 60+60+60).
 
 ---
 
@@ -184,13 +184,112 @@ Cualquier campo vacío se devuelve como `""` (no `null`).
 
 ---
 
-## Errores
+## Servicios (alta)
 
-Aplica a ambos endpoints.
+Único endpoint de escritura de esta API: da de alta un servicio, **fijo o eventual**, en el sistema de pedido de máquinas. Pensado para dispararse desde Kazaró 360 al crear un servicio ahí, así el alta se replica automáticamente acá.
+
+```
+POST https://maquinas.kazaro.com.ar/api/external/servicios
+```
+
+Es **solo de creación**: no permite editar un servicio/eventual ya existente. Si el `nombre` que mandás ya existe, devuelve `409` y no toca nada.
+
+### Body — común a los dos tipos
+
+| Campo | Tipo | Obligatorio | Descripción |
+|---|---|---|---|
+| `tipo` | `"FIJO"` \| `"EVENTUAL"` | Sí | Decide si se crea un servicio fijo o un eventual. |
+| `nombre` | string | Sí | Tiene que ser único (no puede repetir el nombre de un servicio/eventual ya existente). |
+| `tipoServicio` | `"LIMPIEZA"` \| `"ESPACIOS_VERDES"` | Sí | Clasificación por área. |
+| `legajoSupervisor` | string | No | Para matchear al supervisor por legajo. |
+| `dniSupervisor` | string | No | Para matchear al supervisor por DNI. Si mandás los dos, se usa `legajoSupervisor`. |
+
+### Body — solo si `tipo` es `"FIJO"`
+
+| Campo | Tipo | Obligatorio | Descripción |
+|---|---|---|---|
+| `idBrowix` | string | **Sí** | ID del servicio en Browix. |
+
+### Body — solo si `tipo` es `"EVENTUAL"`
+
+| Campo | Tipo | Obligatorio | Descripción |
+|---|---|---|---|
+| `fechaInicio` | string (fecha) | No | Fecha de inicio, si ya se conoce. |
+| `fechaFin` | string (fecha) | No | Fecha de fin, si ya se conoce. |
+
+### Match de supervisor
+
+Si mandás `legajoSupervisor` o `dniSupervisor` y matchea contra un usuario activo del sistema, ese usuario queda asignado como supervisor del servicio/eventual. **Si no matchea a nadie (o no mandás ninguno de los dos), el servicio/eventual se crea igual, sin supervisor** — no es un error, la respuesta simplemente lo indica.
+
+### Ejemplos
+
+Servicio fijo:
+
+```bash
+curl -X POST "https://maquinas.kazaro.com.ar/api/external/servicios" \
+  -H "X-API-Key: <TU_TOKEN_AQUI>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tipo": "FIJO",
+    "nombre": "Servicio Barrio X",
+    "tipoServicio": "LIMPIEZA",
+    "idBrowix": "K99",
+    "legajoSupervisor": "4521"
+  }'
+```
+
+Eventual:
+
+```bash
+curl -X POST "https://maquinas.kazaro.com.ar/api/external/servicios" \
+  -H "X-API-Key: <TU_TOKEN_AQUI>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tipo": "EVENTUAL",
+    "nombre": "SE - Nuevo Eventual",
+    "tipoServicio": "ESPACIOS_VERDES",
+    "fechaInicio": "2026-09-15",
+    "dniSupervisor": "30111222"
+  }'
+```
+
+### Respuesta
+
+`201 Created`. Para `FIJO`:
+
+```json
+{
+  "message": "Servicio creado correctamente",
+  "servicio": {
+    "id": 4,
+    "nombre": "Servicio Barrio X",
+    "idBrowix": "K99",
+    "tipo": "LIMPIEZA",
+    "activo": true,
+    "createdAt": "2026-09-10T17:26:24.882Z"
+  },
+  "supervisor": { "matched": true, "usuarioId": 2, "username": "encargado.ev" }
+}
+```
+
+Para `EVENTUAL`, la clave es `"eventual"` en vez de `"servicio"`, con el objeto completo del eventual creado.
+
+Si no matcheó ningún supervisor, el bloque `supervisor` se ve así:
+
+```json
+"supervisor": { "matched": false, "motivo": "sin_dato" }
+```
+
+`motivo` es `"sin_dato"` (no mandaste `legajoSupervisor` ni `dniSupervisor`) o `"no_encontrado"` (mandaste uno de los dos, pero no matcheó a nadie).
+
+---
+
+## Errores
 
 | HTTP | Motivo |
 |---|---|
 | `401` | Falta el header `X-API-Key` o el valor no es válido. |
-| `400` | `estado` inválido (máquinas), o `conductorId` no numérico (vehículos). |
+| `400` | `estado` inválido (máquinas), `conductorId` no numérico (vehículos), o falta un campo obligatorio / `tipo` inválido (servicios). |
+| `409` | Solo en `POST /servicios`: ya existe un servicio o eventual con ese `nombre`. |
 | `429` | Se superó el límite de 60 requests cada 15 minutos por IP. |
 | `500` | Error interno. |
