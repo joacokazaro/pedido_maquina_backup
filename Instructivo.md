@@ -889,11 +889,13 @@ La importación puede demorar más de un minuto: el sistema de marcación limita
 
 #### Qué se habilita solo con el eventual finalizado
 
-Estas tres acciones aparecen deshabilitadas hasta que el eventual se marca como **finalizado** y se guarda ese cambio de estado:
+Estas tres acciones aparecen deshabilitadas hasta que el eventual se marca como **finalizado**:
 
 - **Importar horas de Browix** (además requiere fecha de inicio y fecha de fin).
 - **Importar insumos** de la plataforma de insumos.
 - **Guardar horas de supervisor**.
+
+No hace falta guardar antes. Si el estado, el nombre o las fechas tienen cambios sin guardar, al apretar cualquiera de estos botones el sistema pide confirmación, guarda el formulario completo sin salir de la pantalla y después importa (o guarda las horas). Si el formulario tiene algún error, por ejemplo falta la fecha de fin o no hay trabajos realizados, no se guarda ni se importa nada y el aviso aparece en esa misma sección.
 
 Los **insumos extra**, en cambio, se pueden cargar en cualquier estado.
 
@@ -982,7 +984,7 @@ La finalización se hace desde la misma pantalla que la carga de datos:
 
 Si falta la fecha de fin o no hay ningún trabajo cargado, el sistema no permite guardar el eventual como finalizado y avisa cuál de los dos falta.
 
-Recién después de guardar el estado *finalizado* se habilitan, en la misma pantalla, la importación de horas de Browix, la importación de insumos y la carga de horas de supervisor.
+Con el estado en *finalizado* se habilitan, en la misma pantalla, la importación de horas de Browix, la importación de insumos y la carga de horas de supervisor. No hace falta guardar primero: esos botones guardan el formulario antes de continuar.
 
 La finalización queda registrada en el historial del eventual.
 

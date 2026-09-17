@@ -100,6 +100,28 @@ function emptyServicioExtra() {
   return { descripcion: "", cantidad: "", unidadMedida: "", unidadLabel: "", precio: "" };
 }
 
+function extraerObservacionesPosteriores(historial) {
+  return (Array.isArray(historial) ? historial : [])
+    .filter((entry) => ["ADMIN_OBSERVACION_POSTERIOR", "COORDINADOR_OBSERVACION_POSTERIOR"].includes(entry?.accion))
+    .map((entry) => ({
+      id: entry.id,
+      fecha: entry.fecha,
+      usuario: entry.usuario?.nombre || entry.usuario?.username || "-",
+      observacion: String(entry?.detalle?.observacion || "").trim(),
+    }))
+    .filter((entry) => entry.observacion)
+    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+}
+
+function extraerCamposPersistidos(eventual) {
+  return {
+    nombre: eventual.nombre || "",
+    estado: eventual.estado || "activo",
+    fechaInicio: toDateInputValue(eventual.fechaInicio),
+    fechaFin: toDateInputValue(eventual.fechaFin),
+  };
+}
+
 export default function AdminEventualForm({ modoFinalizacionCoordinador = false }) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -192,6 +214,13 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const [horasSupervisorError, setHorasSupervisorError] = useState("");
   const [horasSupervisorGuardado, setHorasSupervisorGuardado] = useState(null);
 
+  // Estado, nombre y fechas tal como están guardados en la base: las importaciones y las
+  // horas de supervisor los leen de ahí, no del formulario. Si difieren, antes de esas
+  // acciones se guarda el formulario completo.
+  const [persistido, setPersistido] = useState(null);
+  const [accionPendienteGuardado, setAccionPendienteGuardado] = useState(null);
+  const [guardandoPrevio, setGuardandoPrevio] = useState(null);
+
   useEffect(() => {
     async function load() {
       try {
@@ -222,17 +251,9 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         setSupervisores(Array.isArray(supervisoresData) ? supervisoresData : []);
 
         if (eventual) {
-          const observacionesPosteriores = (Array.isArray(eventual.historial) ? eventual.historial : [])
-            .filter((entry) => ["ADMIN_OBSERVACION_POSTERIOR", "COORDINADOR_OBSERVACION_POSTERIOR"].includes(entry?.accion))
-            .map((entry) => ({
-              id: entry.id,
-              fecha: entry.fecha,
-              usuario: entry.usuario?.nombre || entry.usuario?.username || "-",
-              observacion: String(entry?.detalle?.observacion || "").trim(),
-            }))
-            .filter((entry) => entry.observacion)
-            .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+          const observacionesPosteriores = extraerObservacionesPosteriores(eventual.historial);
 
+          setPersistido(extraerCamposPersistidos(eventual));
           setForm({
             nombre: eventual.nombre || "",
             tipo: eventual.tipo || "",
@@ -920,11 +941,9 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     };
   }
 
-  function requestSubmit() {
+  function validarFormulario() {
     if (!form.tipo) {
-      setError("Tenés que indicar el tipo del eventual (Limpieza o Espacios Verdes).");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+      return "Tenés que indicar el tipo del eventual (Limpieza o Espacios Verdes).";
     }
 
     const requiereSupervisor =
@@ -932,13 +951,20 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       (mostrarCamposPosteriores && (resumenMaquinas.length > 0 || trabajosRealizados.length > 0));
 
     if (requiereSupervisor && !form.supervisorId) {
-      setError("Tenés que asignar un supervisor para completar maquinaria utilizada y trabajos realizados.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+      return "Tenés que asignar un supervisor para completar maquinaria utilizada y trabajos realizados.";
     }
 
     if (form.estado === "finalizado" && !form.fechaFin) {
-      setError("Para finalizar el eventual tenés que indicar la fecha de finalización.");
+      return "Para finalizar el eventual tenés que indicar la fecha de finalización.";
+    }
+
+    return "";
+  }
+
+  function requestSubmit() {
+    const errorValidacion = validarFormulario();
+    if (errorValidacion) {
+      setError(errorValidacion);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
@@ -947,24 +973,101 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     setConfirmOpen(true);
   }
 
+  async function guardarEventual() {
+    const response = await fetch(
+      isEdit ? `${API_BASE}/admin/eventuales/${encodeURIComponent(id)}` : `${API_BASE}/admin/eventuales`,
+      {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(normalizePayload()),
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "No se pudo guardar el eventual");
+    }
+
+    return data;
+  }
+
+  const hayCambiosQueRequierenGuardar =
+    Boolean(persistido) &&
+    (form.estado !== persistido.estado ||
+      form.nombre !== persistido.nombre ||
+      form.fechaInicio !== persistido.fechaInicio ||
+      form.fechaFin !== persistido.fechaFin);
+
+  // Importar horas de Browix, importar insumos y guardar horas de supervisor trabajan sobre
+  // el eventual guardado. Si el formulario tiene cambios en estado, nombre o fechas, primero
+  // se guarda el formulario completo (sin salir de la pantalla) y después se ejecuta la acción.
+  const accionesConGuardado = {
+    browix: {
+      ejecutar: importarHorasBrowix,
+      setErrorAccion: setHorasBrowixError,
+      descripcion: "importar las horas de Browix",
+    },
+    insumos: {
+      ejecutar: importarInsumos,
+      setErrorAccion: setInsumosError,
+      descripcion: "importar los insumos",
+    },
+    horasSupervisor: {
+      ejecutar: guardarHorasSupervisor,
+      setErrorAccion: setHorasSupervisorError,
+      descripcion: "guardar las horas de supervisor",
+    },
+  };
+
+  function solicitarAccionConGuardado(accion) {
+    const { ejecutar, setErrorAccion } = accionesConGuardado[accion];
+    setErrorAccion("");
+
+    if (!hayCambiosQueRequierenGuardar) {
+      ejecutar();
+      return;
+    }
+
+    const errorValidacion = validarFormulario();
+    if (errorValidacion) {
+      setErrorAccion(errorValidacion);
+      return;
+    }
+
+    setAccionPendienteGuardado(accion);
+  }
+
+  async function confirmarGuardadoYEjecutar() {
+    const accion = accionPendienteGuardado;
+    const { ejecutar, setErrorAccion } = accionesConGuardado[accion];
+    setAccionPendienteGuardado(null);
+
+    try {
+      setGuardandoPrevio(accion);
+      const data = await guardarEventual();
+
+      // El formulario queda como recién guardado: la observación posterior ya se registró
+      // y no debe volver a mandarse en el próximo guardado.
+      setPersistido(extraerCamposPersistidos(data));
+      setForm((prev) => ({ ...prev, ...extraerCamposPersistidos(data), observacionesPosteriores: "" }));
+      setObservacionesPosterioresRegistradas(extraerObservacionesPosteriores(data.historial));
+    } catch (saveError) {
+      console.error(saveError);
+      setErrorAccion(saveError.message || "Error guardando eventual");
+      return;
+    } finally {
+      setGuardandoPrevio(null);
+    }
+
+    await ejecutar();
+  }
+
   async function submit() {
     try {
       setSaving(true);
       setError("");
 
-      const response = await fetch(
-        isEdit ? `${API_BASE}/admin/eventuales/${encodeURIComponent(id)}` : `${API_BASE}/admin/eventuales`,
-        {
-          method: isEdit ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(normalizePayload()),
-        }
-      );
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || "No se pudo guardar el eventual");
-      }
+      await guardarEventual();
 
       setConfirmOpen(false);
       navigate(isEdit ? `/admin/eventuales/${id}` : "/admin/eventuales/historial");
@@ -1525,7 +1628,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           {form.estado !== "finalizado" ? (
             <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-medium text-amber-800">
               La importación de horas de Browix y la carga de horas de supervisor se habilitan recién cuando el
-              eventual se marca como <b>finalizado</b> (y se guarda ese cambio de estado).
+              eventual se marca como <b>finalizado</b>. Si ese cambio todavía no se guardó, al importar se guarda
+              el formulario automáticamente.
             </div>
           ) : null}
 
@@ -1544,15 +1648,21 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             </div>
             <button
               type="button"
-              onClick={importarHorasBrowix}
-              disabled={!form.fechaInicio || !form.fechaFin || form.estado !== "finalizado" || importandoHoras}
+              onClick={() => solicitarAccionConGuardado("browix")}
+              disabled={
+                !form.fechaInicio || !form.fechaFin || form.estado !== "finalizado" || importandoHoras || Boolean(guardandoPrevio)
+              }
               className="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-orange-300"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 7v5l3 3" />
               </svg>
-              {importandoHoras ? "Importando..." : "Importar horas de Browix"}
+              {guardandoPrevio === "browix"
+                ? "Guardando..."
+                : importandoHoras
+                  ? "Importando..."
+                  : "Importar horas de Browix"}
             </button>
           </div>
 
@@ -1656,17 +1766,17 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 step="0.01"
                 value={horasSupervisorInput}
                 onChange={(event) => setHorasSupervisorInput(event.target.value)}
-                disabled={form.estado !== "finalizado" || guardandoHorasSupervisor}
+                disabled={form.estado !== "finalizado" || guardandoHorasSupervisor || Boolean(guardandoPrevio)}
                 placeholder="Ej: 8"
                 className="w-32 rounded-xl border p-2.5 text-sm disabled:cursor-not-allowed disabled:bg-slate-100"
               />
               <button
                 type="button"
-                onClick={guardarHorasSupervisor}
-                disabled={form.estado !== "finalizado" || guardandoHorasSupervisor}
+                onClick={() => solicitarAccionConGuardado("horasSupervisor")}
+                disabled={form.estado !== "finalizado" || guardandoHorasSupervisor || Boolean(guardandoPrevio)}
                 className="inline-flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {guardandoHorasSupervisor ? "Guardando..." : "Guardar horas de supervisor"}
+                {guardandoHorasSupervisor || guardandoPrevio === "horasSupervisor" ? "Guardando..." : "Guardar horas de supervisor"}
               </button>
               {horasSupervisorGuardado !== null ? (
                 <span className="text-xs font-medium text-slate-500">
@@ -1698,7 +1808,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           {form.estado !== "finalizado" ? (
             <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
               La importación desde la plataforma de insumos se habilita recién cuando el eventual se marca como{" "}
-              <b>finalizado</b>. Los <b>insumos extra</b> se pueden cargar en
+              <b>finalizado</b> (si ese cambio todavía no se guardó, al importar se guarda el formulario
+              automáticamente). Los <b>insumos extra</b> se pueden cargar en
               cualquier momento.
             </div>
           ) : null}
@@ -1714,15 +1825,15 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             </div>
             <button
               type="button"
-              onClick={importarInsumos}
-              disabled={form.estado !== "finalizado" || importandoInsumos}
+              onClick={() => solicitarAccionConGuardado("insumos")}
+              disabled={form.estado !== "finalizado" || importandoInsumos || Boolean(guardandoPrevio)}
               className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 7v5l3 3" />
               </svg>
-              {importandoInsumos ? "Importando..." : "Importar insumos"}
+              {guardandoPrevio === "insumos" ? "Guardando..." : importandoInsumos ? "Importando..." : "Importar insumos"}
             </button>
           </div>
 
@@ -1860,7 +1971,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         <button onClick={() => navigate(-1)} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700">
           Cancelar
         </button>
-        <button onClick={requestSubmit} disabled={saving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-blue-300">
+        <button onClick={requestSubmit} disabled={saving || Boolean(guardandoPrevio)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-blue-300">
           {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear eventual"}
         </button>
       </div>
@@ -2361,6 +2472,20 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         onCancel={() => setConfirmOpen(false)}
         onConfirm={submit}
         confirmLabel={saving ? "Guardando..." : isEdit ? "Guardar datos" : "Crear eventual"}
+        cancelLabel="Cancelar"
+      />
+
+      <ConfirmModal
+        open={Boolean(accionPendienteGuardado)}
+        title="Guardar cambios del eventual"
+        message={
+          accionPendienteGuardado
+            ? `Hay cambios sin guardar en el estado, el nombre o las fechas del eventual. Para ${accionesConGuardado[accionPendienteGuardado].descripcion} primero se guarda el formulario completo (queda registrado en el historial) y después se continúa. Te quedás en esta pantalla.`
+            : ""
+        }
+        onCancel={() => setAccionPendienteGuardado(null)}
+        onConfirm={confirmarGuardadoYEjecutar}
+        confirmLabel="Guardar y continuar"
         cancelLabel="Cancelar"
       />
     </div>
