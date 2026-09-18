@@ -43,6 +43,56 @@ function esErrorPorLimiteDeConsultas(mensaje) {
 const BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS = Number(process.env.BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS) || 10500;
 const BROWIX_MIN_MS_ENTRE_CONSULTAS_LEGAJOS = Number(process.env.BROWIX_MIN_MS_ENTRE_CONSULTAS_LEGAJOS) || 1100;
 
+// Browix informa el motivo del 400 en "response.errors", que según el endpoint
+// viene como array de {field, error}, como objeto suelto o como string. El
+// fallback a "message" es el genérico ("validation error"), que por sí solo no
+// dice nada: sin desarmar el array, un rango de fechas inválido y un uuid mal
+// configurado se ven exactamente igual.
+function extraerDetalleDeError(entry) {
+  const errores = entry?.response?.errors;
+
+  if (Array.isArray(errores)) {
+    const detalles = errores
+      .map((e) => (typeof e === "string" ? e : e?.error))
+      .filter((detalle) => typeof detalle === "string" && detalle.trim());
+    if (detalles.length > 0) return detalles.join("; ");
+  }
+
+  if (typeof errores?.error === "string") return errores.error;
+  if (typeof errores === "string") return errores;
+
+  return entry?.response?.message || null;
+}
+
+// Browix rechaza con 400 ("el rango de fechas es demasiado amplio, el máximo
+// son 45 días") cualquier consulta de planificación que abarque más de 45
+// días, así que los eventuales largos hay que pedirlos por tramos.
+const BROWIX_MAX_DIAS_POR_CONSULTA = 45;
+const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
+function aMedianocheUTC(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+// Parte [desde, hasta] en ventanas consecutivas (sin solaparse, así no hay
+// fichajes duplicados) de a lo sumo BROWIX_MAX_DIAS_POR_CONSULTA días.
+function partirRangoEnVentanas(desde, hasta) {
+  const fechaFinal = aMedianocheUTC(hasta);
+  const ventanas = [];
+  let inicio = aMedianocheUTC(desde);
+
+  // Siempre se emite al menos una ventana: si las fechas vinieran invertidas,
+  // que falle Browix con su propio mensaje y no que devuelva cero fichajes.
+  for (;;) {
+    const tentativo = new Date(inicio.getTime() + (BROWIX_MAX_DIAS_POR_CONSULTA - 1) * MS_POR_DIA);
+    const fin = tentativo > fechaFinal ? fechaFinal : tentativo;
+    ventanas.push({ desde: inicio, hasta: fin });
+
+    if (fin >= fechaFinal) return ventanas;
+    inicio = new Date(fin.getTime() + MS_POR_DIA);
+  }
+}
+
 async function getFichajesPorGrupo(desde, hasta, grupoId) {
   const url = `${BROWIX_BASE_URL}/v1/externalpermissions/getWorkgroupschedulePlan/uuid:${BROWIX_WORKGROUP_UUID}/${formatFecha(desde)}/${formatFecha(hasta)}/${grupoId}`;
 
@@ -59,14 +109,9 @@ async function getFichajesPorGrupo(desde, hasta, grupoId) {
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const erroresBody = body?.response?.errors;
-    const detalle =
-      (typeof erroresBody?.error === "string" && erroresBody.error) ||
-      (typeof erroresBody === "string" && erroresBody) ||
-      body?.response?.message ||
-      null;
+    const detalle = extraerDetalleDeError(body);
     const error = buildBrowixError(
-      `Browix respondió con error (HTTP ${response.status}) al consultar el grupo ${grupoId}${detalle ? `: ${detalle}` : ""}`
+      `Browix respondió con error (HTTP ${response.status}) al consultar el grupo ${grupoId} entre ${formatFecha(desde)} y ${formatFecha(hasta)}${detalle ? `: ${detalle}` : ""}`
     );
     error.rateLimited = esErrorPorLimiteDeConsultas(detalle);
     throw error;
@@ -79,32 +124,38 @@ async function getFichajesPorGrupo(desde, hasta, grupoId) {
   return body.response.data;
 }
 
-// Consulta los fichajes de todos los grupos configurados (BROWIX_GRUPO_IDS) y
-// combina los resultados. Se consultan secuencialmente (con espaciado de 10s+)
-// en vez de en paralelo por el límite de Browix; si un grupo choca igual
-// contra el límite (por ejemplo por otra consulta concurrente de otro
-// proceso sobre el mismo uuid) reintenta una vez más. Si un grupo falla de
-// forma definitiva se aborta toda la importación en vez de reportar un total
-// parcial que subestimaría las horas en silencio.
+// Consulta los fichajes de todos los grupos configurados (BROWIX_GRUPO_IDS),
+// partiendo el rango en ventanas de 45 días como máximo, y combina los
+// resultados. Todas las consultas van secuencialmente (con espaciado de 10s+)
+// en vez de en paralelo por el límite de Browix, que es por uuid y no por
+// grupo; si una choca igual contra el límite (por ejemplo por otra consulta
+// concurrente de otro proceso sobre el mismo uuid) reintenta una vez más. Si
+// una falla de forma definitiva se aborta toda la importación en vez de
+// reportar un total parcial que subestimaría las horas en silencio.
 export async function getFichajesPorRango(desde, hasta) {
   if (BROWIX_GRUPO_IDS.length === 0) {
     throw buildBrowixError("No hay grupos de Browix configurados (BROWIX_GRUPO_IDS)");
   }
 
+  const ventanas = partirRangoEnVentanas(desde, hasta);
   const fichajes = [];
-  for (let i = 0; i < BROWIX_GRUPO_IDS.length; i += 1) {
-    if (i > 0) await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS);
+  let esPrimeraConsulta = true;
 
-    const grupoId = BROWIX_GRUPO_IDS[i];
-    try {
-      const fichajesGrupo = await getFichajesPorGrupo(desde, hasta, grupoId);
-      fichajes.push(...fichajesGrupo);
-    } catch (error) {
-      if (!error?.rateLimited) throw error;
+  for (const grupoId of BROWIX_GRUPO_IDS) {
+    for (const ventana of ventanas) {
+      if (!esPrimeraConsulta) await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS);
+      esPrimeraConsulta = false;
 
-      await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS);
-      const fichajesGrupo = await getFichajesPorGrupo(desde, hasta, grupoId);
-      fichajes.push(...fichajesGrupo);
+      try {
+        const fichajesGrupo = await getFichajesPorGrupo(ventana.desde, ventana.hasta, grupoId);
+        fichajes.push(...fichajesGrupo);
+      } catch (error) {
+        if (!error?.rateLimited) throw error;
+
+        await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS);
+        const fichajesGrupo = await getFichajesPorGrupo(ventana.desde, ventana.hasta, grupoId);
+        fichajes.push(...fichajesGrupo);
+      }
     }
   }
 
@@ -212,12 +263,7 @@ export async function getCategoriaPorLegajo(legajo) {
   const entry = Array.isArray(body) ? body[0] : body;
 
   if (!response.ok) {
-    const erroresBody = entry?.response?.errors;
-    const detalle =
-      (typeof erroresBody?.error === "string" && erroresBody.error) ||
-      (typeof erroresBody === "string" && erroresBody) ||
-      entry?.response?.message ||
-      null;
+    const detalle = extraerDetalleDeError(entry);
     const error = buildBrowixError(
       `Browix respondió con error (HTTP ${response.status}) al consultar el legajo ${legajo}${detalle ? `: ${detalle}` : ""}`
     );
