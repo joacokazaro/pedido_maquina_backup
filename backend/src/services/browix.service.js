@@ -15,7 +15,8 @@ const BROWIX_GRUPO_IDS = String(process.env.BROWIX_GRUPO_IDS || process.env.BROW
   .filter(Boolean);
 const BROWIX_AUTH_TOKEN = process.env.BROWIX_AUTH_TOKEN || "";
 // Customfield fijo en Browix donde se carga la categoría del empleado (ver getUsers).
-const BROWIX_CUSTOMFIELD_CATEGORIA_ID = "137";
+// Se eliminó y volvió a crear el campo en Browix el 2026-09-22, por lo que cambió de id (era 137).
+const BROWIX_CUSTOMFIELD_CATEGORIA_ID = "346";
 
 function buildBrowixError(message) {
   const error = new Error(message);
