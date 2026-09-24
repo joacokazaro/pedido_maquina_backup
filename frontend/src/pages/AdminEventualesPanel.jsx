@@ -68,12 +68,12 @@ export default function AdminEventualesPanel() {
         </p>
       </header>
 
-      <div className="mx-auto flex max-w-5xl flex-wrap justify-center gap-6">
+      <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-6">
         {sections.map((section) => (
           <Link
             key={section.title}
             to={section.to}
-            className="w-full rounded-2xl border border-gray-200 bg-white p-6 text-center shadow transition hover:-translate-y-1 hover:shadow-lg sm:w-72"
+            className="w-full rounded-2xl border border-gray-200 bg-white p-6 text-center shadow transition hover:-translate-y-1 hover:shadow-lg sm:w-[calc(50%-0.75rem)] lg:w-[calc(25%-1.125rem)]"
           >
             <span className="mb-4 block text-5xl">{section.icon}</span>
             <h2 className="mb-2 text-xl font-bold text-gray-800">{section.title}</h2>
