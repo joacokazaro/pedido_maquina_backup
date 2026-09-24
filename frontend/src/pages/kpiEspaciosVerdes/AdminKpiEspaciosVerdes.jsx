@@ -7,9 +7,11 @@ import Carrusel from "./components/Carrusel";
 import SlideGenerales from "./components/SlideGenerales";
 import SlideRendimiento from "./components/SlideRendimiento";
 import SlideDotacion from "./components/SlideDotacion";
+import SlideCuadrillas from "./components/SlideCuadrillas";
+import SlideEstacionalidad from "./components/SlideEstacionalidad";
 import SlideParqueEquipos from "./components/SlideParqueEquipos";
 
-const FUENTE_HORAS = "Horas del sistema de marcación importadas al cerrar el eventual (campo horasBrowix).";
+const FUENTE_TRABAJOS = "Campo trabajosRealizados del eventual, cargado al cerrarlo.";
 
 export default function AdminKpiEspaciosVerdes() {
   const { user } = useAuth();
@@ -69,7 +71,7 @@ export default function AdminKpiEspaciosVerdes() {
     );
   }
 
-  const { alcance, generales, rendimientos, dotacion, parqueEquipos } = datos;
+  const { alcance, generales, rendimientos, dotacion, cuadrillas, estacionalidad, parqueEquipos } = datos;
 
   const slides = [
     {
@@ -83,16 +85,15 @@ export default function AdminKpiEspaciosVerdes() {
       clave: "desmalezado",
       titulo: "Desmalezado",
       resumen:
-        "Cuántos metros cuadrados limpia una persona en una hora. Es la vara para saber si un trabajo se ejecutó bien o mal, y para cotizar el próximo.",
+        "Cuántos metros cuadrados se desmalezan, en promedio, en un eventual que hace este trabajo.",
       contenido: (
         <SlideRendimiento
           bloque={rendimientos.desmalezado}
-          sentido="mas-es-mejor"
-          formula="m² desmalezados ÷ horas-hombre del eventual"
+          formula="m² desmalezados totales ÷ eventuales con desmalezado"
           notas={[
-            "Solo entran los trabajos de desmalezado cargados en m². Si alguno se cargó en otra unidad (por ejemplo en horas) queda afuera: no es una superficie mal etiquetada sino otra magnitud, y no hay forma de convertirla.",
+            "Solo cuentan los eventuales finalizados que registraron el trabajo; los que no lo hicieron no entran en el promedio. Solo entran los trabajos de desmalezado cargados en m². Si alguno se cargó en otra unidad (por ejemplo en horas) queda afuera: no es una superficie mal etiquetada sino otra magnitud, y no hay forma de convertirla.",
           ]}
-          fuente={FUENTE_HORAS}
+          fuente={FUENTE_TRABAJOS}
         />
       ),
     },
@@ -100,16 +101,15 @@ export default function AdminKpiEspaciosVerdes() {
       clave: "retiroPoda",
       titulo: "Retiro de poda",
       resumen:
-        "Cuánto volumen de ramas se retira por hora trabajada. Se mide en metros cúbicos, que es volumen retirado y no superficie.",
+        "Cuánto volumen de ramas se retira, en promedio, en un eventual que hace este trabajo. Se mide en metros cúbicos.",
       contenido: (
         <SlideRendimiento
           bloque={rendimientos.retiroPoda}
-          sentido="mas-es-mejor"
-          formula="m³ retirados ÷ horas-hombre del eventual"
+          formula="m³ retirados totales ÷ eventuales con retiro de poda"
           notas={[
             "Solo entran los retiros de poda cargados en m³, que es la unidad que corresponde al trabajo.",
           ]}
-          fuente={FUENTE_HORAS}
+          fuente={FUENTE_TRABAJOS}
         />
       ),
     },
@@ -117,17 +117,16 @@ export default function AdminKpiEspaciosVerdes() {
       clave: "combustible",
       titulo: "Combustible",
       resumen:
-        "Cuánta nafta se quema por hora de trabajo. Acá más es peor: sirve para detectar derroche, pérdidas o carga mal registrada.",
+        "Cuántos litros de combustible se consumen, en promedio, en un eventual que lo registra.",
       contenido: (
         <SlideRendimiento
           bloque={rendimientos.combustible}
-          sentido="menos-es-mejor"
-          formula="Litros de combustible ÷ horas-hombre del eventual"
+          formula="Litros de combustible totales ÷ eventuales con combustible cargado"
           notas={[
             "Cuenta nafta preparada, nafta pura, gasoil premium y gasoil común cargados en litros. El aceite de cadena queda afuera porque se mide en cc y no es combustible.",
             "Son los litros que el supervisor cargó a mano en el eventual, no los que se importan de la plataforma de insumos.",
           ]}
-          fuente="Campo insumosExtras del eventual, cruzado con las horas del sistema de marcación."
+          fuente="Campo insumosExtras del eventual."
         />
       ),
     },
@@ -137,6 +136,20 @@ export default function AdminKpiEspaciosVerdes() {
       resumen:
         "Cuánta gente hubo por día y cuánto duró cada trabajo. Permite dimensionar la cuadrilla del próximo eventual sin adivinar.",
       contenido: <SlideDotacion dotacion={dotacion} />,
+    },
+    {
+      clave: "cuadrillas",
+      titulo: "Cuadrillas",
+      resumen:
+        "Cuántas personas participan en un eventual y cuánta gente se puso según el tamaño del trabajo. Sirve para dimensionar la cuadrilla del próximo.",
+      contenido: <SlideCuadrillas cuadrillas={cuadrillas} />,
+    },
+    {
+      clave: "estacionalidad",
+      titulo: "Estacionalidad",
+      resumen:
+        "Cuántos eventuales, personas y horas hubo en cada mes. Sirve para anticipar cuándo hace falta más gente.",
+      contenido: <SlideEstacionalidad estacionalidad={estacionalidad} />,
     },
     {
       clave: "parqueEquipos",

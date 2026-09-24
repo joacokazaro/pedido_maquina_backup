@@ -13,8 +13,17 @@ import {
 } from "../controllers/adminEventuales.controller.js";
 import { adminGetKpisEspaciosVerdes } from "../controllers/kpiEspaciosVerdes.controller.js";
 
+import {
+  adminBuscarSimilares,
+  adminCompararEventuales,
+  adminGetCandidatosComparador,
+} from "../controllers/comparadorEventuales.controller.js";
+
 const router = Router();
 
+router.get("/eventuales/comparador/candidatos", adminGetCandidatosComparador);
+router.get("/eventuales/comparador/versus", adminCompararEventuales);
+router.post("/eventuales/comparador/similares", adminBuscarSimilares);
 router.get("/eventuales/componentes/catalogo", adminGetComponentesCatalogo);
 router.get("/eventuales/kpis/espacios-verdes", adminGetKpisEspaciosVerdes);
 

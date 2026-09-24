@@ -35,7 +35,7 @@ export const UNIDAD_CANONICA_POR_TRABAJO = {
 // los herbicidas/bolsas/tanza no son combustible: ninguno entra en litros/hora.
 const INSUMOS_COMBUSTIBLE = ["NAFTA_PREPARADA", "NAFTA_PURA", "GASOIL_PREMIUM", "GASOIL_COMUN"];
 
-const LABEL_UNIDAD = {
+export const LABEL_UNIDAD = {
   M2: "m²",
   M3: "m³",
   UNIDAD: "unidades",
@@ -44,7 +44,7 @@ const LABEL_UNIDAD = {
   KG: "kg",
 };
 
-const LABEL_TRABAJO = {
+export const LABEL_TRABAJO = {
   PODA_MENOR_2M: "Poda menor a 2m",
   PODA_ALTURA: "Poda en altura",
   RETIRO_PODA: "Retiro de poda",
@@ -58,7 +58,7 @@ const LABEL_TRABAJO = {
 
 const MS_POR_DIA = 24 * 60 * 60 * 1000;
 
-function parseJson(value) {
+export function parseJson(value) {
   if (!value) return null;
   if (typeof value === "object") return value;
   try {
@@ -68,7 +68,7 @@ function parseJson(value) {
   }
 }
 
-function redondear(valor, decimales = 2) {
+export function redondear(valor, decimales = 2) {
   if (!Number.isFinite(valor)) return null;
   const factor = 10 ** decimales;
   return Math.round(valor * factor) / factor;
@@ -118,38 +118,17 @@ export function resumenEstadistico(valores) {
   };
 }
 
-/**
- * Intervalos media ± k·desvío. Las coberturas son las de una distribución
- * normal (68,3% / 95,4%), así que valen como referencia, no como garantía:
- * con una decena de casos no hay cómo afirmar que el rendimiento se
- * distribuye normal. La UI lo dice explícitamente.
- */
-export function bandasDesvio(media, desvio) {
-  if (!Number.isFinite(media) || !Number.isFinite(desvio) || desvio <= 0) return [];
-
-  return [
-    { sigmas: 1, cobertura: 68.3, desde: redondear(media - desvio, 2), hasta: redondear(media + desvio, 2) },
-    { sigmas: 2, cobertura: 95.4, desde: redondear(media - 2 * desvio, 2), hasta: redondear(media + 2 * desvio, 2) },
-  ];
-}
-
-/** Cuántos valores de la muestra caen efectivamente dentro de media ± 1 desvío. */
-export function dentroDeUnaBanda(valores, media, desvio) {
-  if (!Number.isFinite(media) || !Number.isFinite(desvio) || desvio <= 0) return null;
-  return valores.filter((v) => v >= media - desvio && v <= media + desvio).length;
-}
-
 /* =======================
    Lectura de los campos de cierre
 ======================= */
 
-function horasDelEventual(eventual) {
+export function horasDelEventual(eventual) {
   const browix = parseJson(eventual.horasBrowix);
   const horas = Number(browix?.totalHoras);
   return Number.isFinite(horas) && horas > 0 ? horas : null;
 }
 
-function trabajosDelEventual(eventual) {
+export function trabajosDelEventual(eventual) {
   const trabajos = parseJson(eventual.trabajosRealizados);
   return Array.isArray(trabajos) ? trabajos : [];
 }
@@ -160,7 +139,7 @@ function trabajosDelEventual(eventual) {
  * eventual con `DESMALEZADO` medido en horas, que no es una superficie mal
  * etiquetada sino otra magnitud, y no se puede convertir.
  */
-function produccionCanonica(eventual, tipoTrabajo) {
+export function produccionCanonica(eventual, tipoTrabajo) {
   const unidadEsperada = UNIDAD_CANONICA_POR_TRABAJO[tipoTrabajo];
   const total = trabajosDelEventual(eventual)
     .filter((t) => t?.tipo === tipoTrabajo && t?.unidadMedida === unidadEsperada)
@@ -169,7 +148,7 @@ function produccionCanonica(eventual, tipoTrabajo) {
   return total > 0 ? total : null;
 }
 
-function litrosCombustible(eventual) {
+export function litrosCombustible(eventual) {
   const insumos = parseJson(eventual.insumosExtras);
   if (!Array.isArray(insumos)) return null;
 
@@ -180,7 +159,7 @@ function litrosCombustible(eventual) {
   return total > 0 ? total : null;
 }
 
-function duracionEnDias(eventual) {
+export function duracionEnDias(eventual) {
   if (!eventual.fechaInicio || !eventual.fechaFin) return null;
   const desde = new Date(eventual.fechaInicio).getTime();
   const hasta = new Date(eventual.fechaFin).getTime();
@@ -194,60 +173,33 @@ function duracionEnDias(eventual) {
 ======================= */
 
 /**
- * Arma un indicador de tasa: producción ÷ horas-hombre, un valor por eventual.
+ * Arma un indicador de producción por eventual: total producido ÷ cantidad de
+ * eventuales que registraron ese trabajo. Los eventuales que no lo hicieron no
+ * entran en el denominador, así el promedio dice cuánto se produce en un
+ * eventual que efectivamente hace ese trabajo.
  *
- * El denominador son las horas **totales** del eventual, no las horas
- * imputadas a ese trabajo — el sistema no registra ese detalle. Cuando un
- * eventual hizo además otros trabajos, su tasa queda subestimada; esos casos
- * se marcan como `mixto` y se cuentan aparte para que la lectura sea honesta.
+ * No se divide por horas: el sistema no registra cuántas horas se dedicaron a
+ * cada trabajo, y las horas totales del eventual también cubren los demás.
  */
-function construirRendimiento({ eventuales, clave, titulo, unidadRatio, obtenerProduccion, unidadProduccion }) {
+function construirProduccion({ eventuales, clave, titulo, unidad, obtenerProduccion }) {
   const muestras = [];
-  const excluidos = [];
 
   for (const eventual of eventuales) {
     const produccion = obtenerProduccion(eventual);
     if (produccion === null) continue;
 
-    const horas = horasDelEventual(eventual);
-    if (horas === null) {
-      excluidos.push({ id: eventual.id, nombre: eventual.nombre, motivo: "Sin horas importadas" });
-      continue;
-    }
-
-    const tiposDistintos = new Set(trabajosDelEventual(eventual).map((t) => t?.tipo).filter(Boolean));
-
-    muestras.push({
-      id: eventual.id,
-      nombre: eventual.nombre,
-      valor: redondear(produccion / horas, 3),
-      produccion: redondear(produccion, 2),
-      horas: redondear(horas, 2),
-      // Marca los eventuales donde las horas también cubren otros trabajos.
-      mixto: tiposDistintos.size > 1,
-    });
+    muestras.push({ id: eventual.id, nombre: eventual.nombre, valor: redondear(produccion, 2) });
   }
 
   muestras.sort((a, b) => b.valor - a.valor);
 
-  const valores = muestras.map((m) => m.valor);
-  const stats = resumenEstadistico(valores);
-  const bandas = bandasDesvio(stats.media, stats.desvio);
-
   return {
     clave,
     titulo,
-    unidadRatio,
-    unidadProduccion,
+    unidad,
     muestras,
-    stats,
-    bandas,
-    dentroDeUnDesvio: dentroDeUnaBanda(valores, stats.media, stats.desvio),
-    mixtos: muestras.filter((m) => m.mixto).length,
-    excluidos,
-    // Cuántas veces rinde el mejor respecto del peor. Es la lectura que
-    // justifica el indicador: si todos rinden parecido, no hay nada que gestionar.
-    brecha: stats.min > 0 ? redondear(stats.max / stats.min, 1) : null,
+    total: redondear(muestras.reduce((acc, m) => acc + m.valor, 0), 2),
+    stats: resumenEstadistico(muestras.map((m) => m.valor)),
   };
 }
 
@@ -291,6 +243,123 @@ function construirDotacion(eventuales) {
     stats,
     statsDias,
     jornadasTotales: muestras.reduce((acc, m) => acc + m.jornadas, 0),
+  };
+}
+
+/* =======================
+   Cuadrillas
+======================= */
+
+// Personas distintas (legajos) que fichó el eventual. Null si no hay horas importadas.
+function personasDelEventual(eventual) {
+  const browix = parseJson(eventual.horasBrowix);
+  if (!Array.isArray(browix?.personas)) return null;
+  const legajos = new Set(browix.personas.map((p) => p?.legajo).filter(Boolean).map(String));
+  return legajos.size > 0 ? legajos.size : null;
+}
+
+/**
+ * Tamaño de cuadrilla (personas distintas por eventual) y su relación con lo
+ * producido. La relación es un gráfico de puntos, no una tasa: no se divide
+ * nada, se muestra cuánta gente se puso en trabajos de cada tamaño.
+ */
+function construirCuadrillas(eventuales) {
+  const muestras = [];
+
+  for (const eventual of eventuales) {
+    const personas = personasDelEventual(eventual);
+    if (personas === null) continue;
+
+    muestras.push({
+      id: eventual.id,
+      nombre: eventual.nombre,
+      personas,
+      desmalezado: produccionCanonica(eventual, "DESMALEZADO"),
+      retiroPoda: produccionCanonica(eventual, "RETIRO_PODA"),
+    });
+  }
+
+  muestras.sort((a, b) => b.personas - a.personas);
+
+  const puntos = (campo) =>
+    muestras
+      .filter((m) => m[campo] !== null)
+      .map((m) => ({ id: m.id, nombre: m.nombre, personas: m.personas, produccion: redondear(m[campo], 2) }));
+
+  return {
+    muestras,
+    stats: resumenEstadistico(muestras.map((m) => m.personas)),
+    relacion: {
+      desmalezado: { unidad: "m²", puntos: puntos("desmalezado") },
+      retiroPoda: { unidad: "m³", puntos: puntos("retiroPoda") },
+    },
+  };
+}
+
+/* =======================
+   Estacionalidad
+======================= */
+
+const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+function claveMes(fecha) {
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/**
+ * Actividad por mes según la fecha de inicio del eventual: cuántos hubo, cuántas
+ * personas distintas intervinieron y cuántas horas se trabajaron. Un eventual que
+ * cruza dos meses se atribuye por completo al mes en que empezó. Se rellenan los
+ * meses sin actividad entre el primero y el último para que el gráfico no salte.
+ */
+function construirEstacionalidad(eventuales) {
+  const porMes = new Map();
+
+  for (const eventual of eventuales) {
+    const clave = eventual.fechaInicio ? claveMes(eventual.fechaInicio) : null;
+    if (!clave) continue;
+
+    const actual = porMes.get(clave) || { clave, eventuales: 0, legajos: new Set(), horas: 0 };
+    actual.eventuales += 1;
+
+    const browix = parseJson(eventual.horasBrowix);
+    for (const persona of Array.isArray(browix?.personas) ? browix.personas : []) {
+      if (persona?.legajo) actual.legajos.add(String(persona.legajo));
+    }
+    actual.horas += horasDelEventual(eventual) || 0;
+    porMes.set(clave, actual);
+  }
+
+  if (porMes.size === 0) return { meses: [], stats: resumenEstadistico([]) };
+
+  const claves = Array.from(porMes.keys()).sort();
+  const [anioDesde, mesDesde] = claves[0].split("-").map(Number);
+  const [anioHasta, mesHasta] = claves[claves.length - 1].split("-").map(Number);
+  const meses = [];
+
+  for (let anio = anioDesde, mes = mesDesde; anio < anioHasta || (anio === anioHasta && mes <= mesHasta); ) {
+    const clave = `${anio}-${String(mes).padStart(2, "0")}`;
+    const dato = porMes.get(clave);
+    meses.push({
+      clave,
+      etiqueta: `${MESES_CORTOS[mes - 1]} ${String(anio).slice(2)}`,
+      eventuales: dato?.eventuales || 0,
+      personas: dato?.legajos.size || 0,
+      horas: redondear(dato?.horas || 0, 1),
+    });
+    mes += 1;
+    if (mes > 12) { mes = 1; anio += 1; }
+  }
+
+  const conActividad = meses.filter((m) => m.eventuales > 0);
+  const pico = conActividad.reduce((mejor, m) => (!mejor || m.horas > mejor.horas ? m : mejor), null);
+
+  return {
+    meses,
+    pico: pico ? { etiqueta: pico.etiqueta, horas: pico.horas } : null,
+    stats: resumenEstadistico(meses.map((m) => m.eventuales)),
   };
 }
 
@@ -483,32 +552,31 @@ export async function getKpisEspaciosVerdes() {
     },
     generales: construirGenerales(finalizados),
     rendimientos: {
-      desmalezado: construirRendimiento({
+      desmalezado: construirProduccion({
         eventuales: finalizados,
         clave: "desmalezado",
-        titulo: "Rendimiento de desmalezado",
-        unidadRatio: "m²/hora-hombre",
-        unidadProduccion: "m²",
+        titulo: "Desmalezado por eventual",
+        unidad: "m²",
         obtenerProduccion: (e) => produccionCanonica(e, "DESMALEZADO"),
       }),
-      retiroPoda: construirRendimiento({
+      retiroPoda: construirProduccion({
         eventuales: finalizados,
         clave: "retiroPoda",
-        titulo: "Rendimiento de retiro de poda",
-        unidadRatio: "m³/hora-hombre",
-        unidadProduccion: "m³",
+        titulo: "Retiro de poda por eventual",
+        unidad: "m³",
         obtenerProduccion: (e) => produccionCanonica(e, "RETIRO_PODA"),
       }),
-      combustible: construirRendimiento({
+      combustible: construirProduccion({
         eventuales: finalizados,
         clave: "combustible",
-        titulo: "Consumo de combustible",
-        unidadRatio: "litros/hora-hombre",
-        unidadProduccion: "litros",
+        titulo: "Combustible por eventual",
+        unidad: "litros",
         obtenerProduccion: litrosCombustible,
       }),
     },
     dotacion: construirDotacion(finalizados),
+    cuadrillas: construirCuadrillas(finalizados),
+    estacionalidad: construirEstacionalidad(finalizados),
     parqueEquipos: construirParqueEquipos(finalizados),
   };
 }

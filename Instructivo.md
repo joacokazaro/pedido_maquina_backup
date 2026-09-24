@@ -933,25 +933,38 @@ La opción **Eliminar eventual** realiza una baja lógica: el registro queda ina
 
 Desde el panel de eventuales, la card **KPI's Espacios Verdes** abre un tablero de indicadores en formato carrusel. Se pasa de un indicador al otro con las flechas de los costados, con las flechas ← → del teclado, deslizando en el celular o tocando el nombre del indicador. Está disponible para Administrador, Coordinador y Consultor, y es de solo lectura.
 
-Los seis indicadores son:
+Los ocho indicadores son:
 
 1. **Generales**: horas-hombre por categoría, volumen producido separado por unidad, calidad de carga y cierres incompletos.
-2. **Desmalezado**: metros cuadrados por hora-hombre.
-3. **Retiro de poda**: metros cúbicos por hora-hombre.
-4. **Combustible**: litros por hora-hombre. Acá más es peor.
+2. **Desmalezado**: metros cuadrados desmalezados por eventual.
+3. **Retiro de poda**: metros cúbicos retirados por eventual.
+4. **Combustible**: litros consumidos por eventual.
 5. **Dotación**: personas por día y duración de cada trabajo.
-6. **Parque de equipos**: qué maquinaria se usa más y en qué cantidades promedio.
+6. **Cuadrillas**: personas que participaron en cada eventual, y cuánta gente se puso según lo desmalezado o podado.
+7. **Estacionalidad**: eventuales, personas y horas en cada mes.
+8. **Parque de equipos**: qué maquinaria se usa más y en qué cantidades promedio.
 
 Cada indicador trae un bloque **Cómo se calcula** con la cuenta exacta y las salvedades que hay que tener en cuenta para leer el número.
 
-Los tres indicadores de rendimiento (desmalezado, retiro de poda y combustible) muestran además una **campana** con el promedio, el desvío estándar y la banda de ±1 desvío, que es el rango donde debería caer alrededor del 68% de los trabajos. Cada punto sobre la curva es un eventual real: los que quedan fuera de la banda son los que conviene ir a mirar. Lo interesante no es el promedio sino la dispersión: si el mejor trabajo rinde varias veces lo que el peor, ahí hay algo que explicar.
+Desmalezado, retiro de poda y combustible se calculan como el **total producido dividido la cantidad de eventuales que registraron ese trabajo**. Los eventuales que no hicieron ese trabajo no entran en el promedio. No se divide por horas, porque el sistema no registra cuántas horas se dedicaron a cada trabajo.
 
 Dos cosas a tener en cuenta al leerlos:
 
 - Solo se miden **eventuales finalizados**, porque los datos de cierre recién se completan al cerrarlos.
-- Las horas son las **horas totales del eventual**. Si un eventual registró más de un tipo de trabajo, su rendimiento queda subestimado y aparece marcado como **mixto**.
+- Los trabajos cargados en una unidad distinta de la que corresponde (por ejemplo, un desmalezado cargado en horas) no se suman: se cuentan en la calidad de carga de los Generales.
 
 El tablero **no muestra costos**. Para poder calcularlos faltan dos datos que hoy el sistema no tiene: el valor hora de cada categoría de personal y el monto facturado del trabajo.
+
+#### Comparador
+
+Desde el panel de eventuales, la card **Comparador** trabaja sobre los eventuales de Espacios Verdes ya finalizados. Está disponible para Administrador, Coordinador y Consultor, y es de solo lectura. Tiene dos pestañas:
+
+- **Versus**: se eligen dos eventuales y se ven lado a lado sus características (fechas, supervisor, personas, horas por categoría, trabajos, máquinas, vehículos e insumos), con la diferencia de B respecto de A en cantidad y en porcentaje. Las filas donde difieren aparecen resaltadas y se pueden dejar solo esas. Debajo hay gráficos con ambos eventuales superpuestos.
+- **Buscar similares**: se describe el trabajo a realizar con los parámetros que se conozcan, todos opcionales: trabajos con su cantidad, duración en días, cantidad de personas, máquinas y vehículos, y mes de inicio. Se muestran los eventuales cuya similitud supera el mínimo elegido (60% por defecto), ordenados de mayor a menor, con el detalle de cuánto se parece en cada parámetro.
+
+La similitud de cada parámetro es la cantidad menor dividida la mayor (4.000 contra 5.000 m² da 80%); en el mes cuenta la cercanía en el año, y diciembre queda a un mes de enero. El porcentaje final es el promedio de los parámetros ingresados, todos con el mismo peso. Si a un eventual le falta un dato, se compara con lo que tenga y se indica "evaluado en 3 de 4".
+
+Debajo de la lista aparece una **referencia** con la mediana de personas, días, horas-hombre y combustible de los eventuales parecidos, más los equipos que más usaron. Sirve para dimensionar el nuevo trabajo.
 
 ## 9. Funcionalidades del rol Coordinador
 

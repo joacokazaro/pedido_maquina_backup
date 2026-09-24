@@ -49,6 +49,12 @@ export default function AdminEventualesPanel() {
       to: "/admin/eventuales/kpis",
       icon: "📈",
     },
+    {
+      title: "Comparador",
+      description: "Compará dos eventuales finalizados lado a lado, o buscá los más parecidos a un trabajo por hacer.",
+      to: "/admin/eventuales/comparador",
+      icon: "⚖️",
+    },
   ];
 
   return (

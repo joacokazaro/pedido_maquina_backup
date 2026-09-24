@@ -198,11 +198,17 @@ Al sumar producción hay que **filtrar por unidad antes de agregar**: un `SUM(ca
 
 ### KPIs de Espacios Verdes
 - Pantalla `/admin/eventuales/kpis`, en carrusel, accesible desde una card del panel de eventuales. Roles `admin`, `coordinador` y `consultor` (`kpiEspaciosVerdes.service.js`)
-- Seis indicadores: **generales** (horas-hombre por categoría, volumen de operación por unidad, calidad de carga y cierres incompletos), **rendimiento de desmalezado**, **rendimiento de retiro de poda**, **consumo de combustible**, **dotación** y **parque de equipos**
-- Los tres rendimientos son tasas (producción ÷ horas-hombre) y se muestran con su media, su desvío estándar muestral y una campana con la banda ±1σ, con cada eventual apoyado sobre la curva
-- Se calcula **solo sobre eventuales finalizados**: los campos de cierre no existen antes. El denominador son las horas totales del eventual, así que los que registraron más de un tipo de trabajo quedan marcados como "mixto"
-- `UNIDAD_CANONICA_POR_TRABAJO` (en el service) pasa a código la convención de unidades por tipo de trabajo: filtra los trabajos cargados en otra unidad fuera de los rendimientos y alimenta el indicador de calidad de carga
+- Ocho indicadores: **generales** (horas-hombre por categoría, volumen de operación por unidad, calidad de carga y cierres incompletos), **desmalezado**, **retiro de poda** y **combustible** por eventual, **dotación**, **cuadrillas** (personas distintas por eventual y su relación con lo desmalezado y lo podado), **estacionalidad** (eventuales, personas y horas por mes de inicio) y **parque de equipos**
+- Desmalezado, retiro de poda y combustible se miden como producción total ÷ cantidad de eventuales que registraron ese trabajo (los que no lo hicieron no entran en el denominador). Se muestran con promedio, mediana, total y rango, más el detalle por eventual. No se divide por horas porque no se registra cuántas se dedicaron a cada trabajo
+- Se calcula **solo sobre eventuales finalizados**: los campos de cierre no existen antes. Las horas de Browix se usan en generales y dotación
+- `UNIDAD_CANONICA_POR_TRABAJO` (en el service) pasa a código la convención de unidades por tipo de trabajo: filtra los trabajos cargados en otra unidad fuera de esos indicadores y alimenta el indicador de calidad de carga
 - **No mide costos**: sin tarifa por categoría ni monto facturado no hay forma de calcularlos
+
+### Comparador de eventuales
+- Pantalla `/admin/eventuales/comparador`, desde una card del panel de eventuales. Roles `admin`, `coordinador` y `consultor`, solo lectura (`comparadorEventuales.service.js`)
+- Opera solo sobre eventuales de Espacios Verdes **finalizados**. Endpoints bajo `/api/admin/eventuales/comparador/`: `GET candidatos` (lista y catálogo de tipos), `GET versus?a=&b=` y `POST similares`
+- **Versus**: tabla por secciones con la diferencia de B respecto de A (absoluta y %) más gráficos superpuestos. Las cantidades se comparan en unidad canónica, igual que en los KPI
+- **Similares**: parámetros opcionales (trabajos con cantidad, días, personas, máquinas, vehículos, mes). Similitud por parámetro = menor ÷ mayor (el mes usa cercanía circular), final = promedio de los ingresados, todos con el mismo peso. Un grupo que el eventual no tiene cargado no se evalúa y se informa como "evaluado en X de Y". Se devuelven los que superan el umbral (60% por defecto) y una estimación con la mediana de personas, días, horas y combustible de los parecidos
 
 ### Seguros
 - Alta y gestión de seguros de vehículos
