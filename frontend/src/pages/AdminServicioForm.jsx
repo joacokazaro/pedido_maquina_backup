@@ -17,6 +17,19 @@ const ESTADOS = [
   { value: "baja", label: "Baja" },
 ];
 
+const ESTADO_PEDIDO_PRESTAMO_LABEL = {
+  ENTREGADO: "Entregado",
+  PENDIENTE_CONFIRMACION: "Devolución pendiente de confirmar",
+  PENDIENTE_CONFIRMACION_FALTANTES: "Devolución con faltantes pendiente de confirmar",
+};
+
+function origenPrestamo(pedido) {
+  if (pedido?.destino === "SUPERVISOR") {
+    return `Supervisor ${pedido.supervisorDestinoUsername || "-"}`;
+  }
+  return "Depósito";
+}
+
 export default function AdminServicioForm() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -28,6 +41,7 @@ export default function AdminServicioForm() {
   const [idBrowix, setIdBrowix] = useState("");
   const [tipoServicio, setTipoServicio] = useState("");
   const [maquinas, setMaquinas] = useState([]);
+  const [maquinasPrestadas, setMaquinasPrestadas] = useState([]);
   const [loading, setLoading] = useState(esEdicion);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -45,6 +59,7 @@ export default function AdminServicioForm() {
         setIdBrowix(data.idBrowix || "");
         setTipoServicio(data.tipo || "");
         setMaquinas(data.maquinas || []);
+        setMaquinasPrestadas(data.maquinasPrestadas || []);
       })
       .catch(() => setError("Error cargando servicio"))
       .finally(() => setLoading(false));
@@ -195,6 +210,49 @@ export default function AdminServicioForm() {
 
       {esEdicion && (
         <>
+          <div className="bg-white rounded-xl shadow p-4 mt-4 space-y-3">
+            <div className="text-sm text-gray-600">
+              Máquinas en préstamo en este momento:{" "}
+              <span className="font-semibold text-gray-900">{maquinasPrestadas.length}</span>
+            </div>
+
+            {maquinasPrestadas.length === 0 ? (
+              <p className="text-xs text-gray-500">
+                El servicio no tiene máquinas prestadas por pedidos entregados.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {maquinasPrestadas.map((maquina) => (
+                  <div
+                    key={`${maquina.pedido.id}-${maquina.id}`}
+                    className="border rounded-xl p-3"
+                  >
+                    <div className="flex justify-between gap-3 items-start">
+                      <div>
+                        <div className="font-semibold uppercase">{maquina.tipo}</div>
+                        <div className="text-xs text-gray-500">Código: {maquina.id}</div>
+                      </div>
+
+                      <EstadoMaquinaBadge estado={maquina.estado} className="h-fit" />
+                    </div>
+
+                    <div className="mt-2 text-xs text-gray-600 space-y-1">
+                      <p>Modelo: <b>{maquina.modelo || "-"}</b></p>
+                      <p>Prestada por: <b>{origenPrestamo(maquina.pedido)}</b></p>
+                      <p>Servicio de origen: <b>{maquina.servicioOrigen?.nombre || "-"}</b></p>
+                      <p>
+                        Pedido: <b>{maquina.pedido.id}</b>
+                        {" · "}
+                        {ESTADO_PEDIDO_PRESTAMO_LABEL[maquina.pedido.estado] || maquina.pedido.estado}
+                      </p>
+                      <p>Solicitante: <b>{maquina.pedido.solicitante || "-"}</b></p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-xl shadow p-4 space-y-3 mt-4 mb-4">
             <div className="text-sm text-gray-600">
               Máquinas asociadas: <span className="font-semibold text-gray-900">{maquinas.length}</span>

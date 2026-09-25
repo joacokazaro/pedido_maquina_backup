@@ -2,6 +2,67 @@ import prisma from "../db/prisma.js";
 import ExcelJS from "exceljs";
 import { getAsignacionActivaPorMaquina } from "../services/asignacionesPedido.service.js";
 import { normalizeTipoServicio } from "../services/tipoServicio.service.js";
+import { getDevueltasConfirmadasFromHistorial } from "../services/devolucionHistorial.service.js";
+
+// Estados en los que las máquinas de un pedido ya fueron entregadas y todavía
+// no volvieron confirmadas: están físicamente en poder del servicio.
+const ESTADOS_PEDIDO_EN_PODER = [
+  "ENTREGADO",
+  "PENDIENTE_CONFIRMACION",
+  "PENDIENTE_CONFIRMACION_FALTANTES",
+];
+
+// Máquinas que el servicio tiene hoy en préstamo vía pedidos entregados (del
+// depósito o de otro supervisor), excluyendo las que ya fueron confirmadas
+// devueltas en una devolución parcial.
+async function getMaquinasPrestadasAServicio(servicioId) {
+  const pedidos = await prisma.pedido.findMany({
+    where: {
+      servicioId,
+      estado: { in: ESTADOS_PEDIDO_EN_PODER },
+    },
+    include: {
+      supervisor: { select: { username: true, nombre: true } },
+      asignadas: {
+        include: {
+          maquina: {
+            include: { servicio: { select: { id: true, nombre: true } } },
+          },
+        },
+      },
+      historial: {
+        where: {
+          accion: { in: ["DEVOLUCION_CONFIRMADA", "DEVOLUCION_CONFIRMADA_DIRECTA"] },
+        },
+        orderBy: { fecha: "asc" },
+      },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+
+  return pedidos.flatMap((pedido) => {
+    const devueltas = getDevueltasConfirmadasFromHistorial(pedido.historial || []);
+
+    return pedido.asignadas
+      .filter((asignacion) => !devueltas.has(String(asignacion.maquinaId)))
+      .map(({ maquina }) => ({
+        id: maquina.id,
+        tipo: maquina.tipo,
+        modelo: maquina.modelo,
+        serie: maquina.serie,
+        estado: maquina.estado,
+        servicioOrigen: maquina.servicio || null,
+        pedido: {
+          id: pedido.id,
+          estado: pedido.estado,
+          createdAt: pedido.createdAt,
+          destino: pedido.destino,
+          supervisorDestinoUsername: pedido.supervisorDestinoUsername || null,
+          solicitante: pedido.supervisor?.nombre || pedido.supervisor?.username || null,
+        },
+      }));
+  });
+}
 
 /* ========================================================
    HELPERS
@@ -125,7 +186,10 @@ export async function adminGetServicioById(req, res) {
       return res.status(404).json({ error: "Servicio no encontrado" });
     }
 
-    const asignacionPorMaquina = await getAsignacionActivaPorMaquina(servicio.maquinas);
+    const [asignacionPorMaquina, maquinasPrestadas] = await Promise.all([
+      getAsignacionActivaPorMaquina(servicio.maquinas),
+      getMaquinasPrestadasAServicio(servicio.id),
+    ]);
 
     res.json({
       ...servicio,
@@ -133,6 +197,7 @@ export async function adminGetServicioById(req, res) {
         ...maquina,
         asignacion: asignacionPorMaquina.get(maquina.id) || null,
       })),
+      maquinasPrestadas,
     });
   } catch (e) {
     console.error("adminGetServicioById:", e);
