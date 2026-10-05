@@ -6,13 +6,52 @@
 
 const BROWIX_BASE_URL = process.env.BROWIX_BASE_URL || "https://cloud01.browix.com";
 const BROWIX_WORKGROUP_UUID = process.env.BROWIX_WORKGROUP_UUID || "d54d7b99cbdc69591966e3acbbeba8bb";
-// Grupos/workgroups donde se cargan los fichajes de eventuales en Browix. Puede
-// haber más de uno (lista separada por comas); se consultan todos y se combinan
-// los fichajes para armar el total.
-const BROWIX_GRUPO_IDS = String(process.env.BROWIX_GRUPO_IDS || process.env.BROWIX_GRUPO_ID || "2141,2303,1444")
-  .split(",")
-  .map((id) => id.trim())
-  .filter(Boolean);
+// Catálogo de grupos/workgroups de Browix donde pueden estar los fichajes de un
+// eventual. Browix no dice en qué grupo cae cada ubicación y consultarlos todos
+// es inviable (10s de espera por consulta), así que solo se consultan los grupos
+// por defecto más el/los grupos del supervisor del eventual (ver
+// resolverGruposAConsultar). "supervisor" es el nombre legible de la persona
+// dueña del grupo y "username" su usuario en el sistema; ambos son null si el
+// grupo no es de una persona o esa persona no tiene usuario.
+export const BROWIX_GRUPOS = [
+  { id: "1447", nombre: "ARIEL_GONZALEZ", supervisor: "ARIEL GONZALEZ", username: "agonzalez" },
+  { id: "2142", nombre: "CECILIA_VILLARREAL", supervisor: "CECILIA VILLARREAL", username: "cvillarreal" },
+  { id: "1513", nombre: "CRISTINA_MOYA", supervisor: "CRISTINA MOYA", username: "cmoya" },
+  { id: "1451", nombre: "FELIPE_COUREL", supervisor: "FELIPE COUREL", username: "fcourel" },
+  { id: "1985", nombre: "FERNANDEZ_DANIELA", supervisor: "DANIELA FERNANDEZ", username: "dfernandez" },
+  { id: "2141", nombre: "FINALES_DE_OBRA", supervisor: null, username: null },
+  { id: "2243", nombre: "GERMAN_GONZALEZ", supervisor: "GERMAN GONZALEZ", username: null },
+  { id: "1448", nombre: "GUSTAVO_BACUR", supervisor: "GUSTAVO BACUR", username: "gbacur" },
+  { id: "2195", nombre: "IVAN_SCHMID", supervisor: "IVAN SCHMID", username: null },
+  { id: "1444", nombre: "JUAN_BRARDA", supervisor: "JUAN BRARDA", username: "jbrarda" },
+  { id: "2282", nombre: "MARIN_GERMAN", supervisor: "GERMAN MARIN", username: "gmarin" },
+  { id: "1449", nombre: "NATALIA_LARA", supervisor: "NATALIA LARA", username: "nlara" },
+  { id: "1445", nombre: "PABLO_MORETA", supervisor: "PABLO MORETA", username: "pmoreta" },
+  { id: "1973", nombre: "RICARDO_RICARDE", supervisor: "RICARDO RICARDE", username: "rricarde" },
+  { id: "1450", nombre: "RICARDO_RICARDE_UNION", supervisor: "RICARDO RICARDE (UNION)", username: "rricarde" },
+  { id: "2248", nombre: "RUFINO", supervisor: "RUFINO", username: null },
+  { id: "2084", nombre: "NORBERTO_URBANI", supervisor: "NORBERTO URBANI", username: "nurbani" },
+  { id: "2315", nombre: "YOHANA VELEZ", supervisor: "YOHANA VELEZ", username: "yvelez" },
+  // Uno de los 3 grupos por defecto; no figuraba en la lista con nombre.
+  { id: "2303", nombre: "GRUPO_2303", supervisor: null, username: null },
+];
+
+// Grupos donde se cargan los fichajes de casi todos los eventuales: se consultan
+// siempre.
+export const BROWIX_GRUPOS_POR_DEFECTO = ["2141", "2303", "1444"];
+
+// Grupos a consultar para un eventual: los por defecto más el/los del supervisor
+// asignado (si tiene). Se suman y no reemplazan porque los fichajes de un
+// supervisor no siempre están en su grupo: los de Yohana Velez o Cristina Moya,
+// por ejemplo, están en FINALES_DE_OBRA.
+export function resolverGruposAConsultar(supervisorUsername) {
+  const username = String(supervisorUsername || "").trim().toLowerCase();
+  const propios = username
+    ? BROWIX_GRUPOS.filter((grupo) => grupo.username === username).map((grupo) => grupo.id)
+    : [];
+  return [...new Set([...BROWIX_GRUPOS_POR_DEFECTO, ...propios])];
+}
+
 const BROWIX_AUTH_TOKEN = process.env.BROWIX_AUTH_TOKEN || "";
 // Customfield fijo en Browix donde se carga la categoría del empleado (ver getUsers).
 // Se eliminó y volvió a crear el campo en Browix el 2026-09-22, por lo que cambió de id (era 137).
@@ -94,7 +133,25 @@ function partirRangoEnVentanas(desde, hasta) {
   }
 }
 
+// Cola que separa al menos BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS entre el inicio
+// de dos consultas de planificación, aunque vengan de requests distintos (la
+// búsqueda en todos los grupos las dispara una por request) o en simultáneo.
+let colaConsultasGrupos = Promise.resolve();
+let ultimaConsultaGrupoEn = 0;
+
+function esperarTurnoConsultaGrupo() {
+  const turno = colaConsultasGrupos.then(async () => {
+    const espera = ultimaConsultaGrupoEn + BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS - Date.now();
+    if (espera > 0) await sleep(espera);
+    ultimaConsultaGrupoEn = Date.now();
+  });
+  colaConsultasGrupos = turno.catch(() => {});
+  return turno;
+}
+
 async function getFichajesPorGrupo(desde, hasta, grupoId) {
+  await esperarTurnoConsultaGrupo();
+
   const url = `${BROWIX_BASE_URL}/v1/externalpermissions/getWorkgroupschedulePlan/uuid:${BROWIX_WORKGROUP_UUID}/${formatFecha(desde)}/${formatFecha(hasta)}/${grupoId}`;
 
   const headers = { Accept: "application/json" };
@@ -122,38 +179,37 @@ async function getFichajesPorGrupo(desde, hasta, grupoId) {
     throw buildBrowixError(`Respuesta inesperada de Browix al consultar el grupo ${grupoId}`);
   }
 
-  return body.response.data;
+  // Se marca de qué grupo viene cada fichaje: Browix no lo informa y después hace
+  // falta para saber en qué grupo cayó cada eventual.
+  return body.response.data.map((fichaje) => ({ ...fichaje, grupoBrowixId: String(grupoId) }));
 }
 
-// Consulta los fichajes de todos los grupos configurados (BROWIX_GRUPO_IDS),
-// partiendo el rango en ventanas de 45 días como máximo, y combina los
-// resultados. Todas las consultas van secuencialmente (con espaciado de 10s+)
-// en vez de en paralelo por el límite de Browix, que es por uuid y no por
-// grupo; si una choca igual contra el límite (por ejemplo por otra consulta
-// concurrente de otro proceso sobre el mismo uuid) reintenta una vez más. Si
-// una falla de forma definitiva se aborta toda la importación en vez de
-// reportar un total parcial que subestimaría las horas en silencio.
-export async function getFichajesPorRango(desde, hasta) {
-  if (BROWIX_GRUPO_IDS.length === 0) {
-    throw buildBrowixError("No hay grupos de Browix configurados (BROWIX_GRUPO_IDS)");
+// Consulta los fichajes de los grupos indicados, partiendo el rango en
+// ventanas de 45 días como máximo, y combina los resultados. Todas las
+// consultas van secuencialmente (con espaciado de 10s+, ver
+// esperarTurnoConsultaGrupo) en vez de en paralelo por el límite de Browix,
+// que es por uuid y no por grupo; si una choca igual
+// contra el límite (por ejemplo por otra consulta concurrente de otro proceso
+// sobre el mismo uuid) reintenta una vez más. Si una falla de forma definitiva
+// se aborta toda la importación en vez de reportar un total parcial que
+// subestimaría las horas en silencio.
+export async function getFichajesPorRango(desde, hasta, grupoIds) {
+  if (!Array.isArray(grupoIds) || grupoIds.length === 0) {
+    throw buildBrowixError("No hay grupos de Browix para consultar");
   }
 
   const ventanas = partirRangoEnVentanas(desde, hasta);
   const fichajes = [];
-  let esPrimeraConsulta = true;
 
-  for (const grupoId of BROWIX_GRUPO_IDS) {
+  for (const grupoId of grupoIds) {
     for (const ventana of ventanas) {
-      if (!esPrimeraConsulta) await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS);
-      esPrimeraConsulta = false;
-
       try {
         const fichajesGrupo = await getFichajesPorGrupo(ventana.desde, ventana.hasta, grupoId);
         fichajes.push(...fichajesGrupo);
       } catch (error) {
         if (!error?.rateLimited) throw error;
 
-        await sleep(BROWIX_MIN_MS_ENTRE_CONSULTAS_GRUPOS);
+        // El espaciado lo impone esperarTurnoConsultaGrupo dentro de getFichajesPorGrupo.
         const fichajesGrupo = await getFichajesPorGrupo(ventana.desde, ventana.hasta, grupoId);
         fichajes.push(...fichajesGrupo);
       }
@@ -181,6 +237,17 @@ function filtrarFichajesDeJornada(fichajes, ubicacion) {
   return fichajes.filter(
     (f) => String(f?.ubicacion || "").trim() === nombreEsperado && tieneJornadaAsignada(f)
   );
+}
+
+// Cantidad de fichajes con jornada del eventual por grupo de Browix (según el
+// grupo con que se marcó cada fichaje en getFichajesPorGrupo).
+export function contarFichajesPorGrupo(fichajes, ubicacion) {
+  const porGrupo = new Map();
+  for (const fichaje of filtrarFichajesDeJornada(fichajes, ubicacion)) {
+    const grupoId = String(fichaje.grupoBrowixId || "");
+    if (grupoId) porGrupo.set(grupoId, (porGrupo.get(grupoId) || 0) + 1);
+  }
+  return Array.from(porGrupo, ([grupoId, cantidadFichajes]) => ({ grupoId, cantidadFichajes }));
 }
 
 // Suma minutos_teoricos_de_jornada (planificado, el que se usa para el
@@ -238,7 +305,7 @@ export function agruparMinutosPorLegajo(fichajes, ubicacion) {
 }
 
 // Consulta en Browix los datos de un empleado por legajo (external_code) para
-// extraer su categoría (customfield 137). Nunca asume forma de la respuesta:
+// extraer su categoría (customfield de categoría). Nunca asume forma de la respuesta:
 // cualquier desvío (legajo inexistente, sin categoría cargada, HTTP no ok,
 // JSON inválido) se reporta explícitamente en vez de fallar en silencio.
 export async function getCategoriaPorLegajo(legajo) {

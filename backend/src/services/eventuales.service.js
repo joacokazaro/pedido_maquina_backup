@@ -7,9 +7,12 @@ import {
   ROLES_PEDIDO_TITULAR,
 } from "./roles.service.js";
 import {
+  BROWIX_GRUPOS,
+  resolverGruposAConsultar,
   getFichajesPorRango,
   sumarHorasTeoricasPorUbicacion,
   agruparMinutosPorLegajo,
+  contarFichajesPorGrupo,
   getCategoriasPorLegajos,
 } from "./browix.service.js";
 import { resolverServiciosPorNombre, getPedidosInsumos } from "./insumos.service.js";
@@ -1067,7 +1070,7 @@ function redondearHoras(minutos) {
 }
 
 // Agrupa los fichajes por legajo y consulta en Browix la categoría de cada
-// persona (customfield 137) para poder desglosar las horas totales por
+// persona (customfield de categoría) para poder desglosar las horas totales por
 // categoría. Un fallo al categorizar una persona puntual (legajo no
 // encontrado, sin categoría cargada, error de red, etc.) no aborta la
 // importación completa: esa persona queda igual en el desglose por persona
@@ -1114,7 +1117,7 @@ async function categorizarHorasBrowix(fichajes, ubicacion) {
       [usuario.nombre, usuario.apellido].filter(Boolean).join(" ").trim() || nombreFichaje;
 
     if (!usuario.categoria) {
-      const motivo = "El usuario no tiene categoría cargada en Browix (campo personalizado 137)";
+      const motivo = "El usuario no tiene categoría cargada en Browix (campo personalizado de categoría)";
       erroresCategorizacion.push({ legajo: grupo.legajo, nombre: nombreCompleto, motivo });
       return { ...base, nombre: nombreCompleto, categoria: null, error: motivo };
     }
@@ -1139,7 +1142,10 @@ async function categorizarHorasBrowix(fichajes, ubicacion) {
 }
 
 export async function importarHorasBrowixEventual({ eventualId, actorId, actorNombre }) {
-  const eventual = await prisma.eventual.findUnique({ where: { id: Number(eventualId) } });
+  const eventual = await prisma.eventual.findUnique({
+    where: { id: Number(eventualId) },
+    include: { supervisor: { select: { username: true } } },
+  });
   if (!eventual) {
     throw buildError("Eventual no encontrado", 404);
   }
@@ -1155,7 +1161,11 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
     );
   }
 
-  const fichajes = await getFichajesPorRango(eventual.fechaInicio, eventual.fechaFin);
+  // Los grupos salen del supervisor asignado al eventual (más los por defecto);
+  // no se eligen a mano.
+  const grupoIds = resolverGruposAConsultar(eventual.supervisor?.username);
+
+  const fichajes = await getFichajesPorRango(eventual.fechaInicio, eventual.fechaFin, grupoIds);
   const { totalMinutos, totalMinutosReal, cantidadFichajes } = sumarHorasTeoricasPorUbicacion(
     fichajes,
     eventual.nombre
@@ -1177,6 +1187,17 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
     );
   }
 
+  // Dónde cayeron los fichajes: queda en el resultado para poder ver en qué grupo
+  // de Browix (número y supervisor) está cada eventual.
+  const gruposConFichajes = contarFichajesPorGrupo(fichajes, eventual.nombre).map((grupo) => {
+    const catalogo = BROWIX_GRUPOS.find((item) => item.id === grupo.grupoId);
+    return {
+      ...grupo,
+      grupoNombre: catalogo?.nombre || null,
+      grupoSupervisor: catalogo?.supervisor || null,
+    };
+  });
+
   const resultado = {
     totalMinutos,
     totalHoras: Math.round((totalMinutos / 60) * 100) / 100,
@@ -1188,6 +1209,8 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
     hasta: eventual.fechaFin.toISOString().slice(0, 10),
     importadoEn: new Date().toISOString(),
     importadoPor: actorNombre || null,
+    gruposConsultados: grupoIds,
+    gruposConFichajes,
     personas,
     categorias,
     fichajesSinLegajo,

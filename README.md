@@ -464,7 +464,7 @@ No hay suite de tests en el proyecto.
 
 - `DATABASE_URL` — SQLite. En producción: `/var/lib/pedido-maquina/db/pedido.db`
 - `ALLOWED_ORIGINS` — orígenes habilitados para CORS
-- `BROWIX_BASE_URL`, `BROWIX_WORKGROUP_UUID`, `BROWIX_GRUPO_IDS`, `BROWIX_AUTH_TOKEN`
+- `BROWIX_BASE_URL`, `BROWIX_WORKGROUP_UUID`, `BROWIX_AUTH_TOKEN` (los grupos de Browix se resuelven por el supervisor del eventual desde el catálogo `BROWIX_GRUPOS`, no por variable de entorno)
 - `INSUMOS_API_BASE_URL`, `INSUMOS_API_TOKENS` (un token por empresa, separados por coma)
 - `AWS_REGION`, `AWS_S3_BUCKET`, `AWS_S3_REFERENCIAS_PREFIX`
 - `EXTERNAL_API_TOKENS` — tokens válidos para `x-api-key` en `/api/external/*` (separados por coma)

@@ -119,6 +119,7 @@ function extraerCamposPersistidos(eventual) {
     estado: eventual.estado || "activo",
     fechaInicio: toDateInputValue(eventual.fechaInicio),
     fechaFin: toDateInputValue(eventual.fechaFin),
+    supervisorId: eventual.supervisor?.id ? String(eventual.supervisor.id) : "",
   };
 }
 
@@ -996,7 +997,8 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     (form.estado !== persistido.estado ||
       form.nombre !== persistido.nombre ||
       form.fechaInicio !== persistido.fechaInicio ||
-      form.fechaFin !== persistido.fechaFin);
+      form.fechaFin !== persistido.fechaFin ||
+      form.supervisorId !== persistido.supervisorId);
 
   // Importar horas de Browix, importar insumos y guardar horas de supervisor trabajan sobre
   // el eventual guardado. Si el formulario tiene cambios en estado, nombre o fechas, primero
@@ -1691,6 +1693,14 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                     {horasBrowix.cantidadFichajes === 1 ? "" : "s"}
                   </p>
                   <p>Rango: {horasBrowix.desde} a {horasBrowix.hasta}</p>
+                  {Array.isArray(horasBrowix.gruposConFichajes) && horasBrowix.gruposConFichajes.length > 0 ? (
+                    <p>
+                      Grupo de Browix:{" "}
+                      {horasBrowix.gruposConFichajes
+                        .map((g) => `${g.grupoId} · ${g.grupoSupervisor || g.grupoNombre || "sin supervisor"} (${g.cantidadFichajes})`)
+                        .join(", ")}
+                    </p>
+                  ) : null}
                   <p>
                     Importado el {formatDateTime(horasBrowix.importadoEn)}
                     {horasBrowix.importadoPor ? ` por ${horasBrowix.importadoPor}` : ""}
@@ -2480,7 +2490,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
         title="Guardar cambios del eventual"
         message={
           accionPendienteGuardado
-            ? `Hay cambios sin guardar en el estado, el nombre o las fechas del eventual. Para ${accionesConGuardado[accionPendienteGuardado].descripcion} primero se guarda el formulario completo (queda registrado en el historial) y después se continúa. Te quedás en esta pantalla.`
+            ? `Hay cambios sin guardar en el estado, el nombre, las fechas o el supervisor del eventual. Para ${accionesConGuardado[accionPendienteGuardado].descripcion} primero se guarda el formulario completo (queda registrado en el historial) y después se continúa. Te quedás en esta pantalla.`
             : ""
         }
         onCancel={() => setAccionPendienteGuardado(null)}
