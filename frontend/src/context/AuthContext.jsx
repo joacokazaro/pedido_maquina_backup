@@ -5,6 +5,7 @@ import { io as ioClient } from "socket.io-client";
 import { API_BASE } from "../services/apiBase";
 import ConfirmModal from "../components/ConfirmModal";
 import { ROLES_SUPERVISION } from "../constants/roles";
+import { EVENTO_SESION_VENCIDA } from "../services/sesion";
 
 function normalizeAuthUser(raw) {
   if (!raw) return null;
@@ -48,7 +49,8 @@ function hasAnyRole(user, allowedRoles = []) {
 }
 
 const AuthContext = createContext();
-const AUTH_SESSION_VERSION = "3";
+// v4: la sesión ahora trae `sessionToken` (firmado por el backend); las v3 no sirven.
+const AUTH_SESSION_VERSION = "4";
 const AUTH_SESSION_VERSION_KEY = "authSessionVersion";
 
 export function AuthProvider({ children }) {
@@ -74,7 +76,8 @@ export function AuthProvider({ children }) {
         socketUrl = undefined;
       }
 
-      const s = socketUrl ? ioClient(socketUrl) : ioClient();
+      const opciones = { auth: { token: u?.sessionToken || null } };
+      const s = socketUrl ? ioClient(socketUrl, opciones) : ioClient(opciones);
       socketRef.current = s;
       setSocket(s);
 
@@ -162,15 +165,23 @@ export function AuthProvider({ children }) {
 
   async function login(username, password) {
     const data = await loginRequest(username, password);
-    applySessionAndRedirect(data.user);
+    applySessionAndRedirect({ ...data.user, sessionToken: data.token });
   }
 
   async function loginCon360(token360) {
     const data = await loginRequest360(token360);
-    applySessionAndRedirect(data.user);
+    applySessionAndRedirect({ ...data.user, sessionToken: data.token });
   }
 
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  // El backend avisa (401 SESSION_INVALID/SESSION_REQUIRED) que la sesión venció o no es válida.
+  useEffect(() => {
+    const alVencer = () => doLogout();
+    window.addEventListener(EVENTO_SESION_VENCIDA, alVencer);
+    return () => window.removeEventListener(EVENTO_SESION_VENCIDA, alVencer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function doLogout() {
     setUser(null);

@@ -72,7 +72,7 @@ export async function updateSupervisorComponentes(req, res) {
   try {
     const eventual = await updateEventualComponentesBySupervisor({
       eventualId: req.params.id,
-      actorUsername: req.body?.usuario,
+      actorUsername: req.auth?.username || req.body?.usuario,
       maquinasUtilizadas: req.body?.maquinasUtilizadas,
       vehiculoIds: req.body?.vehiculoIds,
     });

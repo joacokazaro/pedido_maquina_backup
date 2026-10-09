@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
+import { descargarArchivoApi } from "../services/sesion";
 
 const COLUMNAS = ["ID", "NOMBRE", "ID_BROWIX", "ACTIVO"];
 
@@ -13,7 +14,7 @@ export default function AdminServiciosImport() {
   const [selectedFile, setSelectedFile] = useState(null);
 
   function downloadTemplate() {
-    window.location.href = `${API_BASE}/admin/servicios/import/template`;
+    descargarArchivoApi(`${API_BASE}/admin/servicios/import/template`).catch((e) => setError(e.message));
   }
 
   function handleFileChange(event) {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import Alerta from "../components/Alerta";
 
@@ -29,8 +29,13 @@ const SPARKS = [
 
 const KAZARO_360_URL = "https://360.kazaro.com.ar";
 
+// Transición: mientras haya gente con usuario/contraseña local, el formulario sigue visible.
+// Cuando todos entren por Kazaró 360, VITE_PASSWORD_LOGIN=false lo oculta (y el backend lo
+// rechaza con PASSWORD_LOGIN_ENABLED=false).
+const PASSWORD_LOGIN = import.meta.env.VITE_PASSWORD_LOGIN !== "false";
+
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -51,6 +56,15 @@ export default function Login() {
     const redirectUri = `${window.location.origin}/sso-360-callback`;
     window.location.href = `${KAZARO_360_URL}/login?redirect_uri=${encodeURIComponent(redirectUri)}`;
   }
+
+  // La tarjeta del dashboard de 360 abre la app con ?sso=1: si ya hay sesión en 360 vuelve
+  // sola con el token (sin pasar por ningún formulario); si no, 360 pide el login y vuelve.
+  // Si algo falla, el callback devuelve a "/" (sin ?sso=1) y no se genera un bucle.
+  useEffect(() => {
+    if (user) return;
+    if (new URLSearchParams(window.location.search).get("sso") === "1") handleLoginCon360();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050f28] px-4 py-6 text-[#0b1736]">
@@ -214,6 +228,8 @@ export default function Login() {
                   </Alerta>
                 )}
 
+                {PASSWORD_LOGIN && (
+                <>
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
                     <label
@@ -295,6 +311,8 @@ export default function Login() {
                   o
                   <span className="h-px flex-1 bg-[#d8e2ee]" />
                 </div>
+                </>
+                )}
 
                 <button
                   type="button"

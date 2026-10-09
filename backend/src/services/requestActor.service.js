@@ -1,11 +1,17 @@
 import prisma from "../db/prisma.js";
+import { legacyHeaderEnabled } from "../middlewares/authenticate.js";
 import { userHasAnyRole } from "./roles.service.js";
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+// Con sesión firmada (req.auth, puesta por el middleware `authenticate`) el actor es SIEMPRE
+// quien inició sesión. Los headers/body/query solo valen en modo transición (AUTH_LEGACY_HEADER).
 function readActorUsername(req) {
+  if (req.auth?.username) return req.auth.username;
+  if (!legacyHeaderEnabled()) return "";
+
   return (
     normalizeText(req.headers["x-auth-username"]) ||
     normalizeText(req.headers["x-username"]) ||

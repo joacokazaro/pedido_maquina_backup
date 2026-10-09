@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import { API_BASE } from "../services/apiBase";
+import { descargarArchivoApi } from "../services/sesion";
 
 const REQUIRED_COLUMNS = [
   "ID",
@@ -40,7 +41,7 @@ export default function AdminVehiculosImport() {
   const [selectedFile, setSelectedFile] = useState(null);
 
   function downloadTemplate() {
-    window.location.href = `${API_BASE}/admin/vehiculos/import/template`;
+    descargarArchivoApi(`${API_BASE}/admin/vehiculos/import/template`).catch((e) => setError(e.message));
   }
 
   function handleFileChange(event) {

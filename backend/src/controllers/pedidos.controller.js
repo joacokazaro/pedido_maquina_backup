@@ -216,9 +216,12 @@ export async function crearPedido(req, res) {
     if (!supervisor)
       return res.status(404).json({ error: "Supervisor no encontrado" });
 
-    const actor = actorUsername
+    // Con sesión firmada el actor es siempre quien inició sesión; el actorUsername del
+    // body solo se respeta en modo transición (AUTH_LEGACY_HEADER, sin token).
+    const actorReal = req.auth?.username || actorUsername;
+    const actor = actorReal
       ? await prisma.usuario.findUnique({
-          where: { username: actorUsername },
+          where: { username: actorReal },
           include: { roles: true },
         })
       : null;

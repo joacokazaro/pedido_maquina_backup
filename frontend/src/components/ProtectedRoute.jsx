@@ -2,11 +2,16 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   // ⛔️ Mientras se restaura sesión, NO redirigir
-  if (user === null) {
+  if (loading) {
     return null; // o loader si querés
+  }
+
+  // Sin sesión (deslogueado, sesión vencida o de la versión anterior): al login, no a una página en blanco.
+  if (user === null) {
+    return <Navigate to="/" replace />;
   }
 
   const userRolesUpper = Array.isArray(user?.roles)

@@ -1,3 +1,5 @@
+// Primero: que .env esté cargado antes de que cualquier módulo lea process.env al importarse.
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -28,6 +30,13 @@ import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import eventualesRoutes from "./routes/eventuales.routes.js";
 import externalRoutes from "./routes/external.routes.js";
 import { iniciarMonitorPrestamosProlongados } from "./services/notificaciones.service.js";
+import { authenticate, legacyHeaderEnabled } from "./middlewares/authenticate.js";
+import { assertSessionConfig, verifySessionToken } from "./services/sessionToken.service.js";
+import prisma from "./db/prisma.js";
+import { userHasRole } from "./services/roles.service.js";
+
+// En producción, sin SESSION_JWT_SECRET no se arranca (mejor que firmar con un secreto débil).
+assertSessionConfig();
 
 const app = express();
 
@@ -89,16 +98,23 @@ app.use("/api", api);
 /* =======================
    API ROUTES
 ======================= */
+// PÚBLICO (login) y EXTERNO (API key propia): van antes de `authenticate`.
 api.use("/auth", authRoutes);
+api.get("/health", (req, res) => {
+  res.status(200).json({ ok: true, ts: new Date().toISOString() });
+});
+// EXTERNO (autenticación por API key, sin sesión de usuario)
+api.use("/external", externalRoutes);
+
+// Desde acá TODO exige sesión firmada (o, en transición, el header viejo: ver AUTH_LEGACY_HEADER).
+api.use(authenticate);
+
 api.use("/maquinas", maquinasRoutes);
 api.use("/vehiculos", vehiculosRoutes);
 api.use("/pedidos", pedidosRoutes);
 api.use("/servicios", serviciosRoutes);
 api.use("/notificaciones", notificacionesRoutes);
 api.use("/eventuales", eventualesRoutes);
-
-// EXTERNO (autenticación por API key, sin x-auth-username)
-api.use("/external", externalRoutes);
 
 // SUPERVISORES (API NORMAL)
 api.use("/supervisores", adminSupervisoresRoutes);
@@ -120,13 +136,6 @@ api.use("/admin", estadisticasRoutes);
 
 
 
-
-/* =======================
-   HEALTHCHECK
-======================= */
-api.get("/health", (req, res) => {
-  res.status(200).json({ ok: true, ts: new Date().toISOString() });
-});
 
 // 404 JSON para cualquier /api/* que no matcheó ningún router de arriba
 // (sin esto, cae en el fallback SPA de más abajo y responde HTML con 200).
@@ -188,12 +197,47 @@ app.set("io", io);
 
 iniciarMonitorPrestamosProlongados({ io });
 
+// Identifica al socket con el mismo token firmado que usa la API. En transición
+// (AUTH_LEGACY_HEADER) se deja pasar uno sin token, como antes.
+io.use(async (socket, next) => {
+   const token = socket.handshake.auth?.token;
+   if (token) {
+      try {
+         socket.data.auth = await verifySessionToken(String(token));
+         return next();
+      } catch {
+         return next(new Error("Sesión inválida o vencida"));
+      }
+   }
+   if (legacyHeaderEnabled()) return next();
+   return next(new Error("Falta iniciar sesión"));
+});
+
+// Un socket con sesión solo puede entrar a SU sala (USER:<username>) y, si tiene rol de
+// depósito, a DEPOSITO. Sin sesión (solo en transición) se mantiene el comportamiento viejo.
+async function puedeUnirseASala(socket, room) {
+   const auth = socket.data.auth;
+   if (!auth) return true;
+   if (room === `USER:${auth.username}`) return true;
+   if (room !== "DEPOSITO") return false;
+
+   const user = await prisma.usuario.findUnique({
+      where: { username: auth.username },
+      select: { rol: true, roles: { select: { rol: true } }, activo: true },
+   });
+   return Boolean(user?.activo && userHasRole(user, "deposito"));
+}
+
 // Allow clients to join rooms
 io.on("connection", (socket) => {
    console.log("Socket connected:", socket.id, "from", socket.handshake.address);
 
-   socket.on("join", ({ room }) => {
+   socket.on("join", async ({ room } = {}) => {
       if (!room) return;
+      if (!(await puedeUnirseASala(socket, room))) {
+         console.warn(`Socket ${socket.id} rechazado al unirse a ${room}`);
+         return;
+      }
       socket.join(room);
       console.log(`Socket ${socket.id} joined room ${room}`);
    });

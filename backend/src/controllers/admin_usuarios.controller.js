@@ -265,6 +265,10 @@ export async function adminGetUsuarioByUsername(req, res) {
 ===================================================== */
 export async function adminCreateUsuario(req, res) {
   try {
+    // Alta/edición/baja de usuarios: solo admin (antes estas tres rutas no pedían ni identidad).
+    const actor = await requireActor(req, res, ["admin"]);
+    if (!actor) return;
+
     const { username, nombre, rol, roles, password, vtoCarnetConductor, legajo, dni } = req.body || {};
 
     const usernameNorm = normalizeString(username);
@@ -340,6 +344,10 @@ export async function adminCreateUsuario(req, res) {
 ===================================================== */
 export async function adminUpdateUsuario(req, res) {
   try {
+    // Alta/edición/baja de usuarios: solo admin (antes estas tres rutas no pedían ni identidad).
+    const actor = await requireActor(req, res, ["admin"]);
+    if (!actor) return;
+
     const username = normalizeString(req.params.username);
     const { nombre, rol, roles, password, activo, vtoCarnetConductor, legajo, dni } = req.body || {};
 
@@ -455,6 +463,10 @@ export async function adminUpdateUsuario(req, res) {
 ===================================================== */
 export async function adminDeleteUsuario(req, res) {
   try {
+    // Alta/edición/baja de usuarios: solo admin (antes estas tres rutas no pedían ni identidad).
+    const actor = await requireActor(req, res, ["admin"]);
+    if (!actor) return;
+
     const username = req.params.username;
 
     if (!username) {

@@ -58,7 +58,7 @@ export async function adminCreateEventual(req, res) {
   try {
     const eventual = await saveEventual({
       payload: req.body || {},
-      actorUsername: req.body?.usuario,
+      actorUsername: req.auth?.username || req.body?.usuario,
     });
     res.status(201).json(eventual);
   } catch (error) {
@@ -71,7 +71,7 @@ export async function adminUpdateEventual(req, res) {
     const eventual = await saveEventual({
       eventualId: req.params.id,
       payload: req.body || {},
-      actorUsername: req.body?.usuario,
+      actorUsername: req.auth?.username || req.body?.usuario,
     });
     res.json(eventual);
   } catch (error) {
