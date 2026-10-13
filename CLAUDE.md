@@ -95,7 +95,7 @@ La importación de insumos está **estructuralmente limitada**: matchea por `Ser
 
 Consecuencia práctica: hoy **no se puede calcular ningún costo** de un eventual (no hay costo laboral —falta tarifa por categoría—, ni subcontratados, ni insumos en la mayoría). Los indicadores que sí funcionan son los de producción y productividad: horas-hombre por categoría, m²/hora-hombre en desmalezado, m³/hora-hombre en retiro de poda y litros de combustible por hora-hombre. `totalHorasReal` se importa desde el día uno pero **no discrimina**: es igual al teórico en 11 de 12 casos.
 
-`src/services/estadisticas.service.js` (secciones *tiempo real* / *avisos* / *período*, solo rol `admin`) **no mide nada de eventuales** — la palabra no aparece en el archivo.
+`src/services/estadisticas.service.js` (secciones *tiempo real* / *avisos* / *período*, roles `admin`, `taller` y `deposito`) **no mide nada de eventuales** — la palabra no aparece en el archivo.
 
 **Código muerto del módulo, para no perder tiempo persiguiéndolo:** `finalizeSupervisorEventual()` en `eventuales.service.js` (nadie lo importa), `POST /api/eventuales/:id/finalizar` (devuelve un `403` fijo), la ruta frontend `/admin/eventuales/:id/finalizar` (ninguna pantalla enlaza a ella) y `frontend/src/components/HistorialEventual.jsx` (sin un solo import, aunque el README lo cita como si estuviera en uso).
 

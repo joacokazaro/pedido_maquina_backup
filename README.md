@@ -192,7 +192,7 @@ Al sumar producción hay que **filtrar por unidad antes de agregar**: un `SUM(ca
 - Campo `tipo` (`LIMPIEZA` / `ESPACIOS_VERDES`), nullable: se hereda del eventual cuando `crearPedido` crea el servicio homónimo, y no se pisa si el servicio ya existía. Habilita el alcance por tipo de `encargado_ev` sobre servicios
 
 ### Estadísticas
-- Panel `/admin/estadisticas`, **solo rol `admin`** (`estadisticas.service.js`)
+- Panel `/admin/estadisticas`, roles `admin`, `taller` y `deposito` (solo lectura; `estadisticas.service.js`)
 - Tres secciones: **tiempo real** (pedidos abiertos, stock de máquinas por estado y composición por tipo), **avisos** (pedidos estancados por umbral, vencimientos próximos) y **período** (agregados por rango de fechas, con helpers de zona horaria Argentina)
 - **No cubre eventuales**: los indicadores de eventuales viven aparte, en "KPIs de Espacios Verdes" (ver debajo)
 
@@ -423,7 +423,7 @@ Grupos de acceso definidos en `App.jsx`:
 - **Vehículos**: `/admin/vehiculos` · `/admin/vehiculos/nuevo` · `/admin/vehiculos/:id` · `/admin/vehiculos/:id/historial` · `/admin/vehiculos/asignaciones` · `/admin/vehiculos/importar`
 - **Taller**: `/admin/taller` · `/admin/taller/registrar` (`/maquinas`, `/vehiculos`) · `/admin/taller/ver` (`/maquinas`, `/vehiculos`)
 - **Eventuales**: `/admin/eventuales` · `/admin/eventuales/historial` · `/admin/eventuales/nuevo` · `/admin/eventuales/:id` · `/admin/eventuales/:id/completar` (alias legado: `/corregir`). La ruta `/admin/eventuales/:id/finalizar` (solo `COORDINADOR`) sigue registrada pero **ninguna pantalla enlaza a ella**
-- **Estadísticas**: `/admin/estadisticas` (solo `ADMIN`)
+- **Estadísticas**: `/admin/estadisticas` (`ADMIN`, `TALLER` y `DEPOSITO`)
 - **Servicios**: `/admin/servicios` · `/admin/servicios/nuevo` · `/admin/servicios/:id` · `/admin/servicios/importar` · `/admin/supervisores-servicios` · `/admin/supervisores`
 - **Otros**: `/admin/pedidos` · `/admin/pedido/:id` · `/admin/usuarios` (`/nuevo`, `/:username`) · `/admin/seguros`
 

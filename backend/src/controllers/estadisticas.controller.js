@@ -1,7 +1,7 @@
 import { requireActor } from "../services/requestActor.service.js";
 import { getResumenTiempoReal, getResumenAvisos, getResumenPeriodo } from "../services/estadisticas.service.js";
 
-const ROLES_ESTADISTICAS = ["admin"];
+const ROLES_ESTADISTICAS = ["admin", "taller", "deposito"];
 
 export async function adminGetEstadisticasTiempoReal(req, res) {
   const actor = await requireActor(req, res, ROLES_ESTADISTICAS);

@@ -113,6 +113,12 @@ function App() {
     </ProtectedRoute>
   );
 
+  const renderEstadisticasPage = (page) => (
+    <ProtectedRoute allowedRoles={["ADMIN", "TALLER", "DEPOSITO"]}>
+      <AdminLayout>{page}</AdminLayout>
+    </ProtectedRoute>
+  );
+
   const renderBackofficePage = (page) => (
     <ProtectedRoute allowedRoles={["ADMIN", "COORDINADOR"]}>
       <AdminLayout>{page}</AdminLayout>
@@ -429,7 +435,7 @@ function App() {
 
       <Route
         path="/admin/estadisticas"
-        element={renderAdminOnlyPage(<AdminEstadisticas />)}
+        element={renderEstadisticasPage(<AdminEstadisticas />)}
       />
 
       <Route

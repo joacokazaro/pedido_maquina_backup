@@ -103,6 +103,10 @@ const NAV_GROUPS_TALLER = [
 		to: "/admin",
 	},
 	{
+		label: "Estadísticas",
+		to: "/admin/estadisticas",
+	},
+	{
 		label: "Inventario",
 		items: [
 			{ label: "Máquinas", to: "/admin/maquinas" },
@@ -121,6 +125,10 @@ const NAV_GROUPS_DEPOSITO = [
 	{
 		label: "Inicio",
 		to: "/deposito",
+	},
+	{
+		label: "Estadísticas",
+		to: "/admin/estadisticas",
 	},
 	{
 		label: "Inventario",
@@ -152,6 +160,10 @@ const NAV_GROUPS_DEPOSITO_TALLER = [
 			{ label: "Panel Depósito", to: "/deposito" },
 			{ label: "Panel Taller", to: "/admin" },
 		],
+	},
+	{
+		label: "Estadísticas",
+		to: "/admin/estadisticas",
 	},
 	{
 		label: "Inventario",
