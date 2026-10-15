@@ -159,7 +159,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   // flag, "no seleccioné ninguna" era indistinguible de "todavía no toqué la selección" y
   // el resumen volvía a las filas guardadas, haciendo imposible vaciar la lista.
   const [seleccionMaquinasTocada, setSeleccionMaquinasTocada] = useState(false);
-  const [vehiculosRows, setVehiculosRows] = useState([emptyVehiculoRow()]);
+  const [vehiculosRows, setVehiculosRows] = useState([]);
   const [legacyComponentes, setLegacyComponentes] = useState(null);
 
   // Recursos del supervisor asignado (máquinas por servicios + vehículos a cargo)
@@ -284,13 +284,9 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           setMaquinasSeleccionadas(
             rowsGuardadas.flatMap((row) => row.maquinaIds.map((maquinaId) => ({ id: maquinaId, tipo: row.tipo })))
           );
-          setVehiculosRows(vehiculoIds.length > 0 ? vehiculoIds.map((vehiculoId) => ({ vehiculoId })) : [emptyVehiculoRow()]);
-
-          // Si el eventual ya tiene supervisor pero todavía no cargó vehículos,
-          // precargamos los que ese supervisor tiene asignados.
-          if (eventual.supervisor?.id && vehiculoIds.length === 0) {
-            prefillVehiculosRef.current = true;
-          }
+          // No se precargan los del supervisor al abrir: si el usuario quitó todos y guardó,
+          // reabrir los volvía a asignar y la baja nunca quedaba firme. Para traerlos hay un botón.
+          setVehiculosRows(vehiculoIds.map((vehiculoId) => ({ vehiculoId })));
 
           setPedidosComplementarios(Array.isArray(eventual.pedidosComplementarios) ? eventual.pedidosComplementarios : []);
           setMaquinasDePedidos(Array.isArray(eventual.maquinasDePedidos) ? eventual.maquinasDePedidos : []);
@@ -380,7 +376,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           setVehiculosRows(
             vehiculosSupervisor.length > 0
               ? vehiculosSupervisor.map((vehiculo) => ({ vehiculoId: vehiculo.id }))
-              : [emptyVehiculoRow()]
+              : []
           );
         }
       } catch (recursosError) {
@@ -432,6 +428,11 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       cancelado = true;
     };
   }, [selectorOpen, selectorTab, todasMaquinasCargadas]);
+
+  const vehiculosSupervisorFaltantes = supervisorVehiculos.filter(
+    (vehiculo) => !vehiculosRows.some((row) => row.vehiculoId === vehiculo.id)
+  );
+  const cantidadVehiculosAsignados = vehiculosRows.filter((row) => row.vehiculoId).length;
 
   const vehiculosOptions = useMemo(() => {
     return vehiculosCatalogo.map((item) => ({
@@ -834,7 +835,14 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   }
 
   function removeVehiculoRow(index) {
-    setVehiculosRows((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
+    setVehiculosRows((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function cargarVehiculosDelSupervisor() {
+    setVehiculosRows((prev) => [
+      ...prev.filter((row) => row.vehiculoId),
+      ...vehiculosSupervisorFaltantes.map((vehiculo) => ({ vehiculoId: vehiculo.id })),
+    ]);
   }
 
   function updateTrabajo(index, key, value) {
@@ -1449,15 +1457,32 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Vehículos utilizados</h2>
             <p className="text-xs text-gray-500">
-              {form.supervisorId
-                ? "Se cargan los vehículos asignados al supervisor. Podés cambiarlos o agregar más."
-                : "Podés cargar cualquier vehículo del catálogo."}
+              {cantidadVehiculosAsignados === 0
+                ? "Este eventual no tiene vehículos asignados."
+                : `${cantidadVehiculosAsignados} vehículo${cantidadVehiculosAsignados === 1 ? "" : "s"} asignado${cantidadVehiculosAsignados === 1 ? "" : "s"}.`}{" "}
+              Para desasignar uno usá <strong>Quitar</strong>; los cambios se aplican al guardar.
             </p>
           </div>
           <button type="button" onClick={addVehiculoRow} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700">
-            Agregar vehículo
+            + Agregar vehículo
           </button>
         </div>
+
+        {form.supervisorId && vehiculosSupervisorFaltantes.length > 0 ? (
+          <button
+            type="button"
+            onClick={cargarVehiculosDelSupervisor}
+            className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+          >
+            Cargar los {vehiculosSupervisorFaltantes.length} vehículo{vehiculosSupervisorFaltantes.length === 1 ? "" : "s"} del supervisor
+          </button>
+        ) : null}
+
+        {vehiculosRows.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 p-4 text-center text-sm text-slate-500">
+            Sin vehículos. Si querés cargar alguno, tocá <strong>+ Agregar vehículo</strong>.
+          </div>
+        ) : null}
 
         {vehiculosRows.map((row, index) => {
           const esDelSupervisor = supervisorVehiculos.some((vehiculo) => vehiculo.id === row.vehiculoId);
@@ -1483,9 +1508,9 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
               <button
                 type="button"
                 onClick={() => removeVehiculoRow(index)}
-                className="justify-self-end rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700"
+                className="justify-self-end rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50"
               >
-                Quitar
+                ✕ Quitar
               </button>
             </div>
           );
