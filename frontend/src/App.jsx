@@ -107,6 +107,12 @@ function App() {
 
   // 👉 Roles que participan del ciclo OPERATIVO de préstamo
   const ROLES_OPERATIVOS = [...ROLES_PEDIDO_TITULAR, "DEPOSITO"];
+  // Pantallas donde depósito ya ve la barra de AdminLayout (que trae sus propias
+  // notificaciones), incluidas las de pedido propio compartidas con el supervisor.
+  const enLayoutDeposito =
+    location.pathname.startsWith("/deposito") ||
+    location.pathname === "/supervisor/pedidos" ||
+    location.pathname.startsWith("/supervisor/pedido/");
   const renderAdminOnlyPage = (page) => (
     <ProtectedRoute allowedRoles={["ADMIN"]}>
       <AdminLayout>{page}</AdminLayout>
@@ -218,7 +224,7 @@ function App() {
         location.pathname !== "/" &&
         !hasRole("ADMIN") &&
         !location.pathname.startsWith("/admin") &&
-        !(isDeposito && location.pathname.startsWith("/deposito")) &&
+        !(isDeposito && enLayoutDeposito) &&
         <Notificaciones />}
       <Routes>
       {/* LOGIN */}
@@ -239,11 +245,7 @@ function App() {
 
       <Route
         path="/supervisor/pedidos"
-        element={
-          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
-            <SupervisorMisPedidos />
-          </ProtectedRoute>
-        }
+        element={renderDepositoOperativoPage(<SupervisorMisPedidos />)}
       />
 
       <Route
@@ -284,11 +286,7 @@ function App() {
 
       <Route
         path="/supervisor/pedido/nuevo"
-        element={
-          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
-            <CreatePedido />
-          </ProtectedRoute>
-        }
+        element={renderDepositoOperativoPage(<CreatePedido />)}
       />
 
       <Route
@@ -311,20 +309,12 @@ function App() {
 
       <Route
         path="/supervisor/pedido/:id"
-        element={
-          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
-            <ViewPedido />
-          </ProtectedRoute>
-        }
+        element={renderDepositoOperativoPage(<ViewPedido />)}
       />
 
       <Route
         path="/supervisor/pedido/:id/devolucion"
-        element={
-          <ProtectedRoute allowedRoles={ROLES_PEDIDO_TITULAR}>
-            <RegistrarDevolucion />
-          </ProtectedRoute>
-        }
+        element={renderDepositoOperativoPage(<RegistrarDevolucion />)}
       />
 
       {/* =============================

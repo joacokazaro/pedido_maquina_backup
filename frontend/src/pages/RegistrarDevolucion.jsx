@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API_BASE } from "../services/apiBase";
 import FondoKazaro from "../components/FondoKazaro";
+import { rutaInicioPedidos } from "../constants/roles";
 
 export default function RegistrarDevolucion() {
   const { id } = useParams();
@@ -97,7 +98,7 @@ export default function RegistrarDevolucion() {
         throw new Error(data.error || "Error registrando devolución");
       }
 
-      navigate("/supervisor");
+      navigate(rutaInicioPedidos(authUser));
     } catch (e) {
       console.error(e);
       setError(e.message || "No se pudo registrar la devolución");

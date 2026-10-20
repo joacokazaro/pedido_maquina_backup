@@ -142,6 +142,8 @@ const NAV_GROUPS_DEPOSITO = [
 		label: "Operaciones",
 		items: [
 			{ label: "Pedidos a gestionar", to: "/deposito/pedidos" },
+			{ label: "Nuevo pedido", to: "/supervisor/pedido/nuevo" },
+			{ label: "Mis pedidos", to: "/supervisor/pedidos" },
 		],
 	},
 	{
@@ -177,6 +179,8 @@ const NAV_GROUPS_DEPOSITO_TALLER = [
 		label: "Operaciones",
 		items: [
 			{ label: "Pedidos a gestionar", to: "/deposito/pedidos" },
+			{ label: "Nuevo pedido", to: "/supervisor/pedido/nuevo" },
+			{ label: "Mis pedidos", to: "/supervisor/pedidos" },
 			{ label: "Taller", to: "/admin/taller" },
 		],
 	},
@@ -295,7 +299,11 @@ export default function AdminLayout({ children }) {
 	const isTaller = hasRole(user, "TALLER");
 	const isDeposito = hasRole(user, "DEPOSITO");
 	const isDepositoTaller = isDeposito && isTaller;
-	const inDepositoPath = location.pathname.startsWith("/deposito");
+	// Las pantallas de pedido propio (/supervisor/pedido*) cuentan como parte del panel de depósito.
+	const inDepositoPath =
+		location.pathname.startsWith("/deposito") ||
+		location.pathname === "/supervisor/pedidos" ||
+		location.pathname.startsWith("/supervisor/pedido/");
 	const navGroups = isDepositoTaller
 		? NAV_GROUPS_DEPOSITO_TALLER
 		: inDepositoPath && isDeposito

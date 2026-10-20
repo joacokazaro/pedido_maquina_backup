@@ -338,10 +338,15 @@ El panel de Depósito muestra accesos a:
 
 - **Máquinas**.
 - **Pedidos a gestionar**.
+- **Mis pedidos**: pedidos que Depósito hace para sus propios servicios (ver 7.1.1).
 - **Máquinas en Servicio**.
 - **Máquinas por Supervisor**.
 
 ![Panel principal de Depósito](capturas/panel_deposito.png)
+
+#### 7.1.1 Pedidos propios de Depósito
+
+Depósito también puede pedir máquinas para los servicios que tiene asignados (la asignación se hace en "Supervisores x Servicios"). Desde **Mis pedidos** o el menú **Operaciones → Nuevo pedido** crea el pedido igual que un Supervisor (a Depósito o como préstamo a otro supervisor), sigue su estado y registra la devolución cuando el pedido está **ENTREGADO**. Los avisos de preparación, entrega y confirmación de esos pedidos abren el detalle propio, no la pantalla de gestión.
 
 ### 7.2 Visualizar pedidos pendientes
 

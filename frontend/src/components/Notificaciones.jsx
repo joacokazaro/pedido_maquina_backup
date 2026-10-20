@@ -4,6 +4,13 @@ import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { formatDateTime } from "../utils/date";
 
+const TIPOS_AVISO_AL_SOLICITANTE = [
+  "PEDIDO_PREPARADO",
+  "PEDIDO_ENTREGADO",
+  "ESTADO_ACTUALIZADO",
+  "DEVOLUCION_CONFIRMADA",
+];
+
 export default function Notificaciones({ embedded = false }) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -111,7 +118,12 @@ export default function Notificaciones({ embedded = false }) {
     if (!n?.pedidoId) return null;
 
     if (hasRole("ADMIN")) return `/admin/pedido/${n.pedidoId}`;
-    if (hasRole("DEPOSITO")) return `/deposito/pedido/${n.pedidoId}`;
+    if (hasRole("DEPOSITO")) {
+      // Estos avisos se le mandan al solicitante del pedido, no a quien lo gestiona: si le
+      // llegan a depósito es porque es un pedido propio.
+      if (TIPOS_AVISO_AL_SOLICITANTE.includes(n.tipo)) return `/supervisor/pedido/${n.pedidoId}`;
+      return `/deposito/pedido/${n.pedidoId}`;
+    }
 
     // SUPERVISOR
     const msg = String(n?.mensaje || "").toLowerCase();

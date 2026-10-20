@@ -7,7 +7,7 @@ import { REQUEST_RESOURCE_TYPES, buildMachineTypeOptions } from "../constants/ma
 import FondoKazaro from "../components/FondoKazaro";
 import SearchableSelect from "../components/SearchableSelect";
 import Alerta from "../components/Alerta";
-import { ROLES_PEDIDO_TITULAR } from "../constants/roles";
+import { ROLES_PEDIDO_TITULAR, rutaInicioPedidos } from "../constants/roles";
 
 export default function CreatePedido() {
   const { user } = useAuth();
@@ -23,6 +23,10 @@ export default function CreatePedido() {
   const esSupervisor = ROLES_PEDIDO_TITULAR.some(
     (r) => rolesUpper.includes(r) || rolPrimario === r
   );
+  // Depósito pide como un titular más, pero solo contra sus servicios asignados y sin
+  // eventuales (el backend rechaza los pedidos de eventual a roles no titulares).
+  const esDeposito = rolesUpper.includes("DEPOSITO") || rolPrimario === "DEPOSITO";
+  const soloServiciosPropios = esSupervisor || esDeposito;
 
   /* =========================
      ESTADOS
@@ -91,10 +95,10 @@ const comboSupRef = useRef(null);
   useEffect(() => {
   if (!user?.username) return;
 
-  // ✅ si es supervisor: solo sus servicios
+  // ✅ si es supervisor o depósito: solo sus servicios
   // ✅ si fuera admin (si alguna vez lo usás acá): todos los servicios
   const url =
-      esSupervisor
+      soloServiciosPropios
       ? `${API_BASE}/pedidos/usuarios/${encodeURIComponent(user.username)}/servicios`
       : `${API_BASE}/servicios`;
 
@@ -106,7 +110,7 @@ const comboSupRef = useRef(null);
       else setServicios([]);
     })
     .catch(() => setServicios([]));
-}, [user?.username, esSupervisor]);
+}, [user?.username, soloServiciosPropios]);
 
 /* =========================
    CARGAR EVENTUALES ASIGNADOS AL USUARIO
@@ -361,7 +365,7 @@ const supervisoresFiltrados = useMemo(() => {
       setOtroCantidad(1);
       setObservacion("");
 
-      setTimeout(() => navigate("/supervisor"), 1200);
+      setTimeout(() => navigate(rutaInicioPedidos(user)), 1200);
     } catch (err) {
       console.error(err);
       avisar(err.message || "Ocurrió un error al crear el pedido.");

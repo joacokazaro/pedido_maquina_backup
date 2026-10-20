@@ -28,6 +28,13 @@ export default function DepositoDashboard() {
       accent: "navy",
     },
     {
+      title: "Mis pedidos",
+      description: "Pedí máquinas para tus servicios, seguí tus pedidos y registrá sus devoluciones.",
+      to: "/supervisor/pedidos",
+      icon: "prestamos",
+      accent: "blue",
+    },
+    {
       title: "Máquinas en Servicio",
       description: "Consultá los servicios cargados y las máquinas asociadas, sin permisos de edición.",
       to: "/deposito/servicios",

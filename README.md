@@ -62,6 +62,7 @@ Mismos permisos que `supervisor_limpieza` (crear pedidos para un eventual + carg
 - Visualizar y preparar pedidos pendientes
 - Asignar máquinas disponibles a pedidos
 - Confirmar devoluciones y registrar faltantes
+- Crear pedidos **a su propio nombre** para los servicios que tenga asignados (requiere asignación en "Supervisores x Servicios"), a depósito o como préstamo a un supervisor; seguirlos en **Mis pedidos** y registrar sus devoluciones. Reutiliza las pantallas `/supervisor/pedido*` dentro del layout de depósito (no es titular de eventuales ni entra a `/supervisor`)
 - Consultar máquinas por servicio y por supervisor en modo lectura
 - Acceso de lectura al inventario y al módulo de taller
 
@@ -406,6 +407,7 @@ Autenticadas con header `x-api-key` (`EXTERNAL_API_TOKENS`), sin relación con `
 ### Depósito
 - `/deposito` · `/deposito/pedidos` · `/deposito/pedido/:id` · `/deposito/pedido/:id/asignar` · `/deposito/pedido/:id/confirmar`
 - `/deposito/maquinas` · `/deposito/servicios` · `/deposito/servicios/:id` · `/deposito/supervisores`
+- Pedidos propios (compartidas con supervisión, `renderDepositoOperativoPage`): `/supervisor/pedidos` · `/supervisor/pedido/nuevo` · `/supervisor/pedido/:id` · `/supervisor/pedido/:id/devolucion`
 
 ### Backoffice (`/admin`)
 El home resuelve por rol: `AdminHome`, `CoordinadorHome`, `ConsultorHome` o `TallerHome`.

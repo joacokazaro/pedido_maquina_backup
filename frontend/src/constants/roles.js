@@ -17,6 +17,16 @@ export const ROLES_SUPERVISION = ["ENCARGADO_EV", "SUPERVISOR_LIMPIEZA"];
 // en el backend, ver eventuales.service.js y pedidos.controller.js).
 export const ROLES_PEDIDO_TITULAR = [...ROLES_SUPERVISION, "COORDINADOR", "SUPERVISOR_EV"];
 
+// Inicio al que vuelven las pantallas de pedido compartidas (`/supervisor/pedido*`).
+// "DEPOSITO" no es titular (no entra a `/supervisor`), pero también crea y sigue sus
+// pedidos desde esas pantallas: su panel de origen es `/deposito`.
+export function rutaInicioPedidos(user) {
+  const roles = [...(Array.isArray(user?.roles) ? user.roles : []), user?.rol].map((r) =>
+    String(r || "").toUpperCase()
+  );
+  return roles.includes("DEPOSITO") ? "/deposito" : "/supervisor";
+}
+
 // Etiquetas legibles para los ABM de usuarios y pantallas que muestren el rol.
 export const ROLE_LABELS = {
   ADMIN: "Admin",

@@ -1,5 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { resolverRutaPadre } from "../utils/rutasPadre";
+import { useAuth } from "../context/AuthContext";
+import { rutaInicioPedidos } from "../constants/roles";
 
 /**
  * Botón "Volver" estandarizado para toda la app.
@@ -20,6 +22,7 @@ import { resolverRutaPadre } from "../utils/rutasPadre";
 export default function BotonVolver({ to, children = "Volver", className = "mb-4" }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
 
   function handleClick() {
     if (to != null) {
@@ -27,7 +30,12 @@ export default function BotonVolver({ to, children = "Volver", className = "mb-4
       return;
     }
     const padre = resolverRutaPadre(location.pathname);
-    navigate(padre ?? -1);
+    if (padre == null) {
+      navigate(-1);
+      return;
+    }
+    // Las pantallas `/supervisor/*` también las usa depósito: su "inicio" es otro panel.
+    navigate(padre === "/supervisor" ? rutaInicioPedidos(user) : padre);
   }
 
   return (
