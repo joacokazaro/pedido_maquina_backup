@@ -344,7 +344,11 @@ const asignacion = await prisma.usuarioServicio.findUnique({
   },
 });
 
-if (!asignacion) {
+// depósito puede pedir para cualquier servicio activo sin asignación (no se le crea
+// ninguna, para no ensuciar "Supervisores x Servicios"). Los eventuales siguen vedados.
+const esDepositoGlobal = userHasRole(supervisor, "deposito");
+
+if (!asignacion && !esDepositoGlobal) {
   // encargado_ev/supervisor_ev pueden pedir para cualquier servicio Espacios Verdes sin
   // asignación explícita — se las creamos al vuelo (mismo patrón que el upsert de la
   // rama de eventual más arriba) para que el resto del sistema (máquinas fijas del
@@ -1335,13 +1339,16 @@ export async function getServiciosDeUsuario(req, res) {
     // tipo Espacios Verdes (mismo alcance ampliado que en la creación del pedido).
     const tieneAlcanceEv = userHasAnyRole(user, ["encargado_ev", "supervisor_ev"]);
 
+    // depósito pide para cualquier servicio activo, esté o no asignado.
+    const tieneAlcanceTotal = userHasRole(user, "deposito");
+
     const servicios = await prisma.servicio.findMany({
       where: {
         activo: true,
-        OR: [
+        ...(tieneAlcanceTotal ? {} : { OR: [
           { supervisores: { some: { usuarioId: user.id } } },
           ...(tieneAlcanceEv ? [{ tipo: TIPO_ESPACIOS_VERDES }] : []),
-        ],
+        ] }),
       },
       orderBy: { nombre: "asc" },
     });

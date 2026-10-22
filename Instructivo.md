@@ -346,7 +346,7 @@ El panel de Depósito muestra accesos a:
 
 #### 7.1.1 Pedidos propios de Depósito
 
-Depósito también puede pedir máquinas para los servicios que tiene asignados (la asignación se hace en "Supervisores x Servicios"). Desde **Mis pedidos** o el menú **Operaciones → Nuevo pedido** crea el pedido igual que un Supervisor (a Depósito o como préstamo a otro supervisor), sigue su estado y registra la devolución cuando el pedido está **ENTREGADO**. Los avisos de preparación, entrega y confirmación de esos pedidos abren el detalle propio, no la pantalla de gestión.
+Depósito también puede pedir máquinas para **cualquier servicio activo**, sin necesidad de asignación previa (no puede pedir para eventuales). Desde **Mis pedidos** o el menú **Operaciones → Nuevo pedido** crea el pedido igual que un Supervisor (a Depósito o como préstamo a otro supervisor), sigue su estado y registra la devolución cuando el pedido está **ENTREGADO**. Los avisos de preparación, entrega y confirmación de esos pedidos abren el detalle propio, no la pantalla de gestión.
 
 ### 7.2 Visualizar pedidos pendientes
 

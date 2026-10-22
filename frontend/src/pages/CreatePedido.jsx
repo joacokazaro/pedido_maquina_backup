@@ -23,8 +23,9 @@ export default function CreatePedido() {
   const esSupervisor = ROLES_PEDIDO_TITULAR.some(
     (r) => rolesUpper.includes(r) || rolPrimario === r
   );
-  // Depósito pide como un titular más, pero solo contra sus servicios asignados y sin
-  // eventuales (el backend rechaza los pedidos de eventual a roles no titulares).
+  // Depósito pide como un titular más, contra cualquier servicio activo (el endpoint de
+  // servicios del usuario ya se los devuelve todos) y sin eventuales (el backend rechaza
+  // los pedidos de eventual a roles no titulares).
   const esDeposito = rolesUpper.includes("DEPOSITO") || rolPrimario === "DEPOSITO";
   const soloServiciosPropios = esSupervisor || esDeposito;
 

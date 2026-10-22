@@ -62,7 +62,7 @@ Mismos permisos que `supervisor_limpieza` (crear pedidos para un eventual + carg
 - Visualizar y preparar pedidos pendientes
 - Asignar máquinas disponibles a pedidos
 - Confirmar devoluciones y registrar faltantes
-- Crear pedidos **a su propio nombre** para los servicios que tenga asignados (requiere asignación en "Supervisores x Servicios"), a depósito o como préstamo a un supervisor; seguirlos en **Mis pedidos** y registrar sus devoluciones. Reutiliza las pantallas `/supervisor/pedido*` dentro del layout de depósito (no es titular de eventuales ni entra a `/supervisor`)
+- Crear pedidos **a su propio nombre** para **cualquier servicio activo** (sin necesidad de asignación en "Supervisores x Servicios"), a depósito o como préstamo a un supervisor; seguirlos en **Mis pedidos** y registrar sus devoluciones. Reutiliza las pantallas `/supervisor/pedido*` dentro del layout de depósito (no es titular de eventuales ni entra a `/supervisor`)
 - Consultar máquinas por servicio y por supervisor en modo lectura
 - Acceso de lectura al inventario y al módulo de taller
 
