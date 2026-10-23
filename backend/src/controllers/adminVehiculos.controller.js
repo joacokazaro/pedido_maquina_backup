@@ -305,10 +305,14 @@ function buildVehiculoData(body, currentVehiculo = null) {
       body.seguroId === undefined || body.seguroId === null || body.seguroId === ""
         ? null
         : Number(body.seguroId),
+    // Si el body no trae el campo (el formulario de edición no lo manda), se conserva el
+    // conductor actual: tratarlo como null cerraba la asignación activa en cada guardado.
     conductorActualId:
-      body.conductorActualId === undefined || body.conductorActualId === null || body.conductorActualId === ""
-        ? null
-        : Number(body.conductorActualId),
+      body.conductorActualId === undefined
+        ? currentVehiculo?.conductorActualId ?? null
+        : body.conductorActualId === null || body.conductorActualId === ""
+          ? null
+          : Number(body.conductorActualId),
     tarjetaVerde: normalizeBoolean(body.tarjetaVerde, currentVehiculo?.tarjetaVerde ?? false),
     vtoSeguro: vtoSeguro.fecha,
     vtoSeguroAplica: vtoSeguro.aplica,
