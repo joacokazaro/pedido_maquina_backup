@@ -80,6 +80,8 @@ import AdminEventualesPanel from "./pages/AdminEventualesPanel";
 import AdminEventualesHistorial from "./pages/AdminEventualesHistorial";
 import AdminEventualForm from "./pages/AdminEventualForm";
 import AdminEventualDetalle from "./pages/AdminEventualDetalle";
+import AdminInformesServicio from "./pages/AdminInformesServicio";
+import AdminInformeServicioDetalle from "./pages/AdminInformeServicioDetalle";
 import CoordinadorHome from "./pages/CoordinadorHome";
 import SupervisorMisEventuales from "./pages/SupervisorMisEventuales";
 import SupervisorEventualDetalle from "./pages/SupervisorEventualDetalle";
@@ -647,6 +649,16 @@ function App() {
             <AdminLayout><AdminEventualForm modoFinalizacionCoordinador /></AdminLayout>
           </ProtectedRoute>
         }
+      />
+
+      <Route
+        path="/admin/informes-servicio"
+        element={renderBackofficePage(<AdminInformesServicio />)}
+      />
+
+      <Route
+        path="/admin/informes-servicio/:id"
+        element={renderBackofficePage(<AdminInformeServicioDetalle />)}
       />
 
       </Routes>

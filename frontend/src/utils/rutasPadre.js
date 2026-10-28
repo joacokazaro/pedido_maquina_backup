@@ -84,6 +84,8 @@ const MAPA_PADRES = {
   "/admin/eventuales/:id/completar": "/admin/eventuales/:id",
   "/admin/eventuales/:id/corregir": "/admin/eventuales/:id",
   "/admin/eventuales/:id/finalizar": "/admin/eventuales/:id",
+  "/admin/informes-servicio": "/admin",
+  "/admin/informes-servicio/:id": "/admin/informes-servicio",
 };
 
 // Precomputamos los candidatos ordenados de más específico a menos específico:

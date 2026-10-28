@@ -979,6 +979,7 @@ El Coordinador accede a un panel de lectura operativa con:
 - **Vehículos**.
 - **Taller**.
 - **Eventuales**.
+- **Informes de servicio**.
 
 Puede consultar inventario, taller y eventuales sin editar datos maestros. En eventuales, cuando el flujo lo habilita, puede acceder a la acción de finalización para completar información posterior.
 
@@ -1005,6 +1006,21 @@ Si falta la fecha de fin o no hay ningún trabajo cargado, el sistema no permite
 Con el estado en *finalizado* se habilitan, en la misma pantalla, la importación de horas de Browix, la importación de insumos y la carga de horas de supervisor. No hace falta guardar primero: esos botones guardan el formulario antes de continuar.
 
 La finalización queda registrada en el historial del eventual.
+
+### 9.2 Informes de servicio
+
+El informe de servicio es el resumen en PDF de un servicio fijo de **Espacios Verdes** en un rango de fechas: qué máquinas y vehículos se usaron, qué trabajos se hicieron, horas de personal e insumos. Lo pueden armar el Coordinador y el Administrador desde **Informes de servicio**.
+
+1. Elegí el **servicio** y las fechas **Desde** y **Hasta**, y tocá **Crear informe**. Solo aparecen servicios fijos de Espacios Verdes (no los eventuales).
+2. El sistema precarga las **máquinas y vehículos de los pedidos entregados** al servicio en ese rango. Cada uno indica su origen: *Pedido*, *Del servicio* o *Manual*.
+3. Completá lo que falte:
+   - **Agregar máquinas**: las asignadas al servicio o cualquiera del inventario. También podés quitar las que no corresponden.
+   - **Vehículos**, **trabajos realizados**, **servicios extras subcontratados** e **insumos extras**.
+   - **Importar horas** (Browix) e **Importar insumos**: se traen solo los del período. Pueden tardar hasta un minuto.
+   - **Observaciones**: quedan con autor y fecha y no se pueden modificar.
+4. **Guardar cambios** conserva el informe para retomarlo después. **Descargar PDF** guarda lo que hay en pantalla y genera el archivo.
+
+Si cambiás las fechas de un informe, tocá **Traer de los pedidos** y volvé a importar horas e insumos para que coincidan con el nuevo período.
 
 ## 10. Funcionalidades del rol Consultor
 

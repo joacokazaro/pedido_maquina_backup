@@ -27,6 +27,7 @@ const NAV_GROUPS_ADMIN = [
 			{ label: "Pedidos", to: "/admin/pedidos" },
 			{ label: "Eventuales", to: "/admin/eventuales" },
 			{ label: "Historial de eventuales", to: "/admin/eventuales/historial" },
+			{ label: "Informes de servicio", to: "/admin/informes-servicio" },
 		],
 	},
 	{
@@ -65,6 +66,7 @@ const NAV_GROUPS_COORDINADOR = [
 			{ label: "Taller", to: "/admin/taller" },
 			{ label: "Eventuales", to: "/admin/eventuales" },
 			{ label: "Historial de eventuales", to: "/admin/eventuales/historial" },
+			{ label: "Informes de servicio", to: "/admin/informes-servicio" },
 		],
 	},
 ];

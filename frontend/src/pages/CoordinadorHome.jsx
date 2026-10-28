@@ -44,6 +44,13 @@ export default function CoordinadorHome() {
       icon: "eventuales",
       accent: "navy",
     },
+    {
+      title: "Informes de servicio",
+      description: "Armá el resumen de un servicio de Espacios Verdes en un rango de fechas y descargalo en PDF.",
+      to: "/admin/informes-servicio",
+      icon: "pedidos",
+      accent: "green",
+    },
   ];
 
   return (

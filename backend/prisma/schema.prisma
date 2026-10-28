@@ -32,6 +32,7 @@ model Usuario {
   asignacionesRealizadasVehiculo VehiculoAsignacion[] @relation("VehiculoAsignadoPorUsuario")
   historialEventuales HistorialEventual[]
   movimientosTaller TallerMovimiento[]
+  informesServicio  InformeServicio[]
 }
 
 model UsuarioRol {
@@ -60,6 +61,7 @@ model Servicio {
   historialMaquinas MaquinaServicioHistorial[]
   pedidos      Pedido[]
   supervisores UsuarioServicio[]
+  informes     InformeServicio[]
 }
 
 model Seguro {
@@ -259,6 +261,34 @@ model HistorialEventual {
   usuario    Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@index([eventualId, fecha])
+}
+
+// Informe de un servicio fijo para un rango de fechas (equivalente del resumen de un
+// eventual, pero sin ciclo de vida propio). Los campos JSON siguen el criterio de Eventual.
+model InformeServicio {
+  id            Int      @id @default(autoincrement())
+  servicioId    Int
+  fechaDesde    DateTime
+  fechaHasta    DateTime
+  // [{ id, origen: PEDIDO | SERVICIO | MANUAL, pedidoIds? }]
+  maquinasUtilizadas String?
+  vehiculosUtilizados String?
+  trabajosRealizados String?
+  serviciosExtrasSubcontratados String?
+  horasBrowix String?
+  insumosImportados String?
+  insumosExtras String?
+  // [{ texto, autor, fecha }]
+  observaciones String?
+  activo        Boolean  @default(true)
+  creadoPorId   Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  servicio  Servicio @relation(fields: [servicioId], references: [id])
+  creadoPor Usuario  @relation(fields: [creadoPorId], references: [id])
+
+  @@index([servicioId, fechaDesde])
 }
 
 model VehiculoAsignacion {

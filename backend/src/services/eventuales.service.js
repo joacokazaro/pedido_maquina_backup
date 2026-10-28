@@ -20,7 +20,7 @@ import { normalizeTipoServicio, TIPO_ESPACIOS_VERDES } from "./tipoServicio.serv
 
 export const ESTADOS_EVENTUAL_VALIDOS = ["activo", "finalizado", "cancelado"];
 
-const TIPOS_TRABAJO_VALIDOS = [
+export const TIPOS_TRABAJO_VALIDOS = [
   "PODA_MENOR_2M",
   "PODA_ALTURA",
   "RETIRO_PODA",
@@ -32,11 +32,11 @@ const TIPOS_TRABAJO_VALIDOS = [
   "OTRO",
 ];
 
-const UNIDADES_MEDIDA_VALIDAS = ["UNIDAD", "M2", "M3", "METROS_LINEALES", "HORAS", "KG"];
+export const UNIDADES_MEDIDA_VALIDAS = ["UNIDAD", "M2", "M3", "METROS_LINEALES", "HORAS", "KG"];
 
 // Insumos que se cargan a mano en el eventual, aparte de los que se importan
 // desde la plataforma de insumos. No tienen precio: solo cantidad consumida.
-const TIPOS_INSUMO_EXTRA_VALIDOS = [
+export const TIPOS_INSUMO_EXTRA_VALIDOS = [
   "NAFTA_PREPARADA",
   "NAFTA_PURA",
   "BOLSAS",
@@ -50,7 +50,7 @@ const TIPOS_INSUMO_EXTRA_VALIDOS = [
 
 // Unidades propias de los insumos (litros/cc para combustibles y aceites), distintas
 // de las de trabajos y servicios extras.
-const UNIDADES_INSUMO_VALIDAS = ["LITROS", "UNIDADES", "METROS", "CC"];
+export const UNIDADES_INSUMO_VALIDAS = ["LITROS", "UNIDADES", "METROS", "CC"];
 
 function normalizeText(value) {
   return String(value || "").trim();
@@ -66,7 +66,7 @@ function uniqueStrings(values) {
   return Array.from(new Set(values.map((value) => normalizeText(value)).filter(Boolean)));
 }
 
-function parseJson(value) {
+export function parseJson(value) {
   if (!value) return null;
   if (typeof value === "object") return value;
   try {
@@ -76,7 +76,7 @@ function parseJson(value) {
   }
 }
 
-function buildError(message, status = 400, payload = null) {
+export function buildError(message, status = 400, payload = null) {
   const error = new Error(message);
   error.status = status;
   if (payload) error.payload = payload;
@@ -88,7 +88,7 @@ export function normalizeEstadoEventual(value) {
   return ESTADOS_EVENTUAL_VALIDOS.includes(normalized) ? normalized : "activo";
 }
 
-function validateTrabajosRealizados(items) {
+export function validateTrabajosRealizados(items) {
   if (!Array.isArray(items)) return [];
 
   const errors = [];
@@ -116,7 +116,7 @@ function validateTrabajosRealizados(items) {
   return errors;
 }
 
-function validateServiciosExtras(items) {
+export function validateServiciosExtras(items) {
   if (!Array.isArray(items)) return [];
 
   const errors = [];
@@ -147,7 +147,7 @@ function validateServiciosExtras(items) {
   return errors;
 }
 
-function validateInsumosExtras(items) {
+export function validateInsumosExtras(items) {
   if (!Array.isArray(items)) return [];
 
   const errors = [];
@@ -175,7 +175,7 @@ function validateInsumosExtras(items) {
   return errors;
 }
 
-function normalizeTrabajoItem(item) {
+export function normalizeTrabajoItem(item) {
   return {
     tipo: normalizeText(item.tipo),
     label: normalizeText(item.label),
@@ -186,7 +186,7 @@ function normalizeTrabajoItem(item) {
   };
 }
 
-function normalizeInsumoExtraItem(item) {
+export function normalizeInsumoExtraItem(item) {
   return {
     tipo: normalizeText(item.tipo),
     label: normalizeText(item.label),
@@ -197,7 +197,7 @@ function normalizeInsumoExtraItem(item) {
   };
 }
 
-function normalizeServicioExtraItem(item) {
+export function normalizeServicioExtraItem(item) {
   const precioVacio =
     item.precio === undefined || item.precio === null || String(item.precio).trim() === "";
   return {
@@ -293,7 +293,7 @@ function mapVehiculoBasico(vehiculo) {
   };
 }
 
-async function getVehiculosByIds(ids = []) {
+export async function getVehiculosByIds(ids = []) {
   const uniqueIds = uniqueStrings(ids);
   if (uniqueIds.length === 0) return [];
 
@@ -1065,7 +1065,7 @@ export async function addSupervisorObservation(eventualId, actorUsername, observ
   return getEventualDetail(eventualId);
 }
 
-function redondearHoras(minutos) {
+export function redondearHoras(minutos) {
   return Math.round((minutos / 60) * 100) / 100;
 }
 
@@ -1076,7 +1076,7 @@ function redondearHoras(minutos) {
 // importación completa: esa persona queda igual en el desglose por persona
 // (bajo "Sin categoría") y el motivo del fallo se reporta en
 // erroresCategorizacion para quedar registrado.
-async function categorizarHorasBrowix(fichajes, ubicacion) {
+export async function categorizarHorasBrowix(fichajes, ubicacion) {
   const { grupos, sinLegajo } = agruparMinutosPorLegajo(fichajes, ubicacion);
 
   // Secuencial (no Promise.allSettled en paralelo): Browix limita getUsers a
@@ -1238,7 +1238,7 @@ export async function importarHorasBrowixEventual({ eventualId, actorId, actorNo
 // Agrupa los items de una lista de pedidos de insumos por insumo (código +
 // nombre, ya que el código puede venir null y no alcanza solo). Suma
 // cantidad y subtotal de cada insumo a través de todos los pedidos.
-function agruparItemsPorInsumo(pedidos) {
+export function agruparItemsPorInsumo(pedidos) {
   const porInsumo = new Map();
 
   for (const pedido of pedidos) {

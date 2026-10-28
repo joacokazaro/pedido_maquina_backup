@@ -101,6 +101,15 @@ Consecuencia práctica: hoy **no se puede calcular ningún costo** de un eventua
 
 **Deuda de autorización concreta:** en `adminEventuales.controller.js`, el alta (`POST`), la edición (`PUT`) y la baja (`DELETE`) **no llaman `requireActor`** — el actor sale de `req.body.usuario` y solo se verifica que ese username exista, sin chequear rol. Los otros cuatro endpoints del mismo controller sí lo llaman. En `eventuales.controller.js`, `getEventualSupervisor` solo valida autorización si viene el query param `username`, y `getMisEventuales` deja pasar `tipoAlcance` desde el query string para roles que no son `encargado_ev`.
 
+### Informes de servicio (servicios fijos de Espacios Verdes)
+
+Equivalente del PDF de eventuales para servicios fijos, en un rango de fechas elegido a mano. Es un módulo aparte (`informesServicio.service.js`, `adminInformesServicio.*`, `AdminInformesServicio.jsx` / `AdminInformeServicioDetalle.jsx`, `utils/informeServicioPdf.js`) que solo reusa de `eventuales.service.js` los validadores y normalizadores de trabajos/extras/insumos y `categorizarHorasBrowix` (por eso ahora se exportan). Roles `admin` y `coordinador`. Detalle de fuentes y endpoints en el README.
+
+- El informe **se persiste** (`InformeServicio`). La precarga de máquinas/vehículos sale de los pedidos entregados al servicio en el rango; la fecha de entrega es la entrada `ENTREGADO` de `HistorialPedido` (respaldo: `ESTADO_ACTUALIZADO` a `ENTREGADO`, o `createdAt` si el estado es posterior a la entrega y no hay historial). `Servicio` no guarda cuándo tuvo cada máquina, así que no se puede reconstruir "lo asignado en ese rango"; por eso lo asignado hoy se suma a mano (`origen: SERVICIO`).
+- Solo servicios `tipo = ESPACIOS_VERDES` y que **no** tengan un `Eventual` homónimo (los pedidos complementarios crean un `Servicio` con el nombre del eventual). Un servicio EV con `tipo` nulo no aparece: hay que clasificarlo desde "Servicios".
+- Browix usa grupos **fijos** `2303`, `1444`, `2282` (`BROWIX_GRUPOS_INFORME_SERVICIO`), a diferencia de los eventuales, donde dependen del supervisor. Mismo límite de consultas (10 s por grupo y ventana de 45 días): un mes tarda ~35 s más la categorización por legajo.
+- No hay horas de supervisor ni historial de auditoría como en `HistorialEventual`: las observaciones llevan autor y fecha y es lo único que queda registrado.
+
 ### Tiempo real
 
 Socket.IO se expone vía `app.set("io", ...)`; los controllers emiten con `req.app.get("io")`. Rooms: `DEPOSITO` y `USER:<username>` (el frontend se une desde `AuthContext` al conectar). Las notificaciones persisten en la tabla de notificaciones además de emitirse.

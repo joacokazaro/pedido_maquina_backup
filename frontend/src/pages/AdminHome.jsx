@@ -38,6 +38,13 @@ export default function AdminHome() {
       accent: "cyan",
     },
     {
+      title: "Informes de servicio",
+      description: "Resumen en PDF de un servicio de Espacios Verdes en un rango de fechas.",
+      to: "/admin/informes-servicio",
+      icon: "pedidos",
+      accent: "green",
+    },
+    {
       title: "Usuarios",
       description: "Gestioná altas, bajas, edición de perfiles y roles del sistema.",
       to: "/admin/usuarios",

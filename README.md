@@ -205,6 +205,14 @@ Al sumar producción hay que **filtrar por unidad antes de agregar**: un `SUM(ca
 - `UNIDAD_CANONICA_POR_TRABAJO` (en el service) pasa a código la convención de unidades por tipo de trabajo: filtra los trabajos cargados en otra unidad fuera de esos indicadores y alimenta el indicador de calidad de carga
 - **No mide costos**: sin tarifa por categoría ni monto facturado no hay forma de calcularlos
 
+### Informes de servicio
+- Resumen en PDF (mismo estilo que el de eventuales) de un **servicio fijo de Espacios Verdes** en un rango de fechas. Pantalla `/admin/informes-servicio`, roles `admin` y `coordinador` (`requireActor` en cada handler de `adminInformesServicio.controller.js`)
+- El informe se **guarda** (`InformeServicio`, campos JSON como `Eventual`): se crea con servicio + rango y se precarga con las máquinas y vehículos de los pedidos no cancelados **entregados** al servicio dentro del rango (fecha = entrada `ENTREGADO` del historial del pedido, en horario argentino). Después se editan a mano: se suman máquinas del servicio u otras del inventario, vehículos, trabajos, servicios extras, insumos extras y observaciones (solo se agregan, con autor y fecha)
+- Cada máquina/vehículo lleva su `origen` (`PEDIDO` / `SERVICIO` / `MANUAL`). "Traer de los pedidos" reemplaza solo los de origen `PEDIDO`
+- Los selectores excluyen los `Servicio` homónimos de un eventual (los crean los pedidos complementarios) y los que no son `ESPACIOS_VERDES`
+- Horas de Browix: fichajes con `ubicacion` = nombre del servicio dentro del rango, siempre sobre los grupos `2303`, `1444` y `2282` (`BROWIX_GRUPOS_INFORME_SERVICIO`, no dependen de supervisor). Insumos: API de insumos por nombre de servicio, filtrando por `dia` dentro del rango
+- Endpoints bajo `/api/admin/informes-servicio`: `GET /servicios`, `GET /catalogo`, `GET|POST /`, `GET|PUT|DELETE /:id`, `POST /:id/recargar-pedidos`, `POST /:id/importar-horas-browix`, `POST /:id/importar-insumos`. El PDF se arma en el frontend (`utils/informeServicioPdf.js`)
+
 ### Comparador de eventuales
 - Pantalla `/admin/eventuales/comparador`, desde una card del panel de eventuales. Roles `admin`, `coordinador` y `consultor`, solo lectura (`comparadorEventuales.service.js`)
 - Opera solo sobre eventuales de Espacios Verdes **finalizados**. Endpoints bajo `/api/admin/eventuales/comparador/`: `GET candidatos` (lista y catálogo de tipos), `GET versus?a=&b=` y `POST similares`
