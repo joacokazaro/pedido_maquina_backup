@@ -32,7 +32,7 @@ export const TIPOS_TRABAJO_VALIDOS = [
   "OTRO",
 ];
 
-export const UNIDADES_MEDIDA_VALIDAS = ["UNIDAD", "M2", "M3", "METROS_LINEALES", "HORAS", "KG"];
+export const UNIDADES_MEDIDA_VALIDAS = ["UNIDAD", "M2", "M3", "METROS_LINEALES", "KM", "HORAS", "KG"];
 
 // Insumos que se cargan a mano en el eventual, aparte de los que se importan
 // desde la plataforma de insumos. No tienen precio: solo cantidad consumida.

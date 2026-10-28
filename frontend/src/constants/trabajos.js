@@ -19,6 +19,7 @@ export const UNIDADES = [
   { value: "M2", label: "M2" },
   { value: "M3", label: "M3" },
   { value: "METROS_LINEALES", label: "Metros lineales" },
+  { value: "KM", label: "Kilómetros" },
   { value: "HORAS", label: "Horas" },
   { value: "KG", label: "Kilogramos" },
 ];
