@@ -499,9 +499,6 @@ export default function AdminInformeServicioDetalle() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {dirty ? <span className="text-xs font-semibold text-amber-700">Cambios sin guardar</span> : null}
-          <button type="button" className={BTN_SECUNDARIO} disabled={ocupado} onClick={onPdf}>
-            {accion === "pdf" ? "Generando..." : "Descargar PDF"}
-          </button>
           <button type="button" className={BTN_PRIMARIO} disabled={ocupado} onClick={onGuardar}>
             {accion === "guardar" ? "Guardando..." : "Guardar cambios"}
           </button>
@@ -849,7 +846,6 @@ export default function AdminInformeServicioDetalle() {
       <Seccion
         numero="7"
         titulo="Horas de Browix"
-        descripcion="Fichajes del servicio dentro del período, en los grupos 2303, 1444 y 2282."
         acciones={
           <button type="button" className={BTN_SECUNDARIO} disabled={ocupado} onClick={() => onImportar("horas-browix", "Horas de Browix importadas.")}>
             {accion === "horas-browix" ? "Importando..." : horasBrowix ? "Reimportar horas" : "Importar horas"}
@@ -1081,9 +1077,14 @@ export default function AdminInformeServicioDetalle() {
         >
           Eliminar informe
         </button>
-        <button type="button" className={BTN_PRIMARIO} disabled={ocupado} onClick={onGuardar}>
-          {accion === "guardar" ? "Guardando..." : "Guardar cambios"}
-        </button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button type="button" className={BTN_PRIMARIO} disabled={ocupado} onClick={onGuardar}>
+            {accion === "guardar" ? "Guardando..." : "Guardar cambios"}
+          </button>
+          <button type="button" className={BTN_SECUNDARIO} disabled={ocupado} onClick={onPdf}>
+            {accion === "pdf" ? "Generando..." : "Descargar PDF"}
+          </button>
+        </div>
       </div>
 
       <SelectorMaquinasModal
