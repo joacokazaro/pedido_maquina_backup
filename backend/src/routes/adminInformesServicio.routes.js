@@ -8,6 +8,7 @@ import {
   adminImportarInsumosInforme,
   adminListInformesServicio,
   adminListServiciosParaInforme,
+  adminPrevisualizarInsumosInforme,
   adminRecargarPedidosInforme,
   adminUpdateInformeServicio,
 } from "../controllers/adminInformesServicio.controller.js";
@@ -24,6 +25,7 @@ router.get("/informes-servicio/:id", adminGetInformeServicio);
 router.put("/informes-servicio/:id", adminUpdateInformeServicio);
 router.post("/informes-servicio/:id/recargar-pedidos", adminRecargarPedidosInforme);
 router.post("/informes-servicio/:id/importar-horas-browix", adminImportarHorasBrowixInforme);
+router.get("/informes-servicio/:id/insumos-disponibles", adminPrevisualizarInsumosInforme);
 router.post("/informes-servicio/:id/importar-insumos", adminImportarInsumosInforme);
 router.delete("/informes-servicio/:id", adminDeleteInformeServicio);
 

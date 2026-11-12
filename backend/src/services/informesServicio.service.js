@@ -31,7 +31,12 @@ import {
   getFichajesPorRango,
   sumarHorasTeoricasPorUbicacion,
 } from "./browix.service.js";
-import { getPedidosInsumos, resolverServiciosPorNombre } from "./insumos.service.js";
+import {
+  aplicarSeleccionInsumos,
+  armarVistaPreviaInsumos,
+  resumirPedidosIncluidos,
+  traerPedidosInsumosPorNombre,
+} from "./insumos.service.js";
 import { TIPO_ESPACIOS_VERDES } from "./tipoServicio.service.js";
 import { ESTADOS_PEDIDO } from "../constants/estadosPedidos.js";
 
@@ -487,40 +492,50 @@ export async function deleteInforme(informeId) {
 // Igual que en eventuales: matchea por nombre exacto del servicio en la API de insumos
 // (probando todas las empresas), pero acá se acota a los pedidos cuyo día cae en el rango
 // del informe, porque un servicio fijo acumula pedidos de todos los períodos.
-export async function importarInsumosInforme({ informeId, actor }) {
+// Dos pasos, igual que en eventuales: vista previa sin guardar y después se
+// guardan solo los ítems elegidos (`clavesIncluidas`; si no viene, todo).
+async function traerPedidosInsumosInforme(informeId) {
   const informe = await getInformeActivoOrThrow(informeId);
 
   const desde = diaISO(informe.fechaDesde);
   const hasta = diaISO(informe.fechaHasta);
 
-  const coincidencias = await resolverServiciosPorNombre(informe.servicio.nombre);
+  const { coincidencias, pedidos } = await traerPedidosInsumosPorNombre(
+    informe.servicio.nombre,
+    (pedido) => pedido.dia >= desde && pedido.dia <= hasta
+  );
 
-  const pedidos = [];
-  for (const { token, servicioId } of coincidencias) {
-    const pedidosEmpresa = await getPedidosInsumos({ token, servicioId });
-    pedidos.push(...pedidosEmpresa.filter((pedido) => pedido.dia >= desde && pedido.dia <= hasta));
-  }
+  return { informe, desde, hasta, coincidencias, pedidos };
+}
 
-  const total = pedidos.reduce((acc, pedido) => acc + (Number(pedido.total) || 0), 0);
+export async function previsualizarInsumosInforme({ informeId }) {
+  const { informe, desde, hasta, coincidencias, pedidos } = await traerPedidosInsumosInforme(informeId);
+  return armarVistaPreviaInsumos({
+    coincidencias,
+    pedidos,
+    servicioNombre: informe.servicio.nombre,
+    anterior: parseJson(informe.insumosImportados),
+    extra: { desde, hasta },
+  });
+}
+
+export async function importarInsumosInforme({ informeId, actor, clavesIncluidas }) {
+  const { informe, desde, hasta, coincidencias, pedidos } = await traerPedidosInsumosInforme(informeId);
+  const { pedidosIncluidos, clavesExcluidas, seleccion } = aplicarSeleccionInsumos(pedidos, clavesIncluidas);
 
   const resultado = {
     servicioIds: coincidencias.map((c) => c.servicioId),
     servicioNombre: informe.servicio.nombre,
     desde,
     hasta,
-    cantidadPedidos: pedidos.length,
-    total: Math.round(total * 100) / 100,
+    cantidadPedidos: pedidosIncluidos.length,
+    total: Math.round(pedidosIncluidos.reduce((acc, p) => acc + p.total, 0) * 100) / 100,
     importadoEn: new Date().toISOString(),
     importadoPor: actor.nombre || actor.username || null,
-    insumos: agruparItemsPorInsumo(pedidos),
-    pedidos: pedidos.map((pedido) => ({
-      pedidoId: pedido.pedidoId,
-      numero: pedido.numero,
-      fechaHoraArgentina: pedido.fechaHoraArgentina,
-      solicitante: pedido.solicitante,
-      estado: pedido.estado,
-      total: pedido.total,
-    })),
+    seleccion,
+    clavesExcluidas,
+    insumos: agruparItemsPorInsumo(pedidosIncluidos),
+    pedidos: resumirPedidosIncluidos(pedidosIncluidos),
   };
 
   await prisma.informeServicio.update({

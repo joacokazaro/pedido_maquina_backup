@@ -6,6 +6,7 @@ import {
   importarInsumosInforme,
   listInformes,
   listServiciosDisponibles,
+  previsualizarInsumosInforme,
   recargarDesdePedidos,
   updateInforme,
 } from "../services/informesServicio.service.js";
@@ -76,8 +77,13 @@ export const adminImportarHorasBrowixInforme = withActor("Error importando horas
   res.json(await importarHorasBrowixInforme({ informeId: req.params.id, actor }));
 });
 
+export const adminPrevisualizarInsumosInforme = withActor("Error consultando insumos", async (req, res) => {
+  res.json(await previsualizarInsumosInforme({ informeId: req.params.id }));
+});
+
 export const adminImportarInsumosInforme = withActor("Error importando insumos", async (req, res, actor) => {
-  res.json(await importarInsumosInforme({ informeId: req.params.id, actor }));
+  // Sin `clavesIncluidas` se importa todo (como antes de la selección).
+  res.json(await importarInsumosInforme({ informeId: req.params.id, actor, clavesIncluidas: req.body?.clavesIncluidas }));
 });
 
 export const adminDeleteInformeServicio = withActor("Error eliminando informe", async (req, res) => {

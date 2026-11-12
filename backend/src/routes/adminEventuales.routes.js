@@ -9,6 +9,7 @@ import {
   adminImportarHorasBrowix,
   adminImportarInsumos,
   adminListEventuales,
+  adminPrevisualizarInsumos,
   adminUpdateEventual,
 } from "../controllers/adminEventuales.controller.js";
 import { adminGetKpisEspaciosVerdes } from "../controllers/kpiEspaciosVerdes.controller.js";
@@ -32,6 +33,7 @@ router.get("/eventuales/:id", adminGetEventual);
 router.post("/eventuales", adminCreateEventual);
 router.put("/eventuales/:id", adminUpdateEventual);
 router.post("/eventuales/:id/importar-horas-browix", adminImportarHorasBrowix);
+router.get("/eventuales/:id/insumos-disponibles", adminPrevisualizarInsumos);
 router.post("/eventuales/:id/importar-insumos", adminImportarInsumos);
 router.put("/eventuales/:id/horas-supervisor", adminActualizarHorasSupervisor);
 router.delete("/eventuales/:id/pedidos/:pedidoId", adminDesvincularPedidoComplementario);

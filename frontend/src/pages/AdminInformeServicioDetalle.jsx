@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import BotonVolver from "../components/BotonVolver";
 import ConfirmModal from "../components/ConfirmModal";
 import SearchableSelect from "../components/SearchableSelect";
+import SeleccionInsumosModal from "../components/SeleccionInsumosModal";
 import { API_BASE } from "../services/apiBase";
 import { useAuth } from "../context/AuthContext";
 import { buildActorHeaders } from "../utils/authHeaders";
@@ -17,6 +18,8 @@ const BTN_PRIMARIO =
 const BTN_SECUNDARIO =
   "rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60";
 const BTN_QUITAR = "text-xs font-semibold text-rose-600 hover:text-rose-800";
+
+const SELECCION_INSUMOS_CERRADA = { open: false, cargando: false, error: "", vista: null };
 
 const ORIGEN_LABEL = { PEDIDO: "Pedido", SERVICIO: "Del servicio", MANUAL: "Manual" };
 const ORIGEN_STYLE = {
@@ -250,6 +253,8 @@ export default function AdminInformeServicioDetalle() {
   const [mensaje, setMensaje] = useState("");
   // Acción en curso ("guardar", "pedidos", "horas-browix", "insumos", "pdf"): deshabilita los botones.
   const [accion, setAccion] = useState("");
+  const [seleccionInsumos, setSeleccionInsumos] = useState(SELECCION_INSUMOS_CERRADA);
+  const [importandoInsumos, setImportandoInsumos] = useState(false);
   const [dirty, setDirty] = useState(false);
 
   const [fechaDesde, setFechaDesde] = useState("");
@@ -418,6 +423,35 @@ export default function AdminInformeServicioDetalle() {
       },
       texto
     );
+
+  // Insumos en dos pasos: se guarda lo que hay en pantalla, se trae la vista previa y se
+  // abre la selección; al confirmar se guardan solo los ítems elegidos.
+  const onImportarInsumos = () =>
+    ejecutar("insumos", async () => {
+      await guardarCambios();
+      setSeleccionInsumos({ open: true, cargando: true, error: "", vista: null });
+      try {
+        const vista = await request("/insumos-disponibles", "GET");
+        setSeleccionInsumos({ open: true, cargando: false, error: "", vista });
+      } catch (previewError) {
+        setSeleccionInsumos({ open: true, cargando: false, error: previewError.message || "Error consultando insumos", vista: null });
+      }
+    });
+
+  async function confirmarImportacionInsumos(clavesIncluidas) {
+    try {
+      setImportandoInsumos(true);
+      aplicarServidor(await request("/importar-insumos", "POST", { clavesIncluidas }));
+      setSeleccionInsumos(SELECCION_INSUMOS_CERRADA);
+      setError("");
+      setMensaje("Insumos importados.");
+    } catch (importError) {
+      console.error(importError);
+      setSeleccionInsumos((prev) => ({ ...prev, error: importError.message || "Error importando insumos" }));
+    } finally {
+      setImportandoInsumos(false);
+    }
+  }
 
   const onPdf = () =>
     ejecutar("pdf", async () => {
@@ -901,7 +935,7 @@ export default function AdminInformeServicioDetalle() {
         titulo="Insumos"
         descripcion="Pedidos de insumos del servicio dentro del período, más los insumos extras cargados a mano."
         acciones={
-          <button type="button" className={BTN_SECUNDARIO} disabled={ocupado} onClick={() => onImportar("insumos", "Insumos importados.")}>
+          <button type="button" className={BTN_SECUNDARIO} disabled={ocupado} onClick={onImportarInsumos}>
             {accion === "insumos" ? "Importando..." : insumosImportados ? "Reimportar insumos" : "Importar insumos"}
           </button>
         }
@@ -915,6 +949,13 @@ export default function AdminInformeServicioDetalle() {
               · {insumosImportados.cantidadPedidos} pedido(s) · período {formatDateOnly(insumosImportados.desde)} al{" "}
               {formatDateOnly(insumosImportados.hasta)}
             </p>
+            {insumosImportados.seleccion && !insumosImportados.seleccion.completa ? (
+              <p className="text-sm font-semibold text-amber-700">
+                Se incluyeron {insumosImportados.seleccion.cantidadItemsIncluidos} de{" "}
+                {insumosImportados.seleccion.cantidadItemsDisponibles} ítems · se excluyeron ${" "}
+                {Number(insumosImportados.seleccion.totalExcluido).toLocaleString("es-AR")}
+              </p>
+            ) : null}
             {insumosImportados.insumos?.length > 0 ? (
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase text-slate-500">
@@ -942,6 +983,15 @@ export default function AdminInformeServicioDetalle() {
             </p>
           </div>
         )}
+        <SeleccionInsumosModal
+          open={seleccionInsumos.open}
+          cargando={seleccionInsumos.cargando}
+          error={seleccionInsumos.error}
+          vista={seleccionInsumos.vista}
+          importando={importandoInsumos}
+          onCancel={() => setSeleccionInsumos(SELECCION_INSUMOS_CERRADA)}
+          onConfirm={confirmarImportacionInsumos}
+        />
 
         <div className="border-t border-slate-200 pt-4">
           <div className="mb-2 flex items-center justify-between">

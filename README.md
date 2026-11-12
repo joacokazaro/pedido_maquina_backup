@@ -211,7 +211,7 @@ Al sumar producción hay que **filtrar por unidad antes de agregar**: un `SUM(ca
 - Cada máquina/vehículo lleva su `origen` (`PEDIDO` / `SERVICIO` / `MANUAL`). "Traer de los pedidos" reemplaza solo los de origen `PEDIDO`
 - Los selectores excluyen los `Servicio` homónimos de un eventual (los crean los pedidos complementarios) y los que no son `ESPACIOS_VERDES`
 - Horas de Browix: fichajes con `ubicacion` = nombre del servicio dentro del rango, siempre sobre los grupos `2303`, `1444` y `2282` (`BROWIX_GRUPOS_INFORME_SERVICIO`, no dependen de supervisor). Insumos: API de insumos por nombre de servicio, filtrando por `dia` dentro del rango
-- Endpoints bajo `/api/admin/informes-servicio`: `GET /servicios`, `GET /catalogo`, `GET|POST /`, `GET|PUT|DELETE /:id`, `POST /:id/recargar-pedidos`, `POST /:id/importar-horas-browix`, `POST /:id/importar-insumos`. El PDF se arma en el frontend (`utils/informeServicioPdf.js`)
+- Endpoints bajo `/api/admin/informes-servicio`: `GET /servicios`, `GET /catalogo`, `GET|POST /`, `GET|PUT|DELETE /:id`, `POST /:id/recargar-pedidos`, `POST /:id/importar-horas-browix`, `GET /:id/insumos-disponibles` (vista previa, no guarda), `POST /:id/importar-insumos` (body opcional `{ clavesIncluidas }`; sin él importa todo). El PDF se arma en el frontend (`utils/informeServicioPdf.js`)
 
 ### Comparador de eventuales
 - Pantalla `/admin/eventuales/comparador`, desde una card del panel de eventuales. Roles `admin`, `coordinador` y `consultor`, solo lectura (`comparadorEventuales.service.js`)
@@ -378,7 +378,8 @@ Todo cuelga de `/api`. Los routers admin se montan como varios routers sobre el 
 - `GET|POST /api/admin/eventuales` · `GET|PUT|DELETE /api/admin/eventuales/:id`
 - `GET /api/admin/eventuales/componentes/catalogo`
 - `GET /api/admin/eventuales/kpis/espacios-verdes` (KPIs de producción y productividad; `requireActor` con `admin`, `coordinador` y `consultor`)
-- `POST /api/admin/eventuales/:id/importar-horas-browix` · `POST /api/admin/eventuales/:id/importar-insumos`
+- `POST /api/admin/eventuales/:id/importar-horas-browix` · `GET /api/admin/eventuales/:id/insumos-disponibles` · `POST /api/admin/eventuales/:id/importar-insumos`
+  - La importación de insumos va en dos pasos: `insumos-disponibles` devuelve cada pedido de la app de Insumos con sus ítems (clave `<pedidoId>:<posición>`, sin guardar nada) y `importar-insumos` recibe `{ clavesIncluidas: [...] }` con los ítems a incluir (sin ese campo se incluye todo). El backend vuelve a consultar la API y filtra por esas claves; no acepta montos del navegador. El resultado guarda `seleccion` (ítems incluidos/disponibles, total excluido) y `clavesExcluidas`, que la próxima vista previa usa para venir con lo mismo destildado.
 - `PUT /api/admin/eventuales/:id/horas-supervisor`
 - `DELETE /api/admin/eventuales/:id/pedidos/:pedidoId` (desvincula un pedido complementario; admin y coordinador)
 

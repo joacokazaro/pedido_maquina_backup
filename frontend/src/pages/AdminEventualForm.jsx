@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatDateTime, toDateInputValue } from "../utils/date";
 import { REQUEST_RESOURCE_TYPES } from "../constants/maquinas";
 import SearchableSelect from "../components/SearchableSelect";
+import SeleccionInsumosModal from "../components/SeleccionInsumosModal";
 import { buildActorHeaders } from "../utils/authHeaders";
 import { TIPOS_SERVICIO } from "../constants/tipoServicio";
 
@@ -21,6 +22,8 @@ function estiloEstadoPedido(estado) {
 }
 
 const ESTADOS = ["activo", "finalizado", "cancelado"];
+
+const SELECCION_INSUMOS_CERRADA = { open: false, cargando: false, error: "", vista: null };
 
 // Pedidos propios cuyas máquinas se ofrecen como "temporales" del supervisor en el selector.
 // PREPARADO todavía no salió del depósito, pero ya está reservado para el supervisor y se
@@ -208,6 +211,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
   const [insumosImportados, setInsumosImportados] = useState(null);
   const [importandoInsumos, setImportandoInsumos] = useState(false);
   const [insumosError, setInsumosError] = useState("");
+  const [seleccionInsumos, setSeleccionInsumos] = useState(SELECCION_INSUMOS_CERRADA);
   const [insumosExtras, setInsumosExtras] = useState([]);
 
   const [horasSupervisorInput, setHorasSupervisorInput] = useState("");
@@ -767,7 +771,26 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
     }
   }
 
-  async function importarInsumos() {
+  // Paso 1: trae todo lo que hay en la app de Insumos (sin guardar) y abre la
+  // selección. Paso 2 (confirmarImportacionInsumos): guarda solo lo elegido.
+  async function abrirSeleccionInsumos() {
+    setSeleccionInsumos({ open: true, cargando: true, error: "", vista: null });
+    try {
+      const res = await fetch(`${API_BASE}/admin/eventuales/${encodeURIComponent(id)}/insumos-disponibles`, {
+        headers: buildActorHeaders(user),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudieron consultar los insumos");
+      }
+      setSeleccionInsumos({ open: true, cargando: false, error: "", vista: data });
+    } catch (previewError) {
+      console.error(previewError);
+      setSeleccionInsumos({ open: true, cargando: false, error: previewError.message || "Error consultando insumos", vista: null });
+    }
+  }
+
+  async function confirmarImportacionInsumos(clavesIncluidas) {
     try {
       setImportandoInsumos(true);
       setInsumosError("");
@@ -775,6 +798,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       const res = await fetch(`${API_BASE}/admin/eventuales/${encodeURIComponent(id)}/importar-insumos`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...buildActorHeaders(user) },
+        body: JSON.stringify({ clavesIncluidas }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -783,9 +807,10 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       }
 
       setInsumosImportados(data.insumosImportados || null);
+      setSeleccionInsumos(SELECCION_INSUMOS_CERRADA);
     } catch (importError) {
       console.error(importError);
-      setInsumosError(importError.message || "Error importando insumos");
+      setSeleccionInsumos((prev) => ({ ...prev, error: importError.message || "Error importando insumos" }));
     } finally {
       setImportandoInsumos(false);
     }
@@ -1018,7 +1043,7 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
       descripcion: "importar las horas de Browix",
     },
     insumos: {
-      ejecutar: importarInsumos,
+      ejecutar: abrirSeleccionInsumos,
       setErrorAccion: setInsumosError,
       descripcion: "importar los insumos",
     },
@@ -1876,6 +1901,16 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
             <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{insumosError}</div>
           ) : null}
 
+          <SeleccionInsumosModal
+            open={seleccionInsumos.open}
+            cargando={seleccionInsumos.cargando}
+            error={seleccionInsumos.error}
+            vista={seleccionInsumos.vista}
+            importando={importandoInsumos}
+            onCancel={() => setSeleccionInsumos(SELECCION_INSUMOS_CERRADA)}
+            onConfirm={confirmarImportacionInsumos}
+          />
+
           {insumosImportados ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1887,9 +1922,16 @@ export default function AdminEventualForm({ modoFinalizacionCoordinador = false 
                 </div>
                 <div className="text-xs text-emerald-700/80">
                   <p>
-                    {insumosImportados.cantidadPedidos} pedido{insumosImportados.cantidadPedidos === 1 ? "" : "s"} encontrado
+                    {insumosImportados.cantidadPedidos} pedido{insumosImportados.cantidadPedidos === 1 ? "" : "s"} incluido
                     {insumosImportados.cantidadPedidos === 1 ? "" : "s"}
                   </p>
+                  {insumosImportados.seleccion && !insumosImportados.seleccion.completa ? (
+                    <p className="font-semibold text-amber-700">
+                      {insumosImportados.seleccion.cantidadItemsIncluidos} de {insumosImportados.seleccion.cantidadItemsDisponibles} ítems
+                      · se excluyeron{" "}
+                      {insumosImportados.seleccion.totalExcluido.toLocaleString("es-AR", { style: "currency", currency: "ARS" })}
+                    </p>
+                  ) : null}
                   <p>
                     Importado el {formatDateTime(insumosImportados.importadoEn)}
                     {insumosImportados.importadoPor ? ` por ${insumosImportados.importadoPor}` : ""}

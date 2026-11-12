@@ -7,6 +7,7 @@ import {
   importarHorasBrowixEventual,
   importarInsumosEventual,
   listEventuales,
+  previsualizarInsumosEventual,
   saveEventual,
 } from "../services/eventuales.service.js";
 import { requireActor } from "../services/requestActor.service.js";
@@ -95,6 +96,17 @@ export async function adminImportarHorasBrowix(req, res) {
   }
 }
 
+export async function adminPrevisualizarInsumos(req, res) {
+  const actor = await requireActor(req, res, ROLES_BACKOFFICE_EVENTUAL);
+  if (!actor) return;
+
+  try {
+    res.json(await previsualizarInsumosEventual({ eventualId: req.params.id }));
+  } catch (error) {
+    handleError(res, error, "Error consultando insumos");
+  }
+}
+
 export async function adminImportarInsumos(req, res) {
   const actor = await requireActor(req, res, ROLES_BACKOFFICE_EVENTUAL);
   if (!actor) return;
@@ -104,6 +116,8 @@ export async function adminImportarInsumos(req, res) {
       eventualId: req.params.id,
       actorId: actor.id,
       actorNombre: actor.nombre || actor.username,
+      // Sin `clavesIncluidas` se importa todo (como antes de la selección).
+      clavesIncluidas: req.body?.clavesIncluidas,
     });
     res.json(eventual);
   } catch (error) {

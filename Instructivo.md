@@ -897,7 +897,7 @@ La importación puede demorar más de un minuto: el sistema de marcación limita
 Estas tres acciones aparecen deshabilitadas hasta que el eventual se marca como **finalizado**:
 
 - **Importar horas de Browix** (además requiere fecha de inicio y fecha de fin).
-- **Importar insumos** de la plataforma de insumos.
+- **Importar insumos** de la plataforma de insumos. Antes de guardar se abre una ventana con todos los pedidos de insumos del servicio y sus ítems: podés destildar los que no se facturan (un pedido entero o ítems sueltos) o dejar **Incluir todo**. Solo lo tildado queda en el eventual y en el PDF. Si volvés a importar, la ventana viene con los mismos ítems destildados que la vez anterior.
 - **Guardar horas de supervisor**.
 
 No hace falta guardar antes. Si el estado, el nombre o las fechas tienen cambios sin guardar, al apretar cualquiera de estos botones el sistema pide confirmación, guarda el formulario completo sin salir de la pantalla y después importa (o guarda las horas). Si el formulario tiene algún error, por ejemplo falta la fecha de fin o no hay trabajos realizados, no se guarda ni se importa nada y el aviso aparece en esa misma sección.
@@ -1016,7 +1016,7 @@ El informe de servicio es el resumen en PDF de un servicio fijo de **Espacios Ve
 3. Completá lo que falte:
    - **Agregar máquinas**: las asignadas al servicio o cualquiera del inventario. También podés quitar las que no corresponden.
    - **Vehículos**, **trabajos realizados**, **servicios extras subcontratados** e **insumos extras**.
-   - **Importar horas** (Browix) e **Importar insumos**: se traen solo los del período. Pueden tardar hasta un minuto.
+   - **Importar horas** (Browix) e **Importar insumos**: se traen solo los del período. Pueden tardar hasta un minuto. Al importar insumos se abre una ventana para elegir qué pedidos o ítems incluir (no siempre se factura todo); **Incluir todo** los marca a todos.
    - **Observaciones**: quedan con autor y fecha y no se pueden modificar.
 4. **Guardar cambios** conserva el informe para retomarlo después. **Descargar PDF** guarda lo que hay en pantalla y genera el archivo.
 

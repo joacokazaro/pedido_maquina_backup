@@ -15,7 +15,12 @@ import {
   contarFichajesPorGrupo,
   getCategoriasPorLegajos,
 } from "./browix.service.js";
-import { resolverServiciosPorNombre, getPedidosInsumos } from "./insumos.service.js";
+import {
+  aplicarSeleccionInsumos,
+  armarVistaPreviaInsumos,
+  resumirPedidosIncluidos,
+  traerPedidosInsumosPorNombre,
+} from "./insumos.service.js";
 import { normalizeTipoServicio, TIPO_ESPACIOS_VERDES } from "./tipoServicio.service.js";
 
 export const ESTADOS_EVENTUAL_VALIDOS = ["activo", "finalizado", "cancelado"];
@@ -1267,7 +1272,12 @@ export function agruparItemsPorInsumo(pedidos) {
 // rango (a diferencia de Browix). A diferencia de las horas de Browix, se
 // puede reimportar tantas veces como se quiera mientras el eventual esté
 // finalizado, siempre pisando el resultado anterior.
-export async function importarInsumosEventual({ eventualId, actorId, actorNombre }) {
+//
+// Es en dos pasos: `previsualizarInsumosEventual` muestra todo lo que se
+// traería (pedidos con sus ítems) sin guardar, y `importarInsumosEventual`
+// guarda solo los ítems elegidos (`clavesIncluidas`; si no viene, todo),
+// porque no siempre se factura todo lo pedido.
+async function traerPedidosInsumosEventual(eventualId) {
   const eventual = await prisma.eventual.findUnique({ where: { id: Number(eventualId) } });
   if (!eventual) {
     throw buildError("Eventual no encontrado", 404);
@@ -1277,33 +1287,35 @@ export async function importarInsumosEventual({ eventualId, actorId, actorNombre
     throw buildError("El eventual debe estar finalizado para importar insumos", 400);
   }
 
-  const coincidencias = await resolverServiciosPorNombre(eventual.nombre);
+  const { coincidencias, pedidos } = await traerPedidosInsumosPorNombre(eventual.nombre);
+  return { eventual, coincidencias, pedidos };
+}
 
-  const pedidos = [];
-  for (const { token, servicioId } of coincidencias) {
-    const pedidosEmpresa = await getPedidosInsumos({ token, servicioId });
-    pedidos.push(...pedidosEmpresa);
-  }
+export async function previsualizarInsumosEventual({ eventualId }) {
+  const { eventual, coincidencias, pedidos } = await traerPedidosInsumosEventual(eventualId);
+  return armarVistaPreviaInsumos({
+    coincidencias,
+    pedidos,
+    servicioNombre: eventual.nombre,
+    anterior: parseJson(eventual.insumosImportados),
+  });
+}
 
-  const insumos = agruparItemsPorInsumo(pedidos);
-  const total = pedidos.reduce((acc, p) => acc + (Number(p.total) || 0), 0);
+export async function importarInsumosEventual({ eventualId, actorId, actorNombre, clavesIncluidas }) {
+  const { eventual, coincidencias, pedidos } = await traerPedidosInsumosEventual(eventualId);
+  const { pedidosIncluidos, clavesExcluidas, seleccion } = aplicarSeleccionInsumos(pedidos, clavesIncluidas);
 
   const resultado = {
     servicioIds: coincidencias.map((c) => c.servicioId),
     servicioNombre: eventual.nombre,
-    cantidadPedidos: pedidos.length,
-    total: Math.round(total * 100) / 100,
+    cantidadPedidos: pedidosIncluidos.length,
+    total: Math.round(pedidosIncluidos.reduce((acc, p) => acc + p.total, 0) * 100) / 100,
     importadoEn: new Date().toISOString(),
     importadoPor: actorNombre || null,
-    insumos,
-    pedidos: pedidos.map((p) => ({
-      pedidoId: p.pedidoId,
-      numero: p.numero,
-      fechaHoraArgentina: p.fechaHoraArgentina,
-      solicitante: p.solicitante,
-      estado: p.estado,
-      total: p.total,
-    })),
+    seleccion,
+    clavesExcluidas,
+    insumos: agruparItemsPorInsumo(pedidosIncluidos),
+    pedidos: resumirPedidosIncluidos(pedidosIncluidos),
   };
 
   await prisma.$transaction([

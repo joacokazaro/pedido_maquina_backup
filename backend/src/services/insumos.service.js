@@ -101,3 +101,153 @@ export async function getPedidosInsumos({ token, servicioId }) {
 
   return pedidos;
 }
+
+// Busca el servicio por nombre en todas las empresas y junta sus pedidos.
+// `filtroPedido` permite acotar (p. ej. por rango de fechas en los informes).
+export async function traerPedidosInsumosPorNombre(nombre, filtroPedido = null) {
+  const coincidencias = await resolverServiciosPorNombre(nombre);
+
+  const pedidos = [];
+  for (const { token, servicioId } of coincidencias) {
+    const pedidosEmpresa = await getPedidosInsumos({ token, servicioId });
+    pedidos.push(...(filtroPedido ? pedidosEmpresa.filter(filtroPedido) : pedidosEmpresa));
+  }
+
+  return { coincidencias, pedidos };
+}
+
+/* =========================
+   SELECCIÓN DE ÍTEMS
+   No siempre se factura todo lo que se pidió para un servicio: antes de
+   importar, quien importa ve cada pedido con sus ítems y elige qué incluir.
+   Cada ítem se identifica con "<pedidoId>:<posición en el pedido>". Al
+   confirmar, el backend vuelve a consultar la API y se queda solo con las
+   claves elegidas (no confía en montos mandados por el navegador).
+========================= */
+
+const redondear2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+export function claveItemInsumo(pedido, indice) {
+  return `${pedido?.pedidoId}:${indice}`;
+}
+
+function itemsDePedido(pedido) {
+  return (Array.isArray(pedido?.items) ? pedido.items : []).map((item, indice) => ({
+    clave: claveItemInsumo(pedido, indice),
+    codigo: item?.codigo ?? null,
+    insumo: item?.insumo ?? "",
+    cantidad: Number(item?.cantidad) || 0,
+    precioUnitario: Number(item?.precioUnitario) || 0,
+    subtotal: Number(item?.subtotal) || 0,
+  }));
+}
+
+function sumarSubtotales(items) {
+  return redondear2(items.reduce((acc, item) => acc + item.subtotal, 0));
+}
+
+// Lo que se le muestra a quien importa, sin guardar nada. Si ya hubo una
+// importación, vienen destildados los ítems que esa vez se excluyeron; lo
+// nuevo (pedidos que aparecieron después) viene tildado.
+export function armarVistaPreviaInsumos({ coincidencias, pedidos, servicioNombre, anterior = null, extra = {} }) {
+  const excluidasAntes = new Set(Array.isArray(anterior?.clavesExcluidas) ? anterior.clavesExcluidas : []);
+
+  const pedidosVista = pedidos.map((pedido) => {
+    const items = itemsDePedido(pedido).map((item) => ({ ...item, seleccionado: !excluidasAntes.has(item.clave) }));
+    return {
+      pedidoId: pedido.pedidoId,
+      numero: pedido.numero,
+      fechaHoraArgentina: pedido.fechaHoraArgentina,
+      dia: pedido.dia ?? null,
+      solicitante: pedido.solicitante,
+      estado: pedido.estado,
+      nota: pedido.nota ?? null,
+      total: sumarSubtotales(items),
+      items,
+    };
+  });
+
+  return {
+    ...extra,
+    servicioIds: coincidencias.map((c) => c.servicioId),
+    servicioNombre,
+    cantidadPedidos: pedidosVista.length,
+    total: redondear2(pedidosVista.reduce((acc, p) => acc + p.total, 0)),
+    importacionAnterior: anterior
+      ? { importadoEn: anterior.importadoEn || null, importadoPor: anterior.importadoPor || null, total: anterior.total ?? null }
+      : null,
+    pedidos: pedidosVista,
+  };
+}
+
+// `clavesIncluidas` null/undefined = incluir todo (comportamiento original).
+// Devuelve los pedidos recortados a los ítems elegidos (los pedidos sin
+// ningún ítem elegido quedan afuera) y el resumen de la selección.
+export function aplicarSeleccionInsumos(pedidos, clavesIncluidas) {
+  if (clavesIncluidas !== undefined && clavesIncluidas !== null && !Array.isArray(clavesIncluidas)) {
+    const error = new Error("La selección de insumos es inválida");
+    error.status = 400;
+    throw error;
+  }
+
+  const incluirTodo = !Array.isArray(clavesIncluidas);
+  const elegidas = new Set((clavesIncluidas || []).map(String));
+
+  const pedidosIncluidos = [];
+  const clavesExcluidas = [];
+  let cantidadItemsDisponibles = 0;
+  let totalDisponible = 0;
+
+  for (const pedido of pedidos) {
+    const items = itemsDePedido(pedido);
+    cantidadItemsDisponibles += items.length;
+    totalDisponible += sumarSubtotales(items);
+
+    const incluidos = [];
+    for (const item of items) {
+      if (incluirTodo || elegidas.has(item.clave)) incluidos.push(item);
+      else clavesExcluidas.push(item.clave);
+    }
+
+    if (incluidos.length > 0) {
+      pedidosIncluidos.push({
+        ...pedido,
+        items: incluidos,
+        total: sumarSubtotales(incluidos),
+        totalPedido: sumarSubtotales(items),
+        itemsExcluidos: items.length - incluidos.length,
+      });
+    }
+  }
+
+  const cantidadItemsIncluidos = cantidadItemsDisponibles - clavesExcluidas.length;
+  const total = redondear2(pedidosIncluidos.reduce((acc, p) => acc + p.total, 0));
+  totalDisponible = redondear2(totalDisponible);
+
+  return {
+    pedidosIncluidos,
+    clavesExcluidas,
+    seleccion: {
+      completa: clavesExcluidas.length === 0,
+      cantidadItemsIncluidos,
+      cantidadItemsDisponibles,
+      cantidadPedidosDisponibles: pedidos.length,
+      totalDisponible,
+      totalExcluido: redondear2(totalDisponible - total),
+    },
+  };
+}
+
+// Resumen de cada pedido incluido que se guarda junto con la importación.
+export function resumirPedidosIncluidos(pedidosIncluidos) {
+  return pedidosIncluidos.map((p) => ({
+    pedidoId: p.pedidoId,
+    numero: p.numero,
+    fechaHoraArgentina: p.fechaHoraArgentina,
+    solicitante: p.solicitante,
+    estado: p.estado,
+    total: p.total,
+    totalPedido: p.totalPedido,
+    itemsExcluidos: p.itemsExcluidos,
+  }));
+}
